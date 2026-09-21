@@ -84,7 +84,7 @@ const CareersPage: React.FC = () => {
   return (
     <div className="pb-20">
       <section className="bg-[#0B192C] text-white py-16 px-4 sm:px-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#0A4DA6]/10 rounded-full blur-[80px] pointer-events-none" />
+        <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#F28C28]/10 rounded-full blur-[80px] pointer-events-none" />
         <div className="max-w-4xl mx-auto text-center relative z-10 space-y-4">
           <span className="inline-block text-[10px] font-extrabold tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
             Join The Team
@@ -141,7 +141,7 @@ const CareersPage: React.FC = () => {
               <button
                 key={d}
                 onClick={() => setSelectedDept(d)}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${selectedDept === d ? "bg-[#0A4DA6] text-white" : "bg-gray-100 dark:bg-slate-800 text-gray-500"}`}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${selectedDept === d ? "bg-[#F28C28] text-white" : "bg-gray-100 dark:bg-slate-800 text-gray-500"}`}
               >
                 {d}
               </button>
@@ -165,7 +165,7 @@ const CareersPage: React.FC = () => {
                   </h3>
                   <div className="flex flex-wrap gap-3 text-[10px] text-gray-400 font-bold">
                     <span className="flex items-center gap-1">
-                      <MapPin size={10} className="text-[#0A4DA6]" />
+                      <MapPin size={10} className="text-[#F28C28]" />
                       {job.location}
                     </span>
                     <span className="flex items-center gap-1">
@@ -197,7 +197,7 @@ const CareersPage: React.FC = () => {
                   </p>
                   <a
                     href="mailto:careers@tirvona.in"
-                    className="inline-flex items-center gap-2 min-h-[44px] px-6 py-2 bg-[#0A4DA6] text-white text-xs font-extrabold rounded-full"
+                    className="inline-flex items-center gap-2 min-h-[44px] px-6 py-2 bg-[#F28C28] text-white text-xs font-extrabold rounded-full"
                   >
                     Apply Now <ArrowRight size={13} />
                   </a>

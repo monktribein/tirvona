@@ -21,7 +21,7 @@ export const EnterprisePageHeader: React.FC<EnterprisePageHeaderProps> = ({
     <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all">
       <div className="flex items-center gap-3.5">
         {icon && (
-          <div className="w-12 h-12 rounded-2xl bg-[#0A4DA6]/10 text-[#0A4DA6] dark:text-amber-400 flex items-center justify-center shrink-0 border border-[#0A4DA6]/15">
+          <div className="w-12 h-12 rounded-2xl bg-[#F28C28]/10 text-[#F28C28] dark:text-amber-400 flex items-center justify-center shrink-0 border border-[#F28C28]/15">
             {icon}
           </div>
         )}

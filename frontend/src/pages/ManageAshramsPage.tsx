@@ -18,9 +18,11 @@ import {
   Sun,
   BookOpen,
   Info,
+  Clock,
+  Ban,
 } from "lucide-react";
 import { useNotifications } from "../contexts/NotificationContext";
-import { ashramService } from "../services";
+import { ashramService, dayStayService } from "../services";
 import { getErrorMessage } from "../lib/api";
 import { FileUploader } from "../components/FileUploader";
 
@@ -116,7 +118,7 @@ export const ManageAshramsPage: React.FC = () => {
 
   return (
     <div className="space-y-8 text-left w-full">
-      <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] rounded-[28px] p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-gradient-to-r from-[#0B192C] via-[#F28C28] to-[#0B192C] rounded-[28px] p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-amber-300 text-xs font-bold backdrop-blur-md">
             <Building size={14} /> Stay Management Console
@@ -158,7 +160,7 @@ export const ManageAshramsPage: React.FC = () => {
           </p>
           <button
             onClick={() => navigate(`${consoleBase}/ashrams/add`)}
-            className="px-6 py-3 bg-[#0A4DA6] text-white font-extrabold text-xs rounded-full shadow-md"
+            className="px-6 py-3 bg-[#F28C28] text-white font-extrabold text-xs rounded-full shadow-md"
           >
             Register Owners to Register Stays
           </button>
@@ -191,7 +193,7 @@ export const ManageAshramsPage: React.FC = () => {
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-xs font-bold text-gray-500 dark:text-gray-400">
-                    <MapPin size={14} className="text-[#0A4DA6]" />
+                    <MapPin size={14} className="text-[#F28C28]" />
                     <span>
                       {ashram.address?.street
                         ? `${ashram.address.street}, `
@@ -214,7 +216,7 @@ export const ManageAshramsPage: React.FC = () => {
 
                   <button
                     onClick={() => navigate(`${consoleBase}/rooms`)}
-                    className="px-4 py-2.5 rounded-full bg-[#0A4DA6]/10 hover:bg-[#0A4DA6]/20 text-[#0A4DA6] border border-[#0A4DA6]/20 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer"
+                    className="px-4 py-2.5 rounded-full bg-[#F28C28]/10 hover:bg-[#F28C28]/20 text-[#F28C28] border border-[#F28C28]/20 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer"
                   >
                     <Bed size={14} /> Manage Rooms
                   </button>
@@ -241,7 +243,7 @@ export const ManageAshramsPage: React.FC = () => {
                 <div className="lg:col-span-2 space-y-6">
                   <div className="bg-gray-50/70 dark:bg-slate-900/70 border border-gray-100 dark:border-slate-800 rounded-2xl p-5 space-y-3">
                     <h3 className="text-xs font-black tracking-wider text-gray-400 flex items-center gap-2">
-                      <Info size={14} className="text-[#0A4DA6]" /> About & Bio
+                      <Info size={14} className="text-[#F28C28]" /> About & Bio
                     </h3>
                     <p className="text-xs leading-relaxed font-semibold text-slate-700 dark:text-slate-300">
                       {ashram.description ||
@@ -279,7 +281,7 @@ export const ManageAshramsPage: React.FC = () => {
                       ).map((item: string, i: number) => (
                         <span
                           key={i}
-                          className="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 border border-blue-100 dark:border-blue-800 text-xs font-bold flex items-center gap-1.5"
+                          className="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#F28C28] dark:text-amber-400 border border-blue-100 dark:border-blue-800 text-xs font-bold flex items-center gap-1.5"
                         >
                           <Sparkles size={12} />
                           {item}
@@ -351,7 +353,7 @@ export const ManageAshramsPage: React.FC = () => {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 text-left">
             <h3 className="font-bold text-sm text-[#0B192C] dark:text-white flex items-center gap-1.5">
-              <Upload size={16} className="text-[#0A4DA6]" /> Upload Stay
+              <Upload size={16} className="text-[#F28C28]" /> Upload Stay
               Deeds & Certificates
             </h3>
             <p className="text-[10px] text-gray-400">
@@ -409,7 +411,7 @@ export const ManageAshramsPage: React.FC = () => {
               <button
                 onClick={handleUploadDocs}
                 disabled={submittingDocs}
-                className="flex-1 py-2.5 bg-[#0A4DA6] text-white rounded-full text-xs font-bold cursor-pointer shadow disabled:opacity-60"
+                className="flex-1 py-2.5 bg-[#F28C28] text-white rounded-full text-xs font-bold cursor-pointer shadow disabled:opacity-60"
               >
                 {submittingDocs ? "Submitting…" : "Submit Documents"}
               </button>

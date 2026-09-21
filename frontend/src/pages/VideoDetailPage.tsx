@@ -87,7 +87,7 @@ export const VideoDetailPage: React.FC = () => {
         </h2>
         <button
           onClick={() => navigate("/blog")}
-          className="px-6 py-2.5 rounded-full bg-[#0A4DA6] text-white font-bold text-xs shadow-md"
+          className="px-6 py-2.5 rounded-full bg-[#F28C28] text-white font-bold text-xs shadow-md"
         >
           Back to Knowledge Hub
         </button>
@@ -336,7 +336,7 @@ export const VideoDetailPage: React.FC = () => {
                 </p>
                 <button
                   onClick={() => navigate("/search")}
-                  className="w-full py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white font-black text-xs shadow-md transition-colors cursor-pointer"
+                  className="w-full py-2.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white font-black text-xs shadow-md transition-colors cursor-pointer"
                 >
                   Book Ashram Stay →
                 </button>
@@ -345,7 +345,7 @@ export const VideoDetailPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="mt-12 bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white rounded-[32px] p-8 sm:p-10 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6 border border-white/10">
+        <div className="mt-12 bg-gradient-to-r from-[#0B192C] via-[#F28C28] to-[#0B192C] text-white rounded-[32px] p-8 sm:p-10 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6 border border-white/10">
           <div className="space-y-2 text-center md:text-left max-w-2xl">
             <span className="px-3.5 py-1 rounded-full bg-white/10 text-amber-300 text-xs font-black tracking-wider">
               Continue Your Sacred Journey

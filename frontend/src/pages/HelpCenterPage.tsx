@@ -101,7 +101,7 @@ const HelpCenterPage: React.FC = () => {
   return (
     <div className="pb-20">
       <section className="bg-[#0B192C] text-white py-14 px-4 sm:px-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#0A4DA6]/10 rounded-full blur-[80px] pointer-events-none" />
+        <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#F28C28]/10 rounded-full blur-[80px] pointer-events-none" />
         <div className="max-w-3xl mx-auto text-center relative z-10 space-y-5">
           <span className="inline-block text-[10px] font-extrabold tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
             Help Center
@@ -139,7 +139,7 @@ const HelpCenterPage: React.FC = () => {
               Try different keywords or{" "}
               <a
                 href="mailto:support@tirvona.in"
-                className="text-[#0A4DA6] font-bold"
+                className="text-[#F28C28] font-bold"
               >
                 contact our support team
               </a>
@@ -198,7 +198,7 @@ const HelpCenterPage: React.FC = () => {
       </section>
 
       <section className="max-w-2xl mx-auto px-4 sm:px-6 pb-14">
-        <div className="bg-[#0A4DA6] text-white rounded-3xl p-8 text-center space-y-4">
+        <div className="bg-[#F28C28] text-white rounded-3xl p-8 text-center space-y-4">
           <h2
             className="font-extrabold"
             style={{ fontSize: "clamp(1.1rem, 4vw, 1.4rem)" }}
@@ -212,7 +212,7 @@ const HelpCenterPage: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <a
               href="mailto:support@tirvona.in"
-              className="min-h-[44px] px-6 py-2.5 bg-white text-[#0A4DA6] font-extrabold text-sm rounded-full flex items-center justify-center"
+              className="min-h-[44px] px-6 py-2.5 bg-white text-[#F28C28] font-extrabold text-sm rounded-full flex items-center justify-center"
             >
               Email Support
             </a>

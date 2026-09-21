@@ -85,7 +85,7 @@ export const EventApprovalsPage: React.FC = () => {
         </div>
       ) : loading ? (
         <div className={`${CARD} p-12 flex items-center justify-center gap-3`}>
-          <Loader2 size={20} className="animate-spin text-[#0A4DA6]" />
+          <Loader2 size={20} className="animate-spin text-[#F28C28]" />
           <span className="text-sm font-bold text-gray-400">Loading…</span>
         </div>
       ) : events.length === 0 ? (

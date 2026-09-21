@@ -153,6 +153,57 @@ export const AshramSchema = new Schema(
       comments: String,
       inspectedAt: Date,
     },
+    dayStayConfig: {
+      enabled: { type: Boolean, default: false, index: true },
+      verificationStatus: {
+        type: String,
+        enum: ["unverified", "pending", "verified", "rejected"],
+        default: "unverified",
+        index: true,
+      },
+      verificationData: {
+        verifiedAt: Date,
+        verifiedBy: id("User"),
+        bathroomConditionScore: Number,
+        roomConditionScore: Number,
+        linenAndTowelsConfirmed: Boolean,
+        hotWaterConfirmed: Boolean,
+        familySuitabilityConfirmed: Boolean,
+        kycProcessConfirmed: Boolean,
+        bathroomPhotos: [String],
+        roomPhotos: [String],
+        notes: String,
+      },
+      operatingHours: {
+        start: { type: String, default: "06:00" },
+        end: { type: String, default: "20:00" },
+      },
+      defaultGraceMinutes: { type: Number, default: 15, min: 0, max: 120 },
+      defaultHousekeepingBufferMinutes: { type: Number, default: 45, min: 0, max: 180 },
+      blackoutDates: [Date],
+      highDemandDates: [Date],
+      isBlockedToday: { type: Boolean, default: false },
+      isBlockedTomorrow: { type: Boolean, default: false },
+      policy: {
+        towelProvided: { type: Boolean, default: true },
+        hotWaterAvailable: { type: Boolean, default: true },
+        attachedBathroom: { type: Boolean, default: true },
+        parkingInfo: {
+          type: { type: String, enum: ["on_site", "partner", "nearby_public", "none"], default: "none" },
+          partnerId: String,
+          distance: String,
+          indicativePrice: Number,
+        },
+        luggageInfo: {
+          available: { type: Boolean, default: true },
+          included: { type: Boolean, default: true },
+          price: { type: Number, default: 0 },
+          hours: String,
+        },
+        houseRules: [String],
+        cancellationPolicy: String,
+      },
+    },
     createdBy: id("User"),
     updatedBy: id("User"),
     deletedAt: Date,
@@ -184,6 +235,7 @@ AshramSchema.index(
 AshramSchema.index({ ownerId: 1 });
 AshramSchema.index({ status: 1, "address.city": 1, "rating.average": -1 });
 AshramSchema.index({ status: 1, "rating.average": -1 });
+AshramSchema.index({ "dayStayConfig.enabled": 1, "dayStayConfig.verificationStatus": 1 });
 
 export const RoomSchema = new Schema(
   {
@@ -214,6 +266,28 @@ export const RoomSchema = new Schema(
         overridePrice: Number,
       },
     ],
+    dayStayConfig: {
+      eligible: { type: Boolean, default: false },
+      enabled: { type: Boolean, default: false },
+      allocatedInventory: { type: Number, default: 0, min: 0 },
+      products: [
+        {
+          productCode: { type: String, required: true, uppercase: true, trim: true },
+          productType: { type: String, enum: ["freshen_up", "day_rest"], required: true },
+          durationMinutes: { type: Number, required: true, min: 1 },
+          price: { type: Number, required: true, min: 0 },
+          discountPrice: { type: Number, min: 0, default: 0 },
+          enabled: { type: Boolean, default: true },
+        },
+      ],
+      bathroomType: {
+        type: String,
+        enum: ["attached_private", "dedicated_private", "shared"],
+        default: "attached_private",
+      },
+      hasHotWater: { type: Boolean, default: true },
+      hasTowels: { type: Boolean, default: true },
+    },
     status: {
       type: String,
       enum: ["active", "under_maintenance"],
@@ -225,6 +299,7 @@ export const RoomSchema = new Schema(
 );
 RoomSchema.index({ ashramId: 1, status: 1 });
 RoomSchema.index({ type: 1 });
+RoomSchema.index({ ashramId: 1, "dayStayConfig.enabled": 1 });
 
 export const RoomRateSchema = new Schema(
   {

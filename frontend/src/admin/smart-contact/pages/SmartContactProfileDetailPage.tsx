@@ -123,7 +123,7 @@ export const SmartContactProfileDetailPage: React.FC = () => {
       <div className="space-y-4">
         <Link
           to="/admin/smart-contacts"
-          className="inline-flex items-center gap-2 text-xs font-black text-[#0A4DA6]"
+          className="inline-flex items-center gap-2 text-xs font-black text-[#F28C28]"
         >
           <ArrowLeft size={14} /> Back to Smart Contacts
         </Link>
@@ -149,7 +149,7 @@ export const SmartContactProfileDetailPage: React.FC = () => {
     <div className="space-y-5">
       <Link
         to="/admin/smart-contacts"
-        className="inline-flex items-center gap-2 text-xs font-black text-[#0A4DA6] hover:underline"
+        className="inline-flex items-center gap-2 text-xs font-black text-[#F28C28] hover:underline"
       >
         <ArrowLeft size={14} /> Back to Smart Contacts
       </Link>
@@ -237,8 +237,8 @@ export const SmartContactProfileDetailPage: React.FC = () => {
             onClick={() => setTab(value)}
             className={`px-4 py-2 rounded-xl text-xs font-black border transition-colors ${
               tab === value
-                ? "bg-[#0A4DA6] text-white border-[#0A4DA6]"
-                : "bg-white dark:bg-[#0B192C] text-[#0B192C] dark:text-white border-gray-200 dark:border-slate-800 hover:border-[#0A4DA6]"
+                ? "bg-[#F28C28] text-white border-[#F28C28]"
+                : "bg-white dark:bg-[#0B192C] text-[#0B192C] dark:text-white border-gray-200 dark:border-slate-800 hover:border-[#F28C28]"
             }`}
           >
             {label}
@@ -256,7 +256,7 @@ export const SmartContactProfileDetailPage: React.FC = () => {
                 className="w-28 h-28 rounded-full object-cover border-4 border-white dark:border-slate-800 shadow"
               />
             ) : (
-              <div className="w-28 h-28 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] grid place-items-center text-2xl font-black">
+              <div className="w-28 h-28 rounded-full bg-[#F28C28]/10 text-[#F28C28] grid place-items-center text-2xl font-black">
                 {profile.displayName.slice(0, 2).toUpperCase()}
               </div>
             )}
@@ -264,7 +264,7 @@ export const SmartContactProfileDetailPage: React.FC = () => {
               <p className="text-base font-black text-[#0B192C] dark:text-white">
                 {profile.displayName}
               </p>
-              <p className="text-xs font-bold text-[#0A4DA6]">
+              <p className="text-xs font-bold text-[#F28C28]">
                 {profile.designation || "—"}
               </p>
               <p className="text-[11px] text-gray-500">{profile.roleLine}</p>
@@ -272,7 +272,7 @@ export const SmartContactProfileDetailPage: React.FC = () => {
           </div>
 
           <div className="lg:col-span-2 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-5 shadow-sm">
-            <h4 className="text-[11px] font-black uppercase tracking-wider text-[#0A4DA6] mb-2">
+            <h4 className="text-[11px] font-black uppercase tracking-wider text-[#F28C28] mb-2">
               Contact details
             </h4>
             <DetailRow label="Slug" value={profile.slug} />

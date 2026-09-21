@@ -394,7 +394,7 @@ export const VolunteerHubPage: React.FC = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search Ganga Aarti, Yoga Trainer, Kitchen Seva, Graphic Designer, Ashram Manager..."
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full text-xs font-bold focus:outline-none focus:border-[#0A4DA6]"
+                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full text-xs font-bold focus:outline-none focus:border-[#F28C28]"
               />
             </div>
 
@@ -402,7 +402,7 @@ export const VolunteerHubPage: React.FC = () => {
               <select
                 value={selectedCity}
                 onChange={(e) => setSelectedCity(e.target.value)}
-                className="px-4 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full text-xs font-extrabold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6] cursor-pointer"
+                className="px-4 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full text-xs font-extrabold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28] cursor-pointer"
               >
                 {cities.map((c) => (
                   <option key={c} value={c}>
@@ -430,7 +430,7 @@ export const VolunteerHubPage: React.FC = () => {
                   onClick={() => setSelectedType(t.id)}
                   className={`px-4 py-2 rounded-full text-xs font-extrabold flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
                     isActive
-                      ? "bg-[#0A4DA6] text-white shadow-md shadow-[#0A4DA6]/25"
+                      ? "bg-[#F28C28] text-white shadow-md shadow-[#F28C28]/25"
                       : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
                   }`}
                 >
@@ -448,10 +448,10 @@ export const VolunteerHubPage: React.FC = () => {
                   type="checkbox"
                   checked={freeStayOnly}
                   onChange={(e) => setFreeStayOnly(e.target.checked)}
-                  className="accent-[#0A4DA6] w-4 h-4 rounded"
+                  className="accent-[#F28C28] w-4 h-4 rounded"
                 />
                 <span className="flex items-center gap-1">
-                  <HomeIcon size={12} className="text-[#0A4DA6]" /> Free Ashram
+                  <HomeIcon size={12} className="text-[#F28C28]" /> Free Ashram
                   Stay Included
                 </span>
               </label>
@@ -461,7 +461,7 @@ export const VolunteerHubPage: React.FC = () => {
                   type="checkbox"
                   checked={freeMealsOnly}
                   onChange={(e) => setFreeMealsOnly(e.target.checked)}
-                  className="accent-[#0A4DA6] w-4 h-4 rounded"
+                  className="accent-[#F28C28] w-4 h-4 rounded"
                 />
                 <span className="flex items-center gap-1">
                   <Utensils size={12} className="text-[#E58C28]" /> 3 Free
@@ -482,7 +482,7 @@ export const VolunteerHubPage: React.FC = () => {
 
         {loading ? (
           <div className="py-20 text-center space-y-3">
-            <div className="w-10 h-10 border-4 border-[#0A4DA6] border-t-transparent rounded-full animate-spin mx-auto" />
+            <div className="w-10 h-10 border-4 border-[#F28C28] border-t-transparent rounded-full animate-spin mx-auto" />
             <p className="text-xs font-black text-gray-500">
               Loading verified ashram openings...
             </p>
@@ -514,11 +514,11 @@ export const VolunteerHubPage: React.FC = () => {
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center font-black text-sm">
+                      <div className="w-10 h-10 rounded-2xl bg-[#F28C28]/10 text-[#F28C28] flex items-center justify-center font-black text-sm">
                         {job.ashramName.charAt(0)}
                       </div>
                       <div>
-                        <h4 className="text-xs font-black text-[#0B192C] dark:text-white group-hover:text-[#0A4DA6] transition-colors line-clamp-1">
+                        <h4 className="text-xs font-black text-[#0B192C] dark:text-white group-hover:text-[#F28C28] transition-colors line-clamp-1">
                           {job.ashramName}
                         </h4>
                         <span className="text-[10px] font-extrabold text-gray-400 flex items-center gap-1">
@@ -536,13 +536,13 @@ export const VolunteerHubPage: React.FC = () => {
                   <div>
                     <Link
                       to={`/volunteer/${job._id}`}
-                      className="block group-hover:text-[#0A4DA6] transition-colors"
+                      className="block group-hover:text-[#F28C28] transition-colors"
                     >
                       <h3 className="text-base font-black text-[#0B192C] dark:text-white leading-snug hover:underline">
                         {job.title}
                       </h3>
                     </Link>
-                    <span className="inline-block mt-1 px-2.5 py-0.5 bg-blue-50 dark:bg-slate-900 text-[#0A4DA6] border border-blue-100 dark:border-slate-800 rounded-full text-[10px] font-black tracking-wider">
+                    <span className="inline-block mt-1 px-2.5 py-0.5 bg-blue-50 dark:bg-slate-900 text-[#F28C28] border border-blue-100 dark:border-slate-800 rounded-full text-[10px] font-black tracking-wider">
                       {job.department}
                     </span>
                   </div>
@@ -594,7 +594,7 @@ export const VolunteerHubPage: React.FC = () => {
                 <div className="pt-2 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between gap-2">
                   <Link
                     to={`/volunteer/${job._id}`}
-                    className="text-[11px] font-extrabold text-[#0A4DA6] hover:underline"
+                    className="text-[11px] font-extrabold text-[#F28C28] hover:underline"
                   >
                     View Details →
                   </Link>
@@ -632,7 +632,7 @@ export const VolunteerHubPage: React.FC = () => {
                   value={applicantName}
                   onChange={(e) => setApplicantName(e.target.value)}
                   placeholder="e.g. Rahul Sharma"
-                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0A4DA6]"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#F28C28]"
                 />
               </div>
 
@@ -646,7 +646,7 @@ export const VolunteerHubPage: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="rahul@gmail.com"
-                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0A4DA6]"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#F28C28]"
                 />
               </div>
 
@@ -660,7 +660,7 @@ export const VolunteerHubPage: React.FC = () => {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="9876543210"
-                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0A4DA6]"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#F28C28]"
                 />
               </div>
 
@@ -674,7 +674,7 @@ export const VolunteerHubPage: React.FC = () => {
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   placeholder="Delhi / Lucknow / Rishikesh"
-                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0A4DA6]"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#F28C28]"
                 />
               </div>
             </div>
@@ -687,7 +687,7 @@ export const VolunteerHubPage: React.FC = () => {
                 <select
                   value={education}
                   onChange={(e) => setEducation(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0A4DA6]"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#F28C28]"
                 >
                   <option value="High School">High School</option>
                   <option value="Undergraduate">Undergraduate</option>
@@ -706,7 +706,7 @@ export const VolunteerHubPage: React.FC = () => {
                 <select
                   value={availability}
                   onChange={(e) => setAvailability(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0A4DA6]"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#F28C28]"
                 >
                   <option value="Immediate (Next 7 Days)">
                     Immediate (Next 7 Days)
@@ -726,7 +726,7 @@ export const VolunteerHubPage: React.FC = () => {
                 value={skills}
                 onChange={(e) => setSkills(e.target.value)}
                 placeholder="Yoga, Ganga Aarti management, Photography, Kitchen Seva..."
-                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0A4DA6]"
+                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#F28C28]"
               />
             </div>
 
@@ -740,7 +740,7 @@ export const VolunteerHubPage: React.FC = () => {
                 value={motivation}
                 onChange={(e) => setMotivation(e.target.value)}
                 placeholder="Share your spiritual motivation and desire to serve..."
-                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0A4DA6]"
+                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#F28C28]"
               />
             </div>
 

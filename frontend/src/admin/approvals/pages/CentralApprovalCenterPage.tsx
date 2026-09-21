@@ -31,7 +31,7 @@ import {
 
 const MODULE_ICON_MAP: Record<string, React.ReactNode> = {
   ashram: <Building2 size={14} className="text-indigo-500" />,
-  room_category: <Bed size={14} className="text-[#0A4DA6]" />,
+  room_category: <Bed size={14} className="text-[#F28C28]" />,
   room: <Bed size={14} className="text-blue-500" />,
   amenities: <Sparkles size={14} className="text-cyan-500" />,
   pricing: <DollarSign size={14} className="text-emerald-500" />,
@@ -199,7 +199,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
           <span className="text-[10px] text-gray-400 font-extrabold tracking-wider block">
             Total Pending
           </span>
-          <h3 className="text-2xl font-black text-[#0A4DA6]">
+          <h3 className="text-2xl font-black text-[#F28C28]">
             {stats?.totalPending ?? 0}
           </h3>
           <span className="text-[9px] text-gray-400 font-semibold">
@@ -291,7 +291,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
               onClick={() => setActiveModule(tab.id)}
               className={`px-3 py-1.5 text-xs font-bold rounded-xl whitespace-nowrap transition-all cursor-pointer ${
                 activeModule === tab.id
-                  ? "bg-[#0A4DA6] text-white shadow-sm"
+                  ? "bg-[#F28C28] text-white shadow-sm"
                   : "bg-gray-50 dark:bg-slate-900 text-gray-500 hover:text-gray-900 dark:hover:text-white"
               }`}
             >
@@ -338,7 +338,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
               placeholder="Search request ID, title, stay..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-1.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0A4DA6]"
+              className="w-full pl-9 pr-4 py-1.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#F28C28]"
             />
           </div>
         </div>
@@ -376,7 +376,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
                     key={req._id}
                     className="border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50/50 dark:hover:bg-slate-900/40"
                   >
-                    <td className="py-3.5 px-4 font-bold text-[#0A4DA6]">
+                    <td className="py-3.5 px-4 font-bold text-[#F28C28]">
                       {req.requestId}
                     </td>
                     <td className="py-3.5 px-4">
@@ -441,7 +441,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
                     <td className="py-3.5 px-4 text-right">
                       <button
                         onClick={() => setSelectedRequest(req)}
-                        className="px-3 py-1.5 bg-[#0A4DA6]/10 text-[#0A4DA6] hover:bg-[#0A4DA6] hover:text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 ml-auto cursor-pointer"
+                        className="px-3 py-1.5 bg-[#F28C28]/10 text-[#F28C28] hover:bg-[#F28C28] hover:text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 ml-auto cursor-pointer"
                       >
                         <Eye size={13} /> View & Review
                       </button>
@@ -459,12 +459,12 @@ export const CentralApprovalCenterPage: React.FC = () => {
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 max-w-3xl w-full space-y-5 shadow-2xl max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <div>
-                <span className="text-[10px] font-extrabold text-[#0A4DA6] tracking-wider">
+                <span className="text-[10px] font-extrabold text-[#F28C28] tracking-wider">
                   {selectedRequest.requestId} •{" "}
                   {humanizeLabel(selectedRequest.module)}
                 </span>
                 <h3 className="font-extrabold text-lg text-[#0B192C] dark:text-white flex items-center gap-2">
-                  <FileCheck size={20} className="text-[#0A4DA6]" />{" "}
+                  <FileCheck size={20} className="text-[#F28C28]" />{" "}
                   {selectedRequest.title}
                 </h3>
               </div>
@@ -559,7 +559,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
               />
               <button
                 type="submit"
-                className="px-4 py-2.5 bg-[#0A4DA6] text-white rounded-xl text-xs font-bold hover:bg-opacity-95 cursor-pointer"
+                className="px-4 py-2.5 bg-[#F28C28] text-white rounded-xl text-xs font-bold hover:bg-opacity-95 cursor-pointer"
               >
                 Comment
               </button>
@@ -574,7 +574,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
                 placeholder="Enter approval comments, modification requirements, or rejection reason..."
                 value={reviewComment}
                 onChange={(e) => setReviewComment(e.target.value)}
-                className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0A4DA6]"
+                className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#F28C28]"
               />
             </div>
 
@@ -592,7 +592,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
                   type="button"
                   disabled={processing}
                   onClick={() => handleReviewAction("under_review")}
-                  className="px-3.5 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full font-extrabold text-xs shadow-sm cursor-pointer disabled:opacity-50"
+                  className="px-3.5 py-2 bg-[#F28C28] hover:bg-[#D97706] text-white rounded-full font-extrabold text-xs shadow-sm cursor-pointer disabled:opacity-50"
                 >
                   Under Review
                 </button>

@@ -212,7 +212,7 @@ export const GlobalSearch: React.FC<{ links: SearchableLink[] }> = ({
   return (
     <div ref={containerRef} className="relative w-full">
       <Search
-        className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0A4DA6] pointer-events-none"
+        className="absolute left-4 top-1/2 -translate-y-1/2 text-[#F28C28] pointer-events-none"
         size={16}
       />
       <input
@@ -230,12 +230,12 @@ export const GlobalSearch: React.FC<{ links: SearchableLink[] }> = ({
         aria-expanded={showPanel}
         role="combobox"
         aria-controls="global-search-results"
-        className="w-full pl-10 pr-16 py-2.5 bg-[#F8FAFC] dark:bg-slate-900 border border-blue-100 dark:border-slate-800 rounded-full text-xs font-medium text-[#0B192C] dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#0A4DA6] focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-[#0A4DA6]/15 transition-all shadow-inner"
+        className="w-full pl-10 pr-16 py-2.5 bg-[#F8FAFC] dark:bg-slate-900 border border-blue-100 dark:border-slate-800 rounded-full text-xs font-medium text-[#0B192C] dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#F28C28] focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-[#F28C28]/15 transition-all shadow-inner"
       />
 
       <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
         {searching && (
-          <Loader2 size={13} className="animate-spin text-[#0A4DA6]" />
+          <Loader2 size={13} className="animate-spin text-[#F28C28]" />
         )}
         {term ? (
           <button
@@ -244,7 +244,7 @@ export const GlobalSearch: React.FC<{ links: SearchableLink[] }> = ({
               setTerm("");
               inputRef.current?.focus();
             }}
-            className="text-slate-400 hover:text-[#0A4DA6] transition-colors cursor-pointer"
+            className="text-slate-400 hover:text-[#F28C28] transition-colors cursor-pointer"
             aria-label={t("Clear search")}
           >
             <X size={13} />
@@ -308,7 +308,7 @@ export const GlobalSearch: React.FC<{ links: SearchableLink[] }> = ({
                         onClick={() => go(row)}
                         className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl text-left transition-colors cursor-pointer ${
                           isActive
-                            ? "bg-[#EBF2FA] dark:bg-slate-800"
+                            ? "bg-[#FFF4E5] dark:bg-slate-800"
                             : "hover:bg-[#F5F8FC] dark:hover:bg-slate-800/60"
                         }`}
                       >
@@ -329,7 +329,7 @@ export const GlobalSearch: React.FC<{ links: SearchableLink[] }> = ({
                             </span>
                           )}
                           {isActive && (
-                            <CornerDownLeft size={12} className="text-[#0A4DA6]" />
+                            <CornerDownLeft size={12} className="text-[#F28C28]" />
                           )}
                         </span>
                       </button>

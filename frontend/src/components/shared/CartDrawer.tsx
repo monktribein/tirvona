@@ -84,7 +84,7 @@ export const CartDrawer: React.FC = () => {
       >
         <header className="flex items-center justify-between p-4 pt-[max(1rem,calc(0.75rem+env(safe-area-inset-top)))] border-b border-gray-200 dark:border-slate-800">
           <h2 className="text-base font-black text-[#0B192C] dark:text-white flex items-center gap-2">
-            <ShoppingBag size={18} className="text-[#0A4DA6]" />
+            <ShoppingBag size={18} className="text-[#F28C28]" />
             Your cart
             {count > 0 && (
               <span className="text-xs font-bold text-gray-500">
@@ -116,7 +116,7 @@ export const CartDrawer: React.FC = () => {
                 close();
                 navigate("/marketplace");
               }}
-              className="mt-1 px-5 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white text-xs font-extrabold cursor-pointer"
+              className="mt-1 px-5 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold cursor-pointer"
             >
               Browse marketplace
             </button>
@@ -138,7 +138,7 @@ export const CartDrawer: React.FC = () => {
                     <h3 className="text-xs font-bold text-[#0B192C] dark:text-white line-clamp-2">
                       {line.name}
                     </h3>
-                    <p className="text-xs font-black text-[#0A4DA6] dark:text-blue-400 mt-0.5">
+                    <p className="text-xs font-black text-[#F28C28] dark:text-amber-400 mt-0.5">
                       {formatCurrency(line.displayPrice)}
                     </p>
                     <div className="flex items-center gap-2 mt-2">
@@ -148,7 +148,7 @@ export const CartDrawer: React.FC = () => {
                             setQuantity(line.productId, line.quantity - 1)
                           }
                           aria-label={`Decrease quantity of ${line.name}`}
-                          className="px-2 py-1 text-gray-600 dark:text-gray-300 hover:text-[#0A4DA6] cursor-pointer"
+                          className="px-2 py-1 text-gray-600 dark:text-gray-300 hover:text-[#F28C28] cursor-pointer"
                         >
                           <Minus size={12} />
                         </button>
@@ -160,7 +160,7 @@ export const CartDrawer: React.FC = () => {
                             setQuantity(line.productId, line.quantity + 1)
                           }
                           aria-label={`Increase quantity of ${line.name}`}
-                          className="px-2 py-1 text-gray-600 dark:text-gray-300 hover:text-[#0A4DA6] cursor-pointer"
+                          className="px-2 py-1 text-gray-600 dark:text-gray-300 hover:text-[#F28C28] cursor-pointer"
                         >
                           <Plus size={12} />
                         </button>
@@ -196,7 +196,7 @@ export const CartDrawer: React.FC = () => {
               </p>
               <button
                 onClick={goToCheckout}
-                className="w-full py-3 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white text-xs font-extrabold shadow-md cursor-pointer transition-all"
+                className="w-full py-3 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold shadow-md cursor-pointer transition-all"
               >
                 {user ? "Proceed to checkout" : "Sign in to checkout"}
               </button>

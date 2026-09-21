@@ -107,7 +107,7 @@ export const statusLabel = (status: RegistrationStatus) =>
 
 export const STATUS_STYLES: Record<RegistrationStatus, string> = {
   confirmed:
-    "bg-blue-50 dark:bg-blue-950/60 text-[#0A4DA6] dark:text-blue-300 border-blue-200 dark:border-blue-900/50",
+    "bg-[#FFF4E5]/60 text-[#F28C28] dark:text-amber-300 border-blue-200 dark:border-blue-900/50",
   checked_in:
     "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/50",
   attended:

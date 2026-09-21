@@ -310,10 +310,10 @@ export const PublicLayout: React.FC = () => {
                     key={link.label}
                     to={link.to}
                     className={`px-3 xl:px-3.5 py-1.5 rounded-full font-bold transition-all text-center whitespace-nowrap text-xs xl:text-[13px] tracking-tight ${isSpecial
-                      ? "bg-[#0A4DA6] text-white hover:bg-[#083D85] shadow-xs font-black ring-2 ring-[#E58C28]/60 ring-offset-1 ring-offset-white dark:ring-offset-[#0B192C] transform -translate-y-0.5"
+                      ? "bg-[#F28C28] text-white hover:bg-[#D97706] shadow-xs font-black ring-2 ring-[#E58C28]/60 ring-offset-1 ring-offset-white dark:ring-offset-[#0B192C] transform -translate-y-0.5"
                       : isActive
-                        ? "text-[#0A4DA6] dark:text-[#E58C28] bg-blue-50/90 dark:bg-slate-800 shadow-2xs font-extrabold"
-                        : "text-slate-700 dark:text-slate-200 hover:text-[#0A4DA6] dark:hover:text-[#E58C28] hover:bg-slate-100/90 dark:hover:bg-slate-800/70"
+                        ? "text-[#F28C28] dark:text-[#E58C28] bg-blue-50/90 dark:bg-slate-800 shadow-2xs font-extrabold"
+                        : "text-slate-700 dark:text-slate-200 hover:text-[#F28C28] dark:hover:text-[#E58C28] hover:bg-slate-100/90 dark:hover:bg-slate-800/70"
                       }`}
                   >
                     <span>{t(link.label)}</span>
@@ -346,7 +346,7 @@ export const PublicLayout: React.FC = () => {
                       type="button"
                       onClick={() => handleSelectCurrency("INR")}
                       className={`w-full text-left px-3 py-2 text-xs font-bold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer ${activeCurrency === "INR"
-                        ? "text-[#0A4DA6] dark:text-amber-400 bg-blue-50/50 dark:bg-slate-800/50"
+                        ? "text-[#F28C28] dark:text-amber-400 bg-blue-50/50 dark:bg-slate-800/50"
                         : "text-gray-700 dark:text-gray-200"
                         }`}
                     >
@@ -357,7 +357,7 @@ export const PublicLayout: React.FC = () => {
                       type="button"
                       onClick={() => handleSelectCurrency("USD")}
                       className={`w-full text-left px-3 py-2 text-xs font-bold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer ${activeCurrency === "USD"
-                        ? "text-[#0A4DA6] dark:text-amber-400 bg-blue-50/50 dark:bg-slate-800/50"
+                        ? "text-[#F28C28] dark:text-amber-400 bg-blue-50/50 dark:bg-slate-800/50"
                         : "text-gray-700 dark:text-gray-200"
                         }`}
                     >
@@ -378,7 +378,7 @@ export const PublicLayout: React.FC = () => {
                               type="button"
                               onClick={() => void refreshRate()}
                               disabled={loadingRate}
-                              className="font-bold text-[#0A4DA6] disabled:opacity-50"
+                              className="font-bold text-[#F28C28] disabled:opacity-50"
                             >
                               {loadingRate ? "Updating…" : "Refresh"}
                             </button>
@@ -389,7 +389,7 @@ export const PublicLayout: React.FC = () => {
                               href={rate.sourceUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="font-semibold text-[#0A4DA6] hover:underline"
+                              className="font-semibold text-[#F28C28] hover:underline"
                             >
                               {rate.source}
                             </a>
@@ -402,7 +402,7 @@ export const PublicLayout: React.FC = () => {
                           type="button"
                           onClick={() => void refreshRate()}
                           disabled={loadingRate}
-                          className="w-full text-left text-[11px] font-bold text-[#0A4DA6] disabled:opacity-50"
+                          className="w-full text-left text-[11px] font-bold text-[#F28C28] disabled:opacity-50"
                         >
                           {loadingRate
                             ? "Loading live USD/INR rate…"
@@ -418,7 +418,7 @@ export const PublicLayout: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowLangDropdown(!showLangDropdown)}
-                  className="text-slate-600 dark:text-gray-300 hover:text-[#0A4DA6] transition-colors p-1 cursor-pointer flex items-center gap-1 text-xs font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="text-slate-600 dark:text-gray-300 hover:text-[#F28C28] transition-colors p-1 cursor-pointer flex items-center gap-1 text-xs font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
                   title="Languages"
                 >
                   <Globe size={15} />
@@ -433,7 +433,7 @@ export const PublicLayout: React.FC = () => {
                       type="button"
                       onClick={() => handleSelectLang("en")}
                       className={`w-full text-left px-3 py-2 text-xs font-bold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer ${activeLang === "en"
-                        ? "text-[#0A4DA6] dark:text-amber-400 bg-blue-50/50 dark:bg-slate-800/50"
+                        ? "text-[#F28C28] dark:text-amber-400 bg-blue-50/50 dark:bg-slate-800/50"
                         : "text-gray-700 dark:text-gray-200"
                         }`}
                     >
@@ -444,7 +444,7 @@ export const PublicLayout: React.FC = () => {
                       type="button"
                       onClick={() => handleSelectLang("hi")}
                       className={`w-full text-left px-3 py-2 text-xs font-bold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer ${activeLang === "hi"
-                        ? "text-[#0A4DA6] dark:text-amber-400 bg-blue-50/50 dark:bg-slate-800/50"
+                        ? "text-[#F28C28] dark:text-amber-400 bg-blue-50/50 dark:bg-slate-800/50"
                         : "text-gray-700 dark:text-gray-200"
                         }`}
                     >
@@ -464,7 +464,7 @@ export const PublicLayout: React.FC = () => {
                   {hasOperationalDashboard() && (
                     <Link
                       to={getDashboardPath()}
-                      className="hidden sm:flex text-xs font-extrabold px-3 py-1.5 rounded-full bg-[#0A4DA6] hover:bg-blue-800 text-white shadow-sm transition-all items-center gap-1.5 shrink-0"
+                      className="hidden sm:flex text-xs font-extrabold px-3 py-1.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white shadow-sm transition-all items-center gap-1.5 shrink-0"
                     >
                       <LayoutDashboard size={13} />
                       <span className="hidden md:inline">
@@ -480,8 +480,8 @@ export const PublicLayout: React.FC = () => {
                       aria-haspopup="menu"
                       aria-expanded={profileDropdownOpen}
                       title={user.name}
-                      className={`w-9 h-9 shrink-0 rounded-full bg-[#0A4DA6] text-white flex items-center justify-center cursor-pointer transition-all hover:bg-[#083D85] ring-2 ring-offset-2 ring-offset-white dark:ring-offset-[#0B192C] ${profileDropdownOpen
-                        ? "ring-[#0A4DA6]/40"
+                      className={`w-9 h-9 shrink-0 rounded-full bg-[#F28C28] text-white flex items-center justify-center cursor-pointer transition-all hover:bg-[#D97706] ring-2 ring-offset-2 ring-offset-white dark:ring-offset-[#0B192C] ${profileDropdownOpen
+                        ? "ring-[#F28C28]/40"
                         : "ring-transparent"
                         }`}
                     >
@@ -491,7 +491,7 @@ export const PublicLayout: React.FC = () => {
                     {profileDropdownOpen && (
                       <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden z-50 text-xs font-bold text-gray-700 dark:text-gray-200">
                         <div className="px-3.5 py-2.5 bg-gradient-to-r from-blue-50/80 to-indigo-50/40 dark:from-slate-800/90 dark:to-slate-900/60 border-b border-gray-100 dark:border-slate-800 flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-[#0A4DA6] text-white flex items-center justify-center shrink-0 shadow-sm ring-1 ring-white dark:ring-slate-700">
+                          <div className="w-8 h-8 rounded-full bg-[#F28C28] text-white flex items-center justify-center shrink-0 shadow-sm ring-1 ring-white dark:ring-slate-700">
                             <User size={16} />
                           </div>
                           <div className="min-w-0 flex-1">
@@ -509,9 +509,9 @@ export const PublicLayout: React.FC = () => {
                             <Link
                               to={getDashboardPath()}
                               onClick={() => setProfileDropdownOpen(false)}
-                              className="px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 bg-blue-50/80 dark:bg-blue-950/50 text-[#0A4DA6] dark:text-blue-400 hover:bg-blue-100/80 transition-colors font-black"
+                              className="px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 bg-blue-50/80 dark:bg-blue-950/50 text-[#F28C28] dark:text-amber-400 hover:bg-blue-100/80 transition-colors font-black"
                             >
-                              <div className="w-6 h-6 rounded-md bg-[#0A4DA6] text-white flex items-center justify-center shrink-0">
+                              <div className="w-6 h-6 rounded-md bg-[#F28C28] text-white flex items-center justify-center shrink-0">
                                 <LayoutDashboard size={13} />
                               </div>
                               <span className="text-xs font-black">
@@ -553,7 +553,7 @@ export const PublicLayout: React.FC = () => {
                                 onClick={() => setProfileDropdownOpen(false)}
                                 className="px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
                               >
-                                <div className="w-6 h-6 rounded-md bg-blue-100/60 dark:bg-blue-950/60 text-[#0A4DA6] dark:text-blue-400 flex items-center justify-center shrink-0">
+                                <div className="w-6 h-6 rounded-md bg-blue-100/60 dark:bg-blue-950/60 text-[#F28C28] dark:text-amber-400 flex items-center justify-center shrink-0">
                                   <Package size={13} />
                                 </div>
                                 <span className="text-xs font-bold">
@@ -598,14 +598,14 @@ export const PublicLayout: React.FC = () => {
                   <Link
                     to={`/login?redirect=${encodeURIComponent(authReturnUrl)}`}
                     onClick={rememberCurrentPage}
-                    className="text-xs font-bold text-slate-700 dark:text-white hover:text-[#0A4DA6] transition-colors px-3 py-1.5 rounded-full border border-gray-200 dark:border-slate-700"
+                    className="text-xs font-bold text-slate-700 dark:text-white hover:text-[#F28C28] transition-colors px-3 py-1.5 rounded-full border border-gray-200 dark:border-slate-700"
                   >
                     Login
                   </Link>
                   <Link
                     to={`/register?redirect=${encodeURIComponent(authReturnUrl)}`}
                     onClick={rememberCurrentPage}
-                    className="text-xs font-bold text-white bg-[#0A4DA6] hover:bg-[#083b80] transition-colors px-4 py-2 rounded-full shadow-sm"
+                    className="text-xs font-bold text-white bg-[#F28C28] hover:bg-[#B45309] transition-colors px-4 py-2 rounded-full shadow-sm"
                   >
                     Sign Up
                   </Link>
@@ -688,7 +688,7 @@ export const PublicLayout: React.FC = () => {
                   to={link.to}
                   onClick={() => setDrawerOpen(false)}
                   className={`flex items-center justify-between py-3 px-3.5 rounded-xl text-sm font-bold transition-colors ${isActive
-                    ? "bg-blue-50 dark:bg-slate-800 text-[#0A4DA6] dark:text-[#E58C28]"
+                    ? "bg-[#FFF4E5] text-[#F28C28] dark:text-[#E58C28]"
                     : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-900"
                     }`}
                 >
@@ -697,7 +697,7 @@ export const PublicLayout: React.FC = () => {
                     size={14}
                     className={
                       isActive
-                        ? "text-[#0A4DA6] dark:text-[#E58C28]"
+                        ? "text-[#F28C28] dark:text-[#E58C28]"
                         : "text-gray-300"
                     }
                   />
@@ -743,7 +743,7 @@ export const PublicLayout: React.FC = () => {
                   type="button"
                   onClick={() => handleSelectCurrency("INR")}
                   className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${activeCurrency === "INR"
-                    ? "bg-white dark:bg-[#0A4DA6] text-[#0A4DA6] dark:text-white shadow-xs"
+                    ? "bg-white dark:bg-[#F28C28] text-[#F28C28] dark:text-white shadow-xs"
                     : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
                     }`}
                 >
@@ -753,7 +753,7 @@ export const PublicLayout: React.FC = () => {
                   type="button"
                   onClick={() => handleSelectCurrency("USD")}
                   className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${activeCurrency === "USD"
-                    ? "bg-white dark:bg-[#0A4DA6] text-[#0A4DA6] dark:text-white shadow-xs"
+                    ? "bg-white dark:bg-[#F28C28] text-[#F28C28] dark:text-white shadow-xs"
                     : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
                     }`}
                 >
@@ -788,7 +788,7 @@ export const PublicLayout: React.FC = () => {
                   type="button"
                   onClick={() => handleSelectLang("en")}
                   className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${activeLang === "en"
-                    ? "bg-white dark:bg-[#0A4DA6] text-[#0A4DA6] dark:text-white shadow-xs"
+                    ? "bg-white dark:bg-[#F28C28] text-[#F28C28] dark:text-white shadow-xs"
                     : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
                     }`}
                 >
@@ -798,7 +798,7 @@ export const PublicLayout: React.FC = () => {
                   type="button"
                   onClick={() => handleSelectLang("hi")}
                   className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${activeLang === "hi"
-                    ? "bg-white dark:bg-[#0A4DA6] text-[#0A4DA6] dark:text-white shadow-xs"
+                    ? "bg-white dark:bg-[#F28C28] text-[#F28C28] dark:text-white shadow-xs"
                     : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
                     }`}
                 >
@@ -1009,7 +1009,7 @@ export const PublicLayout: React.FC = () => {
               </div>
 
               <div className="space-y-3">
-                <h4 className="text-xs sm:text-sm font-black text-white tracking-wider border-l-2 border-[#0A4DA6] pl-2.5">
+                <h4 className="text-xs sm:text-sm font-black text-white tracking-wider border-l-2 border-[#F28C28] pl-2.5">
                   Popular Services
                 </h4>
                 <ul className="text-xs space-y-2.5 text-slate-300 font-medium pt-1">
@@ -1079,11 +1079,11 @@ export const PublicLayout: React.FC = () => {
                   <input
                     type="email"
                     placeholder="Enter your email address..."
-                    className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-[#0A4DA6] transition-colors"
+                    className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-[#F28C28] transition-colors"
                   />
                   <button
                     type="submit"
-                    className="w-full sm:w-auto bg-[#0A4DA6] hover:bg-blue-700 text-white text-xs font-black py-2.5 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-lg transition-all cursor-pointer shrink-0"
+                    className="w-full sm:w-auto bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-black py-2.5 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-lg transition-all cursor-pointer shrink-0"
                   >
                     <span>Subscribe</span>
                     <ArrowRight size={13} />
@@ -1100,7 +1100,7 @@ export const PublicLayout: React.FC = () => {
                     href="https://www.facebook.com/tirvonaofficial"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 hover:bg-[#0A4DA6] text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm group"
+                    className="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 hover:bg-[#F28C28] text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm group"
                     title="Facebook"
                   >
                     <svg
@@ -1189,7 +1189,7 @@ export const PublicLayout: React.FC = () => {
 
             <button
               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-              className="w-10 h-10 rounded-full bg-[#0A4DA6] hover:bg-blue-600 text-white flex items-center justify-center shadow-lg transition-transform hover:scale-105 cursor-pointer shrink-0"
+              className="w-10 h-10 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white flex items-center justify-center shadow-lg transition-transform hover:scale-105 cursor-pointer shrink-0"
               title="Back to Top"
             >
               <ChevronUp size={20} className="stroke-[3]" />

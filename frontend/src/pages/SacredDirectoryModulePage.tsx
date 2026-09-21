@@ -216,7 +216,7 @@ export const SacredDirectoryModulePage: React.FC = () => {
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
             <button
               onClick={() => navigate("/")}
-              className="px-6 py-3 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 shadow-lg transition-all cursor-pointer"
+              className="px-6 py-3 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 shadow-lg transition-all cursor-pointer"
             >
               <span>Back to Home</span>
             </button>
@@ -265,7 +265,7 @@ export const SacredDirectoryModulePage: React.FC = () => {
               />
               <button
                 type="submit"
-                className="px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white font-black text-xs transition-colors shrink-0 shadow-sm cursor-pointer"
+                className="px-6 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white font-black text-xs transition-colors shrink-0 shadow-sm cursor-pointer"
               >
                 Search
               </button>
@@ -308,7 +308,7 @@ export const SacredDirectoryModulePage: React.FC = () => {
                       alt={item.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <span className="absolute top-4 left-4 bg-[#0A4DA6] text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md">
+                    <span className="absolute top-4 left-4 bg-[#F28C28] text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md">
                       {item.badge || item.category}
                     </span>
                     <span className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white text-[10px] font-extrabold px-3 py-1 rounded-full border border-white/20">
@@ -332,7 +332,7 @@ export const SacredDirectoryModulePage: React.FC = () => {
                 <div className="p-6 pt-0 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/50 mt-4">
                   <div>
                     {item.price > 0 ? (
-                      <span className="text-xs font-black text-[#0A4DA6] dark:text-amber-400">
+                      <span className="text-xs font-black text-[#F28C28] dark:text-amber-400">
                         {formatCurrency(item.price)}
                       </span>
                     ) : (
@@ -348,7 +348,7 @@ export const SacredDirectoryModulePage: React.FC = () => {
                         duration: 7000,
                       })
                     }
-                    className="px-5 py-2.5 rounded-full bg-[#0A4DA6] text-white font-black text-xs flex items-center gap-1.5 shadow-md cursor-pointer hover:bg-blue-900 transition-colors"
+                    className="px-5 py-2.5 rounded-full bg-[#F28C28] text-white font-black text-xs flex items-center gap-1.5 shadow-md cursor-pointer hover:bg-[#D97706] transition-colors"
                   >
                     <span>Contact & Info</span>
                     <ArrowRight size={13} />

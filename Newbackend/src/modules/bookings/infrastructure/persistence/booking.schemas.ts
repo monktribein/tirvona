@@ -33,6 +33,44 @@ export const BookingSchema = new Schema(
       default: "tirvona",
       index: true,
     },
+    bookingType: {
+      type: String,
+      enum: ["overnight", "day_rest", "freshen_up"],
+      default: "overnight",
+      index: true,
+    },
+    dayStayDetails: {
+      productCode: { type: String, uppercase: true, trim: true },
+      productType: { type: String, enum: ["freshen_up", "day_rest"] },
+      slotStartTime: { type: Date, index: true },
+      slotEndTime: { type: Date, index: true },
+      durationMinutes: { type: Number, min: 1 },
+      graceMinutes: { type: Number, default: 15, min: 0 },
+      graceExpiresAt: Date,
+      housekeepingBufferMinutes: { type: Number, default: 45, min: 0 },
+      housekeepingEndsAt: Date,
+      actualCheckInAt: Date,
+      actualCheckOutAt: Date,
+      isOverstay: { type: Boolean, default: false },
+      overstayMinutes: { type: Number, default: 0 },
+      overstayCharges: { type: Number, default: 0 },
+      extensionCount: { type: Number, default: 0 },
+      extensions: [
+        {
+          extendedAt: { type: Date, default: Date.now },
+          addedMinutes: { type: Number, required: true, min: 1 },
+          oldEndTime: { type: Date, required: true },
+          newEndTime: { type: Date, required: true },
+          amountCharged: { type: Number, default: 0, min: 0 },
+          paymentId: String,
+          status: {
+            type: String,
+            enum: ["pending", "confirmed", "failed"],
+            default: "pending",
+          },
+        },
+      ],
+    },
     walkInGuest: {
       name: String,
       phone: String,
@@ -163,6 +201,8 @@ BookingSchema.index({ ashramId: 1, status: 1, createdAt: -1 });
 BookingSchema.index({ ashramId: 1, bookingSource: 1, createdAt: -1 });
 BookingSchema.index({ ashramId: 1, checkInDate: 1 });
 BookingSchema.index({ status: 1, reservationExpiresAt: 1 });
+BookingSchema.index({ ashramId: 1, bookingType: 1, "dayStayDetails.slotStartTime": 1 });
+BookingSchema.index({ "rooms.roomId": 1, bookingType: 1, status: 1, "dayStayDetails.slotStartTime": 1, "dayStayDetails.slotEndTime": 1 });
 
 export const BookingStatusHistorySchema = new Schema(
   {

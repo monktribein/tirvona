@@ -251,7 +251,7 @@ export const LoginPage: React.FC = () => {
           e.currentTarget.style.display = "none";
         }}
       />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#0B192C]/90 via-[#0B192C]/60 to-[#0A4DA6]/25" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#0B192C]/90 via-[#0B192C]/60 to-[#F28C28]/25" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen grid lg:grid-cols-2 gap-10 lg:gap-12 items-center pt-36 lg:pt-40 pb-16">
         <div className="hidden lg:flex flex-col justify-center text-white space-y-6 max-w-xl">
@@ -279,7 +279,7 @@ export const LoginPage: React.FC = () => {
                 key={f.label}
                 className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md hover:bg-white/10 hover:border-[#E58C28]/40 transition-all duration-300 group"
               >
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0A4DA6]/40 to-[#E58C28]/30 border border-white/15 flex items-center justify-center text-[#E58C28] group-hover:scale-105 transition-transform shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#F28C28]/40 to-[#E58C28]/30 border border-white/15 flex items-center justify-center text-[#E58C28] group-hover:scale-105 transition-transform shrink-0">
                   {f.icon}
                 </div>
                 <span className="font-extrabold text-xs text-slate-200 group-hover:text-white transition-colors">
@@ -369,13 +369,13 @@ export const LoginPage: React.FC = () => {
                 <div className="flex bg-gray-100 dark:bg-slate-900 p-1 rounded-full">
                   <button
                     onClick={() => switchMode(false)}
-                    className={`flex-1 py-1.5 text-[11px] font-bold rounded-full transition-all cursor-pointer ${!useOtp ? "bg-white dark:bg-slate-800 text-[#0A4DA6] shadow-sm" : "text-gray-400 hover:text-gray-500"}`}
+                    className={`flex-1 py-1.5 text-[11px] font-bold rounded-full transition-all cursor-pointer ${!useOtp ? "bg-white dark:bg-slate-800 text-[#F28C28] shadow-sm" : "text-gray-400 hover:text-gray-500"}`}
                   >
                     Password
                   </button>
                   <button
                     onClick={() => switchMode(true)}
-                    className={`flex-1 py-1.5 text-[11px] font-bold rounded-full transition-all cursor-pointer ${useOtp ? "bg-white dark:bg-slate-800 text-[#0A4DA6] shadow-sm" : "text-gray-400 hover:text-gray-500"}`}
+                    className={`flex-1 py-1.5 text-[11px] font-bold rounded-full transition-all cursor-pointer ${useOtp ? "bg-white dark:bg-slate-800 text-[#F28C28] shadow-sm" : "text-gray-400 hover:text-gray-500"}`}
                   >
                     Mobile OTP
                   </button>
@@ -487,7 +487,7 @@ export const LoginPage: React.FC = () => {
                       </div>
                     )}
                     {notice && (
-                      <div className="p-2.5 bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 text-xs rounded-xl font-semibold">
+                      <div className="p-2.5 bg-[#F28C28]/10 text-[#F28C28] border border-[#F28C28]/20 text-xs rounded-xl font-semibold">
                         {notice}
                       </div>
                     )}
@@ -511,7 +511,7 @@ export const LoginPage: React.FC = () => {
                           placeholder="name@govt.in or +91 98765 43210"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          className="w-full pl-9 pr-3.5 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                          className="w-full pl-9 pr-3.5 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                         />
                       </div>
                     </div>
@@ -531,7 +531,7 @@ export const LoginPage: React.FC = () => {
                           placeholder="Enter your password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className="w-full pl-9 pr-9 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                          className="w-full pl-9 pr-9 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                         />
                         <button
                           type="button"
@@ -553,7 +553,7 @@ export const LoginPage: React.FC = () => {
                           type="checkbox"
                           checked={remember}
                           onChange={(e) => setRemember(e.target.checked)}
-                          className="w-3.5 h-3.5 rounded accent-[#0A4DA6] cursor-pointer"
+                          className="w-3.5 h-3.5 rounded accent-[#F28C28] cursor-pointer"
                         />
                         <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">
                           Remember me
@@ -563,7 +563,7 @@ export const LoginPage: React.FC = () => {
                         type="button"
                         onClick={handleForgotPassword}
                         disabled={loading}
-                        className="text-[11px] font-bold text-[#0A4DA6] hover:underline cursor-pointer disabled:opacity-60"
+                        className="text-[11px] font-bold text-[#F28C28] hover:underline cursor-pointer disabled:opacity-60"
                       >
                         Forgot Password?
                       </button>
@@ -572,7 +572,7 @@ export const LoginPage: React.FC = () => {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="w-full py-2.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white font-extrabold rounded-full text-xs shadow-md shadow-[#0A4DA6]/20 transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60 mt-1"
+                      className="w-full py-2.5 bg-[#F28C28] hover:bg-[#B45309] text-white font-extrabold rounded-full text-xs shadow-md shadow-[#F28C28]/20 transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60 mt-1"
                     >
                       {loading ? (
                         "Signing in…"
@@ -601,7 +601,7 @@ export const LoginPage: React.FC = () => {
                             placeholder="+91 98765 43210"
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
-                            className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                            className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                           />
                         </div>
                         <button
@@ -643,13 +643,13 @@ export const LoginPage: React.FC = () => {
                             placeholder="123456"
                             value={otpCode}
                             onChange={(e) => setOtpCode(e.target.value)}
-                            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs text-center tracking-[0.4em] font-extrabold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs text-center tracking-[0.4em] font-extrabold focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                           />
                         </div>
                         <button
                           type="submit"
                           disabled={loading}
-                          className="w-full py-2.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white rounded-full font-extrabold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60"
+                          className="w-full py-2.5 bg-[#F28C28] hover:bg-[#B45309] text-white rounded-full font-extrabold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60"
                         >
                           {loading ? (
                             "Verifying…"
@@ -692,7 +692,7 @@ export const LoginPage: React.FC = () => {
                     onClick={() => switchMode(true)}
                     className="flex items-center justify-center gap-1.5 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold text-[#0B192C] dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all cursor-pointer"
                   >
-                    <Smartphone size={15} className="text-[#0A4DA6]" /> Login
+                    <Smartphone size={15} className="text-[#F28C28]" /> Login
                     with Mobile OTP
                   </button>
                 </div>
@@ -701,7 +701,7 @@ export const LoginPage: React.FC = () => {
                   Don't have an account?{" "}
                   <Link
                     to={`/register${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ""}`}
-                    className="text-[#0A4DA6] font-black hover:underline"
+                    className="text-[#F28C28] font-black hover:underline"
                   >
                     Create Account
                   </Link>

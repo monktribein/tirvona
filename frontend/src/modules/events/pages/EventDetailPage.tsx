@@ -145,7 +145,7 @@ export const EventDetailPage: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate("/events")}
-            className="inline-flex items-center gap-2 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold px-5 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-2 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold px-5 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
           >
             Browse all events
           </button>
@@ -162,7 +162,7 @@ export const EventDetailPage: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-16 space-y-10">
       <div className="flex flex-col items-center text-center gap-3 pb-4">
         <div className="flex flex-wrap items-center justify-center gap-2">
-          <span className="px-3 py-1 bg-[#0A4DA6] text-white text-[9px] font-extrabold rounded-full flex items-center gap-1 shadow-sm tracking-wider">
+          <span className="px-3 py-1 bg-[#F28C28] text-white text-[9px] font-extrabold rounded-full flex items-center gap-1 shadow-sm tracking-wider">
             <Sparkles size={12} /> {event.eventTypeLabel ?? "Event"}
           </span>
           <span className="text-xs text-gray-400 font-extrabold tracking-wider">
@@ -184,7 +184,7 @@ export const EventDetailPage: React.FC = () => {
         ) : null}
 
         <p className="text-xs text-gray-500 flex items-center justify-center gap-1">
-          <MapPin size={12} className="text-[#0A4DA6]" />
+          <MapPin size={12} className="text-[#F28C28]" />
           {[event.venue?.name, event.venue?.line1, event.venue?.landmark]
             .filter(Boolean)
             .join(", ") || "India"}
@@ -232,7 +232,7 @@ export const EventDetailPage: React.FC = () => {
                   onClick={() => setActiveImage(index)}
                   className={`h-16 w-24 shrink-0 rounded-2xl overflow-hidden border-2 transition-all cursor-pointer ${
                     activeImage === index
-                      ? "border-[#0A4DA6]"
+                      ? "border-[#F28C28]"
                       : "border-transparent opacity-70 hover:opacity-100"
                   }`}
                 >
@@ -288,7 +288,7 @@ export const EventDetailPage: React.FC = () => {
                     key={`${item.label}-${index}`}
                     className="flex items-start gap-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl px-3 py-2.5"
                   >
-                    <span className="shrink-0 font-mono text-[11px] font-bold text-[#0A4DA6] w-16">
+                    <span className="shrink-0 font-mono text-[11px] font-bold text-[#F28C28] w-16">
                       {formatClock(item.startTime)}
                     </span>
                     <div className="min-w-0">
@@ -403,8 +403,8 @@ export const EventDetailPage: React.FC = () => {
                           }}
                           className={`w-full text-left rounded-2xl border p-3 transition-all cursor-pointer active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 ${
                             active
-                              ? "border-[#0A4DA6] bg-blue-50/60 dark:bg-slate-800 ring-2 ring-[#0A4DA6]/20"
-                              : "border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 hover:border-[#0A4DA6]"
+                              ? "border-[#F28C28] bg-blue-50/60 dark:bg-slate-800 ring-2 ring-[#F28C28]/20"
+                              : "border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 hover:border-[#F28C28]"
                           }`}
                         >
                           <div className="flex items-center justify-between gap-2">
@@ -449,7 +449,7 @@ export const EventDetailPage: React.FC = () => {
                         type="button"
                         disabled={seats <= 1}
                         onClick={() => setSeats((value) => Math.max(1, value - 1))}
-                        className="w-7 h-7 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 flex items-center justify-center text-[#0A4DA6] transition-all active:scale-90 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="w-7 h-7 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 flex items-center justify-center text-[#F28C28] transition-all active:scale-90 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         <Minus size={13} className="stroke-[3]" />
                       </button>
@@ -462,7 +462,7 @@ export const EventDetailPage: React.FC = () => {
                         onClick={() =>
                           setSeats((value) => Math.min(maxSeats, value + 1))
                         }
-                        className="w-7 h-7 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 flex items-center justify-center text-[#0A4DA6] transition-all active:scale-90 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="w-7 h-7 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 flex items-center justify-center text-[#F28C28] transition-all active:scale-90 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         <Plus size={13} className="stroke-[3]" />
                       </button>
@@ -487,7 +487,7 @@ export const EventDetailPage: React.FC = () => {
                           )
                         }
                         placeholder={`Attendee ${index + 1}`}
-                        className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl px-3.5 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 placeholder:font-medium focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 focus:border-[#0A4DA6] transition-all"
+                        className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl px-3.5 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 placeholder:font-medium focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 focus:border-[#F28C28] transition-all"
                       />
                     ))}
                   </div>
@@ -510,13 +510,13 @@ export const EventDetailPage: React.FC = () => {
                 type="button"
                 onClick={register}
                 disabled={submitting || !selectedDay?.registrationOpen}
-                className="group w-full bg-[#0A4DA6] hover:bg-[#083D85] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-extrabold pl-5 pr-1.5 py-2 rounded-full inline-flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 cursor-pointer"
+                className="group w-full bg-[#F28C28] hover:bg-[#D97706] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-extrabold pl-5 pr-1.5 py-2 rounded-full inline-flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 cursor-pointer"
               >
                 {submitting ? (
                   <Loader2 size={14} className="animate-spin stroke-[2.5]" />
                 ) : null}
                 <span>{submitting ? "Reserving…" : "Confirm Free Place"}</span>
-                <span className="w-6 h-6 rounded-full bg-white text-[#0A4DA6] flex items-center justify-center transition-transform group-hover:translate-x-0.5">
+                <span className="w-6 h-6 rounded-full bg-white text-[#F28C28] flex items-center justify-center transition-transform group-hover:translate-x-0.5">
                   <ArrowRight size={12} className="stroke-[3]" />
                 </span>
               </button>
@@ -526,7 +526,7 @@ export const EventDetailPage: React.FC = () => {
           <div className="space-y-2 pt-1 border-t border-gray-100 dark:border-slate-800">
             {selectedDay ? (
               <p className="flex items-center gap-1.5 pt-3 text-[11px] font-semibold text-gray-500 dark:text-gray-400">
-                <Clock size={12} className="text-[#0A4DA6] stroke-[2.5]" />
+                <Clock size={12} className="text-[#F28C28] stroke-[2.5]" />
                 Arrive by{" "}
                 {arriveByTime(
                   selectedDay.startsAt,
@@ -536,7 +536,7 @@ export const EventDetailPage: React.FC = () => {
             ) : null}
             {event.dailyCapacity ? (
               <p className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400">
-                <Users size={12} className="text-[#0A4DA6] stroke-[2.5]" />
+                <Users size={12} className="text-[#F28C28] stroke-[2.5]" />
                 {event.dailyCapacity} places each day
               </p>
             ) : null}

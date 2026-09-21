@@ -182,7 +182,7 @@ export const EventsHubPage: React.FC = () => {
               <div className="relative">
                 <Search
                   size={15}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#0A4DA6] stroke-[2.5] pointer-events-none"
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#F28C28] stroke-[2.5] pointer-events-none"
                 />
                 <input
                   id="events-search"
@@ -192,7 +192,7 @@ export const EventsHubPage: React.FC = () => {
                     setQ(changeEvent.target.value);
                   }}
                   placeholder="Kumbh Snan, Janmashtami, Ganga Dussehra…"
-                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 placeholder:font-medium focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 focus:border-[#0A4DA6] transition-all"
+                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 placeholder:font-medium focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 focus:border-[#F28C28] transition-all"
                 />
               </div>
             </div>
@@ -207,7 +207,7 @@ export const EventsHubPage: React.FC = () => {
               <div className="relative">
                 <MapPin
                   size={15}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#0A4DA6] stroke-[2.5] pointer-events-none"
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#F28C28] stroke-[2.5] pointer-events-none"
                 />
                 <select
                   id="events-city"
@@ -216,7 +216,7 @@ export const EventsHubPage: React.FC = () => {
                     setPage(1);
                     setCity(changeEvent.target.value);
                   }}
-                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 cursor-pointer appearance-none"
+                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 cursor-pointer appearance-none"
                 >
                   <option value="">All cities</option>
                   {cityOptions.map((option) => (
@@ -238,7 +238,7 @@ export const EventsHubPage: React.FC = () => {
               <div className="relative">
                 <CalendarDays
                   size={15}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#0A4DA6] stroke-[2.5] pointer-events-none"
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#F28C28] stroke-[2.5] pointer-events-none"
                 />
                 <input
                   id="events-date"
@@ -249,7 +249,7 @@ export const EventsHubPage: React.FC = () => {
                     setPage(1);
                     setDate(changeEvent.target.value);
                   }}
-                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 />
               </div>
             </div>
@@ -264,7 +264,7 @@ export const EventsHubPage: React.FC = () => {
               <div className="relative">
                 <Sparkles
                   size={15}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#0A4DA6] stroke-[2.5] pointer-events-none"
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#F28C28] stroke-[2.5] pointer-events-none"
                 />
                 <select
                   id="events-type"
@@ -273,7 +273,7 @@ export const EventsHubPage: React.FC = () => {
                     setPage(1);
                     setEventType(changeEvent.target.value as EventTypeCode | "");
                   }}
-                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 cursor-pointer appearance-none"
+                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 cursor-pointer appearance-none"
                 >
                   <option value="">All types</option>
                   {typeOptions.map((option) => (
@@ -296,11 +296,11 @@ export const EventsHubPage: React.FC = () => {
                 <h3 className="inline-flex items-center gap-2 font-extrabold text-sm text-[#0B192C] dark:text-white">
                   <SlidersHorizontal
                     size={15}
-                    className="text-[#0A4DA6] stroke-[2.5]"
+                    className="text-[#F28C28] stroke-[2.5]"
                   />
                   Filters
                   {facilities.length > 0 && (
-                    <span className="bg-[#0A4DA6] text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">
+                    <span className="bg-[#F28C28] text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">
                       {facilities.length}
                     </span>
                   )}
@@ -321,7 +321,7 @@ export const EventsHubPage: React.FC = () => {
                     setPage(1);
                     setSort(changeEvent.target.value);
                   }}
-                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 cursor-pointer"
+                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 cursor-pointer"
                 >
                   {sortOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -339,7 +339,7 @@ export const EventsHubPage: React.FC = () => {
                     setPage(1);
                     setIncludePast(changeEvent.target.checked);
                   }}
-                  className="w-3.5 h-3.5 accent-[#0A4DA6] cursor-pointer"
+                  className="w-3.5 h-3.5 accent-[#F28C28] cursor-pointer"
                 />
                 Include past events
               </label>
@@ -359,8 +359,8 @@ export const EventsHubPage: React.FC = () => {
                           onClick={() => toggleFacility(option.value)}
                           className={`text-[10px] font-bold px-3 py-1.5 rounded-full border transition-all cursor-pointer active:scale-95 ${
                             active
-                              ? "bg-[#0A4DA6] border-[#0A4DA6] text-white shadow-sm"
-                              : "bg-gray-50 dark:bg-slate-900 border-gray-100 dark:border-slate-800 text-gray-500 dark:text-gray-400 hover:border-[#0A4DA6] hover:text-[#0A4DA6]"
+                              ? "bg-[#F28C28] border-[#F28C28] text-white shadow-sm"
+                              : "bg-gray-50 dark:bg-slate-900 border-gray-100 dark:border-slate-800 text-gray-500 dark:text-gray-400 hover:border-[#F28C28] hover:text-[#F28C28]"
                           }`}
                         >
                           {option.label}
@@ -420,7 +420,7 @@ export const EventsHubPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={reset}
-                  className="inline-flex items-center gap-2 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold px-5 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
+                  className="inline-flex items-center gap-2 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold px-5 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
                 >
                   Clear filters
                 </button>
@@ -449,7 +449,7 @@ export const EventsHubPage: React.FC = () => {
                       type="button"
                       disabled={page <= 1}
                       onClick={() => setPage((value) => Math.max(1, value - 1))}
-                      className="bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 text-[#0A4DA6] dark:text-blue-300 text-xs font-extrabold px-4 py-2 rounded-full shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 text-[#F28C28] dark:text-amber-300 text-xs font-extrabold px-4 py-2 rounded-full shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       Previous
                     </button>
@@ -460,7 +460,7 @@ export const EventsHubPage: React.FC = () => {
                       type="button"
                       disabled={page >= totalPages}
                       onClick={() => setPage((value) => value + 1)}
-                      className="bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 text-[#0A4DA6] dark:text-blue-300 text-xs font-extrabold px-4 py-2 rounded-full shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 text-[#F28C28] dark:text-amber-300 text-xs font-extrabold px-4 py-2 rounded-full shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       Next
                     </button>

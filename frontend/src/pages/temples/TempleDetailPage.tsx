@@ -507,7 +507,7 @@ export default function TempleDetailPage() {
                 <Map className="w-5 h-5 text-gray-400" /> Location
               </h2>
               <p className="text-gray-600 mt-2 text-sm">{[temple.address?.street, locationLabel].filter(Boolean).join(", ") || "Location currently unavailable"}</p>
-              {Array.isArray(coordinates) && coordinates.length === 2 && <a href={`https://www.google.com/maps/dir/?api=1&destination=${coordinates[1]},${coordinates[0]}`} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-[#0A4DA6]">Get Directions <Navigation className="h-4 w-4" /></a>}
+              {Array.isArray(coordinates) && coordinates.length === 2 && <a href={`https://www.google.com/maps/dir/?api=1&destination=${coordinates[1]},${coordinates[0]}`} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-[#F28C28]">Get Directions <Navigation className="h-4 w-4" /></a>}
             </div>
               {Array.isArray(coordinates) && coordinates.length === 2 && (
               <div className="h-64 relative bg-gray-100">

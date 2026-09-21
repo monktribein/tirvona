@@ -45,7 +45,7 @@ interface Ashram {
 const CARD =
   "bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm";
 const INPUT =
-  "w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all";
+  "w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all";
 const LABEL =
   "mb-1.5 block px-1 text-[10px] tracking-wider font-bold text-gray-400";
 
@@ -273,7 +273,7 @@ export const OwnerCircuitsPage: React.FC = () => {
             <button
               type="button"
               onClick={openCreate}
-              className="inline-flex items-center gap-1.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold px-4 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1.5 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold px-4 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
             >
               <Plus size={15} /> New circuit
             </button>
@@ -287,7 +287,7 @@ export const OwnerCircuitsPage: React.FC = () => {
         </div>
       ) : loading ? (
         <div className={`${CARD} p-12 flex items-center justify-center gap-3`}>
-          <Loader2 size={20} className="animate-spin text-[#0A4DA6]" />
+          <Loader2 size={20} className="animate-spin text-[#F28C28]" />
           <span className="text-sm font-bold text-gray-400">Loading…</span>
         </div>
       ) : circuits.length === 0 ? (
@@ -358,7 +358,7 @@ export const OwnerCircuitsPage: React.FC = () => {
                         type="button"
                         title="Manage stops"
                         onClick={() => openStops(circuit)}
-                        className="p-2 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#0A4DA6] hover:border-[#0A4DA6] transition-all active:scale-90 cursor-pointer"
+                        className="p-2 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#F28C28] hover:border-[#F28C28] transition-all active:scale-90 cursor-pointer"
                       >
                         <Route size={14} />
                       </button>
@@ -366,7 +366,7 @@ export const OwnerCircuitsPage: React.FC = () => {
                         type="button"
                         title="Edit"
                         onClick={() => openEdit(circuit)}
-                        className="p-2 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#0A4DA6] hover:border-[#0A4DA6] transition-all active:scale-90 cursor-pointer"
+                        className="p-2 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#F28C28] hover:border-[#F28C28] transition-all active:scale-90 cursor-pointer"
                       >
                         <Pencil size={14} />
                       </button>
@@ -619,8 +619,8 @@ export const OwnerCircuitsPage: React.FC = () => {
                       onClick={() => toggleSeason(season)}
                       className={`rounded-full border px-3 py-1.5 text-[10px] font-bold transition-all active:scale-95 cursor-pointer ${
                         form.bestSeasons.includes(season)
-                          ? "border-[#0A4DA6] bg-[#0A4DA6] text-white shadow-sm"
-                          : "border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 text-gray-500 dark:text-gray-400 hover:border-[#0A4DA6] hover:text-[#0A4DA6]"
+                          ? "border-[#F28C28] bg-[#F28C28] text-white shadow-sm"
+                          : "border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 text-gray-500 dark:text-gray-400 hover:border-[#F28C28] hover:text-[#F28C28]"
                       }`}
                     >
                       {seasonLabel(season)}
@@ -639,7 +639,7 @@ export const OwnerCircuitsPage: React.FC = () => {
                       usableAsPlannerTemplate: changeEvent.target.checked,
                     })
                   }
-                  className="w-3.5 h-3.5 accent-[#0A4DA6] cursor-pointer"
+                  className="w-3.5 h-3.5 accent-[#F28C28] cursor-pointer"
                 />
                 Offer this circuit in the public itinerary planner
               </label>
@@ -649,7 +649,7 @@ export const OwnerCircuitsPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="inline-flex items-center gap-1.5 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 hover:border-[#0A4DA6] text-gray-500 dark:text-gray-400 hover:text-[#0A4DA6] text-xs font-extrabold px-4 py-2.5 rounded-full shadow-sm transition-all active:scale-95 cursor-pointer"
+                className="inline-flex items-center gap-1.5 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 hover:border-[#F28C28] text-gray-500 dark:text-gray-400 hover:text-[#F28C28] text-xs font-extrabold px-4 py-2.5 rounded-full shadow-sm transition-all active:scale-95 cursor-pointer"
               >
                 Cancel
               </button>
@@ -657,7 +657,7 @@ export const OwnerCircuitsPage: React.FC = () => {
                 type="button"
                 onClick={save}
                 disabled={!canSave || saving}
-                className="inline-flex items-center gap-1.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold px-4 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold px-4 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50"
               >
                 {saving ? (
                   <Loader2 size={14} className="animate-spin" />
@@ -706,7 +706,7 @@ export const OwnerCircuitsPage: React.FC = () => {
                   >
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-[#0B192C] dark:text-white">
-                        <span className="text-[#0A4DA6]">
+                        <span className="text-[#F28C28]">
                           Day {stop.dayNumber}
                         </span>{" "}
                         · {stop.name}
@@ -739,7 +739,7 @@ export const OwnerCircuitsPage: React.FC = () => {
                             isOvernightStop: Boolean(stop.isOvernightStop),
                           });
                         }}
-                        className="p-2 rounded-full bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#0A4DA6] hover:border-[#0A4DA6] transition-all active:scale-90 cursor-pointer"
+                        className="p-2 rounded-full bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#F28C28] hover:border-[#F28C28] transition-all active:scale-90 cursor-pointer"
                       >
                         <Pencil size={13} />
                       </button>
@@ -861,7 +861,7 @@ export const OwnerCircuitsPage: React.FC = () => {
                         isOvernightStop: changeEvent.target.checked,
                       })
                     }
-                    className="w-3.5 h-3.5 accent-[#0A4DA6] cursor-pointer"
+                    className="w-3.5 h-3.5 accent-[#F28C28] cursor-pointer"
                   />
                   <MapPin size={12} /> Pilgrims stay overnight here
                 </label>
@@ -883,7 +883,7 @@ export const OwnerCircuitsPage: React.FC = () => {
                   type="button"
                   onClick={saveStop}
                   disabled={!stopForm.name.trim()}
-                  className="inline-flex items-center gap-1.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold px-4 py-2 rounded-full shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold px-4 py-2 rounded-full shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50"
                 >
                   {editingStop ? "Update stop" : "Add stop"}
                 </button>

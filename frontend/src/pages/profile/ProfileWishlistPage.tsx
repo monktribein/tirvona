@@ -69,7 +69,7 @@ export const ProfileWishlistPage: React.FC = () => {
               </div>
 
               <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex justify-between items-center">
-                <span className="text-base font-black text-[#0A4DA6]">
+                <span className="text-base font-black text-[#F28C28]">
                   {formatCurrency(item.price)}{" "}
                   <span className="text-[10px] text-gray-400 font-normal">
                     /night

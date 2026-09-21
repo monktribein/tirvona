@@ -18,10 +18,10 @@ const AssetValue: React.FC<{ url: string }> = ({ url }) => {
         href={url}
         target="_blank"
         rel="noreferrer"
-        className="inline-flex flex-col gap-1 rounded-xl border border-gray-200 dark:border-slate-700 p-1.5 hover:border-[#0A4DA6]"
+        className="inline-flex flex-col gap-1 rounded-xl border border-gray-200 dark:border-slate-700 p-1.5 hover:border-[#F28C28]"
       >
         <img src={url} alt="Uploaded document" className="h-20 w-28 rounded-lg object-cover bg-slate-900" />
-        <span className="inline-flex items-center justify-center gap-1 text-[10px] font-extrabold text-[#0A4DA6]">
+        <span className="inline-flex items-center justify-center gap-1 text-[10px] font-extrabold text-[#F28C28]">
           <ExternalLink size={10} /> Open image
         </span>
       </a>
@@ -32,7 +32,7 @@ const AssetValue: React.FC<{ url: string }> = ({ url }) => {
       href={url}
       target="_blank"
       rel="noreferrer"
-      className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-950/40 px-3 py-1.5 text-[10px] font-extrabold text-[#0A4DA6] hover:bg-blue-100"
+      className="inline-flex items-center gap-1.5 rounded-full bg-[#FFF4E5]/40 px-3 py-1.5 text-[10px] font-extrabold text-[#F28C28] hover:bg-blue-100"
     >
       <FileText size={12} /> {PDF_ASSET.test(url) ? "Open PDF" : "Open document"}
       <ExternalLink size={10} />

@@ -128,7 +128,7 @@ export const AartiApprovalsPage: React.FC = () => {
         </div>
       ) : loading ? (
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm p-12 flex items-center justify-center gap-3">
-          <Loader2 size={20} className="animate-spin text-[#0A4DA6]" />
+          <Loader2 size={20} className="animate-spin text-[#F28C28]" />
           <span className="text-sm font-bold text-gray-400">Loading…</span>
         </div>
       ) : pending === 0 ? (
@@ -146,7 +146,7 @@ export const AartiApprovalsPage: React.FC = () => {
           {visibleSessions.length ? (
             <section>
               <h2 className="mb-3 inline-flex items-center gap-2 text-base font-black text-[#0B192C] dark:text-white">
-                <Flame size={18} className="text-[#0A4DA6] stroke-[2.5]" /> Aartis ({visibleSessions.length})
+                <Flame size={18} className="text-[#F28C28] stroke-[2.5]" /> Aartis ({visibleSessions.length})
               </h2>
               <div className="space-y-3">
                 {visibleSessions.map((session) => {
@@ -216,7 +216,7 @@ export const AartiApprovalsPage: React.FC = () => {
           {visibleStreams.length ? (
             <section>
               <h2 className="mb-3 inline-flex items-center gap-2 text-base font-black text-[#0B192C] dark:text-white">
-                <Radio size={18} className="text-[#0A4DA6] stroke-[2.5]" /> Live poojas ({visibleStreams.length})
+                <Radio size={18} className="text-[#F28C28] stroke-[2.5]" /> Live poojas ({visibleStreams.length})
               </h2>
               <div className="space-y-3">
                 {visibleStreams.map((stream) => {
@@ -247,7 +247,7 @@ export const AartiApprovalsPage: React.FC = () => {
                               href={stream.streamUrl}
                               target="_blank"
                               rel="noreferrer noopener"
-                              className="mt-1 inline-flex items-center gap-1 text-[11px] font-bold text-[#0A4DA6] dark:text-blue-400 hover:underline"
+                              className="mt-1 inline-flex items-center gap-1 text-[11px] font-bold text-[#F28C28] dark:text-amber-400 hover:underline"
                             >
                               Open the stream to verify
                               <ExternalLink size={12} />

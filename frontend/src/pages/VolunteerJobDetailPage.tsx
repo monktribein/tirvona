@@ -265,7 +265,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen pt-28 pb-20 flex flex-col items-center justify-center space-y-4">
-        <div className="w-12 h-12 border-4 border-[#0A4DA6] border-t-transparent rounded-full animate-spin" />
+        <div className="w-12 h-12 border-4 border-[#F28C28] border-t-transparent rounded-full animate-spin" />
         <p className="text-xs font-bold text-gray-500 animate-pulse">
           Loading Volunteer Opportunity Details...
         </p>
@@ -286,7 +286,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
           </p>
           <Link
             to="/volunteer"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0A4DA6] text-white text-xs font-extrabold rounded-full hover:bg-[#083b80] transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#F28C28] text-white text-xs font-extrabold rounded-full hover:bg-[#B45309] transition-colors"
           >
             <ChevronLeft size={14} /> Back to Volunteer Directory
           </Link>
@@ -304,7 +304,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-3 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="px-3 py-1 bg-blue-50 dark:bg-slate-850 text-[#0A4DA6] dark:text-blue-400 rounded-full text-xs font-black tracking-wider">
+                <span className="px-3 py-1 bg-blue-50 dark:bg-slate-850 text-[#F28C28] dark:text-amber-400 rounded-full text-xs font-black tracking-wider">
                   {job.department}
                 </span>
                 {job.isGovtVerified && (
@@ -331,7 +331,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
 
               <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-gray-600 dark:text-gray-300">
                 <div className="flex items-center gap-1.5">
-                  <Building2 size={16} className="text-[#0A4DA6]" />
+                  <Building2 size={16} className="text-[#F28C28]" />
                   <span className="text-[#0B192C] dark:text-white font-black">
                     {job.ashramName}
                   </span>
@@ -359,7 +359,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
                 type="button"
                 onClick={handleApplyClick}
                 disabled={checkingApplication}
-                className={`w-full py-3 px-6 text-white font-black rounded-full text-xs shadow-lg flex items-center justify-center gap-2 transition-all active:scale-98 disabled:opacity-60 ${alreadyApplied ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20" : "bg-[#0A4DA6] hover:bg-[#083b80] shadow-[#0A4DA6]/25"}`}
+                className={`w-full py-3 px-6 text-white font-black rounded-full text-xs shadow-lg flex items-center justify-center gap-2 transition-all active:scale-98 disabled:opacity-60 ${alreadyApplied ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20" : "bg-[#F28C28] hover:bg-[#B45309] shadow-[#F28C28]/25"}`}
               >
                 {checkingApplication ? "Checking..." : alreadyApplied ? "Already Applied" : "Apply for Seva"} <ArrowRight size={14} />
               </button>
@@ -428,7 +428,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-4 shadow-sm">
-              <h3 className="text-sm font-extrabold tracking-wider text-[#0A4DA6]">
+              <h3 className="text-sm font-extrabold tracking-wider text-[#F28C28]">
                 About This Seva Opportunity
               </h3>
               <p className="text-xs font-medium text-gray-600 dark:text-gray-300 leading-relaxed">
@@ -443,13 +443,13 @@ export const VolunteerJobDetailPage: React.FC = () => {
 
             {job.responsibilities && job.responsibilities.length > 0 && (
               <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-4 shadow-sm">
-                <h3 className="text-sm font-extrabold tracking-wider text-[#0A4DA6] flex items-center gap-2">
+                <h3 className="text-sm font-extrabold tracking-wider text-[#F28C28] flex items-center gap-2">
                   <CheckCircle2 size={16} /> Key Responsibilities & Duties
                 </h3>
                 <ul className="space-y-2.5 text-xs font-medium text-gray-600 dark:text-gray-300">
                   {job.responsibilities.map((resp, idx) => (
                     <li key={idx} className="flex items-start gap-2.5">
-                      <span className="w-5 h-5 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                      <span className="w-5 h-5 rounded-full bg-[#F28C28]/10 text-[#F28C28] flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
                         {idx + 1}
                       </span>
                       <span>{resp}</span>
@@ -461,7 +461,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
 
             {job.requirements && job.requirements.length > 0 && (
               <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-4 shadow-sm">
-                <h3 className="text-sm font-extrabold tracking-wider text-[#0A4DA6] flex items-center gap-2">
+                <h3 className="text-sm font-extrabold tracking-wider text-[#F28C28] flex items-center gap-2">
                   <Users size={16} /> Eligibility & Requirements
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-medium text-gray-600 dark:text-gray-300">
@@ -480,7 +480,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
 
             {job.benefits && job.benefits.length > 0 && (
               <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-4 shadow-sm">
-                <h3 className="text-sm font-extrabold tracking-wider text-[#0A4DA6] flex items-center gap-2">
+                <h3 className="text-sm font-extrabold tracking-wider text-[#F28C28] flex items-center gap-2">
                   <Award size={16} /> Volunteer Benefits & Experience
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-medium text-gray-600 dark:text-gray-300">
@@ -499,9 +499,9 @@ export const VolunteerJobDetailPage: React.FC = () => {
 
           <div className="space-y-6">
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm space-y-5 relative overflow-hidden">
-              <div className="absolute top-0 inset-x-0 h-1 bg-[#0A4DA6]" />
+              <div className="absolute top-0 inset-x-0 h-1 bg-[#F28C28]" />
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2">
-                <Send size={16} className="text-[#0A4DA6]" /> Ready to Offer
+                <Send size={16} className="text-[#F28C28]" /> Ready to Offer
                 Seva?
               </h3>
               <p className="text-xs text-gray-500 font-medium">
@@ -513,7 +513,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
                 type="button"
                 onClick={handleApplyClick}
                 disabled={checkingApplication}
-                className={`w-full py-3.5 text-white font-black rounded-full text-xs shadow-lg flex items-center justify-center gap-2 transition-all active:scale-98 disabled:opacity-60 ${alreadyApplied ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20" : "bg-[#0A4DA6] hover:bg-[#083b80] shadow-[#0A4DA6]/25"}`}
+                className={`w-full py-3.5 text-white font-black rounded-full text-xs shadow-lg flex items-center justify-center gap-2 transition-all active:scale-98 disabled:opacity-60 ${alreadyApplied ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20" : "bg-[#F28C28] hover:bg-[#B45309] shadow-[#F28C28]/25"}`}
               >
                 {checkingApplication ? "Checking..." : alreadyApplied ? "View My Application" : "Apply Now"} <ArrowRight size={14} />
               </button>
@@ -542,13 +542,13 @@ export const VolunteerJobDetailPage: React.FC = () => {
 
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm space-y-4">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2">
-                <Building2 size={16} className="text-[#0A4DA6]" /> Ashram
+                <Building2 size={16} className="text-[#F28C28]" /> Ashram
                 Contact Office
               </h3>
 
               <div className="space-y-3 text-xs font-semibold text-gray-600 dark:text-gray-300">
                 <div className="flex items-center gap-2.5">
-                  <User size={14} className="text-[#0A4DA6] shrink-0" />
+                  <User size={14} className="text-[#F28C28] shrink-0" />
                   <span>
                     {job.contactPerson?.name || "Ashram Seva Administrator"}
                   </span>
@@ -573,7 +573,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
 
               <Link
                 to={ashramUrl({ _id: job.ashramId })}
-                className="inline-block w-full py-2.5 text-center bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-[#0A4DA6] text-xs font-black rounded-full hover:bg-gray-100 dark:hover:bg-slate-850 transition-colors"
+                className="inline-block w-full py-2.5 text-center bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-[#F28C28] text-xs font-black rounded-full hover:bg-gray-100 dark:hover:bg-slate-850 transition-colors"
               >
                 View Ashram Profile →
               </Link>
@@ -591,7 +591,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
           maxWidth="2xl"
         >
           <form onSubmit={handleApplySubmit} className="space-y-4 text-left">
-            <div className="p-3 bg-blue-50/70 dark:bg-slate-900/80 border border-blue-100 dark:border-slate-800 rounded-2xl text-xs font-bold text-[#0A4DA6] flex items-center justify-between">
+            <div className="p-3 bg-blue-50/70 dark:bg-slate-900/80 border border-blue-100 dark:border-slate-800 rounded-2xl text-xs font-bold text-[#F28C28] flex items-center justify-between">
               <span>
                 Applying for Job ID:{" "}
                 <code className="font-mono">{job._id}</code>
@@ -612,7 +612,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
                   value={applicantName}
                   onChange={(e) => setApplicantName(e.target.value)}
                   placeholder="e.g. Rahul Sharma"
-                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0A4DA6]"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#F28C28]"
                 />
               </div>
 
@@ -626,7 +626,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="rahul@gmail.com"
-                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0A4DA6]"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#F28C28]"
                 />
               </div>
 
@@ -640,7 +640,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="9876543210"
-                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0A4DA6]"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#F28C28]"
                 />
               </div>
 
@@ -654,7 +654,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   placeholder="Delhi / Rishikesh / Varanasi"
-                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0A4DA6]"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#F28C28]"
                 />
               </div>
             </div>
@@ -667,7 +667,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
                 <select
                   value={education}
                   onChange={(e) => setEducation(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0A4DA6]"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#F28C28]"
                 >
                   <option value="High School">High School</option>
                   <option value="Undergraduate">Undergraduate</option>
@@ -686,7 +686,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
                 <select
                   value={availability}
                   onChange={(e) => setAvailability(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0A4DA6]"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#F28C28]"
                 >
                   <option value="Immediate (Next 7 Days)">
                     Immediate (Next 7 Days)
@@ -706,7 +706,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
                 value={skills}
                 onChange={(e) => setSkills(e.target.value)}
                 placeholder="Yoga, Photography, Kitchen Seva, Event Management..."
-                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0A4DA6]"
+                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#F28C28]"
               />
             </div>
 
@@ -720,7 +720,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
                 value={motivation}
                 onChange={(e) => setMotivation(e.target.value)}
                 placeholder="Share your spiritual motivation and desire to serve..."
-                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0A4DA6]"
+                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#F28C28]"
               />
             </div>
 

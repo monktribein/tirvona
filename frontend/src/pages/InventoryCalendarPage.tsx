@@ -369,10 +369,10 @@ export const InventoryCalendarPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 flex-wrap">
             <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-2">
-              <CalendarIcon size={18} className="text-[#0A4DA6]" />
+              <CalendarIcon size={18} className="text-[#F28C28]" />
               Daily Inventory & Pricing Calendar
             </h2>
-            <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-blue-100 text-[#0A4DA6] dark:bg-blue-950 dark:text-blue-300">
+            <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-blue-100 text-[#F28C28] dark:bg-blue-950 dark:text-amber-300">
               7-Day Live View
             </span>
             <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 flex items-center gap-1">
@@ -395,7 +395,7 @@ export const InventoryCalendarPage: React.FC = () => {
                 value={selectedAshramId}
                 onChange={(e) => setSelectedAshramId(e.target.value)}
                 aria-label="Active stay"
-                className="p-2 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-extrabold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
+                className="p-2 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-extrabold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]"
               >
                 {myAshrams.length > 1 && (
                   <option value={ALL_ASHRAMS}>
@@ -420,7 +420,7 @@ export const InventoryCalendarPage: React.FC = () => {
               value={selectedRoomId}
               disabled={myRooms.length === 0}
               onChange={(e) => setSelectedRoomId(e.target.value)}
-              className="p-2 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-extrabold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6] disabled:opacity-50"
+              className="p-2 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-extrabold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28] disabled:opacity-50"
             >
               {myRooms.length === 0 && (
                 <option value="">No room categories</option>
@@ -443,13 +443,13 @@ export const InventoryCalendarPage: React.FC = () => {
               max={maxSearchDate}
               value={searchDateInput}
               onChange={(e) => setSearchDateInput(e.target.value)}
-              className="p-2 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-[#0A4DA6]"
+              className="p-2 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-[#F28C28]"
               title="Search any booking date up to 90 days ahead"
             />
             <button
               type="submit"
               disabled={!searchDateInput}
-              className="p-2 bg-[#0A4DA6] text-white rounded-xl hover:bg-[#083b80] transition disabled:opacity-40 cursor-pointer shadow-xs"
+              className="p-2 bg-[#F28C28] text-white rounded-xl hover:bg-[#B45309] transition disabled:opacity-40 cursor-pointer shadow-xs"
               title="Jump to date and view rates"
             >
               <Search size={14} />
@@ -462,7 +462,7 @@ export const InventoryCalendarPage: React.FC = () => {
       {selectedRoom && (
         <div className="p-4.5 rounded-[22px] bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center font-black text-xs">
+            <div className="w-10 h-10 rounded-xl bg-[#F28C28]/10 text-[#F28C28] flex items-center justify-center font-black text-xs">
               7D
             </div>
             <div>
@@ -490,7 +490,7 @@ export const InventoryCalendarPage: React.FC = () => {
           <button
             type="button"
             onClick={handlePrev7Days}
-            className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[#0A4DA6] hover:text-[#0A4DA6] transition cursor-pointer shadow-2xs"
+            className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[#F28C28] hover:text-[#F28C28] transition cursor-pointer shadow-2xs"
           >
             <ChevronLeft size={14} /> 7 Days Back
           </button>
@@ -499,8 +499,8 @@ export const InventoryCalendarPage: React.FC = () => {
             onClick={handleResetToday}
             className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold transition cursor-pointer shadow-2xs ${
               centerDate === todayStr
-                ? "bg-[#0A4DA6] text-white"
-                : "bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-[#0A4DA6]"
+                ? "bg-[#F28C28] text-white"
+                : "bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-[#F28C28]"
             }`}
           >
             <CalendarCheck size={13} /> Reset to Today
@@ -508,7 +508,7 @@ export const InventoryCalendarPage: React.FC = () => {
           <button
             type="button"
             onClick={handleNext7Days}
-            className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[#0A4DA6] hover:text-[#0A4DA6] transition cursor-pointer shadow-2xs"
+            className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[#F28C28] hover:text-[#F28C28] transition cursor-pointer shadow-2xs"
           >
             Next 7 Days <ChevronRight size={14} />
           </button>
@@ -527,7 +527,7 @@ export const InventoryCalendarPage: React.FC = () => {
             <strong className="tabular-nums">{windowFreeRooms} Free Left</strong>
           </span>
           <span className="text-slate-300 dark:text-slate-700">|</span>
-          <span className="text-[#0A4DA6] dark:text-blue-400">
+          <span className="text-[#F28C28] dark:text-amber-400">
             Avg: <strong className="tabular-nums">{formatCurrency(avgNightPrice)}/nt</strong>
           </span>
         </div>
@@ -552,9 +552,9 @@ export const InventoryCalendarPage: React.FC = () => {
               <div
                 key={day.date}
                 onClick={() => handleOpenRateModal(day)}
-                className={`bg-white dark:bg-[#0B192C] rounded-[22px] p-4 shadow-sm space-y-3 relative cursor-pointer transition-all duration-200 select-none flex flex-col justify-between group hover:shadow-md hover:border-[#0A4DA6] hover:-translate-y-1 ${
+                className={`bg-white dark:bg-[#0B192C] rounded-[22px] p-4 shadow-sm space-y-3 relative cursor-pointer transition-all duration-200 select-none flex flex-col justify-between group hover:shadow-md hover:border-[#F28C28] hover:-translate-y-1 ${
                   isSelected
-                    ? "ring-2 ring-[#0A4DA6] bg-blue-50/70 dark:bg-blue-950/50 shadow-md transform -translate-y-0.5"
+                    ? "ring-2 ring-[#F28C28] bg-blue-50/70 dark:bg-blue-950/50 shadow-md transform -translate-y-0.5"
                     : isToday
                       ? "border-2 border-orange-500 bg-orange-50/60 dark:bg-orange-950/30 shadow-xs ring-2 ring-orange-400/20"
                       : "border border-gray-100 dark:border-slate-800"
@@ -564,7 +564,7 @@ export const InventoryCalendarPage: React.FC = () => {
                 <div className="flex justify-between items-center border-b border-gray-50 dark:border-slate-800 pb-2">
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-black text-[#0B192C] dark:text-white flex items-center gap-1">
-                      <CalendarIcon size={13} className="text-[#0A4DA6] shrink-0" />{" "}
+                      <CalendarIcon size={13} className="text-[#F28C28] shrink-0" />{" "}
                       {day.dayName}
                     </span>
                     {isToday && (
@@ -580,7 +580,7 @@ export const InventoryCalendarPage: React.FC = () => {
                       e.stopPropagation();
                       handleOpenRateModal(day);
                     }}
-                    className="p-1.5 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-md text-gray-400 hover:text-[#0A4DA6] transition-colors cursor-pointer"
+                    className="p-1.5 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-md text-gray-400 hover:text-[#F28C28] transition-colors cursor-pointer"
                     title="Update room rate for this date"
                   >
                     <Edit2 size={12} />
@@ -613,7 +613,7 @@ export const InventoryCalendarPage: React.FC = () => {
                       {displayPrice}
                     </span>
                     {hasCustomRate && (
-                      <span className="text-[7px] font-extrabold px-1 py-0.2 bg-blue-100 dark:bg-blue-950 text-[#0A4DA6] dark:text-blue-300 rounded uppercase">
+                      <span className="text-[7px] font-extrabold px-1 py-0.2 bg-blue-100 dark:bg-blue-950 text-[#F28C28] dark:text-amber-300 rounded uppercase">
                         Custom
                       </span>
                     )}
@@ -625,7 +625,7 @@ export const InventoryCalendarPage: React.FC = () => {
                   <div
                     className={`p-1 rounded-md ${
                       day.booked > 0
-                        ? "bg-[#0A4DA6]/10 text-[#0A4DA6] dark:text-blue-300 font-extrabold"
+                        ? "bg-[#F28C28]/10 text-[#F28C28] dark:text-amber-300 font-extrabold"
                         : "bg-gray-100 dark:bg-slate-800 text-gray-500"
                     }`}
                   >
@@ -650,7 +650,7 @@ export const InventoryCalendarPage: React.FC = () => {
                       e.stopPropagation();
                       handleOpenRateModal(day);
                     }}
-                    className="w-full py-1 px-2 bg-blue-50/70 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 text-[#0A4DA6] dark:text-blue-300 rounded-lg text-[10px] font-black flex items-center justify-center gap-1 transition cursor-pointer"
+                    className="w-full py-1 px-2 bg-blue-50/70 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-[#D97706]/50 text-[#F28C28] dark:text-amber-300 rounded-lg text-[10px] font-black flex items-center justify-center gap-1 transition cursor-pointer"
                   >
                     <Edit2 size={10} />
                     Update Rate
@@ -677,7 +677,7 @@ export const InventoryCalendarPage: React.FC = () => {
             <div className="flex justify-between items-start border-b border-gray-100 dark:border-slate-800 pb-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#0A4DA6] dark:text-blue-400 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-xl bg-[#FFF4E5]/60 text-[#F28C28] dark:text-amber-400 flex items-center justify-center">
                     <Sparkles size={16} />
                   </div>
                   <h3 className="font-black text-base text-slate-900 dark:text-white">
@@ -703,9 +703,9 @@ export const InventoryCalendarPage: React.FC = () => {
                 <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   Target Date
                 </label>
-                <div className="px-3.5 py-2.5 bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/50 rounded-xl text-xs font-black text-[#0A4DA6] dark:text-blue-300 flex items-center justify-between">
+                <div className="px-3.5 py-2.5 bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/50 rounded-xl text-xs font-black text-[#F28C28] dark:text-amber-300 flex items-center justify-between">
                   <span className="flex items-center gap-2">
-                    <CalendarIcon size={14} className="text-[#0A4DA6] dark:text-blue-400" />
+                    <CalendarIcon size={14} className="text-[#F28C28] dark:text-amber-400" />
                     {targetDateFormatted || targetDate}
                   </span>
                   {targetDate === todayStr && (
@@ -732,7 +732,7 @@ export const InventoryCalendarPage: React.FC = () => {
                         setCustomPrice(String(r.basePrice));
                       }
                     }}
-                    className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-extrabold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                    className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-extrabold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                   >
                     {myRooms.map((room) => (
                       <option key={room._id} value={room._id}>
@@ -743,7 +743,7 @@ export const InventoryCalendarPage: React.FC = () => {
                 ) : (
                   <div className="px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-900 dark:text-white flex items-center justify-between">
                     <span>{activeModalRoom?.name || "Standard Room"}</span>
-                    <span className="text-xs font-black text-[#0A4DA6] dark:text-blue-400">
+                    <span className="text-xs font-black text-[#F28C28] dark:text-amber-400">
                       Base: ₹{modalBasePrice}/nt
                     </span>
                   </div>
@@ -773,7 +773,7 @@ export const InventoryCalendarPage: React.FC = () => {
                     value={customPrice}
                     onChange={(e) => setCustomPrice(e.target.value)}
                     placeholder={modalBasePrice ? String(modalBasePrice) : "e.g. 1500"}
-                    className="w-full pl-8 pr-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-black text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                    className="w-full pl-8 pr-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-black text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                   />
                 </div>
 
@@ -790,14 +790,14 @@ export const InventoryCalendarPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setCustomPrice(String(Math.round(modalBasePrice * 1.1)))}
-                      className="text-[10px] font-bold px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-950 text-[#0A4DA6] dark:text-blue-300 hover:bg-blue-100 cursor-pointer"
+                      className="text-[10px] font-bold px-2 py-1 rounded-lg bg-[#FFF4E5] text-[#F28C28] dark:text-amber-300 hover:bg-blue-100 cursor-pointer"
                     >
                       +10%
                     </button>
                     <button
                       type="button"
                       onClick={() => setCustomPrice(String(Math.round(modalBasePrice * 1.25)))}
-                      className="text-[10px] font-bold px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-950 text-[#0A4DA6] dark:text-blue-300 hover:bg-blue-100 cursor-pointer"
+                      className="text-[10px] font-bold px-2 py-1 rounded-lg bg-[#FFF4E5] text-[#F28C28] dark:text-amber-300 hover:bg-blue-100 cursor-pointer"
                     >
                       +25%
                     </button>
@@ -822,7 +822,7 @@ export const InventoryCalendarPage: React.FC = () => {
                   min={0}
                   value={maintenanceCount}
                   onChange={(e) => setMaintenanceCount(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                 />
                 <p className="text-[10px] text-slate-400 font-medium">
                   Block rooms from online booking for walk-ins or maintenance on this date.
@@ -841,7 +841,7 @@ export const InventoryCalendarPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={overrideSubmitting}
-                  className="flex-1 py-2.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white rounded-xl font-black text-xs shadow-md transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5"
+                  className="flex-1 py-2.5 bg-[#F28C28] hover:bg-[#B45309] text-white rounded-xl font-black text-xs shadow-md transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   {overrideSubmitting ? (
                     <>

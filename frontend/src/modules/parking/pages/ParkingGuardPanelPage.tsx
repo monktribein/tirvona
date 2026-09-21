@@ -302,7 +302,7 @@ export const ParkingGuardPanelPage: React.FC<ParkingGuardPanelPageProps> = ({
       <div className={`max-w-3xl mx-auto space-y-4 ${embedded ? "w-full" : "px-4 sm:px-6"}`}>
         <header className="space-y-1">
           <h1 className="inline-flex items-center gap-2.5 text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white">
-            <span className="w-9 h-9 rounded-2xl bg-[#0A4DA6] text-white flex items-center justify-center shadow-md">
+            <span className="w-9 h-9 rounded-2xl bg-[#F28C28] text-white flex items-center justify-center shadow-md">
               <ScanLine size={18} className="stroke-[2.5]" />
             </span>
             Gate Scanner
@@ -327,7 +327,7 @@ export const ParkingGuardPanelPage: React.FC<ParkingGuardPanelPageProps> = ({
                 setLocationId(e.target.value);
                 reset();
               }}
-              className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2.5 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 cursor-pointer"
+              className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2.5 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 cursor-pointer"
             >
               <option value="">Select a parking location…</option>
               {context.locations.map((loc) => (
@@ -359,8 +359,8 @@ export const ParkingGuardPanelPage: React.FC<ParkingGuardPanelPageProps> = ({
                   }}
                   className={`flex flex-col items-center gap-1.5 py-3.5 rounded-2xl border transition-all cursor-pointer ${
                     mode === key
-                      ? "bg-[#0A4DA6] border-[#0A4DA6] text-white shadow-md shadow-[#0A4DA6]/25"
-                      : "bg-white dark:bg-[#0B192C] border-gray-200 dark:border-slate-700 text-slate-600 dark:text-gray-300 hover:border-[#0A4DA6]"
+                      ? "bg-[#F28C28] border-[#F28C28] text-white shadow-md shadow-[#F28C28]/25"
+                      : "bg-white dark:bg-[#0B192C] border-gray-200 dark:border-slate-700 text-slate-600 dark:text-gray-300 hover:border-[#F28C28]"
                   }`}
                 >
                   <Icon size={20} className="stroke-[2.5]" />
@@ -384,7 +384,7 @@ export const ParkingGuardPanelPage: React.FC<ParkingGuardPanelPageProps> = ({
                         type="checkbox"
                         checked={autoScan}
                         onChange={(e) => setAutoScan(e.target.checked)}
-                        className="accent-[#0A4DA6]"
+                        className="accent-[#F28C28]"
                       />
                       AUTO
                     </label>
@@ -400,7 +400,7 @@ export const ParkingGuardPanelPage: React.FC<ParkingGuardPanelPageProps> = ({
                       className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl border text-xs font-extrabold transition-all cursor-pointer ${
                         cameraOn
                           ? "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300"
-                          : "bg-white dark:bg-[#0B192C] border-gray-200 dark:border-slate-700 text-slate-600 dark:text-gray-300 hover:border-[#0A4DA6]"
+                          : "bg-white dark:bg-[#0B192C] border-gray-200 dark:border-slate-700 text-slate-600 dark:text-gray-300 hover:border-[#F28C28]"
                       }`}
                     >
                       <Camera size={15} />
@@ -439,13 +439,13 @@ export const ParkingGuardPanelPage: React.FC<ParkingGuardPanelPageProps> = ({
                     placeholder="Point the scanner here, or type e.g. H24R-BGTB"
                     autoComplete="off"
                     autoFocus
-                    className="w-full bg-gray-50 dark:bg-slate-900 border-2 border-dashed border-[#0A4DA6]/30 focus:border-[#0A4DA6] rounded-2xl px-4 py-4 text-xs font-mono text-[#0B192C] dark:text-white placeholder:text-gray-400 placeholder:font-sans focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/20 transition-all"
+                    className="w-full bg-gray-50 dark:bg-slate-900 border-2 border-dashed border-[#F28C28]/30 focus:border-[#F28C28] rounded-2xl px-4 py-4 text-xs font-mono text-[#0B192C] dark:text-white placeholder:text-gray-400 placeholder:font-sans focus:outline-none focus:ring-2 focus:ring-[#F28C28]/20 transition-all"
                   />
 
                   <button
                     type="submit"
                     disabled={busy || !token.trim()}
-                    className="w-full bg-[#0A4DA6] hover:bg-[#083D85] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-extrabold px-6 py-3.5 rounded-full shadow-lg shadow-[#0A4DA6]/20 transition-all active:scale-95 cursor-pointer inline-flex items-center justify-center gap-2"
+                    className="w-full bg-[#F28C28] hover:bg-[#D97706] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-extrabold px-6 py-3.5 rounded-full shadow-lg shadow-[#F28C28]/20 transition-all active:scale-95 cursor-pointer inline-flex items-center justify-center gap-2"
                   >
                     {busy ? (
                       <Loader2
@@ -477,13 +477,13 @@ export const ParkingGuardPanelPage: React.FC<ParkingGuardPanelPageProps> = ({
                     onChange={(e) => setPlate(e.target.value.toUpperCase())}
                     placeholder="MH12AB1234"
                     autoComplete="off"
-                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl px-4 py-4 text-base font-black tracking-widest text-center text-[#0B192C] dark:text-white placeholder:text-gray-300 placeholder:tracking-normal placeholder:text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 focus:border-[#0A4DA6] transition-all"
+                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl px-4 py-4 text-base font-black tracking-widest text-center text-[#0B192C] dark:text-white placeholder:text-gray-300 placeholder:tracking-normal placeholder:text-sm focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 focus:border-[#F28C28] transition-all"
                   />
 
                   <button
                     type="submit"
                     disabled={busy || !plate.trim()}
-                    className="w-full bg-[#0A4DA6] hover:bg-[#083D85] disabled:opacity-50 text-white text-sm font-extrabold px-6 py-3.5 rounded-full shadow-lg transition-all active:scale-95 cursor-pointer inline-flex items-center justify-center gap-2"
+                    className="w-full bg-[#F28C28] hover:bg-[#D97706] disabled:opacity-50 text-white text-sm font-extrabold px-6 py-3.5 rounded-full shadow-lg transition-all active:scale-95 cursor-pointer inline-flex items-center justify-center gap-2"
                   >
                     {busy ? (
                       <Loader2
@@ -504,7 +504,7 @@ export const ParkingGuardPanelPage: React.FC<ParkingGuardPanelPageProps> = ({
                   setManualMode(!manualMode);
                   reset();
                 }}
-                className="w-full text-[11px] font-bold text-gray-500 dark:text-gray-400 hover:text-[#0A4DA6] transition-colors cursor-pointer py-1"
+                className="w-full text-[11px] font-bold text-gray-500 dark:text-gray-400 hover:text-[#F28C28] transition-colors cursor-pointer py-1"
               >
                 {manualMode
                   ? "← Back to QR scanning"

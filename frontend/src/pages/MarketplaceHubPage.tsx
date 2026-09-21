@@ -125,7 +125,7 @@ const ProductCard: React.FC<{
           </p>
         )}
         <div className="flex items-baseline gap-2 pt-1 mt-auto">
-          <span className="text-sm font-black text-[#0A4DA6] dark:text-blue-400">
+          <span className="text-sm font-black text-[#F28C28] dark:text-amber-400">
             {formatCurrency(priceOf(product))}
           </span>
           {discount > 0 && (
@@ -158,7 +158,7 @@ const ProductCard: React.FC<{
             }}
             className={`py-2 px-1.5 rounded-full text-[10px] sm:text-[11px] font-black flex items-center justify-center gap-1 transition-all ${outOfStock
               ? "bg-gray-100 dark:bg-slate-800 text-gray-400 cursor-not-allowed"
-              : "bg-[#0A4DA6]/10 hover:bg-[#0A4DA6] text-[#0A4DA6] hover:text-white dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-[#0A4DA6] dark:hover:text-white cursor-pointer"
+              : "bg-[#F28C28]/10 hover:bg-[#F28C28] text-[#F28C28] hover:text-white dark:bg-blue-950/60 dark:text-amber-300 dark:hover:bg-[#F28C28] dark:hover:text-white cursor-pointer"
               }`}
           >
             Add to cart
@@ -272,7 +272,7 @@ const ProductModal: React.FC<{
 
           <div className="space-y-3">
             <div className="flex items-baseline gap-2 flex-wrap">
-              <span className="text-2xl font-black text-[#0A4DA6] dark:text-blue-400">
+              <span className="text-2xl font-black text-[#F28C28] dark:text-amber-400">
                 {formatCurrency(priceOf(detail))}
               </span>
               {discount > 0 && (
@@ -361,7 +361,7 @@ const ProductModal: React.FC<{
                   onAdd(detail);
                   onClose();
                 }}
-                className="w-full py-3 rounded-full bg-[#0A4DA6] hover:bg-blue-900 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-md cursor-pointer transition-all"
+                className="w-full py-3 rounded-full bg-[#F28C28] hover:bg-[#D97706] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-md cursor-pointer transition-all"
               >
                 {detail.stock !== undefined && detail.stock <= 0
                   ? "Out of stock"
@@ -561,13 +561,13 @@ export const MarketplaceHubPage: React.FC = () => {
               onChange={(e) => setTerm(e.target.value)}
               placeholder="Search sacred prasad..."
               aria-label="Search marketplace"
-              className="w-full pl-10 pr-9 py-2.5 rounded-full border border-gray-200 dark:border-slate-800 bg-white dark:bg-[#0B192C] text-xs font-medium text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-[#0A4DA6] focus:ring-2 focus:ring-[#0A4DA6]/15"
+              className="w-full pl-10 pr-9 py-2.5 rounded-full border border-gray-200 dark:border-slate-800 bg-white dark:bg-[#0B192C] text-xs font-medium text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-[#F28C28] focus:ring-2 focus:ring-[#F28C28]/15"
             />
             {term && (
               <button
                 onClick={() => setTerm("")}
                 aria-label="Clear search"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#0A4DA6] cursor-pointer"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#F28C28] cursor-pointer"
               >
                 <X size={14} />
               </button>
@@ -579,7 +579,7 @@ export const MarketplaceHubPage: React.FC = () => {
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               aria-label="Filter by category"
-              className="px-4 py-2.5 rounded-full border border-gray-200 dark:border-slate-800 bg-white dark:bg-[#0B192C] text-xs font-bold text-[#0B192C] dark:text-white cursor-pointer focus:outline-none focus:border-[#0A4DA6]"
+              className="px-4 py-2.5 rounded-full border border-gray-200 dark:border-slate-800 bg-white dark:bg-[#0B192C] text-xs font-bold text-[#0B192C] dark:text-white cursor-pointer focus:outline-none focus:border-[#F28C28]"
             >
               <option value="">All categories</option>
               {categoryOptions.map((name) => (
@@ -593,7 +593,7 @@ export const MarketplaceHubPage: React.FC = () => {
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
               aria-label="Sort products"
-              className="px-4 py-2.5 rounded-full border border-gray-200 dark:border-slate-800 bg-white dark:bg-[#0B192C] text-xs font-bold text-[#0B192C] dark:text-white cursor-pointer focus:outline-none focus:border-[#0A4DA6]"
+              className="px-4 py-2.5 rounded-full border border-gray-200 dark:border-slate-800 bg-white dark:bg-[#0B192C] text-xs font-bold text-[#0B192C] dark:text-white cursor-pointer focus:outline-none focus:border-[#F28C28]"
             >
               {SORTS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -613,7 +613,7 @@ export const MarketplaceHubPage: React.FC = () => {
                   setTerm("");
                   setCategory("");
                 }}
-                className="ml-2 text-[#0A4DA6] hover:underline font-bold cursor-pointer"
+                className="ml-2 text-[#F28C28] hover:underline font-bold cursor-pointer"
               >
                 Clear filters
               </button>
@@ -638,7 +638,7 @@ export const MarketplaceHubPage: React.FC = () => {
             </p>
             <button
               onClick={() => load(1, false)}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white text-xs font-extrabold cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold cursor-pointer"
             >
               <RefreshCw size={14} /> Try again
             </button>
@@ -656,7 +656,7 @@ export const MarketplaceHubPage: React.FC = () => {
                     setTerm("");
                     setCategory("");
                   }}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white text-xs font-extrabold cursor-pointer"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold cursor-pointer"
                 >
                   Clear filters
                 </button>
@@ -673,7 +673,7 @@ export const MarketplaceHubPage: React.FC = () => {
                 <div className="flex flex-wrap items-center justify-center gap-4">
                   <button
                     onClick={() => navigate("/")}
-                    className="px-6 py-3 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 shadow-lg cursor-pointer"
+                    className="px-6 py-3 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 shadow-lg cursor-pointer"
                   >
                     <Home size={16} /> Back to home
                   </button>
@@ -706,7 +706,7 @@ export const MarketplaceHubPage: React.FC = () => {
                 <button
                   onClick={() => load(page + 1, true)}
                   disabled={loadingMore}
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#0A4DA6] hover:bg-blue-900 disabled:opacity-60 text-white text-xs font-extrabold shadow-md cursor-pointer transition-all"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#F28C28] hover:bg-[#D97706] disabled:opacity-60 text-white text-xs font-extrabold shadow-md cursor-pointer transition-all"
                 >
                   {loadingMore ? (
                     <>

@@ -57,7 +57,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
         type="button"
         onClick={() => inputRef.current?.click()}
         disabled={status === "uploading"}
-        className="w-full flex items-center justify-center gap-2 py-2.5 px-4 border border-dashed border-[#0A4DA6]/40 bg-[#0A4DA6]/5 hover:bg-[#0A4DA6]/10 text-[#0A4DA6] rounded-xl text-xs font-bold cursor-pointer transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+        className="w-full flex items-center justify-center gap-2 py-2.5 px-4 border border-dashed border-[#F28C28]/40 bg-[#F28C28]/5 hover:bg-[#F28C28]/10 text-[#F28C28] rounded-xl text-xs font-bold cursor-pointer transition-all disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {status === "uploading" ? (
           <>
@@ -90,10 +90,10 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
         /\.(jpe?g|png|webp|gif|svg|avif|heic)($|\?)/i.test(currentUrl) ? (
           <a href={currentUrl} target="_blank" rel="noreferrer" className="inline-flex flex-col gap-1 rounded-xl border border-gray-200 p-1.5">
             <img src={currentUrl} alt="Uploaded file" className="h-20 w-28 rounded-lg object-cover" />
-            <span className="inline-flex items-center justify-center gap-1 text-[10px] font-bold text-[#0A4DA6]"><ExternalLink size={10} /> Open image</span>
+            <span className="inline-flex items-center justify-center gap-1 text-[10px] font-bold text-[#F28C28]"><ExternalLink size={10} /> Open image</span>
           </a>
         ) : (
-          <a href={currentUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1.5 text-[10px] font-bold text-[#0A4DA6]">
+          <a href={currentUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1.5 text-[10px] font-bold text-[#F28C28]">
             <FileText size={12} /> Open document <ExternalLink size={10} />
           </a>
         )

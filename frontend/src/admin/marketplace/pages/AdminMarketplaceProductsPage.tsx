@@ -487,7 +487,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={handleCreateOpen}
-              className="px-5 py-2.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-[#0A4DA6]/20 cursor-pointer"
+              className="px-5 py-2.5 bg-[#F28C28] hover:bg-[#B45309] text-white rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-[#F28C28]/20 cursor-pointer"
             >
               <Plus size={16} /> Add New Product
             </button>
@@ -496,7 +496,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
               className="p-2.5 bg-gray-50 dark:bg-slate-900 hover:bg-gray-100 dark:hover:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-full text-gray-500 cursor-pointer transition-colors"
               title="Refresh List"
             >
-              <RefreshCw size={16} className={loading ? "animate-spin text-[#0A4DA6]" : ""} />
+              <RefreshCw size={16} className={loading ? "animate-spin text-[#F28C28]" : ""} />
             </button>
           </div>
         }
@@ -546,7 +546,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
         {loading ? (
           <div className="py-16 text-center space-y-3">
             <RefreshCw
-              className="animate-spin mx-auto text-[#0A4DA6]"
+              className="animate-spin mx-auto text-[#F28C28]"
               size={28}
             />
             <p className="text-xs font-bold text-gray-400">
@@ -564,7 +564,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
             </p>
             <button
               onClick={handleCreateOpen}
-              className="px-4 py-2 bg-[#0A4DA6] text-white text-xs font-bold rounded-xl cursor-pointer"
+              className="px-4 py-2 bg-[#F28C28] text-white text-xs font-bold rounded-xl cursor-pointer"
             >
               Create Product
             </button>
@@ -625,7 +625,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                           {p.name}
                         </div>
                         <div className="text-[11px] text-gray-400 flex items-center gap-1 mt-0.5">
-                          <ShieldCheck size={12} className="text-[#0A4DA6]" />
+                          <ShieldCheck size={12} className="text-[#F28C28]" />
                           <span className="truncate">
                             {p.templeSource || "Sanctified Vendor"}
                           </span>
@@ -639,7 +639,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                       </td>
 
                       <td className="py-3 px-4">
-                        <span className="px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#0A4DA6] dark:text-blue-300 font-extrabold text-[11px] tracking-wide">
+                        <span className="px-2.5 py-1 rounded-full bg-[#FFF4E5]/40 text-[#F28C28] dark:text-amber-300 font-extrabold text-[11px] tracking-wide">
                           {humanizeLabel(p.category)}
                         </span>
                       </td>
@@ -711,7 +711,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                           </button>
                           <button
                             onClick={() => handleEditOpen(p)}
-                            className="p-2 bg-blue-50 hover:bg-blue-100 text-[#0A4DA6] rounded-xl transition-colors cursor-pointer"
+                            className="p-2 bg-blue-50 hover:bg-blue-100 text-[#F28C28] rounded-xl transition-colors cursor-pointer"
                             title="Edit Product & Manage Images"
                           >
                             <Edit2 size={14} />
@@ -750,7 +750,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
           className="space-y-5 text-xs font-bold"
         >
           <div className="space-y-3 p-4 bg-gray-50 dark:bg-slate-900/60 rounded-2xl border border-gray-200/60 dark:border-slate-800">
-            <h3 className="text-xs font-black text-[#0A4DA6] tracking-wider flex items-center gap-1.5">
+            <h3 className="text-xs font-black text-[#F28C28] tracking-wider flex items-center gap-1.5">
               <ShoppingBag size={14} /> Product Overview
             </h3>
 
@@ -843,7 +843,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
           </div>
 
           <div className="space-y-3 p-4 bg-gray-50 dark:bg-slate-900/60 rounded-2xl border border-gray-200/60 dark:border-slate-800">
-            <h3 className="text-xs font-black text-[#0A4DA6] tracking-wider flex items-center gap-1.5">
+            <h3 className="text-xs font-black text-[#F28C28] tracking-wider flex items-center gap-1.5">
               <Tag size={14} /> Pricing, Stock & Weight
             </h3>
 
@@ -930,7 +930,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, isFeatured: e.target.checked })
                   }
-                  className="w-4 h-4 rounded text-[#0A4DA6]"
+                  className="w-4 h-4 rounded text-[#F28C28]"
                 />
                 <span className="text-xs text-gray-700 dark:text-gray-300 font-extrabold flex items-center gap-1">
                   <Star size={12} className="text-amber-500 fill-amber-500" />{" "}
@@ -960,14 +960,14 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
           <div className="space-y-3 p-4 bg-blue-50/40 dark:bg-slate-900/80 rounded-2xl border border-blue-100 dark:border-blue-900/50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <ImageIcon size={16} className="text-[#0A4DA6]" />
-                <h3 className="text-xs font-black text-[#0A4DA6] tracking-wider">
+                <ImageIcon size={16} className="text-[#F28C28]" />
+                <h3 className="text-xs font-black text-[#F28C28] tracking-wider">
                   Product Image Management
                 </h3>
               </div>
 
               <div className="flex items-center gap-2">
-                <label className="px-3 py-1.5 bg-[#0A4DA6] hover:bg-blue-900 text-white font-extrabold text-xs rounded-xl flex items-center gap-1.5 shadow-sm cursor-pointer transition-colors shrink-0">
+                <label className="px-3 py-1.5 bg-[#F28C28] hover:bg-[#D97706] text-white font-extrabold text-xs rounded-xl flex items-center gap-1.5 shadow-sm cursor-pointer transition-colors shrink-0">
                   <Upload size={13} />
                   <span>{isUploading ? "Uploading..." : "Upload Image"}</span>
                   <input
@@ -982,7 +982,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                 {import.meta.env.DEV ? <button
                   type="button"
                   onClick={() => setShowUrlInput(!showUrlInput)}
-                  className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-800 text-[#0A4DA6] dark:text-blue-300 hover:bg-blue-50 font-extrabold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
+                  className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-800 text-[#F28C28] dark:text-amber-300 hover:bg-blue-50 font-extrabold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
                 >
                   <LinkIcon size={13} />
                   <span>Add by URL</span>
@@ -1002,7 +1002,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleAddUrl}
-                  className="px-3 py-2 bg-[#0A4DA6] hover:bg-blue-900 text-white font-extrabold text-xs rounded-lg cursor-pointer shrink-0"
+                  className="px-3 py-2 bg-[#F28C28] hover:bg-[#D97706] text-white font-extrabold text-xs rounded-lg cursor-pointer shrink-0"
                 >
                   Confirm URL
                 </button>
@@ -1041,7 +1041,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                     <div
                       key={idx}
                       className={`relative bg-white dark:bg-slate-900 rounded-2xl border ${isCover
-                        ? "border-2 border-[#0A4DA6] shadow-md shadow-[#0A4DA6]/15"
+                        ? "border-2 border-[#F28C28] shadow-md shadow-[#F28C28]/15"
                         : "border-gray-200 dark:border-slate-800"
                         } overflow-hidden flex flex-col justify-between group transition-all`}
                     >
@@ -1057,7 +1057,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                         />
 
                         {isCover ? (
-                          <span className="absolute top-2 left-2 px-2.5 py-0.5 bg-[#0A4DA6] text-white text-[9px] font-black rounded-full shadow-md">
+                          <span className="absolute top-2 left-2 px-2.5 py-0.5 bg-[#F28C28] text-white text-[9px] font-black rounded-full shadow-md">
                             ★ Primary Cover
                           </span>
                         ) : (
@@ -1077,7 +1077,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                           </button>
 
                           <label
-                            className="p-1.5 bg-[#0A4DA6] text-white rounded-lg hover:scale-110 transition-transform cursor-pointer"
+                            className="p-1.5 bg-[#F28C28] text-white rounded-lg hover:scale-110 transition-transform cursor-pointer"
                             title="Replace File"
                           >
                             <input
@@ -1119,7 +1119,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                               type="button"
                               disabled={idx === 0}
                               onClick={() => handleMoveImage(idx, "left")}
-                              className="p-1 text-gray-500 hover:text-[#0A4DA6] disabled:opacity-30 cursor-pointer"
+                              className="p-1 text-gray-500 hover:text-[#F28C28] disabled:opacity-30 cursor-pointer"
                               title="Reorder Left"
                             >
                               <ArrowLeft size={12} />
@@ -1128,7 +1128,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                               type="button"
                               disabled={idx === formData.images.length - 1}
                               onClick={() => handleMoveImage(idx, "right")}
-                              className="p-1 text-gray-500 hover:text-[#0A4DA6] disabled:opacity-30 cursor-pointer"
+                              className="p-1 text-gray-500 hover:text-[#F28C28] disabled:opacity-30 cursor-pointer"
                               title="Reorder Right"
                             >
                               <ArrowRight size={12} />
@@ -1139,12 +1139,12 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => handleSetCover(idx)}
-                              className="text-[#0A4DA6] dark:text-blue-400 font-extrabold hover:underline cursor-pointer flex items-center gap-0.5"
+                              className="text-[#F28C28] dark:text-amber-400 font-extrabold hover:underline cursor-pointer flex items-center gap-0.5"
                             >
                               <ArrowUp size={10} /> Set Cover
                             </button>
                           ) : (
-                            <span className="text-[#0A4DA6] font-extrabold">
+                            <span className="text-[#F28C28] font-extrabold">
                               Cover Photo
                             </span>
                           )}

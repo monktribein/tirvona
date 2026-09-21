@@ -57,7 +57,7 @@ const styles: Record<ToastKind, { icon: typeof Info; iconBox: string; label: str
   },
   info: {
     icon: Info,
-    iconBox: "bg-blue-50 text-[#0A4DA6] dark:bg-blue-950/60 dark:text-blue-400",
+    iconBox: "bg-blue-50 text-[#F28C28] dark:bg-blue-950/60 dark:text-amber-400",
     label: "Tirvona",
   },
 };

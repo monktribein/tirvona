@@ -1,6 +1,7 @@
 
 export type GuestIntentType =
   | "ashram_booking"
+  | "day_stay_booking"
   | "parking_booking"
   | "service_booking"
   | "volunteer_apply"

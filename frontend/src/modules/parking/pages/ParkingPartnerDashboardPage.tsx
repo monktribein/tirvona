@@ -221,8 +221,8 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
               { label: "Gate scanner", path: "/parking/gate" },
               { label: "Parking bookings", path: "/parking/my-bookings" },
             ].map((action, index) => (
-              <button key={action.path} type="button" onClick={() => navigate(action.path)} className="flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3 text-left text-xs text-slate-700 transition hover:border-[#0A4DA6]">
-                <span className="grid h-8 w-8 place-items-center rounded-lg text-white" style={{ backgroundColor: ["#0A4DA6", "#14B8A6", "#F59E0B", "#8B5CF6"][index] }}><CircleParking size={15} /></span>
+              <button key={action.path} type="button" onClick={() => navigate(action.path)} className="flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3 text-left text-xs text-slate-700 transition hover:border-[#F28C28]">
+                <span className="grid h-8 w-8 place-items-center rounded-lg text-white" style={{ backgroundColor: ["#F28C28", "#14B8A6", "#F59E0B", "#8B5CF6"][index] }}><CircleParking size={15} /></span>
                 {action.label}
               </button>
             ))}
@@ -250,8 +250,8 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
                   onClick={() => setStatusFilter(f.value)}
                   className={`shrink-0 text-[10px] font-bold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
                     statusFilter === f.value
-                      ? "bg-[#0A4DA6] border-[#0A4DA6] text-white"
-                      : "bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-slate-600 dark:text-gray-300 hover:border-[#0A4DA6]"
+                      ? "bg-[#F28C28] border-[#F28C28] text-white"
+                      : "bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-slate-600 dark:text-gray-300 hover:border-[#F28C28]"
                   }`}
                 >
                   {f.label}
@@ -323,7 +323,7 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
         <div className="space-y-5">
           <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-3 shadow-sm">
             <h2 className="inline-flex items-center gap-2 font-extrabold text-sm text-[#0B192C] dark:text-white">
-              <Building2 size={15} className="text-[#0A4DA6] stroke-[2.5]" />
+              <Building2 size={15} className="text-[#F28C28] stroke-[2.5]" />
               Your Locations
             </h2>
 
@@ -359,7 +359,7 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
                       <div className="flex items-center gap-2 pt-0.5">
                         <div className="flex-1 h-1.5 bg-gray-200 dark:bg-slate-800 rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-[#0A4DA6] rounded-full transition-all"
+                            className="h-full bg-[#F28C28] rounded-full transition-all"
                             style={{
                               width: `${Math.min(100, Number(loc.liveOccupancy.occupancyPercent) || 0)}%`,
                             }}
@@ -379,7 +379,7 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
           {(reports.peakHours?.length ?? 0) > 0 && (
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-3 shadow-sm">
               <h2 className="inline-flex items-center gap-2 font-extrabold text-sm text-[#0B192C] dark:text-white">
-                <Clock size={15} className="text-[#0A4DA6] stroke-[2.5]" />
+                <Clock size={15} className="text-[#F28C28] stroke-[2.5]" />
                 Peak Hours
               </h2>
 
@@ -394,7 +394,7 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
                     className="flex-1 flex flex-col items-center gap-1 group relative"
                   >
                     <div
-                      className="w-full bg-[#0A4DA6]/80 hover:bg-[#0A4DA6] rounded-t transition-all min-h-[2px]"
+                      className="w-full bg-[#F28C28]/80 hover:bg-[#F28C28] rounded-t transition-all min-h-[2px]"
                       style={{ height: `${(h.count / peakMax) * 100}%` }}
                       title={`${h.label} — ${h.count} booking(s)`}
                     />

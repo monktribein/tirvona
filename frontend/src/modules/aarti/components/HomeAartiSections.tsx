@@ -30,7 +30,7 @@ const SectionHeading: React.FC<{
     </p>
     <Link
       to={ctaTo}
-      className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
+      className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#B45309] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
     >
       {ctaLabel} <ArrowRight size={14} />
     </Link>

@@ -51,7 +51,7 @@ export const ParkingAmenityList: React.FC<ParkingAmenityListProps> = ({
             key={key}
             className="flex items-center gap-2.5 bg-gray-50 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-800 rounded-2xl px-3.5 py-2.5"
           >
-            <span className="w-7 h-7 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-blue-300 flex items-center justify-center shrink-0">
+            <span className="w-7 h-7 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#F28C28] dark:text-amber-300 flex items-center justify-center shrink-0">
               {ICONS[key] || <Check size={14} className="stroke-[2.5]" />}
             </span>
             <span className="text-xs font-bold text-slate-700 dark:text-gray-200">
@@ -68,7 +68,7 @@ export const ParkingAmenityList: React.FC<ParkingAmenityListProps> = ({
       {shown.map((key) => (
         <span
           key={key}
-          className="inline-flex items-center gap-1.5 bg-blue-50/70 dark:bg-slate-800 text-[#0A4DA6] dark:text-blue-300 text-[10px] font-bold px-2.5 py-1 rounded-full border border-blue-100 dark:border-slate-700"
+          className="inline-flex items-center gap-1.5 bg-blue-50/70 dark:bg-slate-800 text-[#F28C28] dark:text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-full border border-blue-100 dark:border-slate-700"
         >
           {ICONS[key] || <Check size={12} className="stroke-[2.5]" />}
           <span>{amenityLabel(key)}</span>

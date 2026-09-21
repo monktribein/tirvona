@@ -136,7 +136,7 @@ export const EventGatePage: React.FC = () => {
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-16 space-y-5">
       <div>
         <h1 className="inline-flex items-center gap-2 font-extrabold text-xl sm:text-2xl text-[#0B192C] dark:text-white">
-          <ScanLine size={22} className="text-[#0A4DA6] stroke-[2.5]" />
+          <ScanLine size={22} className="text-[#F28C28] stroke-[2.5]" />
           Event Gate
         </h1>
         <p className="mt-1 text-xs font-medium text-gray-400">
@@ -170,7 +170,7 @@ export const EventGatePage: React.FC = () => {
             <select
               value={eventId}
               onChange={(changeEvent) => setEventId(changeEvent.target.value)}
-              className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl px-3.5 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 cursor-pointer"
+              className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl px-3.5 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 cursor-pointer"
             >
               <option value="">Any event I manage</option>
               {events.map((item) => (
@@ -188,7 +188,7 @@ export const EventGatePage: React.FC = () => {
               type="date"
               value={date}
               onChange={(changeEvent) => setDate(changeEvent.target.value)}
-              className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl px-3.5 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30"
+              className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl px-3.5 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30"
             />
           </label>
         </div>
@@ -205,7 +205,7 @@ export const EventGatePage: React.FC = () => {
             }}
             placeholder="ABCD-1234"
             autoFocus
-            className="mt-1.5 w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl px-4 py-3.5 text-center font-mono text-xl font-black uppercase tracking-[0.2em] text-[#0B192C] dark:text-white placeholder:text-gray-300 placeholder:font-normal placeholder:tracking-normal focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 focus:border-[#0A4DA6] transition-all"
+            className="mt-1.5 w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl px-4 py-3.5 text-center font-mono text-xl font-black uppercase tracking-[0.2em] text-[#0B192C] dark:text-white placeholder:text-gray-300 placeholder:font-normal placeholder:tracking-normal focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 focus:border-[#F28C28] transition-all"
           />
         </label>
 
@@ -214,7 +214,7 @@ export const EventGatePage: React.FC = () => {
             type="button"
             onClick={() => scan("verify")}
             disabled={scanning || !canScan || !code.trim()}
-            className="inline-flex items-center justify-center gap-2 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 hover:border-[#0A4DA6] text-[#0A4DA6] dark:text-blue-300 text-xs font-extrabold px-4 py-3 rounded-full shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center justify-center gap-2 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 hover:border-[#F28C28] text-[#F28C28] dark:text-amber-300 text-xs font-extrabold px-4 py-3 rounded-full shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Verify Only
           </button>
@@ -222,7 +222,7 @@ export const EventGatePage: React.FC = () => {
             type="button"
             onClick={() => scan("entry")}
             disabled={scanning || !canScan || !code.trim()}
-            className="inline-flex items-center justify-center gap-2 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold px-4 py-3 rounded-full shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center justify-center gap-2 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold px-4 py-3 rounded-full shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {scanning ? (
               <Loader2 size={14} className="animate-spin stroke-[2.5]" />

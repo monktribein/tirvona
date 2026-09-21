@@ -37,10 +37,10 @@ export const AartiFilterPanel: React.FC<AartiFilterPanelProps> = ({
     <aside className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-4 space-y-5 shadow-sm">
       <header className="flex items-center justify-between gap-2">
         <h3 className="inline-flex items-center gap-2 font-extrabold text-sm text-[#0B192C] dark:text-white">
-          <SlidersHorizontal size={15} className="text-[#0A4DA6] stroke-[2.5]" />
+          <SlidersHorizontal size={15} className="text-[#F28C28] stroke-[2.5]" />
           Filters
           {activeCount > 0 && (
-            <span className="bg-[#0A4DA6] text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">
+            <span className="bg-[#F28C28] text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">
               {activeCount}
             </span>
           )}
@@ -68,7 +68,7 @@ export const AartiFilterPanel: React.FC<AartiFilterPanelProps> = ({
           id="aarti-sort"
           value={sort}
           onChange={(event) => onChange({ sort: event.target.value })}
-          className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 cursor-pointer"
+          className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 cursor-pointer"
         >
           {sortOptions.map((option) => (
             <option key={option.value} value={option.value}>
@@ -93,8 +93,8 @@ export const AartiFilterPanel: React.FC<AartiFilterPanelProps> = ({
                   onClick={() => toggleFacility(option.value)}
                   className={`text-[10px] font-bold px-3 py-1.5 rounded-full border transition-all cursor-pointer active:scale-95 ${
                     active
-                      ? "bg-[#0A4DA6] border-[#0A4DA6] text-white shadow-sm"
-                      : "bg-gray-50 dark:bg-slate-900 border-gray-100 dark:border-slate-800 text-gray-500 dark:text-gray-400 hover:border-[#0A4DA6] hover:text-[#0A4DA6]"
+                      ? "bg-[#F28C28] border-[#F28C28] text-white shadow-sm"
+                      : "bg-gray-50 dark:bg-slate-900 border-gray-100 dark:border-slate-800 text-gray-500 dark:text-gray-400 hover:border-[#F28C28] hover:text-[#F28C28]"
                   }`}
                 >
                   {option.label}

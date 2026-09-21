@@ -1,10 +1,10 @@
 
 export const colors = {
   primary: {
-    main: "#0A4DA6",
-    hover: "#083B80",
-    light: "rgba(10, 77, 166, 0.1)",
-    border: "rgba(10, 77, 166, 0.2)",
+    main: "#F28C28",
+    hover: "#B45309",
+    light: "rgba(242, 140, 40, 0.1)",
+    border: "rgba(242, 140, 40, 0.2)",
   },
   secondary: {
     main: "#E58C28",
@@ -16,7 +16,7 @@ export const colors = {
     bg: "#0B192C",
     border: "#1E293B",
     hover: "#1E293B",
-    active: "#0A4DA6",
+    active: "#F28C28",
     text: "#94A3B8",
     textActive: "#FFFFFF",
   },

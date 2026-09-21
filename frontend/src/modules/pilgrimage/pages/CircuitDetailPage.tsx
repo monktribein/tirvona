@@ -32,7 +32,7 @@ const Stat: React.FC<{
   value: string;
 }> = ({ icon, label, value }) => (
   <div className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl px-3 py-3 text-center">
-    <span className="text-[#0A4DA6] flex justify-center">{icon}</span>
+    <span className="text-[#F28C28] flex justify-center">{icon}</span>
     <p className="mt-1.5 text-sm font-black text-[#0B192C] dark:text-white">
       {value}
     </p>
@@ -88,7 +88,7 @@ export const CircuitDetailPage: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate("/pilgrimage-circuits")}
-            className="inline-flex items-center gap-2 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold px-5 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-2 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold px-5 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
           >
             Browse all circuits
           </button>
@@ -104,7 +104,7 @@ export const CircuitDetailPage: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-16 space-y-10">
       <div className="flex flex-col items-center text-center gap-3 pb-4">
         <div className="flex flex-wrap items-center justify-center gap-2">
-          <span className="px-3 py-1 bg-[#0A4DA6] text-white text-[9px] font-extrabold rounded-full flex items-center gap-1 shadow-sm tracking-wider">
+          <span className="px-3 py-1 bg-[#F28C28] text-white text-[9px] font-extrabold rounded-full flex items-center gap-1 shadow-sm tracking-wider">
             <Compass size={12} /> {circuit.circuitTypeLabel ?? "Circuit"}
           </span>
           <span
@@ -125,7 +125,7 @@ export const CircuitDetailPage: React.FC = () => {
         ) : null}
 
         <p className="text-xs text-gray-500 flex items-center justify-center gap-1">
-          <MapPin size={12} className="text-[#0A4DA6]" />
+          <MapPin size={12} className="text-[#F28C28]" />
           {circuit.startCity || "—"}
           {circuit.endCity && circuit.endCity !== circuit.startCity
             ? ` → ${circuit.endCity}`
@@ -164,7 +164,7 @@ export const CircuitDetailPage: React.FC = () => {
                   onClick={() => setActiveImage(index)}
                   className={`h-16 w-24 shrink-0 rounded-2xl overflow-hidden border-2 transition-all cursor-pointer ${
                     activeImage === index
-                      ? "border-[#0A4DA6]"
+                      ? "border-[#F28C28]"
                       : "border-transparent opacity-70 hover:opacity-100"
                   }`}
                 >
@@ -300,10 +300,10 @@ export const CircuitDetailPage: React.FC = () => {
           {circuit.usableAsPlannerTemplate ? (
             <Link
               to={`/destinations/planner?circuit=${circuit.slug}`}
-              className="group w-full bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold pl-5 pr-1.5 py-2 rounded-full inline-flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 cursor-pointer"
+              className="group w-full bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold pl-5 pr-1.5 py-2 rounded-full inline-flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 cursor-pointer"
             >
               <span>Plan My Trip</span>
-              <span className="w-6 h-6 rounded-full bg-white text-[#0A4DA6] flex items-center justify-center transition-transform group-hover:translate-x-0.5">
+              <span className="w-6 h-6 rounded-full bg-white text-[#F28C28] flex items-center justify-center transition-transform group-hover:translate-x-0.5">
                 <ArrowRight size={12} className="stroke-[3]" />
               </span>
             </Link>

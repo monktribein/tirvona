@@ -463,7 +463,7 @@ export const OfflineInventoryPage: React.FC = () => {
   };
 
   const field =
-    "w-full px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-[#0A4DA6]";
+    "w-full px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-[#F28C28]";
   const card =
     "bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px]";
 
@@ -494,13 +494,13 @@ export const OfflineInventoryPage: React.FC = () => {
             <>
               <button
                 onClick={() => openDirectReturnModal()}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full border-2 border-[#0A4DA6] text-[#0A4DA6] dark:text-blue-400 bg-white dark:bg-[#0B192C] hover:bg-blue-50 dark:hover:bg-blue-950/40 text-xs font-extrabold shadow-sm transition"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full border-2 border-[#F28C28] text-[#F28C28] dark:text-amber-400 bg-white dark:bg-[#0B192C] hover:bg-blue-50 dark:hover:bg-blue-950/40 text-xs font-extrabold shadow-sm transition"
               >
                 <ArrowDownLeft size={14} /> Request rooms from Tirvona
               </button>
               <button
                 onClick={() => openForm()}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-[#083D84] text-white text-xs font-extrabold shadow-sm transition"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold shadow-sm transition"
               >
                 <Plus size={14} /> Add offline room
               </button>
@@ -546,7 +546,7 @@ export const OfflineInventoryPage: React.FC = () => {
             onClick={() => setTab(key)}
             className={`px-4 py-2 rounded-full text-xs font-extrabold ${
               tab === key
-                ? "bg-[#0A4DA6] text-white"
+                ? "bg-[#F28C28] text-white"
                 : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300"
             }`}
           >
@@ -557,7 +557,7 @@ export const OfflineInventoryPage: React.FC = () => {
 
       {loading ? (
         <div className={`${card} p-12 flex justify-center`}>
-          <Loader2 size={22} className="animate-spin text-[#0A4DA6]" />
+          <Loader2 size={22} className="animate-spin text-[#F28C28]" />
         </div>
       ) : tab === "rooms" ? (
         /* ─── Rooms tab ──────────────────────────────────────────────────── */
@@ -593,7 +593,7 @@ export const OfflineInventoryPage: React.FC = () => {
                     <td className="py-3.5 px-4 font-black text-emerald-600">
                       {row.availableUnits}
                     </td>
-                    <td className="py-3.5 px-4 font-bold text-[#0A4DA6]">
+                    <td className="py-3.5 px-4 font-bold text-[#F28C28]">
                       {row.transferredUnits || 0}
                     </td>
                     <td className="py-3.5 px-4">
@@ -613,7 +613,7 @@ export const OfflineInventoryPage: React.FC = () => {
                           <button
                             onClick={() => openTransferModal(row)}
                             disabled={row.availableUnits <= 0}
-                            className="px-2.5 py-1.5 rounded-lg bg-[#0A4DA6] text-white text-[10px] font-extrabold disabled:opacity-40"
+                            className="px-2.5 py-1.5 rounded-lg bg-[#F28C28] text-white text-[10px] font-extrabold disabled:opacity-40"
                           >
                             Transfer to Tirvona
                           </button>
@@ -622,7 +622,7 @@ export const OfflineInventoryPage: React.FC = () => {
                             disabled={
                               !row.transferredUnits || row.transferredUnits <= 0
                             }
-                            className="px-2.5 py-1.5 rounded-lg border border-[#0A4DA6] text-[#0A4DA6] dark:text-blue-400 bg-blue-50/60 dark:bg-blue-950/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-[10px] font-extrabold disabled:opacity-40 transition"
+                            className="px-2.5 py-1.5 rounded-lg border border-[#F28C28] text-[#F28C28] dark:text-amber-400 bg-blue-50/60 dark:bg-blue-950/20 hover:bg-blue-100 dark:hover:bg-[#D97706]/40 text-[10px] font-extrabold disabled:opacity-40 transition"
                           >
                             Request rooms back
                           </button>
@@ -659,14 +659,14 @@ export const OfflineInventoryPage: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => openDirectReturnModal()}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border-2 border-[#0A4DA6] text-[#0A4DA6] dark:text-blue-400 bg-white dark:bg-[#0B192C] hover:bg-blue-50 dark:hover:bg-blue-950/40 text-xs font-extrabold shadow-sm transition"
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border-2 border-[#F28C28] text-[#F28C28] dark:text-amber-400 bg-white dark:bg-[#0B192C] hover:bg-blue-50 dark:hover:bg-blue-950/40 text-xs font-extrabold shadow-sm transition"
                           >
                             <ArrowDownLeft size={14} /> Request rooms from Tirvona
                           </button>
                           <button
                             type="button"
                             onClick={() => openForm()}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#0A4DA6] hover:bg-[#083D84] text-white text-xs font-extrabold transition"
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold transition"
                           >
                             <Plus size={14} /> Add offline room
                           </button>
@@ -707,7 +707,7 @@ export const OfflineInventoryPage: React.FC = () => {
                         {row.roomId?.name || ""}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 font-black text-[#0A4DA6]">
+                    <td className="py-3.5 px-4 font-black text-[#F28C28]">
                       +{row.units}
                     </td>
                     <td className="py-3.5 px-4">
@@ -965,7 +965,7 @@ export const OfflineInventoryPage: React.FC = () => {
             />
             <button
               disabled={saving}
-              className="w-full py-3 rounded-full bg-[#0A4DA6] text-white text-xs font-extrabold disabled:opacity-60"
+              className="w-full py-3 rounded-full bg-[#F28C28] text-white text-xs font-extrabold disabled:opacity-60"
             >
               {saving ? (
                 <Loader2 size={15} className="animate-spin mx-auto" />
@@ -1077,7 +1077,7 @@ export const OfflineInventoryPage: React.FC = () => {
             </p>
             <button
               disabled={saving}
-              className="w-full py-3 rounded-full bg-[#0A4DA6] text-white text-xs font-extrabold disabled:opacity-60"
+              className="w-full py-3 rounded-full bg-[#F28C28] text-white text-xs font-extrabold disabled:opacity-60"
             >
               {saving ? (
                 <Loader2 size={15} className="animate-spin mx-auto" />
@@ -1165,7 +1165,7 @@ export const OfflineInventoryPage: React.FC = () => {
             </p>
             <button
               disabled={saving}
-              className="w-full py-3 rounded-full bg-[#0A4DA6] hover:bg-[#083D84] text-white text-xs font-extrabold disabled:opacity-60 transition shadow-sm"
+              className="w-full py-3 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold disabled:opacity-60 transition shadow-sm"
             >
               {saving ? (
                 <Loader2 size={15} className="animate-spin mx-auto" />
@@ -1399,13 +1399,13 @@ export const OfflineInventoryPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40 p-3 text-[11px] text-blue-900 dark:text-blue-300">
+            <div className="rounded-xl bg-[#FFF4E5]/20 border border-blue-200 dark:border-blue-800/40 p-3 text-[11px] text-blue-900 dark:text-amber-300">
               This request will be sent to the Super Admin for approval. Once approved, the selected rooms will be deducted from Tirvona's online availability for the chosen dates and allocated to your offline inventory.
             </div>
 
             <button
               disabled={saving || !directReturnForm.ashramId || !directReturnForm.roomId}
-              className="w-full py-3 rounded-full bg-[#0A4DA6] hover:bg-[#083D84] text-white text-xs font-extrabold disabled:opacity-60 transition shadow-sm"
+              className="w-full py-3 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold disabled:opacity-60 transition shadow-sm"
             >
               {saving ? (
                 <Loader2 size={15} className="animate-spin mx-auto" />

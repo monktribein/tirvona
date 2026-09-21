@@ -174,7 +174,7 @@ export const AartiControlCenterPage: React.FC = () => {
               onClick={() => setTab(value)}
               className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors cursor-pointer ${
                 tab === value
-                  ? "bg-[#0A4DA6] text-white"
+                  ? "bg-[#F28C28] text-white"
                   : "text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-900"
               }`}
             >
@@ -185,7 +185,7 @@ export const AartiControlCenterPage: React.FC = () => {
         <select
           value={statusFilter}
           onChange={(event) => setStatusFilter(event.target.value)}
-          className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+          className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
         >
           <option value="">All statuses</option>
           <option value="draft">Draft</option>
@@ -198,7 +198,7 @@ export const AartiControlCenterPage: React.FC = () => {
 
       {loading ? (
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm p-12 flex items-center justify-center gap-3">
-          <Loader2 size={20} className="animate-spin text-[#0A4DA6]" />
+          <Loader2 size={20} className="animate-spin text-[#F28C28]" />
           <span className="text-sm font-bold text-gray-400">Loading…</span>
         </div>
       ) : tab === "sessions" ? (
@@ -260,7 +260,7 @@ export const AartiControlCenterPage: React.FC = () => {
                           type="button"
                           title={session.isFeatured ? "Unfeature" : "Feature"}
                           onClick={() => toggleFeatured(session)}
-                          className="p-2 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#0A4DA6] hover:border-[#0A4DA6] transition-all active:scale-90 cursor-pointer"
+                          className="p-2 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#F28C28] hover:border-[#F28C28] transition-all active:scale-90 cursor-pointer"
                         >
                           <Star
                             size={13}
@@ -331,7 +331,7 @@ export const AartiControlCenterPage: React.FC = () => {
                         href={stream.streamUrl}
                         target="_blank"
                         rel="noreferrer noopener"
-                        className="line-clamp-1 text-[10px] font-semibold text-[#0A4DA6] dark:text-blue-400 hover:underline"
+                        className="line-clamp-1 text-[10px] font-semibold text-[#F28C28] dark:text-amber-400 hover:underline"
                       >
                         {stream.streamUrl}
                       </a>
@@ -359,7 +359,7 @@ export const AartiControlCenterPage: React.FC = () => {
                         type="button"
                         title={stream.isFeatured ? "Unfeature" : "Feature"}
                         onClick={() => toggleStreamFeatured(stream)}
-                        className="p-2 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#0A4DA6] hover:border-[#0A4DA6] transition-all active:scale-90 cursor-pointer"
+                        className="p-2 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#F28C28] hover:border-[#F28C28] transition-all active:scale-90 cursor-pointer"
                       >
                         <Star
                           size={13}

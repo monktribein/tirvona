@@ -81,7 +81,7 @@ export const LocalServicesHubPage: React.FC = () => {
 
           <div className="max-w-xs mx-auto pt-2 flex items-center">
             <div className="w-full bg-white dark:bg-[#0B192C] rounded-full px-4 py-2 shadow-md border border-gray-200 dark:border-slate-800 flex items-center">
-              <MapPin size={16} className="text-[#0A4DA6] shrink-0" />
+              <MapPin size={16} className="text-[#F28C28] shrink-0" />
               <select
                 value={selectedCity}
                 onChange={(e) => setSelectedCity(e.target.value)}
@@ -108,7 +108,7 @@ export const LocalServicesHubPage: React.FC = () => {
                 onClick={() => setSelectedCategory(cat.id)}
                 className={`px-4 py-2 rounded-full text-xs font-black whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
                   active
-                    ? "bg-[#0A4DA6] text-white shadow-md"
+                    ? "bg-[#F28C28] text-white shadow-md"
                     : "bg-white dark:bg-[#0B192C] text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-800 hover:bg-gray-100"
                 }`}
               >
@@ -123,7 +123,7 @@ export const LocalServicesHubPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 space-y-8">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16 space-y-3">
-            <Loader2 className="animate-spin text-[#0A4DA6]" size={36} />
+            <Loader2 className="animate-spin text-[#F28C28]" size={36} />
             <p className="text-sm font-bold text-gray-500">
               Loading verified local services...
             </p>
@@ -156,7 +156,7 @@ export const LocalServicesHubPage: React.FC = () => {
                       alt={item.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <span className="absolute top-4 left-4 bg-[#0A4DA6] text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md">
+                    <span className="absolute top-4 left-4 bg-[#F28C28] text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md">
                       {item.badge || "Verified operator"}
                     </span>
                     <span className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white text-[10px] font-extrabold px-3 py-1 rounded-full border border-white/20">
@@ -166,7 +166,7 @@ export const LocalServicesHubPage: React.FC = () => {
 
                   <div className="p-6 space-y-3">
                     <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-400">
-                      <MapPin size={13} className="text-[#0A4DA6]" />
+                      <MapPin size={13} className="text-[#F28C28]" />
                       <span>{item.location || item.city}</span>
                     </div>
                     <h3 className="font-black text-base text-[#0B192C] dark:text-white leading-tight">
@@ -179,7 +179,7 @@ export const LocalServicesHubPage: React.FC = () => {
                 </div>
 
                 <div className="p-6 pt-0 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/50 mt-4">
-                  <span className="text-xs font-black text-[#0A4DA6] dark:text-amber-400">
+                  <span className="text-xs font-black text-[#F28C28] dark:text-amber-400">
                     {item.price || "Contact for Fare"}
                   </span>
                   <button
@@ -189,7 +189,7 @@ export const LocalServicesHubPage: React.FC = () => {
                         duration: 7000,
                       })
                     }
-                    className="px-4 py-2 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white font-black text-xs shadow-md transition-colors cursor-pointer"
+                    className="px-4 py-2 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white font-black text-xs shadow-md transition-colors cursor-pointer"
                   >
                     Contact &amp; Book
                   </button>
@@ -203,7 +203,7 @@ export const LocalServicesHubPage: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate("/marketplace")}
-            className="inline-flex items-center gap-2.5 px-8 py-3.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white font-extrabold text-sm shadow-xl hover:shadow-2xl transition-all cursor-pointer group"
+            className="inline-flex items-center gap-2.5 px-8 py-3.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white font-extrabold text-sm shadow-xl hover:shadow-2xl transition-all cursor-pointer group"
           >
             <span>Explore Marketplace</span>
             <ArrowRight

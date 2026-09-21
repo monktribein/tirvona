@@ -180,7 +180,7 @@ export const AartiGatePage: React.FC = () => {
             <select
               value={sessionId}
               onChange={(event) => setSessionId(event.target.value)}
-              className="cursor-pointer rounded-xl border border-orange-200 bg-gray-50/70 px-4 py-3 text-sm font-semibold text-[#0B192C] focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+              className="cursor-pointer rounded-xl border border-orange-200 bg-gray-50/70 px-4 py-3 text-sm font-semibold text-[#0B192C] focus:outline-none focus:ring-2 focus:ring-[#F28C28]/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
             >
               <option value="">Any aarti I manage</option>
               {sessions.map((session) => (
@@ -198,7 +198,7 @@ export const AartiGatePage: React.FC = () => {
               type="date"
               value={date}
               onChange={(event) => setDate(event.target.value)}
-              className="rounded-xl border border-orange-200 bg-gray-50/70 px-4 py-3 text-sm font-semibold text-[#0B192C] focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+              className="rounded-xl border border-orange-200 bg-gray-50/70 px-4 py-3 text-sm font-semibold text-[#0B192C] focus:outline-none focus:ring-2 focus:ring-[#F28C28]/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
             />
           </label>
         </div>
@@ -215,7 +215,7 @@ export const AartiGatePage: React.FC = () => {
             }}
             placeholder="ABCD-1234"
             autoFocus
-            className="mt-1.5 w-full rounded-2xl border border-orange-200 bg-gray-50/70 px-4 py-4 text-center font-mono text-xl font-black uppercase tracking-[0.2em] text-[#0B192C] transition-all placeholder:font-normal placeholder:tracking-normal placeholder:text-gray-300 focus:border-[#0A4DA6] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/20 sm:text-2xl dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            className="mt-1.5 w-full rounded-2xl border border-orange-200 bg-gray-50/70 px-4 py-4 text-center font-mono text-xl font-black uppercase tracking-[0.2em] text-[#0B192C] transition-all placeholder:font-normal placeholder:tracking-normal placeholder:text-gray-300 focus:border-[#F28C28] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/20 sm:text-2xl dark:border-slate-800 dark:bg-slate-900 dark:text-white"
           />
         </label>
 
@@ -224,7 +224,7 @@ export const AartiGatePage: React.FC = () => {
             type="button"
             onClick={() => scan("verify")}
             disabled={scanning || !canScan || !code.trim()}
-            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border border-[#0A4DA6]/25 bg-white px-4 py-3.5 text-sm font-extrabold text-[#0A4DA6] shadow-sm transition-all hover:border-[#0A4DA6] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40 dark:bg-[#0B192C] dark:text-blue-300"
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border border-[#F28C28]/25 bg-white px-4 py-3.5 text-sm font-extrabold text-[#F28C28] shadow-sm transition-all hover:border-[#F28C28] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40 dark:bg-[#0B192C] dark:text-amber-300"
           >
             Verify Only
           </button>
@@ -232,7 +232,7 @@ export const AartiGatePage: React.FC = () => {
             type="button"
             onClick={() => scan("entry")}
             disabled={scanning || !canScan || !code.trim()}
-            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-[#0A4DA6] px-4 py-3.5 text-sm font-extrabold text-white shadow-md transition-all hover:bg-[#083D85] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-[#F28C28] px-4 py-3.5 text-sm font-extrabold text-white shadow-md transition-all hover:bg-[#D97706] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40"
           >
             {scanning ? (
               <Loader2 size={14} className="animate-spin stroke-[2.5]" />

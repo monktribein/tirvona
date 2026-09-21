@@ -46,7 +46,7 @@ export const REFUND_STATUS_TONE: Record<RefundStatus, string> = {
   pending:
     "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-900/50",
   under_review:
-    "bg-blue-50 text-[#0A4DA6] border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-900/50",
+    "bg-blue-50 text-[#F28C28] border-blue-200 dark:bg-blue-950/50 dark:text-amber-300 dark:border-blue-900/50",
   approved:
     "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-900/50",
   processing:

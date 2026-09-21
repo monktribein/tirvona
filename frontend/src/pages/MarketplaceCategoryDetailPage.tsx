@@ -71,7 +71,7 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
     return (
       <div className="min-h-screen p-8 flex items-center justify-center">
         <div className="space-y-4 text-center">
-          <div className="w-12 h-12 border-4 border-[#0A4DA6] border-t-transparent rounded-full animate-spin mx-auto" />
+          <div className="w-12 h-12 border-4 border-[#F28C28] border-t-transparent rounded-full animate-spin mx-auto" />
           <p className="text-xs font-extrabold text-gray-400">
             Loading Sacred Category Landing Page...
           </p>
@@ -92,7 +92,7 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
         </p>
         <Link
           to="/marketplace/categories"
-          className="inline-block px-6 py-3 bg-[#0A4DA6] text-white font-bold text-xs rounded-full"
+          className="inline-block px-6 py-3 bg-[#F28C28] text-white font-bold text-xs rounded-full"
         >
           Browse All Categories
         </Link>
@@ -149,7 +149,7 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
               <Flame size={14} />{" "}
               {category.trendingBadge || "AUTHENTIC MAHASWET"}
             </span>
-            <span className="px-4 py-1.5 rounded-full bg-[#0A4DA6] text-white text-xs font-black shadow-lg flex items-center gap-1.5">
+            <span className="px-4 py-1.5 rounded-full bg-[#F28C28] text-white text-xs font-black shadow-lg flex items-center gap-1.5">
               <MapPin size={13} /> {category.originCity}, {category.originState}
             </span>
           </div>
@@ -214,7 +214,7 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-gray-600 dark:text-gray-300 font-semibold leading-relaxed">
             <div className="space-y-3 bg-gray-50 dark:bg-slate-900/60 p-5 rounded-2xl border border-gray-100 dark:border-slate-800">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-1.5">
-                <BookOpen size={15} className="text-[#0A4DA6]" /> Origin &
+                <BookOpen size={15} className="text-[#F28C28]" /> Origin &
                 Temple History
               </h3>
               <p>
@@ -260,7 +260,7 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
                   key={p.value}
                   onClick={() => setSelectedPrice(p.value)}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-black cursor-pointer whitespace-nowrap transition-all ${selectedPrice === p.value
-                    ? "bg-[#0A4DA6] text-white shadow-sm"
+                    ? "bg-[#F28C28] text-white shadow-sm"
                     : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
                     }`}
                 >
@@ -302,7 +302,7 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
                   </div>
 
                   <div className="p-6 space-y-3">
-                    <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white group-hover:text-[#0A4DA6] transition-colors">
+                    <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white group-hover:text-[#F28C28] transition-colors">
                       {prod.productName || prod.name}
                     </h3>
                     <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed font-semibold">
@@ -310,7 +310,7 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
                     </p>
 
                     <div className="flex items-center justify-between text-xs font-bold text-gray-400 pt-1">
-                      <span className="flex items-center gap-1 text-[#0A4DA6] dark:text-amber-400">
+                      <span className="flex items-center gap-1 text-[#F28C28] dark:text-amber-400">
                         <ShieldCheck size={13} />{" "}
                         {prod.storeName || category.templeName}
                       </span>
@@ -335,7 +335,7 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
                         displayPrice: prod.price,
                       });
                     }}
-                    className="flex-1 py-3 bg-[#0A4DA6]/10 hover:bg-[#0A4DA6] text-[#0A4DA6] hover:text-white font-extrabold text-xs rounded-full cursor-pointer transition-all flex items-center justify-center gap-1.5"
+                    className="flex-1 py-3 bg-[#F28C28]/10 hover:bg-[#F28C28] text-[#F28C28] hover:text-white font-extrabold text-xs rounded-full cursor-pointer transition-all flex items-center justify-center gap-1.5"
                   >
                     <ShoppingBag size={14} /> Add to cart
                   </button>
@@ -370,7 +370,7 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
         {trustedSellers && trustedSellers.length > 0 && (
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
             <h2 className="text-xl font-black text-[#0B192C] dark:text-white flex items-center gap-2">
-              <ShieldCheck size={20} className="text-[#0A4DA6]" /> Verified &
+              <ShieldCheck size={20} className="text-[#F28C28]" /> Verified &
               Certified Temple Vendors
             </h2>
 
@@ -419,7 +419,7 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
                   className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl p-4 space-y-1"
                 >
                   <h4 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2">
-                    <span className="text-[#0A4DA6] font-black">Q:</span>{" "}
+                    <span className="text-[#F28C28] font-black">Q:</span>{" "}
                     {faq.q}
                   </h4>
                   <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold pl-5 leading-relaxed">

@@ -274,7 +274,7 @@ export const ParkingControlCenterPage: React.FC = () => {
             className="p-2.5 bg-gray-50 dark:bg-slate-900 hover:bg-gray-100 dark:hover:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-full text-gray-500 cursor-pointer transition-colors"
             title="Refresh"
           >
-            <RefreshCw size={16} className={loading ? "animate-spin text-[#0A4DA6]" : ""} />
+            <RefreshCw size={16} className={loading ? "animate-spin text-[#F28C28]" : ""} />
           </button>
         }
       />
@@ -293,7 +293,7 @@ export const ParkingControlCenterPage: React.FC = () => {
             onClick={() => setTab(item.key)}
             className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
               tab === item.key
-                ? "bg-[#0A4DA6] text-white"
+                ? "bg-[#F28C28] text-white"
                 : "text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-900"
             }`}
           >
@@ -309,7 +309,7 @@ export const ParkingControlCenterPage: React.FC = () => {
 
       {loading && !analytics ? (
         <div className={`${card} p-12 flex items-center justify-center gap-3`}>
-          <Loader2 size={20} className="animate-spin text-[#0A4DA6]" />
+          <Loader2 size={20} className="animate-spin text-[#F28C28]" />
           <span className="text-sm font-bold text-gray-400">
             Loading parking data…
           </span>
@@ -475,7 +475,7 @@ export const ParkingControlCenterPage: React.FC = () => {
                       onClick={() => setLocationStatusFilter(option)}
                       className={`px-3 py-1.5 rounded-full text-[11px] font-extrabold capitalize transition-colors ${
                         active
-                          ? "bg-[#0A4DA6] text-white"
+                          ? "bg-[#F28C28] text-white"
                           : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
                       }`}
                     >
@@ -611,7 +611,7 @@ export const ParkingControlCenterPage: React.FC = () => {
                           <button
                             disabled={busyId === group.partnerId}
                             onClick={() => settle(group)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0A4DA6] text-white text-xs font-bold hover:bg-[#083d85] disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F28C28] text-white text-xs font-bold hover:bg-[#D97706] disabled:opacity-50"
                           >
                             <IndianRupee size={13} />
                             Settle Payout

@@ -141,7 +141,7 @@ export const WriteReviewCard: React.FC<{
               `/login?redirect=${encodeURIComponent(window.location.pathname)}`,
             );
           }}
-          className="px-5 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white text-xs font-extrabold cursor-pointer"
+          className="px-5 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold cursor-pointer"
         >
           Sign in to review
         </button>
@@ -218,7 +218,7 @@ export const WriteReviewCard: React.FC<{
           onChange={(e) => setComment(e.target.value.slice(0, 1500))}
           rows={4}
           placeholder="What stood out — the rooms, the food, the aarti, the staff?"
-          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6] resize-none"
+          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28] resize-none"
         />
         <span className="text-[10px] text-gray-400 block text-right">
           {comment.length}/1500
@@ -228,7 +228,7 @@ export const WriteReviewCard: React.FC<{
       <button
         onClick={submit}
         disabled={!canSubmit}
-        className="w-full py-3 rounded-full bg-[#0A4DA6] hover:bg-blue-900 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white text-xs font-extrabold flex items-center justify-center gap-2 cursor-pointer transition-all"
+        className="w-full py-3 rounded-full bg-[#F28C28] hover:bg-[#D97706] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white text-xs font-extrabold flex items-center justify-center gap-2 cursor-pointer transition-all"
       >
         {submitting && <Loader2 size={14} className="animate-spin" />}
         Post review

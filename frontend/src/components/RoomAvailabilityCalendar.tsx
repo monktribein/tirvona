@@ -30,7 +30,7 @@ export function RoomAvailabilityCalendar({
   if (loading) {
     return (
       <div className="flex min-h-32 items-center justify-center rounded-2xl border border-gray-100 bg-gray-50 dark:border-slate-800 dark:bg-slate-900/70">
-        <Loader2 size={20} className="animate-spin text-[#0A4DA6]" />
+        <Loader2 size={20} className="animate-spin text-[#F28C28]" />
       </div>
     );
   }
@@ -59,14 +59,14 @@ export function RoomAvailabilityCalendar({
       <div className="mb-3 flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="flex items-center gap-1.5 text-[11px] font-extrabold text-[#0B192C] dark:text-white">
-            <CalendarDays size={14} className="text-[#0A4DA6]" />
+            <CalendarDays size={14} className="text-[#F28C28]" />
             Select an available date
           </p>
           <p className="mt-0.5 truncate text-[9px] font-semibold text-gray-400">
             {roomName || "Selected room"} · one-night stay
           </p>
         </div>
-        <span className="shrink-0 rounded-full bg-[#0A4DA6]/8 px-2 py-1 text-[9px] font-extrabold text-[#0A4DA6]">
+        <span className="shrink-0 rounded-full bg-[#F28C28]/8 px-2 py-1 text-[9px] font-extrabold text-[#F28C28]">
           {monthLabel}
         </span>
       </div>
@@ -107,7 +107,7 @@ export function RoomAvailabilityCalendar({
               title={`${date.toLocaleDateString("en-IN", { dateStyle: "full" })} · ${soldOut ? "Sold out" : `${day.available} available`} · ${formatCurrency(day.price)}`}
               aria-label={`${date.toLocaleDateString("en-IN", { dateStyle: "long" })}, ${soldOut ? "sold out" : `${day.available} available`}`}
               aria-pressed={selected}
-              className={`relative flex h-9 w-9 flex-col items-center justify-center rounded-full border text-center transition-all ${color} ${soldOut ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:-translate-y-0.5 hover:shadow-sm"} ${selected ? "ring-2 ring-[#0A4DA6] ring-offset-2 dark:ring-offset-[#0B192C]" : ""}`}
+              className={`relative flex h-9 w-9 flex-col items-center justify-center rounded-full border text-center transition-all ${color} ${soldOut ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:-translate-y-0.5 hover:shadow-sm"} ${selected ? "ring-2 ring-[#F28C28] ring-offset-2 dark:ring-offset-[#0B192C]" : ""}`}
             >
               <span className="text-[10px] font-black leading-none">{date.getDate()}</span>
               <span className="mt-0.5 max-w-8 truncate text-[6px] font-extrabold leading-none">

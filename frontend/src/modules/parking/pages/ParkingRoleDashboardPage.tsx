@@ -232,7 +232,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen pt-28 pb-16 flex flex-col items-center justify-center">
-        <div className="w-12 h-12 border-4 border-[#0A4DA6] border-t-transparent rounded-full animate-spin mb-4" />
+        <div className="w-12 h-12 border-4 border-[#F28C28] border-t-transparent rounded-full animate-spin mb-4" />
         <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
           Loading Parking Management...
         </p>
@@ -307,7 +307,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
               onClick={() => setActiveRoleView("partner")}
               className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
                 activeRoleView === "partner"
-                  ? "bg-[#0A4DA6] text-white shadow-md"
+                  ? "bg-[#F28C28] text-white shadow-md"
                   : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
               }`}
             >
@@ -319,7 +319,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
               onClick={() => setActiveRoleView("manager")}
               className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
                 activeRoleView === "manager"
-                  ? "bg-[#0A4DA6] text-white shadow-md"
+                  ? "bg-[#F28C28] text-white shadow-md"
                   : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
               }`}
             >
@@ -410,10 +410,10 @@ export const ParkingRoleDashboardPage: React.FC = () => {
             <div className="lg:col-span-2 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
-                  <TrendingUp size={16} className="text-[#0A4DA6]" /> Financial
+                  <TrendingUp size={16} className="text-[#F28C28]" /> Financial
                   Performance Reports
                 </h3>
-                <span className="text-xs font-bold text-[#0A4DA6] bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-full">
+                <span className="text-xs font-bold text-[#F28C28] bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-full">
                   Partner Scope
                 </span>
               </div>
@@ -474,7 +474,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
-                  <Users size={16} className="text-[#0A4DA6]" /> Assigned Staff
+                  <Users size={16} className="text-[#F28C28]" /> Assigned Staff
                 </h3>
                 <span className="text-xs font-bold text-gray-400">
                   {staffList.length} members
@@ -518,7 +518,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
 
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
             <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
-              <Car size={16} className="text-[#0A4DA6]" /> Facility Booking Roster
+              <Car size={16} className="text-[#F28C28]" /> Facility Booking Roster
             </h3>
 
             <div className="overflow-x-auto">
@@ -543,7 +543,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
                   ) : (
                     partnerBookings.map((b) => (
                       <tr key={b._id} className="hover:bg-gray-50/50 dark:hover:bg-slate-900/50">
-                        <td className="py-3 px-4 font-mono text-[#0A4DA6]">{b.bookingReference}</td>
+                        <td className="py-3 px-4 font-mono text-[#F28C28]">{b.bookingReference}</td>
                         <td className="py-3 px-4 font-black">{b.vehicleNumber}</td>
                         <td className="py-3 px-4 capitalize">{vehicleLabel(b.vehicleType)}</td>
                         <td className="py-3 px-4 text-gray-500 dark:text-gray-400">
@@ -582,7 +582,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
 
             <button
               onClick={() => setShowManualCheckInModal(true)}
-              className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#0A4DA6] hover:bg-blue-900 text-white font-extrabold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#F28C28] hover:bg-[#D97706] text-white font-extrabold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
             >
               <Plus size={15} />
               <span>Manual Spot Allocation</span>
@@ -591,7 +591,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
 
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
             <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
-              <Layers size={16} className="text-[#0A4DA6]" /> Parking Areas & Slot Categories
+              <Layers size={16} className="text-[#F28C28]" /> Parking Areas & Slot Categories
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -625,7 +625,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
-                <Car size={16} className="text-[#0A4DA6]" /> Live Parking Bays ({slots.length})
+                <Car size={16} className="text-[#F28C28]" /> Live Parking Bays ({slots.length})
               </h3>
               <span className="text-[11px] font-bold text-gray-400">
                 Click bay to toggle maintenance status
@@ -680,7 +680,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
-                <Plus size={16} className="text-[#0A4DA6]" /> Manual Spot Allocation
+                <Plus size={16} className="text-[#F28C28]" /> Manual Spot Allocation
               </h3>
               <button
                 onClick={() => setShowManualCheckInModal(false)}
@@ -741,7 +741,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#0A4DA6] text-white font-extrabold"
+                  className="px-5 py-2 rounded-xl bg-[#F28C28] text-white font-extrabold"
                 >
                   Create Check-In
                 </button>

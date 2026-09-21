@@ -108,6 +108,7 @@ export const SearchPage: React.FC = () => {
   const [acFilter, setAcFilter] = useState(false);
   const [foodFilter, setFoodFilter] = useState(false);
   const [parkingFilter, setParkingFilter] = useState(false);
+  const [dayStayOnlyFilter, setDayStayOnlyFilter] = useState(false);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
   const activeFilterCount =
@@ -116,7 +117,8 @@ export const SearchPage: React.FC = () => {
     (homestayFilter ? 1 : 0) +
     (acFilter ? 1 : 0) +
     (foodFilter ? 1 : 0) +
-    (parkingFilter ? 1 : 0);
+    (parkingFilter ? 1 : 0) +
+    (dayStayOnlyFilter ? 1 : 0);
 
   const [showMapGrid, setShowMapGrid] = useState(false);
   const [selectedMapAshram, setSelectedMapAshram] = useState<any>(null);
@@ -181,11 +183,16 @@ export const SearchPage: React.FC = () => {
       if (lower.includes("homestay") || lower.includes("home stay") || lower.includes("temple"))
         setHomestayFilter(true);
     }
+    const tabQuery = searchParams.get("tab") || "";
+    if (tabQuery === "day-stay" || typeQuery.toLowerCase().includes("day") || typeQuery.toLowerCase().includes("freshen")) {
+      setDayStayOnlyFilter(true);
+    }
     setCheckIn(effIn);
     setCheckOut(effOut);
   }, [
     activeKeyword,
     typeQuery,
+    searchParams,
     checkInQuery,
     checkOutQuery,
     roomsQuery,
@@ -207,6 +214,7 @@ export const SearchPage: React.FC = () => {
     acFilter,
     foodFilter,
     parkingFilter,
+    dayStayOnlyFilter,
     coordinates?.latitude,
     coordinates?.longitude,
   ]);
@@ -298,6 +306,10 @@ export const SearchPage: React.FC = () => {
                 : "ashram";
             return selectedTypes.includes(category);
           });
+        }
+
+        if (dayStayOnlyFilter) {
+          fetchedData = fetchedData.filter((a: any) => Boolean(a.dayStayConfig?.enabled));
         }
 
         // Sort so that available stays appear first, and unavailable stays appear at the bottom
@@ -512,85 +524,128 @@ export const SearchPage: React.FC = () => {
     params.set("rooms", String(searchState.rooms));
     params.set("adults", String(searchState.adults));
     params.set("guests", String(totalGuests));
+    // Tell AshramDetailPage which booking mode to open
+    if (dayStayOnlyFilter) params.set("mode", "daystay");
     const qStr = params.toString();
     return ashramUrl(ashram, qStr ? `?${qStr}` : "");
   };
 
+  const activeTab = dayStayOnlyFilter ? "day-stay" : "stay";
+
+  const handleTabChange = (tabKey: "stay" | "day-stay") => {
+    const isDayStay = tabKey === "day-stay";
+    setDayStayOnlyFilter(isDayStay);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("tab", tabKey);
+    setSearchParams(nextParams);
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-12 space-y-4">
-      {/* Search bar — z-[60] on mobile so it doesn't clash with the nav drawer (z-50) */}
-      <div className="relative z-[60] lg:z-[100] isolate overflow-visible bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 p-1 sm:p-1.5 rounded-2xl lg:rounded-full shadow-md shadow-[#0B192C]/5 shrink-0">
-        <form
-          onSubmit={handleSearchSubmit}
-          className="grid grid-cols-1 lg:grid-cols-[1.45fr_1.35fr_1.15fr_auto] gap-1 lg:gap-0 items-center"
-        >
-          <div
-            className="flex flex-col justify-center text-left relative min-h-[46px] px-4 py-2 rounded-xl lg:rounded-full lg:border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0B192C] hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:shadow-sm z-10 focus-within:z-[90]"
-            ref={autocompleteRef}
+      {/* Search Header with Mode Switcher & Search Bar */}
+      <div className="space-y-2">
+        {/* Tab Switcher: Stay vs Day Rest */}
+        <div className="flex items-center gap-1.5 p-1 rounded-full bg-slate-100 dark:bg-slate-800/80 w-fit shadow-xs">
+          <button
+            type="button"
+            onClick={() => handleTabChange("stay")}
+            className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              activeTab === "stay"
+                ? "bg-white dark:bg-[#F28C28] text-[#F28C28] dark:text-white shadow-xs"
+                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+            }`}
           >
-            <label className="text-[10px] font-extrabold text-[#0B192C] dark:text-white uppercase tracking-wider">
-              Where
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={language === "hi" && destination && hiUi[destination] ? hiUi[destination] : destination}
-                onChange={handleInputChange}
-                onFocus={() => setShowSuggestions(true)}
-                placeholder={t("Search destinations")}
-                className="w-full bg-transparent border-0 p-0 text-[16px] sm:text-sm font-semibold text-slate-700 dark:text-slate-200 focus:outline-none"
+            <Building2 size={13} />
+            <span>Overnight Stays</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleTabChange("day-stay")}
+            className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer ${
+              activeTab === "day-stay"
+                ? "bg-gradient-to-r from-[#E58C28] to-[#f59e0b] text-white shadow-sm"
+                : "text-[#E58C28] hover:bg-[#E58C28]/10"
+            }`}
+          >
+            <Sparkles size={13} />
+            <span>Short Stay</span>
+          </button>
+        </div>
+
+        {/* Search bar — clean z-20 so it never overlaps modals */}
+        <div className="relative z-20 isolate bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 p-1 sm:p-1.5 rounded-2xl lg:rounded-full shadow-md shadow-[#0B192C]/5 shrink-0">
+          <form
+            onSubmit={handleSearchSubmit}
+            className="grid grid-cols-1 lg:grid-cols-[1.45fr_1.35fr_1.15fr_auto] gap-1 lg:gap-0 items-center"
+          >
+            <div
+              className="flex flex-col justify-center text-left relative min-h-[46px] px-4 py-2 rounded-xl lg:rounded-full border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0B192C] hover:bg-slate-50 dark:hover:bg-slate-900/60 z-10 focus-within:z-30"
+              ref={autocompleteRef}
+            >
+              <label className="text-[10px] font-extrabold text-[#0B192C] dark:text-white uppercase tracking-wider">
+                Where
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={language === "hi" && destination && hiUi[destination] ? hiUi[destination] : destination}
+                  onChange={handleInputChange}
+                  onFocus={() => setShowSuggestions(true)}
+                  placeholder={t("Search destinations")}
+                  className="w-full bg-transparent border-0 p-0 text-[16px] sm:text-sm font-semibold text-slate-700 dark:text-slate-200 focus:outline-none"
+                />
+              </div>
+
+              <AnimatePresence>
+                {showSuggestions && suggestions.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 5 }}
+                    className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden z-40 text-xs"
+                  >
+                    {suggestions.map((sug, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => selectSuggestion(sug)}
+                        className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 font-semibold flex items-center gap-2 border-b border-gray-50 dark:border-slate-850 last:border-b-0 cursor-pointer"
+                      >
+                        <Compass size={12} className="text-[#F28C28]" />
+                        <span>{t(sug)}</span>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div className="relative rounded-xl lg:rounded-full px-4 py-2 min-h-[46px] flex items-center border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0B192C] hover:bg-slate-50 dark:hover:bg-slate-900/60 z-10">
+              <DateRangePicker
+                checkIn={checkIn}
+                checkOut={checkOut}
+                compact
+                pill
+                onChange={(nextIn, nextOut) => {
+                  setCheckIn(nextIn);
+                  setCheckOut(nextOut);
+                  updateBookingSearch({ checkIn: nextIn, checkOut: nextOut });
+                }}
               />
             </div>
 
-            <AnimatePresence>
-              {showSuggestions && suggestions.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 5 }}
-                  className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden z-50 text-xs"
-                >
-                  {suggestions.map((sug, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => selectSuggestion(sug)}
-                      className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 font-semibold flex items-center gap-2 border-b border-gray-50 dark:border-slate-850 last:border-b-0 cursor-pointer"
-                    >
-                      <Compass size={12} className="text-[#0A4DA6]" />
-                      <span>{t(sug)}</span>
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+            <div className="relative rounded-xl lg:rounded-full px-4 py-2 min-h-[46px] flex items-center bg-white dark:bg-[#0B192C] hover:bg-slate-50 dark:hover:bg-slate-900/60 z-10">
+              <GuestRoomSelector compact pill />
+            </div>
 
-          <div className="relative rounded-xl lg:rounded-full px-4 py-2 min-h-[46px] flex items-center lg:border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0B192C] hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:shadow-sm z-10 focus-within:z-[90]">
-            <DateRangePicker
-              checkIn={checkIn}
-              checkOut={checkOut}
-              compact
-              pill
-              onChange={(nextIn, nextOut) => {
-                setCheckIn(nextIn);
-                setCheckOut(nextOut);
-                updateBookingSearch({ checkIn: nextIn, checkOut: nextOut });
-              }}
-            />
-          </div>
-
-          <div className="relative rounded-xl lg:rounded-full px-4 py-2 min-h-[46px] flex items-center bg-white dark:bg-[#0B192C] hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:shadow-sm z-10 focus-within:z-[90]">
-            <GuestRoomSelector compact pill />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full lg:w-auto h-11 px-5 bg-[#0A4DA6] hover:bg-opacity-95 text-white font-extrabold rounded-xl lg:rounded-full text-sm flex items-center justify-center gap-1.5 cursor-pointer shadow-sm shadow-[#0A4DA6]/10"
-          >
-            <Search size={13} /> Modify Search
-          </button>
-        </form>
+            <button
+              type="submit"
+              className="w-full lg:w-auto h-11 px-6 bg-[#F28C28] hover:bg-opacity-95 text-white font-extrabold rounded-xl lg:rounded-full text-sm flex items-center justify-center gap-1.5 cursor-pointer shadow-sm shadow-[#F28C28]/10"
+            >
+              <Search size={14} /> Modify Search
+            </button>
+          </form>
+        </div>
       </div>
 
       {!coordinates && (
@@ -598,7 +653,7 @@ export const SearchPage: React.FC = () => {
           className="shrink-0 rounded-2xl border px-4 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-blue-100 bg-blue-50/70 dark:border-blue-900 dark:bg-blue-950/30"
         >
           <div className="flex items-center gap-2.5">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-[#0A4DA6] shadow-xs dark:bg-slate-900">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-[#F28C28] shadow-xs dark:bg-slate-900">
               <Navigation size={14} />
             </span>
             <div className="min-w-0">
@@ -620,7 +675,7 @@ export const SearchPage: React.FC = () => {
             type="button"
             onClick={requestLocation}
             disabled={locationStatus === "requesting"}
-            className="shrink-0 self-start sm:self-auto rounded-full bg-[#0A4DA6] px-3.5 py-1.5 text-[11px] font-bold text-white disabled:cursor-wait disabled:opacity-60 hover:bg-[#083b80] transition-colors"
+            className="shrink-0 self-start sm:self-auto rounded-full bg-[#F28C28] px-3.5 py-1.5 text-[11px] font-bold text-white disabled:cursor-wait disabled:opacity-60 hover:bg-[#B45309] transition-colors"
           >
             {locationStatus === "requesting" ? "Locating…" : "Use my location"}
           </button>
@@ -632,7 +687,7 @@ export const SearchPage: React.FC = () => {
         <button
           type="button"
           onClick={() => setMobileFilterOpen(true)}
-          className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-blue-50 dark:bg-slate-800 text-[#0A4DA6] dark:text-blue-400 font-bold text-xs rounded-full cursor-pointer hover:bg-blue-100 transition-colors"
+          className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#FFF4E5] text-[#F28C28] dark:text-amber-400 font-bold text-xs rounded-full cursor-pointer hover:bg-blue-100 transition-colors"
         >
           <Filter size={13} />
           <span>Filters {activeFilterCount > 0 && `(${activeFilterCount})`}</span>
@@ -646,7 +701,7 @@ export const SearchPage: React.FC = () => {
         <aside className="hidden lg:block space-y-6 lg:sticky lg:top-20">
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm space-y-6">
             <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-50 dark:border-slate-850 pb-3">
-              <Filter size={16} className="text-[#0A4DA6]" /> Filters
+              <Filter size={16} className="text-[#F28C28]" /> Filters
             </h3>
 
             <div className="space-y-4">
@@ -659,7 +714,7 @@ export const SearchPage: React.FC = () => {
                     type="checkbox"
                     checked={ashramFilter}
                     onChange={() => setAshramFilter(!ashramFilter)}
-                    className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
+                    className="rounded border-gray-200 dark:border-slate-700 text-[#F28C28] focus:ring-[#F28C28]/20 cursor-pointer w-4 h-4"
                   />
                   <span className="flex items-center gap-1.5 text-[#0B192C] dark:text-gray-200">
                     <Building2 size={14} className="text-gray-400" /> Ashram
@@ -671,7 +726,7 @@ export const SearchPage: React.FC = () => {
                     type="checkbox"
                     checked={dharamshalaFilter}
                     onChange={() => setDharamshalaFilter(!dharamshalaFilter)}
-                    className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
+                    className="rounded border-gray-200 dark:border-slate-700 text-[#F28C28] focus:ring-[#F28C28]/20 cursor-pointer w-4 h-4"
                   />
                   <span className="flex items-center gap-1.5 text-[#0B192C] dark:text-gray-200">
                     <Landmark size={14} className="text-gray-400" /> Dharamshala
@@ -683,7 +738,7 @@ export const SearchPage: React.FC = () => {
                     type="checkbox"
                     checked={homestayFilter}
                     onChange={() => setHomestayFilter(!homestayFilter)}
-                    className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
+                    className="rounded border-gray-200 dark:border-slate-700 text-[#F28C28] focus:ring-[#F28C28]/20 cursor-pointer w-4 h-4"
                   />
                   <span className="flex items-center gap-1.5 text-[#0B192C] dark:text-gray-200">
                     <Home size={14} className="text-gray-400" /> Homestay
@@ -702,7 +757,7 @@ export const SearchPage: React.FC = () => {
                     type="checkbox"
                     checked={acFilter}
                     onChange={() => setAcFilter(!acFilter)}
-                    className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
+                    className="rounded border-gray-200 dark:border-slate-700 text-[#F28C28] focus:ring-[#F28C28]/20 cursor-pointer w-4 h-4"
                   />
                   <span className="flex items-center gap-1.5 text-[#0B192C] dark:text-gray-200">
                     <Wifi size={14} className="text-gray-400" /> AC Rooms
@@ -714,7 +769,7 @@ export const SearchPage: React.FC = () => {
                     type="checkbox"
                     checked={foodFilter}
                     onChange={() => setFoodFilter(!foodFilter)}
-                    className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
+                    className="rounded border-gray-200 dark:border-slate-700 text-[#F28C28] focus:ring-[#F28C28]/20 cursor-pointer w-4 h-4"
                   />
                   <span className="flex items-center gap-1.5 text-[#0B192C] dark:text-gray-200">
                     <UtensilsCrossed size={14} className="text-gray-400" /> Pure Vegetarian Food
@@ -726,19 +781,31 @@ export const SearchPage: React.FC = () => {
                     type="checkbox"
                     checked={parkingFilter}
                     onChange={() => setParkingFilter(!parkingFilter)}
-                    className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
+                    className="rounded border-gray-200 dark:border-slate-700 text-[#F28C28] focus:ring-[#F28C28]/20 cursor-pointer w-4 h-4"
                   />
                   <span className="flex items-center gap-1.5 text-[#0B192C] dark:text-gray-200">
                     <Car size={14} className="text-gray-400" /> Parking
+                  </span>
+                </label>
+
+                <label className="flex items-center gap-3 text-xs font-semibold cursor-pointer select-none pt-2 border-t border-gray-100 dark:border-slate-800">
+                  <input
+                    type="checkbox"
+                    checked={dayStayOnlyFilter}
+                    onChange={() => setDayStayOnlyFilter(!dayStayOnlyFilter)}
+                    className="rounded border-gray-200 dark:border-slate-700 text-[#E58C28] focus:ring-[#E58C28]/20 cursor-pointer w-4 h-4"
+                  />
+                  <span className="flex items-center gap-1.5 font-bold text-[#E58C28]">
+                    <Sparkles size={14} className="text-[#E58C28]" /> Short Stay
                   </span>
                 </label>
               </div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-blue-500/10 via-amber-500/5 to-transparent border border-[#0A4DA6]/20 p-5 rounded-[24px] space-y-2">
+          <div className="bg-gradient-to-br from-blue-500/10 via-amber-500/5 to-transparent border border-[#F28C28]/20 p-5 rounded-[24px] space-y-2">
             <h4 className="text-xs font-extrabold text-[#0B192C] dark:text-white flex items-center gap-2">
-              <Navigation size={14} className="text-[#0A4DA6]" /> Near Temple Finder
+              <Navigation size={14} className="text-[#F28C28]" /> Near Temple Finder
             </h4>
             <p className="text-[11px] text-gray-500 leading-relaxed font-medium">
               Find ashrams walking distance from major ghats & temples.
@@ -777,7 +844,7 @@ export const SearchPage: React.FC = () => {
                   setResults(sorted);
                 }
               }}
-              className="px-5 py-2.5 bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 rounded-full text-[10px] font-bold hover:bg-[#0A4DA6]/15 transition-all cursor-pointer"
+              className="px-5 py-2.5 bg-[#F28C28]/10 text-[#F28C28] border border-[#F28C28]/20 rounded-full text-[10px] font-bold hover:bg-[#F28C28]/15 transition-all cursor-pointer"
             >
               Show distances
             </button>
@@ -794,10 +861,10 @@ export const SearchPage: React.FC = () => {
           />
 
           {destinationGuide && !loading && (
-            <div className="bg-gradient-to-r from-[#0A4DA6]/10 via-[#E58C28]/10 to-transparent border border-[rgba(229,140,40,0.35)] rounded-2xl px-3.5 py-2 sm:px-4 sm:py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-2xs">
+            <div className="bg-gradient-to-r from-[#F28C28]/10 via-[#E58C28]/10 to-transparent border border-[rgba(229,140,40,0.35)] rounded-2xl px-3.5 py-2 sm:px-4 sm:py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-2xs">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] text-[9px] font-black uppercase tracking-wider">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#F28C28]/10 text-[#F28C28] text-[9px] font-black uppercase tracking-wider">
                     <Sparkles size={10} className="text-[#E58C28]" /> Destination Guide
                   </span>
                   <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
@@ -810,7 +877,7 @@ export const SearchPage: React.FC = () => {
               </div>
               <Link
                 to={`/destination/${destinationGuide.slug}`}
-                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-[11px] font-extrabold transition-all shrink-0 shadow-xs"
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#F28C28] hover:bg-[#B45309] text-white text-[11px] font-extrabold transition-all shrink-0 shadow-xs"
               >
                 Explore {destinationGuide.name} <ArrowRight size={12} />
               </Link>
@@ -827,15 +894,40 @@ export const SearchPage: React.FC = () => {
               ))}
             </div>
           ) : results.length === 0 ? (
-            <div className="text-center py-20 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] space-y-4">
+            <div className="text-center py-16 px-4 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] space-y-4 shadow-sm">
+              <div className="w-12 h-12 rounded-full bg-[#FFF4E5] text-[#F28C28] flex items-center justify-center mx-auto">
+                <Search size={20} />
+              </div>
               <h4 className="font-extrabold text-base text-[#0B192C] dark:text-white">
                 No Tirvona Verified Ashrams found matching{" "}
                 {activeKeyword ? `"${activeKeyword}"` : "your query"}
               </h4>
               <p className="text-xs text-gray-400 max-w-sm mx-auto leading-relaxed">
-                Try adjusting filters or typing city names like 'Rishikesh',
-                'Haridwar', or 'Vrindavan'.
+                {activeFilterCount > 0
+                  ? "Some filters may be restricting your results. Try resetting your active filters."
+                  : "Try searching destinations like 'Vrindavan', 'Mathura', 'Rishikesh', or 'Haridwar'."}
               </p>
+              {activeFilterCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAshramFilter(false);
+                    setDharamshalaFilter(false);
+                    setHomestayFilter(false);
+                    setAcFilter(false);
+                    setFoodFilter(false);
+                    setParkingFilter(false);
+                    setDayStayOnlyFilter(false);
+                    const nextParams = new URLSearchParams(searchParams);
+                    nextParams.delete("tab");
+                    nextParams.delete("type");
+                    setSearchParams(nextParams);
+                  }}
+                  className="px-5 py-2.5 bg-[#F28C28] text-white text-xs font-bold rounded-full hover:bg-[#B45309] transition-all cursor-pointer shadow-xs"
+                >
+                  Clear All Filters ({activeFilterCount})
+                </button>
+              )}
             </div>
           ) : (
             <div className="space-y-3.5">
@@ -845,7 +937,7 @@ export const SearchPage: React.FC = () => {
                 <React.Fragment key={ashram._id}>
                   {coordinates && ashram.discovery?.isNearby && index === 0 && (
                     <div className="flex items-center gap-2 px-1 pt-1 text-sm font-extrabold text-[#0B192C] dark:text-white">
-                      <Navigation size={17} className="text-[#0A4DA6]" />
+                      <Navigation size={17} className="text-[#F28C28]" />
                       Nearby Ashrams, ranked by distance
                     </div>
                   )}
@@ -854,7 +946,7 @@ export const SearchPage: React.FC = () => {
                     index > 0 &&
                     results[index - 1]?.discovery?.isNearby && (
                       <div className="flex items-center gap-2 border-t border-slate-200 px-1 pt-5 text-sm font-extrabold text-[#0B192C] dark:border-slate-700 dark:text-white">
-                        <Compass size={17} className="text-[#0A4DA6]" />
+                        <Compass size={17} className="text-[#F28C28]" />
                         More verified Ashrams
                       </div>
                     )}
@@ -880,7 +972,7 @@ export const SearchPage: React.FC = () => {
                       }}
                     />
                     {ashram.discovery?.distanceKm != null && (
-                      <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-extrabold text-[#0A4DA6] shadow-sm">
+                      <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-extrabold text-[#F28C28] shadow-sm">
                         {ashram.discovery.distanceKm} km away
                       </span>
                     )}
@@ -925,7 +1017,7 @@ export const SearchPage: React.FC = () => {
                         </div>
                       </div>
                       <p className="text-[10px] text-gray-400 font-bold flex items-center gap-1">
-                        <MapPin size={10} className="text-[#0A4DA6]" />{" "}
+                        <MapPin size={10} className="text-[#F28C28]" />{" "}
                         {ashram.address?.city}, {ashram.address?.state}
                       </p>
                       <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">
@@ -936,17 +1028,17 @@ export const SearchPage: React.FC = () => {
 
                     <div className="grid grid-cols-2 gap-2 text-[10px] font-semibold text-slate-600 dark:text-slate-300 sm:grid-cols-4">
                       <span className="flex items-center gap-1.5 rounded-xl bg-slate-50 px-2.5 py-2 dark:bg-slate-900">
-                        <BedDouble size={13} className="text-[#0A4DA6]" />
+                        <BedDouble size={13} className="text-[#F28C28]" />
                         {ashram.discovery?.rooms?.totalInventory ?? 0} rooms
                       </span>
                       <span className="flex items-center gap-1.5 rounded-xl bg-slate-50 px-2.5 py-2 dark:bg-slate-900">
-                        <Car size={13} className="text-[#0A4DA6]" />
+                        <Car size={13} className="text-[#F28C28]" />
                         {ashram.discovery?.parking?.available
                           ? "Parking"
                           : "No parking listed"}
                       </span>
                       <span className="flex items-center gap-1.5 rounded-xl bg-slate-50 px-2.5 py-2 dark:bg-slate-900">
-                        <UtensilsCrossed size={13} className="text-[#0A4DA6]" />
+                        <UtensilsCrossed size={13} className="text-[#F28C28]" />
                         {ashram.discovery?.food?.available
                           ? ashram.discovery.food.type || "Food available"
                           : "No food listed"}
@@ -982,7 +1074,7 @@ export const SearchPage: React.FC = () => {
                       ashram.discovery?.spiritualSchedule?.activities?.length >
                         0) && (
                       <p className="flex items-start gap-1.5 text-[10px] leading-relaxed text-slate-500 dark:text-slate-300">
-                        <Clock size={13} className="mt-0.5 shrink-0 text-[#0A4DA6]" />
+                        <Clock size={13} className="mt-0.5 shrink-0 text-[#F28C28]" />
                         <span className="line-clamp-2">
                           {ashram.discovery.spiritualSchedule.dailySchedule ||
                             ashram.discovery.spiritualSchedule.activities.join(
@@ -992,9 +1084,14 @@ export const SearchPage: React.FC = () => {
                       </p>
                     )}
 
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-1 items-center">
+                      {ashram.dayStayConfig?.enabled && (
+                        <span className="text-[9px] font-black bg-[#E58C28]/15 text-[#E58C28] border border-[#E58C28]/30 px-2 py-0.5 rounded-md flex items-center gap-1">
+                          <Sparkles size={10} /> Day Rest Available
+                        </span>
+                      )}
                       {ashram.amenities
-                        ?.slice(0, 4)
+                        ?.slice(0, 3)
                         .map((am: string, i: number) => (
                           <span
                             key={i}
@@ -1031,7 +1128,7 @@ export const SearchPage: React.FC = () => {
                       className={`w-full md:w-auto px-5 py-2.5 text-center text-xs font-bold rounded-full transition-all ${
                         !isAvailable
                           ? "bg-slate-700 hover:bg-slate-800 text-white opacity-95"
-                          : "bg-[#0A4DA6] hover:bg-opacity-95 text-white"
+                          : "bg-[#F28C28] hover:bg-opacity-95 text-white"
                       }`}
                     >
                       View Details
@@ -1087,7 +1184,7 @@ export const SearchPage: React.FC = () => {
                   className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 w-full max-w-5xl rounded-[32px] shadow-2xl overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-[600px] relative text-left"
                 >
                   <div className="flex-grow bg-slate-950 text-slate-200 relative p-6 flex flex-col items-center justify-center border-r border-slate-900 h-[40vh] md:h-full overflow-hidden select-none">
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(10,77,166,0.06),transparent_70%)]" />
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(242, 140, 40,0.06),transparent_70%)]" />
                     <div className="absolute top-4 left-5 right-5 z-10 pointer-events-none">
                       <p className="text-[11px] font-black text-white">
                         Distance from {central.name}
@@ -1112,8 +1209,8 @@ export const SearchPage: React.FC = () => {
                             style={{ left: pct.x, top: pct.y }}
                           >
                             <span className="relative flex h-5 w-5 items-center justify-center">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0A4DA6] opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-3 w-3 bg-[#0A4DA6] border border-white"></span>
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F28C28] opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-3 w-3 bg-[#F28C28] border border-white"></span>
                             </span>
                             <div className="mt-1 bg-slate-900/90 border border-slate-700 text-[8px] font-black text-white px-2 py-0.5 rounded shadow whitespace-nowrap tracking-wide">
                               🕉️ {central.name}
@@ -1137,7 +1234,7 @@ export const SearchPage: React.FC = () => {
                               className={`flex h-4 w-4 items-center justify-center rounded-full transition-all duration-200 ${
                                 isSelected
                                   ? "bg-emerald-400 scale-125 ring-4 ring-emerald-400/20"
-                                  : "bg-[#0A4DA6] hover:bg-emerald-400 hover:scale-110"
+                                  : "bg-[#F28C28] hover:bg-emerald-400 hover:scale-110"
                               }`}
                             >
                               <span className="h-1.5 w-1.5 rounded-full bg-white" />
@@ -1153,7 +1250,7 @@ export const SearchPage: React.FC = () => {
 
                     <div className="absolute bottom-4 left-4 bg-slate-900/80 border border-slate-800 text-[8px] font-semibold p-2 rounded flex flex-col gap-1 z-40 backdrop-blur-sm">
                       <div className="flex items-center gap-1.5">
-                        <span className="h-2 w-2 rounded-full bg-[#0A4DA6] inline-block" />{" "}
+                        <span className="h-2 w-2 rounded-full bg-[#F28C28] inline-block" />{" "}
                         Central Landmark
                       </div>
                       <div className="flex items-center gap-1.5">
@@ -1201,7 +1298,7 @@ export const SearchPage: React.FC = () => {
                               onClick={() => setSelectedMapAshram(item)}
                               className={`p-4.5 border rounded-[20px] cursor-pointer transition-all text-left ${
                                 isSelected
-                                  ? "border-[#0A4DA6] bg-[#0A4DA6]/5 shadow-sm"
+                                  ? "border-[#F28C28] bg-[#F28C28]/5 shadow-sm"
                                   : "border-gray-100 dark:border-slate-800 hover:border-gray-250 bg-card"
                               }`}
                             >
@@ -1209,7 +1306,7 @@ export const SearchPage: React.FC = () => {
                                 <h4 className="font-extrabold text-[11px] leading-tight text-gray-800 dark:text-gray-200">
                                   {i + 1}. {item.name}
                                 </h4>
-                                <span className="text-[9px] font-bold text-[#0A4DA6] bg-[#0A4DA6]/10 px-1.5 py-0.5 rounded whitespace-nowrap shadow-sm shrink-0">
+                                <span className="text-[9px] font-bold text-[#F28C28] bg-[#F28C28]/10 px-1.5 py-0.5 rounded whitespace-nowrap shadow-sm shrink-0">
                                   {item.distance} km
                                 </span>
                               </div>
@@ -1226,7 +1323,7 @@ export const SearchPage: React.FC = () => {
                                   </span>
                                   <Link
                                     to={buildDetailLink(item)}
-                                    className="px-3.5 py-1.5 bg-[#0A4DA6] text-white rounded-full text-[9px] font-bold shadow"
+                                    className="px-3.5 py-1.5 bg-[#F28C28] text-white rounded-full text-[9px] font-bold shadow"
                                   >
                                     View Details
                                   </Link>
@@ -1246,15 +1343,15 @@ export const SearchPage: React.FC = () => {
 
       {/* Mobile Filter Drawer */}
       {mobileFilterOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex justify-end">
+        <div className="fixed inset-0 z-[200] lg:hidden flex justify-end">
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs z-[190]"
             onClick={() => setMobileFilterOpen(false)}
           />
-          <div className="relative w-full max-w-sm bg-white dark:bg-[#0B192C] h-[100vh] h-[100dvh] flex flex-col z-10 shadow-2xl overflow-hidden">
+          <div className="relative w-full max-w-sm bg-white dark:bg-[#0B192C] h-[100vh] h-[100dvh] flex flex-col z-[200] shadow-2xl overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 pt-[max(1rem,calc(0.75rem+env(safe-area-inset-top)))] border-b border-gray-100 dark:border-slate-800">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2">
-                <Filter size={16} className="text-[#0A4DA6]" /> Filters {activeFilterCount > 0 && `(${activeFilterCount})`}
+                <Filter size={16} className="text-[#F28C28]" /> Filters {activeFilterCount > 0 && `(${activeFilterCount})`}
               </h3>
               <button
                 type="button"
@@ -1276,7 +1373,7 @@ export const SearchPage: React.FC = () => {
                       type="checkbox"
                       checked={ashramFilter}
                       onChange={() => setAshramFilter(!ashramFilter)}
-                      className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
+                      className="rounded border-gray-200 dark:border-slate-700 text-[#F28C28] focus:ring-[#F28C28]/20 cursor-pointer w-4 h-4"
                     />
                     <span className="flex items-center gap-1.5 text-[#0B192C] dark:text-gray-200">
                       <Building2 size={14} className="text-gray-400" /> Ashram
@@ -1287,7 +1384,7 @@ export const SearchPage: React.FC = () => {
                       type="checkbox"
                       checked={dharamshalaFilter}
                       onChange={() => setDharamshalaFilter(!dharamshalaFilter)}
-                      className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
+                      className="rounded border-gray-200 dark:border-slate-700 text-[#F28C28] focus:ring-[#F28C28]/20 cursor-pointer w-4 h-4"
                     />
                     <span className="flex items-center gap-1.5 text-[#0B192C] dark:text-gray-200">
                       <Landmark size={14} className="text-gray-400" /> Dharamshala
@@ -1298,7 +1395,7 @@ export const SearchPage: React.FC = () => {
                       type="checkbox"
                       checked={homestayFilter}
                       onChange={() => setHomestayFilter(!homestayFilter)}
-                      className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
+                      className="rounded border-gray-200 dark:border-slate-700 text-[#F28C28] focus:ring-[#F28C28]/20 cursor-pointer w-4 h-4"
                     />
                     <span className="flex items-center gap-1.5 text-[#0B192C] dark:text-gray-200">
                       <Home size={14} className="text-gray-400" /> Homestay
@@ -1317,7 +1414,7 @@ export const SearchPage: React.FC = () => {
                       type="checkbox"
                       checked={acFilter}
                       onChange={() => setAcFilter(!acFilter)}
-                      className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
+                      className="rounded border-gray-200 dark:border-slate-700 text-[#F28C28] focus:ring-[#F28C28]/20 cursor-pointer w-4 h-4"
                     />
                     <span className="flex items-center gap-1.5 text-[#0B192C] dark:text-gray-200">
                       <Wifi size={14} className="text-gray-400" /> AC Rooms
@@ -1328,7 +1425,7 @@ export const SearchPage: React.FC = () => {
                       type="checkbox"
                       checked={foodFilter}
                       onChange={() => setFoodFilter(!foodFilter)}
-                      className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
+                      className="rounded border-gray-200 dark:border-slate-700 text-[#F28C28] focus:ring-[#F28C28]/20 cursor-pointer w-4 h-4"
                     />
                     <span className="flex items-center gap-1.5 text-[#0B192C] dark:text-gray-200">
                       <UtensilsCrossed size={14} className="text-gray-400" /> Pure Vegetarian Food
@@ -1339,10 +1436,21 @@ export const SearchPage: React.FC = () => {
                       type="checkbox"
                       checked={parkingFilter}
                       onChange={() => setParkingFilter(!parkingFilter)}
-                      className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
+                      className="rounded border-gray-200 dark:border-slate-700 text-[#F28C28] focus:ring-[#F28C28]/20 cursor-pointer w-4 h-4"
                     />
                     <span className="flex items-center gap-1.5 text-[#0B192C] dark:text-gray-200">
                       <Car size={14} className="text-gray-400" /> Parking
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-3 text-xs font-semibold cursor-pointer select-none pt-2 border-t border-gray-100 dark:border-slate-800">
+                    <input
+                      type="checkbox"
+                      checked={dayStayOnlyFilter}
+                      onChange={() => setDayStayOnlyFilter(!dayStayOnlyFilter)}
+                      className="rounded border-gray-200 dark:border-slate-700 text-[#E58C28] focus:ring-[#E58C28]/20 cursor-pointer w-4 h-4"
+                    />
+                    <span className="flex items-center gap-1.5 font-bold text-[#E58C28]">
+                      <Sparkles size={14} className="text-[#E58C28]" /> Short Stay
                     </span>
                   </label>
                 </div>
@@ -1358,6 +1466,11 @@ export const SearchPage: React.FC = () => {
                   setAcFilter(false);
                   setFoodFilter(false);
                   setParkingFilter(false);
+                  setDayStayOnlyFilter(false);
+                  const nextParams = new URLSearchParams(searchParams);
+                  nextParams.delete("tab");
+                  nextParams.delete("type");
+                  setSearchParams(nextParams);
                 }}
                 className="flex-1 py-2.5 rounded-full border border-gray-200 dark:border-slate-700 text-xs font-bold text-gray-600 dark:text-gray-300 cursor-pointer"
               >
@@ -1366,7 +1479,7 @@ export const SearchPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setMobileFilterOpen(false)}
-                className="flex-1 py-2.5 rounded-full bg-[#0A4DA6] text-white text-xs font-extrabold shadow-sm cursor-pointer"
+                className="flex-1 py-2.5 rounded-full bg-[#F28C28] text-white text-xs font-extrabold shadow-sm cursor-pointer"
               >
                 Apply Filters
               </button>

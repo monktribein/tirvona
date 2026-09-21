@@ -113,7 +113,7 @@ export const ImageUploadGrid: React.FC<{
         type="button"
         onClick={() => inputRef.current?.click()}
         disabled={uploading || value.length >= max}
-        className="w-full py-4 rounded-2xl border-2 border-dashed border-[#0A4DA6]/35 bg-blue-50/40 dark:bg-slate-900 text-[#0A4DA6] flex flex-col items-center justify-center gap-1 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+        className="w-full py-4 rounded-2xl border-2 border-dashed border-[#F28C28]/35 bg-blue-50/40 dark:bg-slate-900 text-[#F28C28] flex flex-col items-center justify-center gap-1 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {uploading ? (
           <Loader2 size={18} className="animate-spin" />

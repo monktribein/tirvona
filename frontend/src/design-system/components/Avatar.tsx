@@ -29,7 +29,7 @@ export const Avatar: React.FC<AvatarProps> = ({
           <img
             src={src}
             alt={name}
-            className="w-full h-full rounded-full object-cover border-2 border-[#0A4DA6]/20"
+            className="w-full h-full rounded-full object-cover border-2 border-[#F28C28]/20"
           />
         ) : (
           <div className="w-full h-full rounded-full bg-[#E58C28]/15 border border-[#E58C28]/40 flex items-center justify-center font-black text-[#E58C28]">

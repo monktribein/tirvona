@@ -54,7 +54,7 @@ export const ParkingCard: React.FC<ParkingCardProps> = ({
         <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
 
         {parking.isVerified && (
-          <span className="absolute top-3 left-3 inline-flex items-center gap-1 bg-[#0A4DA6] text-white text-[9px] font-black tracking-wider px-2.5 py-1 rounded-full shadow-md">
+          <span className="absolute top-3 left-3 inline-flex items-center gap-1 bg-[#F28C28] text-white text-[9px] font-black tracking-wider px-2.5 py-1 rounded-full shadow-md">
             <ShieldCheck size={11} className="stroke-[2.5]" />
             Verified
           </span>
@@ -93,7 +93,7 @@ export const ParkingCard: React.FC<ParkingCardProps> = ({
 
           <div className="min-h-[26px] flex items-center">
             {nearest ? (
-              <p className="text-[10px] font-bold text-[#0A4DA6] dark:text-blue-300 bg-blue-50/70 dark:bg-slate-800 rounded-full px-2.5 py-1 inline-flex items-center gap-1 max-w-full">
+              <p className="text-[10px] font-bold text-[#F28C28] dark:text-amber-300 bg-blue-50/70 dark:bg-slate-800 rounded-full px-2.5 py-1 inline-flex items-center gap-1 max-w-full">
                 <Navigation size={10} className="shrink-0 stroke-[2.5]" />
                 <span className="truncate">
                   {nearest.walkingMinutes
@@ -152,10 +152,10 @@ export const ParkingCard: React.FC<ParkingCardProps> = ({
 
             <Link
               to={`/parking/${parking.slug}${query}`}
-              className="mt-2.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-[11px] font-bold pl-4 pr-1.5 py-1.5 rounded-full inline-flex items-center gap-2 shadow-md transition-all active:scale-95 shrink-0"
+              className="mt-2.5 bg-[#F28C28] hover:bg-[#D97706] text-white text-[11px] font-bold pl-4 pr-1.5 py-1.5 rounded-full inline-flex items-center gap-2 shadow-md transition-all active:scale-95 shrink-0"
             >
               <span>View</span>
-              <span className="w-5 h-5 rounded-full bg-white text-[#0A4DA6] flex items-center justify-center transition-transform group-hover:translate-x-0.5">
+              <span className="w-5 h-5 rounded-full bg-white text-[#F28C28] flex items-center justify-center transition-transform group-hover:translate-x-0.5">
                 <ArrowRight size={11} className="stroke-[3]" />
               </span>
             </Link>

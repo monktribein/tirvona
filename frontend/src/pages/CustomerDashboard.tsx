@@ -128,7 +128,7 @@ export const CustomerDashboard: React.FC = () => {
         </div>
         <Link
           to="/"
-          className="px-5 py-2.5 bg-[#0A4DA6] text-white text-xs font-bold rounded-full hover:bg-opacity-95 transition-all shadow-md shadow-[#0A4DA6]/10 flex items-center gap-1.5 cursor-pointer"
+          className="px-5 py-2.5 bg-[#F28C28] text-white text-xs font-bold rounded-full hover:bg-opacity-95 transition-all shadow-md shadow-[#F28C28]/10 flex items-center gap-1.5 cursor-pointer"
         >
           <Compass size={14} /> Book Another Stay
         </Link>
@@ -155,7 +155,7 @@ export const CustomerDashboard: React.FC = () => {
           </p>
           <Link
             to="/"
-            className="inline-block px-5 py-2.5 bg-[#0A4DA6] text-white text-xs font-bold rounded-full shadow-md hover:bg-opacity-95 transition-all"
+            className="inline-block px-5 py-2.5 bg-[#F28C28] text-white text-xs font-bold rounded-full shadow-md hover:bg-opacity-95 transition-all"
           >
             Find Stays
           </Link>
@@ -180,7 +180,7 @@ export const CustomerDashboard: React.FC = () => {
                       {b.ashramId?.name}
                     </h3>
                     <p className="text-[10px] text-gray-400 font-bold flex items-center gap-0.5">
-                      <MapPin size={10} className="text-[#0A4DA6]" />{" "}
+                      <MapPin size={10} className="text-[#F28C28]" />{" "}
                       {b.ashramId?.address?.city}
                     </p>
                   </div>
@@ -193,7 +193,7 @@ export const CustomerDashboard: React.FC = () => {
                       Check In
                     </span>
                     <span className="font-semibold flex items-center gap-1.5">
-                      <Calendar size={13} className="text-[#0A4DA6]" />{" "}
+                      <Calendar size={13} className="text-[#F28C28]" />{" "}
                       {new Date(b.checkInDate).toLocaleDateString()}
                     </span>
                   </div>
@@ -202,7 +202,7 @@ export const CustomerDashboard: React.FC = () => {
                       Check Out
                     </span>
                     <span className="font-semibold flex items-center gap-1.5">
-                      <Calendar size={13} className="text-[#0A4DA6]" />{" "}
+                      <Calendar size={13} className="text-[#F28C28]" />{" "}
                       {new Date(b.checkOutDate).toLocaleDateString()}
                     </span>
                   </div>
@@ -237,7 +237,7 @@ export const CustomerDashboard: React.FC = () => {
                 {isConfirmed && (
                   <div className="p-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 rounded-2xl flex items-center justify-between">
                     <div>
-                      <span className="text-[9px] text-[#0A4DA6] font-extrabold block tracking-wider">
+                      <span className="text-[9px] text-[#F28C28] font-extrabold block tracking-wider">
                         Digital Check-in Pass
                       </span>
                       <span className="text-[10px] text-gray-400 leading-normal">
@@ -351,7 +351,7 @@ export const CustomerDashboard: React.FC = () => {
               </button>
               <button
                 type="submit"
-                className="flex-1 py-2.5 bg-[#0A4DA6] text-white rounded-full text-xs font-bold cursor-pointer shadow"
+                className="flex-1 py-2.5 bg-[#F28C28] text-white rounded-full text-xs font-bold cursor-pointer shadow"
               >
                 Submit Review
               </button>

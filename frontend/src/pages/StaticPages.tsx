@@ -50,7 +50,7 @@ export const CancellationPolicyPage: React.FC = () => (
             {
               when: "3–7 days before check-in",
               refund: "75% Refund",
-              color: "text-[#0A4DA6]",
+              color: "text-[#F28C28]",
             },
             {
               when: "1–2 days before check-in",
@@ -147,11 +147,11 @@ export const CancellationPolicyPage: React.FC = () => (
         </p>
       </StaticSection>
 
-      <div className="bg-[#0A4DA6]/5 border border-[#0A4DA6]/10 rounded-2xl p-5 text-sm text-gray-600 dark:text-gray-300">
+      <div className="bg-[#F28C28]/5 border border-[#F28C28]/10 rounded-2xl p-5 text-sm text-gray-600 dark:text-gray-300">
         For disputes or questions about a refund, contact{" "}
         <a
           href="mailto:support@tirvona.in"
-          className="text-[#0A4DA6] font-bold"
+          className="text-[#F28C28] font-bold"
         >
           support@tirvona.in
         </a>{" "}
@@ -321,7 +321,7 @@ export const OwnerGuidePage: React.FC = () => (
           key={i}
           className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 flex gap-5 shadow-sm"
         >
-          <div className="w-12 h-12 rounded-2xl bg-[#0A4DA6] text-white font-black text-sm flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-[#F28C28] text-white font-black text-sm flex items-center justify-center flex-shrink-0">
             {s.step}
           </div>
           <div className="space-y-1.5">
@@ -333,7 +333,7 @@ export const OwnerGuidePage: React.FC = () => (
         </div>
       ))}
 
-      <div className="bg-[#0A4DA6]/5 border border-[#0A4DA6]/10 rounded-2xl p-5 space-y-3">
+      <div className="bg-[#F28C28]/5 border border-[#F28C28]/10 rounded-2xl p-5 space-y-3">
         <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
           Required Documents Checklist
         </h3>
@@ -350,8 +350,8 @@ export const OwnerGuidePage: React.FC = () => (
             key={i}
             className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300"
           >
-            <div className="w-4 h-4 rounded border-2 border-[#0A4DA6] flex items-center justify-center flex-shrink-0">
-              <div className="w-2 h-2 rounded-sm bg-[#0A4DA6]" />
+            <div className="w-4 h-4 rounded border-2 border-[#F28C28] flex items-center justify-center flex-shrink-0">
+              <div className="w-2 h-2 rounded-sm bg-[#F28C28]" />
             </div>
             {d}
           </div>
@@ -361,7 +361,7 @@ export const OwnerGuidePage: React.FC = () => (
       <div className="text-center">
         <a
           href="/partner"
-          className="inline-flex items-center gap-2 min-h-[52px] px-8 py-3 bg-[#0A4DA6] text-white font-extrabold text-sm rounded-full shadow-lg"
+          className="inline-flex items-center gap-2 min-h-[52px] px-8 py-3 bg-[#F28C28] text-white font-extrabold text-sm rounded-full shadow-lg"
         >
           Start Registration Now
         </a>
@@ -476,16 +476,16 @@ export const StayPoliciesPage: React.FC = () => (
         </p>
       </StaticSection>
 
-      <div className="bg-[#0A4DA6]/5 border border-[#0A4DA6]/10 rounded-2xl p-5 text-sm text-gray-600 dark:text-gray-300">
+      <div className="bg-[#F28C28]/5 border border-[#F28C28]/10 rounded-2xl p-5 text-sm text-gray-600 dark:text-gray-300">
         For questions or concerns about your stay, contact{" "}
         <a
           href="mailto:support@tirvona.in"
-          className="text-[#0A4DA6] font-bold"
+          className="text-[#F28C28] font-bold"
         >
           support@tirvona.in
         </a>{" "}
         or visit our{" "}
-        <a href="/help" className="text-[#0A4DA6] font-bold">
+        <a href="/help" className="text-[#F28C28] font-bold">
           Help Center
         </a>
         .
@@ -673,7 +673,7 @@ export const RefundPolicyPage: React.FC = () => (
             For disputes, email{" "}
             <a
               href="mailto:refunds@tirvona.in"
-              className="text-[#0A4DA6] font-bold"
+              className="text-[#F28C28] font-bold"
             >
               refunds@tirvona.in
             </a>{" "}
@@ -773,7 +773,7 @@ export const CookiePolicyPage: React.FC = () => (
                   key={i}
                   className="border border-gray-100 dark:border-slate-700"
                 >
-                  <td className="px-3 py-2.5 font-mono text-[11px] text-[#0A4DA6]">
+                  <td className="px-3 py-2.5 font-mono text-[11px] text-[#F28C28]">
                     {c.name}
                   </td>
                   <td className="px-3 py-2.5 text-gray-600 dark:text-gray-300">
@@ -784,7 +784,7 @@ export const CookiePolicyPage: React.FC = () => (
                   </td>
                   <td className="px-3 py-2.5">
                     <span
-                      className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold ${c.type === "Essential" ? "bg-[#0E7B6C]/10 text-[#0E7B6C]" : c.type === "Analytics" ? "bg-[#0A4DA6]/10 text-[#0A4DA6]" : "bg-[#D4AF37]/10 text-[#D4AF37]"}`}
+                      className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold ${c.type === "Essential" ? "bg-[#0E7B6C]/10 text-[#0E7B6C]" : c.type === "Analytics" ? "bg-[#F28C28]/10 text-[#F28C28]" : "bg-[#D4AF37]/10 text-[#D4AF37]"}`}
                     >
                       {c.type}
                     </span>
@@ -807,7 +807,7 @@ export const CookiePolicyPage: React.FC = () => (
             href="https://tools.google.com/dlpage/gaoptout"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[#0A4DA6] font-bold"
+            className="text-[#F28C28] font-bold"
           >
             Google Analytics Opt-out Browser Add-on
           </a>

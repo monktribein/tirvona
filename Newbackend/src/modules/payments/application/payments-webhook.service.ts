@@ -7,6 +7,7 @@ import { BookingsService } from "../../bookings/application/bookings.service";
 import { ParkingBookingService } from "../../parking/application/parking-booking.service";
 import { MarketplaceOrderService } from "../../commerce/application/marketplace-order.service";
 import { AartiBookingService } from "../../aarti/application/aarti-booking.service";
+import { DayStayBookingService } from "../../day-stay/application/day-stay-booking.service";
 
 /// Server-to-server reconciliation for Razorpay payments, independent of the
 /// guest's device ever delivering a client-side success callback.
@@ -31,6 +32,7 @@ export class PaymentsWebhookService {
     private readonly parking: ParkingBookingService,
     private readonly marketplace: MarketplaceOrderService,
     private readonly aarti: AartiBookingService,
+    private readonly dayStay: DayStayBookingService,
   ) {}
 
   /// Verifies Razorpay's `X-Razorpay-Signature` header: HMAC-SHA256 of the
@@ -111,6 +113,8 @@ export class PaymentsWebhookService {
     orderId: string,
     paymentId: string,
   ): Promise<string | null> {
+    if (await this.dayStay.confirmPaymentFromWebhook(orderId, paymentId))
+      return "day_stay";
     if (await this.bookings.confirmPaymentFromWebhook(orderId, paymentId))
       return "bookings";
     if (await this.parking.confirmPaymentFromWebhook(orderId, paymentId))

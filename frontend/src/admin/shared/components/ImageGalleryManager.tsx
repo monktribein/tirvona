@@ -130,7 +130,7 @@ export const ImageGalleryManager: React.FC<ImageGalleryManagerProps> = ({
     <div className="space-y-3 bg-gray-50/70 dark:bg-slate-900/60 p-4 rounded-2xl border border-gray-200/80 dark:border-slate-800 text-left">
       <div className="flex items-center justify-between">
         <label className="font-extrabold text-xs text-[#0B192C] dark:text-white flex items-center gap-2">
-          <ImageIcon size={15} className="text-[#0A4DA6]" /> {label}
+          <ImageIcon size={15} className="text-[#F28C28]" /> {label}
         </label>
         {allImages.length > 0 && (
           <span className="text-[10px] font-bold text-gray-400">
@@ -140,15 +140,15 @@ export const ImageGalleryManager: React.FC<ImageGalleryManagerProps> = ({
         )}
       </div>
 
-      <label className="w-full py-4 px-6 border-2 border-dashed border-[#0A4DA6]/40 dark:border-blue-500/40 hover:border-[#0A4DA6] bg-blue-50/40 dark:bg-slate-800/40 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-all hover:shadow-md">
+      <label className="w-full py-4 px-6 border-2 border-dashed border-[#F28C28]/40 dark:border-blue-500/40 hover:border-[#F28C28] bg-blue-50/40 dark:bg-slate-800/40 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-all hover:shadow-md">
         {uploading ? (
-          <div className="flex items-center gap-2 text-[#0A4DA6] font-bold text-xs">
+          <div className="flex items-center gap-2 text-[#F28C28] font-bold text-xs">
             <Loader2 size={18} className="animate-spin" />
             <span>Reading image file from device memory...</span>
           </div>
         ) : (
           <>
-            <div className="p-2.5 bg-[#0A4DA6] text-white rounded-full shadow-md">
+            <div className="p-2.5 bg-[#F28C28] text-white rounded-full shadow-md">
               <Upload size={18} />
             </div>
             <div className="text-center space-y-0.5">
@@ -217,7 +217,7 @@ export const ImageGalleryManager: React.FC<ImageGalleryManagerProps> = ({
                     </button>
                   )}
 
-                  <label className="w-full py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-extrabold flex items-center justify-center gap-1 cursor-pointer">
+                  <label className="w-full py-1 bg-blue-600 hover:bg-[#D97706] text-white rounded-lg text-[10px] font-extrabold flex items-center justify-center gap-1 cursor-pointer">
                     <RefreshCw size={11} /> Replace
                     <input
                       type="file"

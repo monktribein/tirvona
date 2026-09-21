@@ -67,13 +67,13 @@ const DocumentAssetEditor: React.FC<{
           {isUrl && IMAGE_ASSET.test(value) ? (
             <img src={value} alt={label} className="h-24 w-36 rounded-xl object-cover bg-slate-900" />
           ) : (
-            <div className="h-16 w-16 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-[#0A4DA6] flex items-center justify-center">
+            <div className="h-16 w-16 rounded-xl bg-[#FFF4E5]/40 text-[#F28C28] flex items-center justify-center">
               <FileText size={24} />
             </div>
           )}
           <div className="flex flex-wrap gap-2">
             {isUrl && (
-              <a href={value} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-[#0A4DA6] px-3 py-2 text-[10px] font-extrabold text-white">
+              <a href={value} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-[#F28C28] px-3 py-2 text-[10px] font-extrabold text-white">
                 <ExternalLink size={11} /> {IMAGE_ASSET.test(value) ? "Open image" : "Open document"}
               </a>
             )}
@@ -85,7 +85,7 @@ const DocumentAssetEditor: React.FC<{
       ) : (
         <p className="text-[11px] text-gray-400">No document uploaded.</p>
       )}
-      <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#0A4DA6]/30 px-3 py-2 text-[10px] font-extrabold text-[#0A4DA6]">
+      <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#F28C28]/30 px-3 py-2 text-[10px] font-extrabold text-[#F28C28]">
         {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
         {value ? "Replace document" : "Upload document or image"}
         <input type="file" accept="image/*,.pdf,application/pdf" disabled={uploading} onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(file); }} className="hidden" />
@@ -659,7 +659,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
             placeholder={t("Search records...")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full text-xs font-medium text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
+            className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full text-xs font-medium text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]"
           />
         </div>
 
@@ -796,7 +796,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                           selectedIds.includes(item._id || item.id),
                         )
                       }
-                      className="rounded border-gray-300 text-[#0A4DA6] focus:ring-0 cursor-pointer"
+                      className="rounded border-gray-300 text-[#F28C28] focus:ring-0 cursor-pointer"
                     />
                   </th>
                   {columns.map((col) => (
@@ -840,7 +840,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => handleSelectOne(id)}
-                            className="rounded border-gray-300 text-[#0A4DA6] focus:ring-0 cursor-pointer"
+                            className="rounded border-gray-300 text-[#F28C28] focus:ring-0 cursor-pointer"
                           />
                         </td>
                         {columns.map((col) => (
@@ -875,7 +875,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                         <td className="py-3.5 px-4 text-right">
                           <button
                             onClick={() => openDetailModal(item)}
-                            className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#0A4DA6]/25 bg-[#0A4DA6]/5 px-3 py-1.5 text-[11px] font-extrabold text-[#0A4DA6] transition-colors hover:bg-[#0A4DA6] hover:text-white cursor-pointer whitespace-nowrap"
+                            className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#F28C28]/25 bg-[#F28C28]/5 px-3 py-1.5 text-[11px] font-extrabold text-[#F28C28] transition-colors hover:bg-[#F28C28] hover:text-white cursor-pointer whitespace-nowrap"
                           >
                             <Eye size={13} /> {t("Edit / View")}
                           </button>
@@ -936,7 +936,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                     </span>
                   )}
                   {(detailItem.isVerified || detailItem.status === "approved") && (
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-[#0A4DA6] dark:bg-blue-950/60 dark:text-blue-300 flex items-center gap-1">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-[#F28C28] dark:bg-blue-950/60 dark:text-amber-300 flex items-center gap-1">
                       <CheckCircle size={10} /> Verified
                     </span>
                   )}
@@ -972,7 +972,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                       <div className="space-y-3 p-4 bg-gray-50 dark:bg-slate-900/60 rounded-2xl border border-gray-100 dark:border-slate-800">
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] font-black uppercase text-gray-400 tracking-wider flex items-center gap-1.5">
-                            <ImageIcon size={14} className="text-[#0A4DA6]" /> Photos & Media Gallery ({gallery.length})
+                            <ImageIcon size={14} className="text-[#F28C28]" /> Photos & Media Gallery ({gallery.length})
                           </span>
                         </div>
 
@@ -1087,7 +1087,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                             {k === "ownerId" && v && typeof v === "object" ? (
                               <div className="space-y-0.5">
                                 <p>{(v as any).name || "Ashram owner"}</p>
-                                <p className="font-medium text-[#0A4DA6]">{(v as any).email || "No email available"}</p>
+                                <p className="font-medium text-[#F28C28]">{(v as any).email || "No email available"}</p>
                                 {(v as any).phone && <p className="font-medium text-gray-500">{(v as any).phone}</p>}
                               </div>
                             ) : (
@@ -1135,7 +1135,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                   <button
                     type="submit"
                     form="unified-record-edit-form"
-                    className="px-6 py-2.5 bg-[#0A4DA6] text-white rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-[#0A4DA6]/25 cursor-pointer hover:bg-[#083b80]"
+                    className="px-6 py-2.5 bg-[#F28C28] text-white rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-[#F28C28]/25 cursor-pointer hover:bg-[#B45309]"
                   >
                     <Edit size={14} /> Save Changes
                   </button>
@@ -1273,7 +1273,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                         if (onSave) beginDetailEdit();
                         else if (onManage) onManage(detailItem);
                       }}
-                      className="px-6 py-2.5 bg-[#0A4DA6] text-white rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-[#0A4DA6]/25 cursor-pointer hover:bg-[#083b80] transition-colors"
+                      className="px-6 py-2.5 bg-[#F28C28] text-white rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-[#F28C28]/25 cursor-pointer hover:bg-[#B45309] transition-colors"
                     >
                       <Edit size={14} /> Edit Record
                     </button>
@@ -1322,7 +1322,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
               </button>
               <button
                 type="submit"
-                className="flex-1 py-2.5 bg-[#0A4DA6] text-white rounded-full text-xs font-black shadow-md cursor-pointer hover:bg-[#083b80]"
+                className="flex-1 py-2.5 bg-[#F28C28] text-white rounded-full text-xs font-black shadow-md cursor-pointer hover:bg-[#B45309]"
               >
                 Create Record
               </button>

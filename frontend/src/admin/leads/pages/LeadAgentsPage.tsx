@@ -40,7 +40,7 @@ import {
 } from "lucide-react";
 
 const inputClass =
-  "w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]";
+  "w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]";
 
 const Field: React.FC<{
   label: string;
@@ -472,7 +472,7 @@ export const LeadAgentsPage: React.FC = () => {
                     <td className="px-5 py-3 text-xs font-semibold text-gray-500">
                       {agent.region || "—"}
                     </td>
-                    <td className="px-5 py-3 text-xs font-black text-[#0A4DA6]">
+                    <td className="px-5 py-3 text-xs font-black text-[#F28C28]">
                       {agent.leadCount ?? 0}
                     </td>
                     <td className="px-5 py-3 text-[11px] font-semibold text-gray-500">
@@ -482,10 +482,10 @@ export const LeadAgentsPage: React.FC = () => {
                       {agent.role === 'field_agent' || agent.role === 'field_executive' ? (
                         <button
                           onClick={() => void openAttendanceModal(agent)}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/40 text-[#0A4DA6] hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200/60 dark:border-blue-800/40 transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#FFF4E5]/40 text-[#F28C28] hover:bg-blue-100 dark:hover:bg-[#D97706]/50 border border-blue-200/60 dark:border-blue-800/40 transition-colors cursor-pointer"
                           title="View GPS & Attendance Logs"
                         >
-                          <Calendar size={11} className="text-[#0A4DA6]" />
+                          <Calendar size={11} className="text-[#F28C28]" />
                           <span>{summary ? `${summary.daysPresent} Days` : "View Logs"}</span>
                           {todayLog?.checkedIn && (
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" title="Checked in today" />
@@ -519,7 +519,7 @@ export const LeadAgentsPage: React.FC = () => {
                           title="Edit"
                           disabled={!agent.createdByAdminId}
                           onClick={() => openEdit(agent)}
-                          className="p-1.5 rounded-lg text-[#0A4DA6] hover:bg-[#0A4DA6]/10 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                          className="p-1.5 rounded-lg text-[#F28C28] hover:bg-[#F28C28]/10 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                         >
                           <Pencil size={15} />
                         </button>
@@ -602,7 +602,7 @@ export const LeadAgentsPage: React.FC = () => {
         onClose={closeForm}
         title={editing ? "Edit field executive" : "Create field executive"}
         subtitle="Signs in to the lead app with phone number and password."
-        icon={<Users size={18} className="text-[#0A4DA6]" />}
+        icon={<Users size={18} className="text-[#F28C28]" />}
         maxWidth="2xl"
         footer={
           <div className="flex justify-end gap-2">
@@ -720,7 +720,7 @@ export const LeadAgentsPage: React.FC = () => {
         onClose={() => setManagingRegions(false)}
         title="Manage lead regions"
         subtitle="Tirvona districts appear automatically. Add another Indian district when needed."
-        icon={<MapPinned size={18} className="text-[#0A4DA6]" />}
+        icon={<MapPinned size={18} className="text-[#F28C28]" />}
         maxWidth="2xl"
         footer={
           <div className="flex justify-end">
@@ -882,7 +882,7 @@ export const LeadAgentsPage: React.FC = () => {
         }}
         title={`Attendance & GPS Logs — ${attendanceAgent?.name || ""}`}
         subtitle={`${attendanceAgent?.role?.replace(/_/g, " ").toUpperCase() || "FIELD AGENT"} • Phone: ${attendanceAgent?.phone || "—"} • District: ${attendanceAgent?.region || "—"}`}
-        icon={<MapPin size={18} className="text-[#0A4DA6]" />}
+        icon={<MapPin size={18} className="text-[#F28C28]" />}
         maxWidth="3xl"
         footer={
           <div className="flex justify-end">
@@ -900,7 +900,7 @@ export const LeadAgentsPage: React.FC = () => {
       >
         {loadingAttendance ? (
           <div className="py-16 flex flex-col items-center justify-center gap-3">
-            <Loader2 className="w-7 h-7 text-[#0A4DA6] animate-spin" />
+            <Loader2 className="w-7 h-7 text-[#F28C28] animate-spin" />
             <p className="text-xs font-bold text-gray-400">Loading attendance & GPS tracking data...</p>
           </div>
         ) : (
@@ -908,7 +908,7 @@ export const LeadAgentsPage: React.FC = () => {
             {/* Top Stat Summary Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="p-3.5 rounded-xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/50 dark:bg-blue-950/20">
-                <div className="flex items-center gap-2 text-xs font-bold text-[#0A4DA6] dark:text-blue-400 mb-1">
+                <div className="flex items-center gap-2 text-xs font-bold text-[#F28C28] dark:text-amber-400 mb-1">
                   <Calendar size={14} />
                   Total Days Present
                 </div>
@@ -990,7 +990,7 @@ export const LeadAgentsPage: React.FC = () => {
                                 href={rec.checkInLocation.mapsUrl || `https://www.google.com/maps?q=${rec.checkInLocation.latitude},${rec.checkInLocation.longitude}`}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0A4DA6] hover:underline"
+                                className="inline-flex items-center gap-1 text-[11px] font-bold text-[#F28C28] hover:underline"
                               >
                                 <ExternalLink size={11} />
                                 View GPS Map ({rec.checkInLocation.latitude.toFixed(4)}, {rec.checkInLocation.longitude.toFixed(4)})
@@ -1016,7 +1016,7 @@ export const LeadAgentsPage: React.FC = () => {
                                     href={rec.checkOutLocation.mapsUrl || `https://www.google.com/maps?q=${rec.checkOutLocation.latitude},${rec.checkOutLocation.longitude}`}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0A4DA6] hover:underline"
+                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#F28C28] hover:underline"
                                   >
                                     <ExternalLink size={11} />
                                     View GPS Map ({rec.checkOutLocation.latitude.toFixed(4)}, {rec.checkOutLocation.longitude.toFixed(4)})

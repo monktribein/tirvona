@@ -166,7 +166,7 @@ export const VerificationQueuePage: React.FC = () => {
                       href={a.ownerId.govtIdUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-[10px] font-bold text-[#0A4DA6] hover:underline"
+                      className="text-[10px] font-bold text-[#F28C28] hover:underline"
                     >
                       View owner identity document
                     </a>
@@ -217,7 +217,7 @@ export const VerificationQueuePage: React.FC = () => {
                       setSchedulingAshramId(a._id);
                       setInspectionDate("");
                     }}
-                    className="px-4 py-2 bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 hover:bg-[#0A4DA6]/15 rounded-full text-[10px] font-bold cursor-pointer"
+                    className="px-4 py-2 bg-[#F28C28]/10 text-[#F28C28] border border-[#F28C28]/20 hover:bg-[#F28C28]/15 rounded-full text-[10px] font-bold cursor-pointer"
                   >
                     Schedule Inspection
                   </button>
@@ -241,7 +241,7 @@ export const VerificationQueuePage: React.FC = () => {
                       setTargetStatus("approved");
                       setComments("");
                     }}
-                    className="px-4 py-2 bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 hover:bg-[#0A4DA6]/15 rounded-full text-[10px] font-bold cursor-pointer"
+                    className="px-4 py-2 bg-[#F28C28]/10 text-[#F28C28] border border-[#F28C28]/20 hover:bg-[#F28C28]/15 rounded-full text-[10px] font-bold cursor-pointer"
                   >
                     Verify Approve
                   </button>
@@ -260,7 +260,7 @@ export const VerificationQueuePage: React.FC = () => {
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <h3 className="font-bold text-sm text-[#0B192C] dark:text-white flex items-center gap-1.5">
-                <ShieldAlert size={16} className="text-[#0A4DA6]" /> Log
+                <ShieldAlert size={16} className="text-[#F28C28]" /> Log
                 Verification Decision
               </h3>
               <button
@@ -348,7 +348,7 @@ export const VerificationQueuePage: React.FC = () => {
               </button>
               <button
                 type="submit"
-                className="flex-1 py-2.5 bg-[#0A4DA6] text-white rounded-full text-xs font-bold"
+                className="flex-1 py-2.5 bg-[#F28C28] text-white rounded-full text-xs font-bold"
               >
                 Schedule
               </button>

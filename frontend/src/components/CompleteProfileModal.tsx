@@ -52,11 +52,11 @@ export const CompleteProfileModal: React.FC<Props> = ({
             className="w-14 h-14 object-contain inline-block"
           />
           <h2 className="text-2xl font-black text-[#0B192C] dark:text-white flex items-center justify-center gap-1.5">
-            Almost There <ShieldCheck size={20} className="text-[#0A4DA6]" />
+            Almost There <ShieldCheck size={20} className="text-[#F28C28]" />
           </h2>
           <p className="text-xs text-gray-400 font-semibold">
             Signing up as{" "}
-            <span className="text-[#0A4DA6] font-bold">{email}</span>
+            <span className="text-[#F28C28] font-bold">{email}</span>
           </p>
         </div>
 
@@ -82,7 +82,7 @@ export const CompleteProfileModal: React.FC<Props> = ({
                 placeholder="Enter your name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full pl-10 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                className="w-full pl-10 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
               />
             </div>
           </div>
@@ -103,7 +103,7 @@ export const CompleteProfileModal: React.FC<Props> = ({
                 placeholder="+91 98765 43210"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full pl-10 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                className="w-full pl-10 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
               />
             </div>
             <p className="text-[10px] text-gray-400 font-semibold">
@@ -114,7 +114,7 @@ export const CompleteProfileModal: React.FC<Props> = ({
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white rounded-full font-extrabold text-sm shadow-md shadow-[#0A4DA6]/20 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60"
+            className="w-full py-3.5 bg-[#F28C28] hover:bg-[#B45309] text-white rounded-full font-extrabold text-sm shadow-md shadow-[#F28C28]/20 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60"
           >
             {loading ? (
               "Creating account…"

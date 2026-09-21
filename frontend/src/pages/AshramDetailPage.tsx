@@ -47,6 +47,7 @@ import {
 import TirvonaMap from "../components/TirvonaMap";
 import { DateRangePicker } from "../components/DateRangePicker";
 import { RoomAvailabilityCalendar } from "../components/RoomAvailabilityCalendar";
+import { DayStayBookingCard } from "../components/day-stay/DayStayBookingCard";
 import { hasValidCoordinates } from "../utils/geo";
 import { useAutoScroll } from "../hooks/useAutoScroll";
 import { VRINDAVAN_DUMMY_STAYS } from "../data/vrindavanStaysData";
@@ -77,6 +78,7 @@ import {
   Edit3,
   Tag,
   MessageSquare,
+  Clock,
 } from "lucide-react";
 import { checkAshramBookingAvailable } from "../utils/ashramAvailabilityHelper";
 
@@ -127,6 +129,8 @@ export const AshramDetailPage: React.FC = () => {
   const qRooms = searchParams.get("rooms");
   const qAdults = searchParams.get("adults");
   const qChildren = searchParams.get("children");
+  // mode=daystay → open short stay card; anything else → open overnight directly
+  const qMode = searchParams.get("mode");
 
   const initialDates = normalizeBookingDates(
     qCheckIn || searchState.checkIn,
@@ -155,6 +159,7 @@ export const AshramDetailPage: React.FC = () => {
   // the persisted ashram id once the canonical listing has loaded.
   const currentAshramId = String(ashram?._id ?? id ?? "");
   const [rooms, setRooms] = useState<any[]>([]);
+  const [selectedDayStayRoomId, setSelectedDayStayRoomId] = useState<string>("");
   const [expandedRoomId, setExpandedRoomId] = useState<string | null>(null);
   const [roomPhotoViewer, setRoomPhotoViewer] = useState<{
     name: string;
@@ -386,6 +391,13 @@ export const AshramDetailPage: React.FC = () => {
   const [bookingSuccess, setBookingSuccess] = useState<any>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  // Controls which booking section is visible in the sidebar:
+  //   false = short stay only (hide overnight)
+  //   true  = overnight booking (hide short stay prompt)
+  //   null  = prompt the user (only when navigating without mode param and ashram has dayStay)
+  const [showOvernightBooking, setShowOvernightBooking] = useState<boolean | null>(
+    qMode === "daystay" ? false : true
+  );
   const touchStartX = useRef(0);
 
   useEffect(() => {
@@ -773,7 +785,7 @@ export const AshramDetailPage: React.FC = () => {
   useEffect(() => {
     platformSettingsService
       .getSettings()
-      .then((res) => {
+      .then((res: any) => {
         if (res.data?.success && res.data.data?.platformFee) {
           setPlatformSettings(res.data.data.platformFee);
         }
@@ -1147,13 +1159,6 @@ export const AshramDetailPage: React.FC = () => {
       return;
     }
 
-    if (user.role !== "customer") {
-      setBookingError(
-        "Only registered Guests can book rooms. Please log in with a Customer profile.",
-      );
-      return;
-    }
-
     if (!checkIn || !checkOut) {
       setBookingError("Please choose check-in and check-out dates.");
       return;
@@ -1362,7 +1367,7 @@ export const AshramDetailPage: React.FC = () => {
         <div className="pt-2 flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <Link
             to="/search"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#0A4DA6] text-white text-xs font-black shadow-md hover:bg-[#083b80] transition-colors"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#F28C28] text-white text-xs font-black shadow-md hover:bg-[#B45309] transition-colors"
           >
             Explore Other Stays
           </Link>
@@ -1426,7 +1431,7 @@ export const AshramDetailPage: React.FC = () => {
           )}
           <div className="text-xs font-bold text-gray-600 dark:text-gray-300 flex flex-col sm:flex-row sm:flex-wrap items-center justify-center gap-y-2 sm:gap-x-2.5 leading-relaxed">
             <span className="flex items-start gap-1.5">
-              <MapPin size={14} className="text-[#0A4DA6] shrink-0 mt-[3px]" />
+              <MapPin size={14} className="text-[#F28C28] shrink-0 mt-[3px]" />
               <span>
                 {[
                   ashram.address?.street,
@@ -1467,9 +1472,9 @@ export const AshramDetailPage: React.FC = () => {
                         property_name: ashram.name,
                       })
                     }
-                    className="flex items-center gap-1.5 hover:text-[#0A4DA6] transition-colors shrink-0"
+                    className="flex items-center gap-1.5 hover:text-[#F28C28] transition-colors shrink-0"
                   >
-                    <Phone size={13} className="text-[#0A4DA6] shrink-0" />
+                    <Phone size={13} className="text-[#F28C28] shrink-0" />
                     <span>{formatted}</span>
                   </a>
 
@@ -1506,9 +1511,9 @@ export const AshramDetailPage: React.FC = () => {
 
             <a
               href={`mailto:${ashram.contact?.email || ashram.email || ashram.ownerId?.email || "stay@trust.in"}`}
-              className="flex items-center gap-1.5 hover:text-[#0A4DA6] transition-colors shrink-0"
+              className="flex items-center gap-1.5 hover:text-[#F28C28] transition-colors shrink-0"
             >
-              <Mail size={13} className="text-[#0A4DA6] shrink-0" />
+              <Mail size={13} className="text-[#F28C28] shrink-0" />
               <span>
                 {ashram.contact?.email ||
                   ashram.email ||
@@ -1530,30 +1535,13 @@ export const AshramDetailPage: React.FC = () => {
                   }
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 hover:text-[#0A4DA6] transition-colors shrink-0"
+                  className="flex items-center gap-1.5 hover:text-[#F28C28] transition-colors shrink-0"
                 >
-                  <Globe size={13} className="text-[#0A4DA6] shrink-0" />
+                  <Globe size={13} className="text-[#F28C28] shrink-0" />
                   <span>{ashram.website}</span>
                 </a>
               </>
             )}
-          </div>
-
-          <div className="pt-1 hidden sm:block">
-            <button
-              type="button"
-              onClick={() => {
-                handleBookNowClick();
-                const el = document.getElementById("booking-engine");
-                if (el) {
-                  el.scrollIntoView({ behavior: "smooth", block: "start" });
-                }
-              }}
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-black shadow-md hover:shadow-lg transition-all cursor-pointer active:scale-95"
-            >
-              <span>Book Stay Now</span>
-              <ArrowRight size={13} />
-            </button>
           </div>
         </div>
       </div>
@@ -1613,7 +1601,7 @@ export const AshramDetailPage: React.FC = () => {
                 aria-label={`Show image ${idx + 1}`}
                 className={`relative shrink-0 w-24 h-16 sm:w-28 sm:h-20 rounded-2xl overflow-hidden cursor-pointer border-2 transition-all snap-start group ${
                   idx === activeImageIndex
-                    ? "border-[#0A4DA6] ring-2 ring-[#0A4DA6]/20"
+                    ? "border-[#F28C28] ring-2 ring-[#F28C28]/20"
                     : "border-transparent opacity-70 hover:opacity-100"
                 }`}
               >
@@ -1711,7 +1699,7 @@ export const AshramDetailPage: React.FC = () => {
 
             {ashram.history && (
               <div className="pt-4 border-t border-gray-100 dark:border-slate-800 space-y-2">
-                <h4 className="text-xs font-bold text-[#0A4DA6] tracking-wider">
+                <h4 className="text-xs font-bold text-[#F28C28] tracking-wider">
                   Historical Significance
                 </h4>
                 <p className="text-xs text-gray-500 leading-relaxed italic bg-gray-50/50 dark:bg-slate-900/10 p-4 rounded-2xl border border-dashed border-gray-100 dark:border-slate-850">
@@ -1840,7 +1828,7 @@ export const AshramDetailPage: React.FC = () => {
                     aria-expanded={roomImages.length > 0 ? isExpanded : undefined}
                     className={`p-4 sm:p-5 border rounded-[20px] transition-all relative overflow-hidden ${roomImages.length > 0 ? "cursor-pointer" : ""} ${
                       selectedQty > 0
-                        ? "border-[#0A4DA6] bg-[#0A4DA6]/5 shadow-sm ring-1 ring-[#0A4DA6]/30"
+                        ? "border-[#F28C28] bg-[#F28C28]/5 shadow-sm ring-1 ring-[#F28C28]/30"
                         : "border-gray-100 dark:border-slate-800 hover:bg-gray-50/50 dark:hover:bg-slate-800/10"
                     }`}
                   >
@@ -1895,31 +1883,48 @@ export const AshramDetailPage: React.FC = () => {
                       
                       <div
                         onClick={(e) => e.stopPropagation()}
-                        className="flex items-center gap-3 mt-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-full p-1 shadow-sm cursor-default"
+                        className="flex flex-col sm:items-end gap-2 mt-3"
                       >
-                        <button
-                          onClick={() => handleUpdateRoomQty(r._id, -1)}
-                          className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-rose-600 transition-colors disabled:opacity-30"
-                          disabled={selectedQty === 0 || !checkAshramBookingAvailable(ashram)}
-                        >
-                          <span className="text-lg leading-none font-medium">−</span>
-                        </button>
-                        <span className="text-sm font-black text-[#0B192C] dark:text-white w-4 text-center">
-                          {selectedQty}
-                        </span>
-                        <button
-                          onClick={() => {
-                            handleUpdateRoomQty(r._id, 1);
-                            if (isDeal && roomDeal?.promoCode && (!appliedPromo || appliedPromo !== roomDeal.promoCode)) {
-                              setCouponCode(roomDeal.promoCode);
-                              handleApplyAvailableOffer(roomDeal);
-                            }
-                          }}
-                          className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-emerald-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                          disabled={selectedRoomCount >= requestedRoomCount || !checkAshramBookingAvailable(ashram)}
-                        >
-                          <span className="text-lg leading-none font-medium">＋</span>
-                        </button>
+                        <div className="flex items-center gap-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-full p-1 shadow-sm cursor-default">
+                          <button
+                            onClick={() => handleUpdateRoomQty(r._id, -1)}
+                            className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-rose-600 transition-colors disabled:opacity-30"
+                            disabled={selectedQty === 0 || !checkAshramBookingAvailable(ashram)}
+                          >
+                            <span className="text-lg leading-none font-medium">−</span>
+                          </button>
+                          <span className="text-sm font-black text-[#0B192C] dark:text-white w-4 text-center">
+                            {selectedQty}
+                          </span>
+                          <button
+                            onClick={() => {
+                              handleUpdateRoomQty(r._id, 1);
+                              if (isDeal && roomDeal?.promoCode && (!appliedPromo || appliedPromo !== roomDeal.promoCode)) {
+                                setCouponCode(roomDeal.promoCode);
+                                handleApplyAvailableOffer(roomDeal);
+                              }
+                            }}
+                            className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-emerald-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                            disabled={selectedRoomCount >= requestedRoomCount || !checkAshramBookingAvailable(ashram)}
+                          >
+                            <span className="text-lg leading-none font-medium">＋</span>
+                          </button>
+                        </div>
+
+                        {ashram?.dayStayConfig?.enabled && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedDayStayRoomId(String(r._id));
+                              const el = document.getElementById("day-stay-card");
+                              if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-200 dark:text-black text-[11px] font-bold transition-all cursor-pointer border border-black dark:border-white shadow-2xs"
+                          >
+                            <Clock size={11} />
+                            <span>Short Stay (From ₹{r.dayStayConfig?.pricingByProduct?.DAY_REST_4H || r.dayStayConfig?.pricingByProduct?.DAY_REST_6H || 499})</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                     </div>
@@ -2044,7 +2049,7 @@ export const AshramDetailPage: React.FC = () => {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
               <div className="space-y-3">
-                <h4 className="font-bold text-[#0A4DA6] tracking-wider text-[10px]">
+                <h4 className="font-bold text-[#F28C28] tracking-wider text-[10px]">
                   Guidelines for Guests
                 </h4>
                 <ul className="text-gray-500 space-y-2 list-disc pl-5">
@@ -2054,7 +2059,7 @@ export const AshramDetailPage: React.FC = () => {
                 </ul>
               </div>
               <div className="space-y-3">
-                <h4 className="font-bold text-[#0A4DA6] tracking-wider text-[10px]">
+                <h4 className="font-bold text-[#F28C28] tracking-wider text-[10px]">
                   Check-in Policies
                 </h4>
                 <div className="space-y-1.5 text-gray-500">
@@ -2085,7 +2090,7 @@ export const AshramDetailPage: React.FC = () => {
                 </h3>
                 <Link
                   to="/volunteer"
-                  className="text-xs font-black text-[#0A4DA6] hover:underline"
+                  className="text-xs font-black text-[#F28C28] hover:underline"
                 >
                   View All Directory →
                 </Link>
@@ -2098,7 +2103,7 @@ export const AshramDetailPage: React.FC = () => {
                     className="p-4 bg-gray-50/70 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-800 rounded-2xl space-y-2"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black text-[#0A4DA6] bg-blue-50 dark:bg-slate-850 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-black text-[#F28C28] bg-blue-50 dark:bg-slate-850 px-2 py-0.5 rounded-full">
                         {j.department}
                       </span>
                       <span className="text-[10px] font-bold text-gray-400">
@@ -2120,7 +2125,7 @@ export const AshramDetailPage: React.FC = () => {
 
                     <Link
                       to={`/volunteer/${j._id}`}
-                      className="inline-block mt-2 px-3 py-1 bg-[#0A4DA6] hover:bg-[#083b80] text-white text-[10px] font-extrabold rounded-full transition-colors"
+                      className="inline-block mt-2 px-3 py-1 bg-[#F28C28] hover:bg-[#B45309] text-white text-[10px] font-extrabold rounded-full transition-colors"
                     >
                       Apply for Seva
                     </Link>
@@ -2148,16 +2153,70 @@ export const AshramDetailPage: React.FC = () => {
         </div>
 
         <div className="space-y-6">
+          {/* Short Stay card — only when user explicitly chose short-stay mode */}
+          {ashram?.dayStayConfig?.enabled && showOvernightBooking === false && (
+            <DayStayBookingCard
+              ashram={ashram}
+              rooms={rooms}
+              selectedRoomId={selectedDayStayRoomId}
+              onSelectRoom={setSelectedDayStayRoomId}
+              onSuccess={(res) => {
+                setBookingSuccess(res);
+              }}
+            />
+          )}
+
+          {/* Question card: switch to overnight (shown below short stay) */}
+          {ashram?.dayStayConfig?.enabled && showOvernightBooking === false && (
+            <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-5 shadow-sm space-y-4 relative overflow-hidden">
+              <div className="absolute top-0 inset-x-0 h-1 bg-[#F28C28]/40 rounded-t-[28px]" />
+              <div className="flex flex-col gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#FFF4E5] flex items-center justify-center shrink-0">
+                    <BedDouble size={18} className="text-[#F28C28]" />
+                  </div>
+                  <div>
+                    <p className="font-extrabold text-sm text-[#0B192C] dark:text-white">
+                      Want to book a full overnight stay?
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                      Reserve a room for the full night in addition to your short stay.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowOvernightBooking(true)}
+                    className="flex-1 py-2.5 rounded-2xl bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold transition-all shadow-sm cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <BedDouble size={13} />
+                    Yes, show overnight booking
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {}}
+                    className="flex-1 py-2.5 rounded-2xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 text-gray-600 dark:text-slate-300 text-xs font-extrabold hover:bg-gray-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                  >
+                    No, short stay is enough
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Overnight booking panel — visible when no dayStay or user chose overnight */}
+          {(!ashram?.dayStayConfig?.enabled || showOvernightBooking === true) && (
           <div id="booking-engine" className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-4 sm:p-6 shadow-sm space-y-6 relative overflow-visible z-40">
-            <div className="absolute top-0 inset-x-0 h-1 bg-[#0A4DA6]" />
+            <div className="absolute top-0 inset-x-0 h-1 bg-[#F28C28]" />
             <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
-              Stay Booking Engine
+              Overnight Stay Booking
             </h3>
 
             {restoredNotice && (
-              <div className="p-3 bg-[#0A4DA6]/10 border border-[#0A4DA6]/20 rounded-xl flex items-center justify-between text-xs font-semibold text-[#0A4DA6] space-x-2">
+              <div className="p-3 bg-[#F28C28]/10 border border-[#F28C28]/20 rounded-xl flex items-center justify-between text-xs font-semibold text-[#F28C28] space-x-2">
                 <div className="flex items-center gap-1.5">
-                  <Sparkles size={14} className="text-[#0A4DA6] shrink-0" />
+                  <Sparkles size={14} className="text-[#F28C28] shrink-0" />
                   <span>
                     Your previous booking selections have been restored.
                   </span>
@@ -2219,7 +2278,7 @@ export const AshramDetailPage: React.FC = () => {
                       ? `Book ${Object.values(selectedRooms).reduce((a, b) => a + b, 0)} ${Object.values(selectedRooms).reduce((a, b) => a + b, 0) === 1 ? "Room" : "Rooms"}`
                       : firstSelectedRoom?.name}
                   </span>
-                  <span className="text-[10px] font-bold text-[#0A4DA6]">
+                  <span className="text-[10px] font-bold text-[#F28C28]">
                     {formatCurrency(firstSelectedRoom?.basePrice || 0)} / bed per night
                   </span>
                 </div>
@@ -2266,7 +2325,7 @@ export const AshramDetailPage: React.FC = () => {
                               key={item._id}
                               className={`p-3 rounded-2xl border transition-all text-xs font-semibold flex items-center justify-between gap-2 ${
                                 qty > 0
-                                  ? "bg-[#0A4DA6]/5 border-[#0A4DA6]/30"
+                                  ? "bg-[#F28C28]/5 border-[#F28C28]/30"
                                   : "bg-gray-50/70 dark:bg-slate-900/60 border-gray-100 dark:border-slate-800"
                               }`}
                             >
@@ -2275,19 +2334,19 @@ export const AshramDetailPage: React.FC = () => {
                                   {item.category === "bed" || /bed/i.test(item.name || "") ? (
                                     <BedDouble
                                       size={14}
-                                      className="text-[#0A4DA6] shrink-0"
+                                      className="text-[#F28C28] shrink-0"
                                     />
                                   ) : (
                                     <Sparkles
                                       size={13}
-                                      className="text-[#0A4DA6] shrink-0"
+                                      className="text-[#F28C28] shrink-0"
                                     />
                                   )}
                                   <span className="font-extrabold text-[#0B192C] dark:text-white truncate">
                                     {item.name}
                                   </span>
                                 </div>
-                                <span className="text-[10px] font-bold text-[#0A4DA6] block">
+                                <span className="text-[10px] font-bold text-[#F28C28] block">
                                   {formatCurrency(item.price)}{" "}
                                   <span className="text-gray-400 font-medium">
                                     / {item.unitLabel || "Unit"}
@@ -2309,7 +2368,7 @@ export const AshramDetailPage: React.FC = () => {
                                   className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-bold transition-all ${
                                     qty <= 0
                                       ? "border-gray-200 text-gray-300 dark:border-slate-800 dark:text-slate-700 cursor-not-allowed"
-                                      : "border-[#0A4DA6] text-[#0A4DA6] hover:bg-[#0A4DA6] hover:text-white cursor-pointer"
+                                      : "border-[#F28C28] text-[#F28C28] hover:bg-[#F28C28] hover:text-white cursor-pointer"
                                   }`}
                                 >
                                   -
@@ -2330,7 +2389,7 @@ export const AshramDetailPage: React.FC = () => {
                                   className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-bold transition-all ${
                                     qty >= (item.maxQuantity || 10)
                                       ? "border-gray-200 text-gray-300 dark:border-slate-800 dark:text-slate-700 cursor-not-allowed"
-                                      : "border-[#0A4DA6] text-[#0A4DA6] hover:bg-[#0A4DA6] hover:text-white cursor-pointer"
+                                      : "border-[#F28C28] text-[#F28C28] hover:bg-[#F28C28] hover:text-white cursor-pointer"
                                   }`}
                                 >
                                   +
@@ -2346,7 +2405,7 @@ export const AshramDetailPage: React.FC = () => {
                 {(offersLoading || availableOffers.length > 0) && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2">
-                      <label className="text-[10px] font-black tracking-wider text-[#0A4DA6] flex items-center gap-1.5">
+                      <label className="text-[10px] font-black tracking-wider text-[#F28C28] flex items-center gap-1.5">
                         <Sparkles size={12} /> Available Offers
                       </label>
                       {!offersLoading && (
@@ -2412,7 +2471,7 @@ export const AshramDetailPage: React.FC = () => {
                                       {offer.description || "Apply this offer to your stay."}
                                     </p>
                                     <div className="flex items-center gap-2 flex-wrap text-[9px] font-bold text-slate-500 dark:text-slate-400">
-                                      <span className="text-[#0A4DA6] dark:text-blue-400">
+                                      <span className="text-[#F28C28] dark:text-amber-400">
                                         Applied on: {targetRoomName}
                                       </span>
                                       {Number(offer.minimumBookingAmount || 0) > 0 && (
@@ -2429,7 +2488,7 @@ export const AshramDetailPage: React.FC = () => {
                                     className={`shrink-0 rounded-xl px-3 py-2 text-[10px] font-black transition-colors ${
                                       isApplied
                                         ? "cursor-default bg-emerald-500 text-white"
-                                        : "cursor-pointer bg-[#0A4DA6] text-white hover:bg-[#083b80]"
+                                        : "cursor-pointer bg-[#F28C28] text-white hover:bg-[#B45309]"
                                     }`}
                                   >
                                     {isApplied ? "Applied" : `Apply ${code}`}
@@ -2483,7 +2542,7 @@ export const AshramDetailPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={handleChangeCoupon}
-                        className="flex-1 py-1.5 px-3 bg-[#0A4DA6] hover:bg-[#083b80] text-white text-[10px] font-black rounded-xl flex items-center justify-center gap-1 transition-all cursor-pointer shadow-sm"
+                        className="flex-1 py-1.5 px-3 bg-[#F28C28] hover:bg-[#B45309] text-white text-[10px] font-black rounded-xl flex items-center justify-center gap-1 transition-all cursor-pointer shadow-sm"
                       >
                         <Edit3 size={12} /> Change Coupon
                       </button>
@@ -2527,7 +2586,7 @@ export const AshramDetailPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={handleApplyCoupon}
-                      className="px-4 py-2.5 bg-[#0A4DA6] text-white text-xs font-extrabold rounded-xl cursor-pointer hover:bg-[#083b80] transition-all shadow-sm"
+                      className="px-4 py-2.5 bg-[#F28C28] text-white text-xs font-extrabold rounded-xl cursor-pointer hover:bg-[#B45309] transition-all shadow-sm"
                     >
                       Apply
                     </button>
@@ -2559,7 +2618,7 @@ export const AshramDetailPage: React.FC = () => {
                     type="checkbox"
                     checked={useLoyalty}
                     onChange={() => setUseLoyalty(!useLoyalty)}
-                    className="w-4 h-4 text-[#0A4DA6] rounded border-gray-300 cursor-pointer"
+                    className="w-4 h-4 text-[#F28C28] rounded border-gray-300 cursor-pointer"
                   />
                 </div>
 
@@ -2640,7 +2699,7 @@ export const AshramDetailPage: React.FC = () => {
                   )}
 
                   {platformSettings.enabled && (
-                    <div className="flex justify-between text-[#0A4DA6] font-extrabold text-[11px]">
+                    <div className="flex justify-between text-[#F28C28] font-extrabold text-[11px]">
                       <span>
                         {platformSettings.label || "Tirvona Platform Fee"}:
                       </span>
@@ -2680,7 +2739,7 @@ export const AshramDetailPage: React.FC = () => {
 
                   <div className="pt-2 border-t border-gray-200 dark:border-slate-800 flex justify-between text-base font-black text-[#0B192C] dark:text-white">
                     <span>Final Payable Amount:</span>
-                    <span className="text-[#0A4DA6] dark:text-blue-400">
+                    <span className="text-[#F28C28] dark:text-amber-400">
                       {formatCurrency(finalPayableCalc)}
                     </span>
                   </div>
@@ -2732,7 +2791,7 @@ export const AshramDetailPage: React.FC = () => {
                   className={`w-full py-3.5 text-white font-black rounded-full text-xs flex items-center justify-center gap-2 transition-all ${
                     !checkAshramBookingAvailable(ashram)
                       ? "bg-rose-600 hover:bg-rose-700 cursor-not-allowed opacity-90 shadow-md shadow-rose-900/20"
-                      : "bg-[#0A4DA6] hover:bg-[#083b80] disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-[#0A4DA6]/25 cursor-pointer active:scale-98"
+                      : "bg-[#F28C28] hover:bg-[#B45309] disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-[#F28C28]/25 cursor-pointer active:scale-98"
                   }`}
                 >
                   {!checkAshramBookingAvailable(ashram)
@@ -2770,7 +2829,7 @@ export const AshramDetailPage: React.FC = () => {
                   {bookingSuccess.reservationNumber && (
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">Reservation No:</span>
-                      <span className="font-mono font-bold text-[#0A4DA6]">
+                      <span className="font-mono font-bold text-[#F28C28]">
                         {bookingSuccess.reservationNumber}
                       </span>
                     </div>
@@ -2794,7 +2853,7 @@ export const AshramDetailPage: React.FC = () => {
 
                   <div className="flex justify-between items-center pt-2 border-t border-dashed border-gray-200 dark:border-slate-800 font-extrabold text-sm text-[#0B192C] dark:text-white">
                     <span>Total Amount Payable:</span>
-                    <span className="text-[#0A4DA6]">
+                    <span className="text-[#F28C28]">
                       {formatCurrency(bookingSuccess.pricing?.totalAmount)}
                     </span>
                   </div>
@@ -2803,7 +2862,7 @@ export const AshramDetailPage: React.FC = () => {
                 <div className="space-y-2 pt-1">
                   <Link
                     to="/profile/bookings"
-                    className="w-full py-3 bg-[#0A4DA6] hover:bg-[#083b80] text-white font-extrabold rounded-full text-xs shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all"
+                    className="w-full py-3 bg-[#F28C28] hover:bg-[#B45309] text-white font-extrabold rounded-full text-xs shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all"
                   >
                     Go to My Bookings <ArrowRight size={14} />
                   </Link>
@@ -2819,18 +2878,58 @@ export const AshramDetailPage: React.FC = () => {
               </div>
             )}
           </div>
+          )}
+
+          {/* Question card: switch to short stay (shown below overnight panel) */}
+          {ashram?.dayStayConfig?.enabled && showOvernightBooking === true && (
+            <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-5 shadow-sm space-y-4 relative overflow-hidden">
+              <div className="absolute top-0 inset-x-0 h-1 bg-[#F28C28]/40 rounded-t-[28px]" />
+              <div className="flex flex-col gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#FFF4E5] flex items-center justify-center shrink-0">
+                    <Sparkles size={18} className="text-[#F28C28]" />
+                  </div>
+                  <div>
+                    <p className="font-extrabold text-sm text-[#0B192C] dark:text-white">
+                      Want a short stay instead?
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                      Book a 4 or 6-hour freshen-up slot at this property without a full overnight booking.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowOvernightBooking(false)}
+                    className="flex-1 py-2.5 rounded-2xl bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold transition-all shadow-sm cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <Sparkles size={13} />
+                    Yes, show short stay
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {}}
+                    className="flex-1 py-2.5 rounded-2xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 text-gray-600 dark:text-slate-300 text-xs font-extrabold hover:bg-gray-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                  >
+                    No, overnight is fine
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm space-y-4">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <h4 className="inline-flex items-center gap-2 text-xs font-extrabold text-[#0B192C] dark:text-white">
-                <Map className="text-[#0A4DA6]" size={16} /> Location
+                <Map className="text-[#F28C28]" size={16} /> Location
               </h4>
               {ashramLatLng && (
                 <a
                   href={`https://www.google.com/maps/search/?api=1&query=${ashramLatLng[0]},${ashramLatLng[1]}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-4 py-1.5 bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 rounded-full text-[9px] font-bold hover:bg-[#0A4DA6]/15 transition-all inline-block cursor-pointer"
+                  className="px-4 py-1.5 bg-[#F28C28]/10 text-[#F28C28] border border-[#F28C28]/20 rounded-full text-[9px] font-bold hover:bg-[#F28C28]/15 transition-all inline-block cursor-pointer"
                 >
                   Get Directions
                 </a>
@@ -2873,7 +2972,7 @@ export const AshramDetailPage: React.FC = () => {
       {relatedStays.length > 0 && (
         <div className="space-y-6 pt-10 border-t border-gray-100 dark:border-slate-800">
           <div className="space-y-1">
-            <span className="text-xs font-extrabold text-[#0A4DA6] tracking-widest">
+            <span className="text-xs font-extrabold text-[#F28C28] tracking-widest">
               More Places
             </span>
             <h3 className="text-lg md:text-2xl font-extrabold text-[#0B192C] dark:text-white">
@@ -2914,7 +3013,7 @@ export const AshramDetailPage: React.FC = () => {
                   <h4 className="font-extrabold text-xs text-[#0B192C] dark:text-white line-clamp-1">
                     {rel.name}
                   </h4>
-                  <span className="text-[9px] text-[#0A4DA6] font-bold block">
+                  <span className="text-[9px] text-[#F28C28] font-bold block">
                     {rel.address?.city}
                   </span>
                 </div>
@@ -2922,7 +3021,7 @@ export const AshramDetailPage: React.FC = () => {
                   <span className="text-[10px] font-extrabold text-[#0B192C] dark:text-white">
                     {formatCurrency(rel.lowestNightPrice ?? 150)} / night
                   </span>
-                  <span className="text-[9px] font-bold text-[#0A4DA6] flex items-center gap-0.5">
+                  <span className="text-[9px] font-bold text-[#F28C28] flex items-center gap-0.5">
                     View <ChevronRight size={10} />
                   </span>
                 </div>
@@ -2938,7 +3037,7 @@ export const AshramDetailPage: React.FC = () => {
           <span className="text-[10px] text-gray-400 font-bold block uppercase tracking-wider">
             From
           </span>
-          <span className="text-sm font-black text-[#0A4DA6] dark:text-blue-400">
+          <span className="text-sm font-black text-[#F28C28] dark:text-amber-400">
             {formatCurrency(firstSelectedRoom?.basePrice || (ashram as any)?.lowestNightPrice || 150)}
             <span className="text-[10px] text-gray-500 font-normal"> / night</span>
           </span>
@@ -2952,7 +3051,7 @@ export const AshramDetailPage: React.FC = () => {
               el.scrollIntoView({ behavior: "smooth", block: "start" });
             }
           }}
-          className="px-5 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold shadow-md cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all"
+          className="px-5 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#B45309] text-white text-xs font-extrabold shadow-md cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all"
         >
           <span>Book Now</span>
           <ArrowRight size={13} />

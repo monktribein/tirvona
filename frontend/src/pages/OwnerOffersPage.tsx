@@ -342,7 +342,7 @@ export const OwnerOffersPage: React.FC = () => {
 
   return (
     <div className="space-y-8 text-left w-full pb-12">
-      <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] rounded-[28px] p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-gradient-to-r from-[#0B192C] via-[#F28C28] to-[#0B192C] rounded-[28px] p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
           <div className="inline-flex items-center px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-black border border-amber-500/30 backdrop-blur-md">
             Enterprise Offer & Promotion Hub
@@ -359,7 +359,7 @@ export const OwnerOffersPage: React.FC = () => {
         <div className="flex flex-wrap items-center gap-3 shrink-0">
           <button
             onClick={() => handleOpenWizard(undefined, false)}
-            className="bg-[#0A4DA6] hover:bg-[#083b80] text-white font-black text-xs sm:text-sm px-5 py-3 rounded-full flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer active:scale-95"
+            className="bg-[#F28C28] hover:bg-[#B45309] text-white font-black text-xs sm:text-sm px-5 py-3 rounded-full flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer active:scale-95"
           >
             <Plus size={16} /> Launch Create Offer Wizard
           </button>
@@ -395,7 +395,7 @@ export const OwnerOffersPage: React.FC = () => {
           <div className="text-[10px] font-black text-gray-400 tracking-wider">
             Scheduled
           </div>
-          <div className="text-xl font-black text-[#0A4DA6] dark:text-amber-400">
+          <div className="text-xl font-black text-[#F28C28] dark:text-amber-400">
             {stats.scheduledOffers}
           </div>
         </div>
@@ -436,7 +436,7 @@ export const OwnerOffersPage: React.FC = () => {
               onClick={() => setSelectedStatus(st)}
               className={`px-3.5 py-1.5 rounded-full text-xs font-black cursor-pointer whitespace-nowrap transition-all ${
                 selectedStatus === st
-                  ? "bg-[#0A4DA6] text-white shadow-sm"
+                  ? "bg-[#F28C28] text-white shadow-sm"
                   : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
               }`}
             >
@@ -455,7 +455,7 @@ export const OwnerOffersPage: React.FC = () => {
             placeholder="Search offer or promo code..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full pl-9 pr-4 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+            className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full pl-9 pr-4 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
           />
         </div>
       </div>
@@ -489,7 +489,7 @@ export const OwnerOffersPage: React.FC = () => {
                       className="w-full h-full object-cover opacity-90"
                     />
                   ) : null}
-                  <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-[#0A4DA6] text-white text-[10px] font-black">
+                  <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-[#F28C28] text-white text-[10px] font-black">
                     {offer.offerType}
                   </span>
                   <span className="absolute top-3 right-3 px-3 py-1 rounded-full bg-amber-500 text-white text-xs font-black">
@@ -513,7 +513,7 @@ export const OwnerOffersPage: React.FC = () => {
                     <span className="text-[10px] font-black text-gray-400">
                       PROMO
                     </span>
-                    <span className="font-mono font-black text-sm text-[#0A4DA6] dark:text-amber-400">
+                    <span className="font-mono font-black text-sm text-[#F28C28] dark:text-amber-400">
                       {offer.promoCode}
                     </span>
                   </div>
@@ -601,7 +601,7 @@ export const OwnerOffersPage: React.FC = () => {
                     onClick={() => setCurrentStep(stepNum)}
                     className={`px-3 py-1.5 rounded-full text-[10px] font-extrabold whitespace-nowrap cursor-pointer transition-all ${
                       currentStep === stepNum
-                        ? "bg-[#0A4DA6] text-white"
+                        ? "bg-[#F28C28] text-white"
                         : currentStep > stepNum
                           ? "bg-emerald-500/10 text-emerald-600"
                           : "bg-gray-100 dark:bg-slate-800 text-gray-400"
@@ -628,7 +628,7 @@ export const OwnerOffersPage: React.FC = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, offerTitle: e.target.value })
                       }
-                      className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                      className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                     />
                   </div>
 
@@ -645,7 +645,7 @@ export const OwnerOffersPage: React.FC = () => {
                             offerType: e.target.value,
                           })
                         }
-                        className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                        className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                       >
                         {offerCategories.map((c) => (
                           <option key={c} value={c}>
@@ -684,7 +684,7 @@ export const OwnerOffersPage: React.FC = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, ashramId: e.target.value, roomId: "" })
                       }
-                      className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                      className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                     >
                       <option value="">All My Owned Ashrams</option>
                       {ashrams.map((a) => (
@@ -704,7 +704,7 @@ export const OwnerOffersPage: React.FC = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, roomId: e.target.value })
                       }
-                      className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                      className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                     >
                       <option value="">All Room Categories (Whole Ashram)</option>
                       {availableRooms.map((r) => (
@@ -770,7 +770,7 @@ export const OwnerOffersPage: React.FC = () => {
                             promoCode: e.target.value.toUpperCase(),
                           })
                         }
-                        className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-mono font-black focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                        className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-mono font-black focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                       />
                     </div>
 
@@ -944,7 +944,7 @@ export const OwnerOffersPage: React.FC = () => {
                     <p className="text-xs text-gray-500">
                       {formData.description}
                     </p>
-                    <div className="font-mono font-black text-sm text-[#0A4DA6]">
+                    <div className="font-mono font-black text-sm text-[#F28C28]">
                       {formData.promoCode}
                     </div>
                   </div>
@@ -968,7 +968,7 @@ export const OwnerOffersPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setCurrentStep(currentStep + 1)}
-                    className="px-6 py-2.5 bg-[#0A4DA6] text-white rounded-full text-xs font-bold cursor-pointer"
+                    className="px-6 py-2.5 bg-[#F28C28] text-white rounded-full text-xs font-bold cursor-pointer"
                   >
                     Next Step <ArrowRight size={14} />
                   </button>

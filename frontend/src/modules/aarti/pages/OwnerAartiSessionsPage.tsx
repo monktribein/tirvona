@@ -352,7 +352,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value)}
-            className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+            className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
           >
             <option value="">All statuses</option>
             <option value="draft">Draft</option>
@@ -364,7 +364,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
           <button
             type="button"
             onClick={openCreate}
-            className="inline-flex items-center gap-1.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold px-4 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-1.5 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold px-4 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
           >
             <Plus size={15} /> New aarti
           </button>
@@ -378,7 +378,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
         </div>
       ) : loading ? (
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm p-12 flex items-center justify-center gap-3">
-          <Loader2 size={20} className="animate-spin text-[#0A4DA6]" />
+          <Loader2 size={20} className="animate-spin text-[#F28C28]" />
           <span className="text-sm font-bold text-gray-400">Loading…</span>
         </div>
       ) : sessions.length === 0 ? (
@@ -448,7 +448,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                           type="button"
                           title="Manage passes"
                           onClick={() => openPasses(session)}
-                          className="p-2 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#0A4DA6] hover:border-[#0A4DA6] transition-all active:scale-90 cursor-pointer"
+                          className="p-2 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#F28C28] hover:border-[#F28C28] transition-all active:scale-90 cursor-pointer"
                         >
                           <Ticket size={14} />
                         </button>
@@ -456,7 +456,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                           type="button"
                           title="Edit"
                           onClick={() => openEdit(session)}
-                          className="p-2 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#0A4DA6] hover:border-[#0A4DA6] transition-all active:scale-90 cursor-pointer"
+                          className="p-2 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#F28C28] hover:border-[#F28C28] transition-all active:scale-90 cursor-pointer"
                         >
                           <Pencil size={14} />
                         </button>
@@ -560,7 +560,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                         },
                       });
                     }}
-                    className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all disabled:opacity-60"
+                    className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all disabled:opacity-60"
                   >
                     <option value="">Select an ashram</option>
                     {ashrams.map((ashram) => (
@@ -580,7 +580,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                   value={form.name}
                   onChange={(event) => setForm({ ...form, name: event.target.value })}
                   placeholder="e.g. Evening Ganga Aarti at Har Ki Pauri"
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 />
               </label>
 
@@ -591,7 +591,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                 <select
                   value={form.kind}
                   onChange={(event) => setForm({ ...form, kind: event.target.value })}
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 >
                   {AARTI_KINDS.map((kind) => (
                     <option key={kind} value={kind}>
@@ -609,7 +609,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                   value={form.deity}
                   onChange={(event) => setForm({ ...form, deity: event.target.value })}
                   placeholder="e.g. Maa Ganga"
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 />
               </label>
 
@@ -623,7 +623,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                   onChange={(event) =>
                     setForm({ ...form, startTime: event.target.value })
                   }
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 />
               </label>
 
@@ -642,7 +642,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                       durationMinutes: Number(event.target.value) || 45,
                     })
                   }
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 />
               </label>
 
@@ -656,7 +656,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                   onChange={(event) =>
                     setForm({ ...form, startDate: event.target.value })
                   }
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 />
               </label>
 
@@ -671,7 +671,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                   onChange={(event) =>
                     setForm({ ...form, endDate: event.target.value })
                   }
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 />
               </label>
 
@@ -687,8 +687,8 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                       onClick={() => toggleDay(day)}
                       className={`rounded-full border px-3 py-1.5 text-[10px] font-bold transition-all active:scale-95 cursor-pointer ${
                         form.daysOfWeek.includes(day)
-                          ? "border-[#0A4DA6] bg-[#0A4DA6] text-white shadow-sm"
-                          : "border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 text-gray-500 dark:text-gray-400 hover:border-[#0A4DA6] hover:text-[#0A4DA6]"
+                          ? "border-[#F28C28] bg-[#F28C28] text-white shadow-sm"
+                          : "border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 text-gray-500 dark:text-gray-400 hover:border-[#F28C28] hover:text-[#F28C28]"
                       }`}
                     >
                       {label}
@@ -710,7 +710,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                     })
                   }
                   placeholder="e.g. Har Ki Pauri Ghat"
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 />
               </label>
 
@@ -734,7 +734,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                       },
                     });
                   }}
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 >
                   {INDIA_STATES.map((state) => (
                     <option key={state.code} value={state.name}>
@@ -756,7 +756,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                       venue: { ...form.venue, city: event.target.value },
                     })
                   }
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 >
                   {(INDIA_STATES.find(
                     (state) => state.name === form.venue.state,
@@ -787,7 +787,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                     setForm({ ...form, coverImage: event.target.value })
                   }
                   placeholder="https://…"
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 />
               </label> : null}
                 <div>
@@ -820,7 +820,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                   onChange={(event) =>
                     setForm({ ...form, description: event.target.value })
                   }
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 />
               </label>
 
@@ -833,7 +833,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                   onChange={(event) =>
                     setForm({ ...form, dressCode: event.target.value })
                   }
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 />
               </label>
 
@@ -846,7 +846,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                   onChange={(event) =>
                     setForm({ ...form, contactPhone: event.target.value })
                   }
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 />
               </label>
 
@@ -862,8 +862,8 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                       onClick={() => toggleFacility(facility)}
                       className={`rounded-full border px-3 py-1.5 text-xs font-medium ${
                         form.facilities.includes(facility)
-                          ? "border-[#0A4DA6] bg-[#0A4DA6] text-white shadow-sm"
-                          : "border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 text-gray-500 dark:text-gray-400 hover:border-[#0A4DA6] hover:text-[#0A4DA6]"
+                          ? "border-[#F28C28] bg-[#F28C28] text-white shadow-sm"
+                          : "border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 text-gray-500 dark:text-gray-400 hover:border-[#F28C28] hover:text-[#F28C28]"
                       }`}
                     >
                       {facilityLabel(facility)}
@@ -877,7 +877,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="inline-flex items-center gap-1.5 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 hover:border-[#0A4DA6] text-gray-500 dark:text-gray-400 hover:text-[#0A4DA6] text-xs font-extrabold px-4 py-2.5 rounded-full shadow-sm transition-all active:scale-95 cursor-pointer"
+                className="inline-flex items-center gap-1.5 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 hover:border-[#F28C28] text-gray-500 dark:text-gray-400 hover:text-[#F28C28] text-xs font-extrabold px-4 py-2.5 rounded-full shadow-sm transition-all active:scale-95 cursor-pointer"
               >
                 Cancel
               </button>
@@ -885,7 +885,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                 type="button"
                 onClick={save}
                 disabled={!canSave || saving}
-                className="inline-flex items-center gap-1.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold px-4 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold px-4 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50"
               >
                 {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                 Save aarti
@@ -953,7 +953,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                             isActive: pass.isActive !== false,
                           });
                         }}
-                        className="p-2 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#0A4DA6] hover:border-[#0A4DA6] transition-all active:scale-90 cursor-pointer"
+                        className="p-2 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#F28C28] hover:border-[#F28C28] transition-all active:scale-90 cursor-pointer"
                       >
                         <Pencil size={13} />
                       </button>
@@ -981,7 +981,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                     setPassForm({ ...passForm, name: event.target.value })
                   }
                   placeholder="Pass name, e.g. VIP Ghat"
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 />
                 <input
                   value={passForm.code}
@@ -990,7 +990,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                     setPassForm({ ...passForm, code: event.target.value.toUpperCase() })
                   }
                   placeholder="Code, e.g. VIP"
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 disabled:opacity-60 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 disabled:opacity-60 transition-all"
                 />
                 <input
                   type="number"
@@ -1003,7 +1003,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                     })
                   }
                   placeholder="Price per pass"
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 />
                 <input
                   type="number"
@@ -1016,7 +1016,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                     })
                   }
                   placeholder="Seats available"
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 />
                 <input
                   value={passForm.zoneLabel}
@@ -1024,7 +1024,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                     setPassForm({ ...passForm, zoneLabel: event.target.value })
                   }
                   placeholder="Zone label (optional)"
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 />
                 <input
                   type="number"
@@ -1038,7 +1038,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                     })
                   }
                   placeholder="Max per booking"
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 />
                 <label className="flex items-center gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
                   <input
@@ -1075,7 +1075,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                       setEditingPass(null);
                       setPassForm({ ...emptyPass });
                     }}
-                    className="inline-flex items-center gap-1.5 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 hover:border-[#0A4DA6] text-gray-500 dark:text-gray-400 hover:text-[#0A4DA6] text-xs font-extrabold px-3 py-2 rounded-full shadow-sm transition-all active:scale-95 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 hover:border-[#F28C28] text-gray-500 dark:text-gray-400 hover:text-[#F28C28] text-xs font-extrabold px-3 py-2 rounded-full shadow-sm transition-all active:scale-95 cursor-pointer"
                   >
                     Cancel edit
                   </button>
@@ -1084,7 +1084,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                   type="button"
                   onClick={savePass}
                   disabled={!passForm.name.trim() || !passForm.code.trim()}
-                  className="inline-flex items-center gap-1.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold px-4 py-2 rounded-full shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold px-4 py-2 rounded-full shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50"
                 >
                   {editingPass ? "Update pass" : "Add pass"}
                 </button>

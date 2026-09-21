@@ -239,7 +239,7 @@ export const AartiHubPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={resetFilters}
-                    className="inline-flex items-center gap-2 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold px-5 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
+                    className="inline-flex items-center gap-2 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold px-5 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
                   >
                     Clear filters
                   </button>
@@ -269,7 +269,7 @@ export const AartiHubPage: React.FC = () => {
                       type="button"
                       disabled={page <= 1}
                       onClick={() => setPage((value) => Math.max(1, value - 1))}
-                      className="bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 text-[#0A4DA6] dark:text-blue-300 text-xs font-extrabold px-4 py-2 rounded-full shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 text-[#F28C28] dark:text-amber-300 text-xs font-extrabold px-4 py-2 rounded-full shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       Previous
                     </button>
@@ -280,7 +280,7 @@ export const AartiHubPage: React.FC = () => {
                       type="button"
                       disabled={page >= totalPages}
                       onClick={() => setPage((value) => value + 1)}
-                      className="bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 text-[#0A4DA6] dark:text-blue-300 text-xs font-extrabold px-4 py-2 rounded-full shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 text-[#F28C28] dark:text-amber-300 text-xs font-extrabold px-4 py-2 rounded-full shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       Next
                     </button>

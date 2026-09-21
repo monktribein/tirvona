@@ -16,7 +16,7 @@ import {
 import { EnterpriseButton, EnterpriseStatusBadge } from "../../admin/shared";
 import { useAuth } from "../../contexts/AuthContext";
 import { bookingService } from "../../services";
-import { formatCurrency } from "../../utils/format";
+import { formatCurrency, formatSlotTime } from "../../utils/format";
 import { parkingBookingService } from "../../modules/parking/services/parking.service";
 import { getErrorMessage } from "../../lib/api";
 import useMyBookings, {
@@ -138,7 +138,7 @@ export const ProfileBookingsPage: React.FC = () => {
           </p>
           <button
             onClick={() => navigate("/login?redirect=/profile/bookings")}
-            className="bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold px-6 py-2.5 rounded-full transition-all active:scale-95 cursor-pointer"
+            className="bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold px-6 py-2.5 rounded-full transition-all active:scale-95 cursor-pointer"
           >
             Sign In
           </button>
@@ -157,7 +157,7 @@ export const ProfileBookingsPage: React.FC = () => {
               onClick={() => setActiveTab(tab.key)}
               className={`px-4 sm:px-5 py-2 rounded-full transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === tab.key
-                  ? "bg-[#0A4DA6] text-white shadow-md"
+                  ? "bg-[#F28C28] text-white shadow-md"
                   : "text-gray-500 hover:text-[#0B192C] dark:hover:text-white"
               }`}
             >
@@ -188,8 +188,8 @@ export const ProfileBookingsPage: React.FC = () => {
                 onClick={() => setKindFilter(key)}
                 className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
                   kindFilter === key
-                    ? "bg-[#0A4DA6] border-[#0A4DA6] text-white"
-                    : "bg-white dark:bg-[#0B192C] border-gray-200 dark:border-slate-700 text-slate-600 dark:text-gray-300 hover:border-[#0A4DA6]"
+                    ? "bg-[#F28C28] border-[#F28C28] text-white"
+                    : "bg-white dark:bg-[#0B192C] border-gray-200 dark:border-slate-700 text-slate-600 dark:text-gray-300 hover:border-[#F28C28]"
                 }`}
               >
                 <Icon size={12} className="stroke-[2.5]" />
@@ -248,13 +248,13 @@ export const ProfileBookingsPage: React.FC = () => {
             <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
               <Link
                 to="/search"
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#0A4DA6] text-white rounded-full text-xs font-bold shadow-md hover:bg-[#083D85] transition-colors"
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#F28C28] text-white rounded-full text-xs font-bold shadow-md hover:bg-[#D97706] transition-colors"
               >
                 <BedDouble size={13} /> Find a Stay
               </Link>
               <Link
                 to="/parking"
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 text-[#0A4DA6] dark:text-blue-300 rounded-full text-xs font-bold hover:border-[#0A4DA6] transition-colors"
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 text-[#F28C28] dark:text-amber-300 rounded-full text-xs font-bold hover:border-[#F28C28] transition-colors"
               >
                 <CircleParking size={13} /> Book Parking
               </Link>
@@ -298,7 +298,7 @@ export const ProfileBookingsPage: React.FC = () => {
                       <span
                         className={`inline-flex items-center gap-1 text-[9px] font-black tracking-wider px-2 py-0.5 rounded-full ${
                           b.kind === "parking"
-                            ? "bg-blue-50 dark:bg-blue-950/50 text-[#0A4DA6] dark:text-blue-300"
+                            ? "bg-[#FFF4E5]/50 text-[#F28C28] dark:text-amber-300"
                             : "bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300"
                         }`}
                       >
@@ -318,7 +318,7 @@ export const ProfileBookingsPage: React.FC = () => {
                           ? `/parking/booking/${b.id}`
                           : `/booking/${b.reference || b.id}`)
                       }
-                      className="hover:text-[#0A4DA6] transition-colors block"
+                      className="hover:text-[#F28C28] transition-colors block"
                     >
                       <h3 className="font-black text-base text-[#0B192C] dark:text-white leading-tight">
                         {b.title}
@@ -335,6 +335,8 @@ export const ProfileBookingsPage: React.FC = () => {
                     <p className="text-gray-400 font-bold pt-1">
                       {b.kind === "parking"
                         ? `${formatDateTime(b.start)} → ${formatDateTime(b.end)}`
+                        : ((b.bookingType === "day_rest" || b.bookingType === "freshen_up" || Boolean(b.dayStayDetails?.productCode)) && b.bookingType !== "overnight")
+                        ? `${formatDate(b.start)} · ${formatSlotTime(b.dayStayDetails?.slotStartTime || b.start)} – ${formatSlotTime(b.dayStayDetails?.slotEndTime || b.end)}`
                         : `${formatDate(b.start)} → ${formatDate(b.end)}`}
                       {b.meta ? ` • ${b.meta}` : ""}
                     </p>
@@ -366,7 +368,7 @@ export const ProfileBookingsPage: React.FC = () => {
                     </div>
 
                     {b.slotNumber && (
-                      <p className="inline-flex items-center gap-1.5 mt-1.5 bg-blue-50 dark:bg-blue-950/50 text-[#0A4DA6] dark:text-blue-300 px-2.5 py-1 rounded-full text-[10px] font-black">
+                      <p className="inline-flex items-center gap-1.5 mt-1.5 bg-[#FFF4E5]/50 text-[#F28C28] dark:text-amber-300 px-2.5 py-1 rounded-full text-[10px] font-black">
                         <CircleParking size={11} /> Bay {b.slotNumber}
                       </p>
                     )}
@@ -391,7 +393,7 @@ export const ProfileBookingsPage: React.FC = () => {
                     <span className="text-[10px] text-gray-400 block font-bold">
                       {b.amountPaid > 0 ? "Paid" : "Payable at Ashram"}
                     </span>
-                    <span className="text-lg font-black text-[#0A4DA6] dark:text-white">
+                    <span className="text-lg font-black text-[#F28C28] dark:text-white">
                       {formatCurrency(
                         b.amountPaid > 0 ? b.amountPaid : b.amount,
                       )}
@@ -493,7 +495,7 @@ export const ProfileBookingsPage: React.FC = () => {
               </button>
 
               <div className="text-center pb-3 border-b border-gray-100 dark:border-slate-800 space-y-1">
-                <span className="text-xs font-black tracking-wider text-[#0A4DA6]">
+                <span className="text-xs font-black tracking-wider text-[#F28C28]">
                   Tirvona Sacred Stays
                 </span>
                 <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
@@ -517,7 +519,7 @@ export const ProfileBookingsPage: React.FC = () => {
                     <span className="text-gray-400 font-bold">
                       Reservation No:
                     </span>
-                    <span className="font-mono font-bold text-[#0A4DA6]">
+                    <span className="font-mono font-bold text-[#F28C28]">
                       {selectedReceipt.reservationNumber}
                     </span>
                   </div>
@@ -555,8 +557,9 @@ export const ProfileBookingsPage: React.FC = () => {
                     Check-In / Out:
                   </span>
                   <span className="font-semibold">
-                    {formatDate(selectedReceipt.start)} →{" "}
-                    {formatDate(selectedReceipt.end)}
+                    {((selectedReceipt.bookingType === "day_rest" || selectedReceipt.bookingType === "freshen_up" || Boolean(selectedReceipt.dayStayDetails?.productCode)) && selectedReceipt.bookingType !== "overnight")
+                      ? `${formatDate(selectedReceipt.start)} (${formatSlotTime(selectedReceipt.dayStayDetails?.slotStartTime || selectedReceipt.start)}) → ${formatDate(selectedReceipt.end)} (${formatSlotTime(selectedReceipt.dayStayDetails?.slotEndTime || selectedReceipt.end)})`
+                      : `${formatDate(selectedReceipt.start)} → ${formatDate(selectedReceipt.end)}`}
                   </span>
                 </div>
 
@@ -582,7 +585,7 @@ export const ProfileBookingsPage: React.FC = () => {
 
                 <div className="flex justify-between pt-2 border-t border-dashed border-gray-200 dark:border-slate-800 text-sm font-black">
                   <span>Total Amount:</span>
-                  <span className="text-[#0A4DA6]">
+                  <span className="text-[#F28C28]">
                     {formatCurrency(selectedReceipt.amount)}
                   </span>
                 </div>
@@ -591,7 +594,7 @@ export const ProfileBookingsPage: React.FC = () => {
               <div className="pt-2 flex gap-2">
                 <button
                   onClick={() => window.print()}
-                  className="flex-1 py-2.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white font-extrabold text-xs rounded-full cursor-pointer transition-all"
+                  className="flex-1 py-2.5 bg-[#F28C28] hover:bg-[#B45309] text-white font-extrabold text-xs rounded-full cursor-pointer transition-all"
                 >
                   Print Receipt
                 </button>

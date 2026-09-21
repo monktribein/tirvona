@@ -11,6 +11,22 @@ export default {
         primary: {
           DEFAULT: "var(--primary)",
           foreground: "var(--primary-foreground)",
+          hover: "var(--primary-hover)",
+          active: "var(--primary-active)",
+          light: "var(--primary-light)",
+          border: "var(--primary-border)",
+        },
+        saffron: {
+          50: "#FFF9F2",
+          100: "#FFF4E5",
+          200: "#FFE4C4",
+          300: "#FFC88A",
+          400: "#FFA44D",
+          500: "#F28C28",
+          600: "#D97706",
+          700: "#B45309",
+          800: "#92400E",
+          900: "#78350F",
         },
         secondary: {
           DEFAULT: "var(--secondary)",

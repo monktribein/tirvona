@@ -55,7 +55,7 @@ export const openRazorpayCheckout = (
           description: options?.description || (order as any).description || "Secure Tirvona Payment",
           image: options?.image || "/logo.png",
           prefill,
-          theme: { color: "#0A4DA6" },
+          theme: { color: "#F28C28" },
           handler: (response: RazorpayResult) => resolve(response),
           modal: {
             ondismiss: () => reject(new Error("Payment was cancelled. Nothing was confirmed.")),

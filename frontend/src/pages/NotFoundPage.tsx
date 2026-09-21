@@ -54,14 +54,14 @@ export const NotFoundPage: React.FC = () => {
   if (checking)
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <Loader2 size={26} className="animate-spin text-[#0A4DA6]" />
+        <Loader2 size={26} className="animate-spin text-[#F28C28]" />
       </div>
     );
 
   return (
     <div className="min-h-[70vh] flex items-center justify-center p-6">
       <div className="max-w-lg w-full text-center space-y-5">
-        <p className="text-6xl font-black text-[#0A4DA6]">404</p>
+        <p className="text-6xl font-black text-[#F28C28]">404</p>
         <div className="space-y-2">
           <h1 className="text-xl font-black text-[#0B192C] dark:text-white">
             This page does not exist
@@ -78,7 +78,7 @@ export const NotFoundPage: React.FC = () => {
         <div className="flex flex-wrap justify-center gap-2 pt-1">
           <Link
             to="/"
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#0A4DA6] text-white text-xs font-extrabold"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#F28C28] text-white text-xs font-extrabold"
           >
             <Home size={14} /> Go to homepage
           </Link>

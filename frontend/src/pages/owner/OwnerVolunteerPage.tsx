@@ -364,7 +364,7 @@ export const OwnerVolunteerPage: React.FC = () => {
         <EnterpriseStatsCard
           title="Active Openings"
           value={stats.activeOpenings}
-          icon={<Building2 size={20} className="text-[#0A4DA6]" />}
+          icon={<Building2 size={20} className="text-[#F28C28]" />}
         />
         <EnterpriseStatsCard
           title="Total Applications"
@@ -388,7 +388,7 @@ export const OwnerVolunteerPage: React.FC = () => {
           onClick={() => setActiveTab("openings")}
           className={`pb-3 text-xs font-black tracking-wider transition-all border-b-2 cursor-pointer ${
             activeTab === "openings"
-              ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-[#E58C28]"
+              ? "border-[#F28C28] text-[#F28C28] dark:text-[#E58C28]"
               : "border-transparent text-gray-400 hover:text-gray-600"
           }`}
         >
@@ -399,7 +399,7 @@ export const OwnerVolunteerPage: React.FC = () => {
           onClick={() => setActiveTab("applications")}
           className={`pb-3 text-xs font-black tracking-wider transition-all border-b-2 cursor-pointer ${
             activeTab === "applications"
-              ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-[#E58C28]"
+              ? "border-[#F28C28] text-[#F28C28] dark:text-[#E58C28]"
               : "border-transparent text-gray-400 hover:text-gray-600"
           }`}
         >
@@ -446,7 +446,7 @@ export const OwnerVolunteerPage: React.FC = () => {
 
                   <div className="text-xs font-extrabold text-gray-500 space-y-1.5">
                     <p className="flex items-center gap-1.5">
-                      <MapPin size={13} className="text-[#0A4DA6]" /> {job.city}
+                      <MapPin size={13} className="text-[#F28C28]" /> {job.city}
                       , {job.state}
                     </p>
                     <p className="flex items-center gap-1.5">
@@ -464,7 +464,7 @@ export const OwnerVolunteerPage: React.FC = () => {
                   </div>
 
                   <div className="bg-gray-50 dark:bg-slate-900 rounded-2xl p-2.5 text-center">
-                    <span className="text-xs font-black text-[#0A4DA6] dark:text-blue-300">
+                    <span className="text-xs font-black text-[#F28C28] dark:text-amber-300">
                       {job.stipend}
                     </span>
                   </div>
@@ -556,14 +556,14 @@ export const OwnerVolunteerPage: React.FC = () => {
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         {updatingApplicationId === app._id && (
-                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#0A4DA6] border-t-transparent" aria-label="Updating status" />
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#F28C28] border-t-transparent" aria-label="Updating status" />
                         )}
                         <select
                           aria-label={`Update status for ${app.applicantName}`}
                           value={app.status || "applied"}
                           disabled={updatingApplicationId === app._id}
                           onChange={(event) => void handleStatusUpdate(app._id, event.target.value)}
-                          className="min-h-9 min-w-[142px] cursor-pointer rounded-full border border-gray-200 bg-white px-3 py-2 text-[10px] font-black capitalize text-[#0B192C] outline-none transition focus:border-[#0A4DA6] focus:ring-2 focus:ring-[#0A4DA6]/15 disabled:cursor-wait disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                          className="min-h-9 min-w-[142px] cursor-pointer rounded-full border border-gray-200 bg-white px-3 py-2 text-[10px] font-black capitalize text-[#0B192C] outline-none transition focus:border-[#F28C28] focus:ring-2 focus:ring-[#F28C28]/15 disabled:cursor-wait disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                         >
                           <option value="applied">Applied</option>
                           <option value="shortlisted">Shortlisted</option>
@@ -587,7 +587,7 @@ export const OwnerVolunteerPage: React.FC = () => {
           onClose={() => setViewingJob(null)}
           title={viewingJob.title}
           subtitle={`${viewingJob.ashramName} · ${viewingJob.city}, ${viewingJob.state || "India"}`}
-          icon={<Eye size={18} className="text-[#0A4DA6]" />}
+          icon={<Eye size={18} className="text-[#F28C28]" />}
           maxWidth="2xl"
           footer={
             <div className="flex flex-col-reverse sm:flex-row justify-end gap-2">

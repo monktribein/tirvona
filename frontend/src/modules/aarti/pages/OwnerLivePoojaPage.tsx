@@ -222,7 +222,7 @@ export const OwnerLivePoojaPage: React.FC = () => {
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value)}
-            className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+            className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
           >
             <option value="">All statuses</option>
             <option value="draft">Draft</option>
@@ -233,7 +233,7 @@ export const OwnerLivePoojaPage: React.FC = () => {
           <button
             type="button"
             onClick={openCreate}
-            className="inline-flex items-center gap-1.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold px-4 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-1.5 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold px-4 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
           >
             <Plus size={15} /> New stream
           </button>
@@ -247,7 +247,7 @@ export const OwnerLivePoojaPage: React.FC = () => {
         </div>
       ) : loading ? (
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm p-12 flex items-center justify-center gap-3">
-          <Loader2 size={20} className="animate-spin text-[#0A4DA6]" />
+          <Loader2 size={20} className="animate-spin text-[#F28C28]" />
           <span className="text-sm font-bold text-gray-400">Loading…</span>
         </div>
       ) : streams.length === 0 ? (
@@ -317,7 +317,7 @@ export const OwnerLivePoojaPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => openEdit(stream)}
-                      className="inline-flex items-center gap-1 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 dark:text-gray-400 hover:text-[#0A4DA6] hover:border-[#0A4DA6] text-[10px] font-bold px-2.5 py-1.5 rounded-full transition-all active:scale-95 cursor-pointer"
+                      className="inline-flex items-center gap-1 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 dark:text-gray-400 hover:text-[#F28C28] hover:border-[#F28C28] text-[10px] font-bold px-2.5 py-1.5 rounded-full transition-all active:scale-95 cursor-pointer"
                     >
                       <Pencil size={12} /> Edit
                     </button>
@@ -334,7 +334,7 @@ export const OwnerLivePoojaPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => toggleLive(stream)}
-                        className="inline-flex items-center gap-1 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 dark:text-gray-400 hover:text-[#0A4DA6] hover:border-[#0A4DA6] text-[10px] font-bold px-2.5 py-1.5 rounded-full transition-all active:scale-95 cursor-pointer"
+                        className="inline-flex items-center gap-1 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 dark:text-gray-400 hover:text-[#F28C28] hover:border-[#F28C28] text-[10px] font-bold px-2.5 py-1.5 rounded-full transition-all active:scale-95 cursor-pointer"
                       >
                         <Radio size={12} />
                         {stream.isLive ? "Mark offline" : "Mark live"}
@@ -390,7 +390,7 @@ export const OwnerLivePoojaPage: React.FC = () => {
                         city: ashram?.address?.city ?? form.city,
                       });
                     }}
-                    className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all disabled:opacity-60"
+                    className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all disabled:opacity-60"
                   >
                     <option value="">Select an ashram</option>
                     {ashrams.map((ashram) => (
@@ -409,7 +409,7 @@ export const OwnerLivePoojaPage: React.FC = () => {
                   value={form.title}
                   onChange={(event) => setForm({ ...form, title: event.target.value })}
                   placeholder="e.g. Ganga Aarti Live — Har Ki Pauri"
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 />
               </label>
 
@@ -425,7 +425,7 @@ export const OwnerLivePoojaPage: React.FC = () => {
                       provider: event.target.value as AartiStreamProvider,
                     })
                   }
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 >
                   <option value="youtube">YouTube</option>
                   <option value="facebook">Facebook</option>
@@ -443,7 +443,7 @@ export const OwnerLivePoojaPage: React.FC = () => {
                   onChange={(event) =>
                     setForm({ ...form, sessionId: event.target.value })
                   }
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 >
                   <option value="">Not linked</option>
                   {sessions.map((session) => (
@@ -464,7 +464,7 @@ export const OwnerLivePoojaPage: React.FC = () => {
                     setForm({ ...form, streamUrl: event.target.value })
                   }
                   placeholder="https://www.youtube.com/watch?v=…"
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 />
                 <span className="text-[10px] font-medium text-gray-400">
                   The playable embed is derived automatically for supported providers.
@@ -483,7 +483,7 @@ export const OwnerLivePoojaPage: React.FC = () => {
                       setForm({ ...form, thumbnailUrl: event.target.value })
                     }
                     placeholder="https://…"
-                    className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                    className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                   />
                 </label> : null}
                 <div>
@@ -517,7 +517,7 @@ export const OwnerLivePoojaPage: React.FC = () => {
                   onChange={(event) =>
                     setForm({ ...form, startsAt: event.target.value })
                   }
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 />
               </label>
 
@@ -530,7 +530,7 @@ export const OwnerLivePoojaPage: React.FC = () => {
                   min={form.startsAt}
                   value={form.endsAt}
                   onChange={(event) => setForm({ ...form, endsAt: event.target.value })}
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 />
               </label>
 
@@ -543,7 +543,7 @@ export const OwnerLivePoojaPage: React.FC = () => {
                   onChange={(event) =>
                     setForm({ ...form, venueName: event.target.value })
                   }
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 />
               </label>
 
@@ -563,7 +563,7 @@ export const OwnerLivePoojaPage: React.FC = () => {
                       city: state ? getDistricts(state.code)[0] ?? "" : "",
                     });
                   }}
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 >
                   <option value="">Select state</option>
                   {INDIA_STATES.map((state) => (
@@ -583,7 +583,7 @@ export const OwnerLivePoojaPage: React.FC = () => {
                   onChange={(event) =>
                     setForm({ ...form, city: event.target.value })
                   }
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 >
                   <option value="">Select city / district</option>
                   {(INDIA_STATES.find((state) => state.name === form.state)
@@ -611,7 +611,7 @@ export const OwnerLivePoojaPage: React.FC = () => {
                   onChange={(event) =>
                     setForm({ ...form, description: event.target.value })
                   }
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all"
                 />
               </label>
             </div>
@@ -620,7 +620,7 @@ export const OwnerLivePoojaPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="inline-flex items-center gap-1.5 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 hover:border-[#0A4DA6] text-gray-500 dark:text-gray-400 hover:text-[#0A4DA6] text-xs font-extrabold px-4 py-2.5 rounded-full shadow-sm transition-all active:scale-95 cursor-pointer"
+                className="inline-flex items-center gap-1.5 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 hover:border-[#F28C28] text-gray-500 dark:text-gray-400 hover:text-[#F28C28] text-xs font-extrabold px-4 py-2.5 rounded-full shadow-sm transition-all active:scale-95 cursor-pointer"
               >
                 Cancel
               </button>
@@ -636,7 +636,7 @@ export const OwnerLivePoojaPage: React.FC = () => {
                   (!!form.endsAt && form.endsAt < form.startsAt) ||
                   (!editing && !form.ashramId)
                 }
-                className="inline-flex items-center gap-1.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold px-4 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold px-4 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50"
               >
                 {saving ? (
                   <Loader2 size={14} className="animate-spin" />

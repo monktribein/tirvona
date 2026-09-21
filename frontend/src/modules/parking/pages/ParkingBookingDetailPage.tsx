@@ -174,7 +174,7 @@ export const ParkingBookingDetailPage: React.FC = () => {
         </p>
         <Link
           to="/parking/my-bookings"
-          className="inline-block bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold px-5 py-2.5 rounded-full transition-all active:scale-95"
+          className="inline-block bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold px-5 py-2.5 rounded-full transition-all active:scale-95"
         >
           My parking bookings
         </Link>
@@ -215,7 +215,7 @@ export const ParkingBookingDetailPage: React.FC = () => {
         )}
 
         {notice && (
-          <div className="flex items-start gap-2.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50 text-[#0A4DA6] dark:text-blue-300 rounded-2xl px-4 py-3">
+          <div className="flex items-start gap-2.5 bg-[#FFF4E5]/40 border border-blue-200 dark:border-blue-900/50 text-[#F28C28] dark:text-amber-300 rounded-2xl px-4 py-3">
             <Info size={15} className="shrink-0 mt-0.5 stroke-[2.5]" />
             <p className="text-xs font-semibold">{notice}</p>
           </div>
@@ -368,7 +368,7 @@ export const ParkingBookingDetailPage: React.FC = () => {
                 <span className="text-xs font-black text-[#0B192C] dark:text-white">
                   Paid
                 </span>
-                <span className="text-base font-black text-[#0A4DA6] dark:text-blue-300">
+                <span className="text-base font-black text-[#F28C28] dark:text-amber-300">
                   {formatCurrency(booking.pricing.amountPaid)}
                 </span>
               </div>
@@ -380,7 +380,7 @@ export const ParkingBookingDetailPage: React.FC = () => {
                   href={location.googleMapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 min-w-[10rem] bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold px-4 py-2.5 rounded-full shadow-md transition-all active:scale-95 inline-flex items-center justify-center gap-2"
+                  className="flex-1 min-w-[10rem] bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold px-4 py-2.5 rounded-full shadow-md transition-all active:scale-95 inline-flex items-center justify-center gap-2"
                 >
                   <Navigation size={14} className="stroke-[2.5]" />
                   Navigate
@@ -389,7 +389,7 @@ export const ParkingBookingDetailPage: React.FC = () => {
               {location?.contactPhone && (
                 <a
                   href={`tel:${location.contactPhone}`}
-                  className="flex-1 min-w-[10rem] bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 hover:border-[#0A4DA6] text-slate-700 dark:text-gray-200 text-xs font-extrabold px-4 py-2.5 rounded-full transition-all active:scale-95 inline-flex items-center justify-center gap-2"
+                  className="flex-1 min-w-[10rem] bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 hover:border-[#F28C28] text-slate-700 dark:text-gray-200 text-xs font-extrabold px-4 py-2.5 rounded-full transition-all active:scale-95 inline-flex items-center justify-center gap-2"
                 >
                   <Phone size={14} className="stroke-[2.5]" />
                   Call parking
@@ -496,13 +496,13 @@ export const ParkingBookingDetailPage: React.FC = () => {
                   onChange={(e) => setComment(e.target.value)}
                   rows={3}
                   placeholder="How was the parking? Was it easy to find, secure, well-staffed?"
-                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-medium text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 resize-none"
+                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-medium text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 resize-none"
                 />
 
                 <button
                   type="submit"
                   disabled={!rating}
-                  className="bg-[#0A4DA6] hover:bg-[#083D85] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-extrabold px-5 py-2.5 rounded-full transition-all active:scale-95 cursor-pointer"
+                  className="bg-[#F28C28] hover:bg-[#D97706] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-extrabold px-5 py-2.5 rounded-full transition-all active:scale-95 cursor-pointer"
                 >
                   Submit review
                 </button>

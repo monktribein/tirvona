@@ -504,7 +504,7 @@ export const AdminOffersPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="px-3 py-1 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] dark:text-blue-400 text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
+            <span className="px-3 py-1 rounded-full bg-[#F28C28]/10 text-[#F28C28] dark:text-amber-400 text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
               <Tag size={12} />{" "}
               {isPlatformAdmin
                 ? "Super Admin Offers & Deals Module"
@@ -524,7 +524,7 @@ export const AdminOffersPage: React.FC = () => {
         <div className="flex flex-wrap items-center gap-3 shrink-0 self-start sm:self-auto">
           <button
             onClick={() => openCreateModal(false)}
-            className="px-5 py-3 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white text-xs font-extrabold flex items-center gap-2 shadow-md cursor-pointer transition-all"
+            className="px-5 py-3 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold flex items-center gap-2 shadow-md cursor-pointer transition-all"
           >
             <Plus size={16} /> Create New Offer
           </button>
@@ -572,7 +572,7 @@ export const AdminOffersPage: React.FC = () => {
                 onClick={() => setSelectedStatus(tab)}
                 className={`px-4 py-2 rounded-full text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
                   selectedStatus === tab
-                    ? "bg-[#0A4DA6] text-white shadow-sm"
+                    ? "bg-[#F28C28] text-white shadow-sm"
                     : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
                 }`}
               >
@@ -589,14 +589,14 @@ export const AdminOffersPage: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search offer or coupon..."
-                className="w-full pl-9 pr-3 py-2 rounded-full border border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
+                className="w-full pl-9 pr-3 py-2 rounded-full border border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]"
               />
             </div>
 
             <select
               value={selectedRoute}
               onChange={(e) => setSelectedRoute(e.target.value)}
-              className="w-full sm:w-auto px-4 py-2 rounded-full border border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6] cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2 rounded-full border border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28] cursor-pointer"
             >
               {TARGET_ROUTES.map((r) => (
                 <option key={r.value} value={r.value}>
@@ -645,7 +645,7 @@ export const AdminOffersPage: React.FC = () => {
           </p>
           <button
             onClick={() => openCreateModal(false)}
-            className="mt-2 inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#0A4DA6] text-white text-xs font-extrabold"
+            className="mt-2 inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#F28C28] text-white text-xs font-extrabold"
           >
             <Plus size={14} /> Add New Offer
           </button>
@@ -672,7 +672,7 @@ export const AdminOffersPage: React.FC = () => {
                   adminToolbar={
                     <>
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-[10px] font-black text-[#0A4DA6] dark:text-blue-400">
+                        <span className="px-2.5 py-0.5 rounded-full bg-[#FFF4E5]/40 text-[10px] font-black text-[#F28C28] dark:text-amber-400">
                           {routeObj?.label || "Homepage"}
                         </span>
 
@@ -708,7 +708,7 @@ export const AdminOffersPage: React.FC = () => {
                           disabled={isBusy(offer._id)}
                           title="View Offer Details"
                           aria-label="View offer details"
-                          className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 hover:text-[#0A4DA6] cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 hover:text-[#F28C28] cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           {isBusy(offer._id, "view") ? (
                             <Loader2 size={15} className="animate-spin" />
@@ -721,7 +721,7 @@ export const AdminOffersPage: React.FC = () => {
                           disabled={isBusy(offer._id)}
                           title="Edit Offer"
                           aria-label="Edit offer"
-                          className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 hover:text-[#0A4DA6] cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 hover:text-[#F28C28] cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           <Edit3 size={15} />
                         </button>
@@ -837,7 +837,7 @@ export const AdminOffersPage: React.FC = () => {
                     value={formData.offerTitle}
                     onChange={(e) => setFormData({ ...formData, offerTitle: e.target.value })}
                     placeholder={formData.isLastMinuteDeal ? "e.g. Last Minute Special Deal - Deluxe AC Room" : "e.g. Mahakumbh Sacred Stay Special"}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]"
                   />
                 </div>
 
@@ -851,7 +851,7 @@ export const AdminOffersPage: React.FC = () => {
                     value={formData.promoCode}
                     onChange={(e) => setFormData({ ...formData, promoCode: e.target.value.toUpperCase() })}
                     placeholder="KUMBH2026"
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6] tracking-wider"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28] tracking-wider"
                   />
                 </div>
 
@@ -862,7 +862,7 @@ export const AdminOffersPage: React.FC = () => {
                   <select
                     value={formData.targetRoute}
                     onChange={(e) => setFormData({ ...formData, targetRoute: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6] cursor-pointer"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28] cursor-pointer"
                   >
                     {TARGET_ROUTES.map((r) => (
                       <option key={r.value} value={r.value}>
@@ -874,7 +874,7 @@ export const AdminOffersPage: React.FC = () => {
 
                 <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-gray-50/70 dark:bg-slate-900/40 border border-gray-100 dark:border-slate-800">
                   <div className="sm:col-span-2 flex items-center gap-2 flex-wrap">
-                    <MapPin size={14} className="text-[#0A4DA6]" />
+                    <MapPin size={14} className="text-[#F28C28]" />
                     <p className="text-[11px] font-extrabold text-[#0B192C] dark:text-white">
                       Applies To Stay &amp; Target Room Category
                     </p>
@@ -891,7 +891,7 @@ export const AdminOffersPage: React.FC = () => {
                       <select
                         value={formData.destination}
                         onChange={(e) => handleDestinationChange(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6] cursor-pointer"
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28] cursor-pointer"
                       >
                         <option value="">All Destinations</option>
                         {destinations.map((d) => (
@@ -927,7 +927,7 @@ export const AdminOffersPage: React.FC = () => {
                           setAvailableRooms([]);
                         }
                       }}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6] cursor-pointer"
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28] cursor-pointer"
                     >
                       <option value="">Select a Stay</option>
                       {(destinationAshrams.length > 0 ? destinationAshrams : myAshrams).map((a) => (
@@ -946,7 +946,7 @@ export const AdminOffersPage: React.FC = () => {
                       value={formData.roomId || ""}
                       onChange={(e) => setFormData({ ...formData, roomId: e.target.value })}
                       disabled={!formData.ashramId}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6] cursor-pointer disabled:opacity-50"
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28] cursor-pointer disabled:opacity-50"
                     >
                       <option value="">All Room Categories (Whole Stay)</option>
                       {availableRooms.map((r: any) => (
@@ -978,7 +978,7 @@ export const AdminOffersPage: React.FC = () => {
                   <select
                     value={formData.offerType}
                     onChange={(e) => setFormData({ ...formData, offerType: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6] cursor-pointer"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28] cursor-pointer"
                   >
                     {OFFER_TYPES.map((t) => (
                       <option key={t} value={t}>
@@ -995,7 +995,7 @@ export const AdminOffersPage: React.FC = () => {
                   <select
                     value={formData.discountType}
                     onChange={(e) => setFormData({ ...formData, discountType: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6] cursor-pointer"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28] cursor-pointer"
                   >
                     {DISCOUNT_TYPES.map((d) => (
                       <option key={d.value} value={d.value}>
@@ -1014,7 +1014,7 @@ export const AdminOffersPage: React.FC = () => {
                     min="1"
                     value={formData.discountValue}
                     onChange={(e) => setFormData({ ...formData, discountValue: Number(e.target.value) })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]"
                   />
                 </div>
 
@@ -1032,7 +1032,7 @@ export const AdminOffersPage: React.FC = () => {
                         maximumRedemptions: Number(e.target.value),
                       })
                     }
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]"
                   />
                 </div>
 
@@ -1044,7 +1044,7 @@ export const AdminOffersPage: React.FC = () => {
                     type="date"
                     value={formData.validFrom}
                     onChange={(e) => setFormData({ ...formData, validFrom: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]"
                   />
                 </div>
 
@@ -1057,7 +1057,7 @@ export const AdminOffersPage: React.FC = () => {
                     required
                     value={formData.validTill}
                     onChange={(e) => setFormData({ ...formData, validTill: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]"
                   />
                   {formData.isLastMinuteDeal && (
                     <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 mt-1 block">
@@ -1098,7 +1098,7 @@ export const AdminOffersPage: React.FC = () => {
                             </span>
                           </div>
                         ) : (
-                          <span className="text-xs font-bold text-[#0A4DA6] dark:text-amber-400">
+                          <span className="text-xs font-bold text-[#F28C28] dark:text-amber-400">
                             {formData.discountType === "Percentage" ? `${formData.discountValue}% OFF` : `₹${formData.discountValue} OFF`} applied to bookings
                           </span>
                         )}
@@ -1126,7 +1126,7 @@ export const AdminOffersPage: React.FC = () => {
                       value={formData.bannerImage}
                       onChange={(e) => setFormData({ ...formData, bannerImage: e.target.value })}
                       placeholder="Or enter image URL directly"
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]"
                     /> : null}
                   </div>
                 </div>
@@ -1141,7 +1141,7 @@ export const AdminOffersPage: React.FC = () => {
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     placeholder="Brief details about what the offer provides..."
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]"
                   />
                 </div>
 
@@ -1152,7 +1152,7 @@ export const AdminOffersPage: React.FC = () => {
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6] cursor-pointer"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28] cursor-pointer"
                   >
                     <option value="active">Active</option>
                     <option value="scheduled">Scheduled</option>
@@ -1167,7 +1167,7 @@ export const AdminOffersPage: React.FC = () => {
                       type="checkbox"
                       checked={formData.featured}
                       onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
-                      className="w-4 h-4 mt-0.5 shrink-0 accent-[#0A4DA6] rounded"
+                      className="w-4 h-4 mt-0.5 shrink-0 accent-[#F28C28] rounded"
                     />
                     <span className="leading-snug">
                       Feature this offer on Homepage banner
@@ -1187,7 +1187,7 @@ export const AdminOffersPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-extrabold shadow-md cursor-pointer transition-all flex items-center justify-center gap-2"
+                  className="px-6 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-extrabold shadow-md cursor-pointer transition-all flex items-center justify-center gap-2"
                 >
                   {submitting && <Loader2 size={13} className="animate-spin" />}
                   {submitting ? "Saving..." : editOfferId ? "Update Offer" : "Publish Offer"}
@@ -1213,7 +1213,7 @@ export const AdminOffersPage: React.FC = () => {
             <div className="flex items-start justify-between border-b border-gray-100 dark:border-slate-800 pb-4 gap-4">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                  <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-[10px] font-black text-[#0A4DA6] dark:text-blue-400">
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#FFF4E5]/40 text-[10px] font-black text-[#F28C28] dark:text-amber-400">
                     {TARGET_ROUTES.find(
                       (r) => r.value === (viewOffer.targetRoute || "homepage"),
                     )?.label || "Homepage"}
@@ -1339,7 +1339,7 @@ export const AdminOffersPage: React.FC = () => {
                   setViewOffer(null);
                   openEditModal(target);
                 }}
-                className="px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white text-xs font-extrabold shadow-md cursor-pointer flex items-center justify-center gap-2"
+                className="px-6 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold shadow-md cursor-pointer flex items-center justify-center gap-2"
               >
                 <Edit3 size={13} /> Edit Offer
               </button>

@@ -119,7 +119,7 @@ export const OfferDetailPage: React.FC = () => {
     return (
       <div className="min-h-screen p-8 flex items-center justify-center">
         <div className="space-y-4 text-center">
-          <div className="w-12 h-12 border-4 border-[#0A4DA6] border-t-transparent rounded-full animate-spin mx-auto" />
+          <div className="w-12 h-12 border-4 border-[#F28C28] border-t-transparent rounded-full animate-spin mx-auto" />
           <p className="text-xs font-extrabold text-gray-400">
             Loading Offer Landing Page...
           </p>
@@ -140,7 +140,7 @@ export const OfferDetailPage: React.FC = () => {
         </p>
         <Link
           to="/offers"
-          className="inline-block px-6 py-3 bg-[#0A4DA6] text-white font-bold text-xs rounded-full"
+          className="inline-block px-6 py-3 bg-[#F28C28] text-white font-bold text-xs rounded-full"
         >
           Browse All Offers
         </Link>
@@ -155,17 +155,17 @@ export const OfferDetailPage: React.FC = () => {
     <div className="min-h-screen pt-24 pb-28 text-left space-y-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         <div className="flex items-center gap-2 text-xs font-extrabold text-gray-400 overflow-x-auto whitespace-nowrap">
-          <Link to="/" className="hover:text-[#0A4DA6] transition-colors">
+          <Link to="/" className="hover:text-[#F28C28] transition-colors">
             Home
           </Link>
           <span>/</span>
-          <Link to="/offers" className="hover:text-[#0A4DA6] transition-colors">
+          <Link to="/offers" className="hover:text-[#F28C28] transition-colors">
             Offers
           </Link>
           {primaryAshram?.address?.city && (
             <>
               <span>/</span>
-              <span className="text-[#0A4DA6]">
+              <span className="text-[#F28C28]">
                 {primaryAshram.address.city}
               </span>
             </>
@@ -178,13 +178,13 @@ export const OfferDetailPage: React.FC = () => {
 
         <Link
           to="/offers"
-          className="inline-flex items-center gap-1.5 text-xs font-black text-[#0A4DA6] hover:underline cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-xs font-black text-[#F28C28] hover:underline cursor-pointer"
         >
           <ChevronLeft size={14} /> View All Offers
         </Link>
 
         <div className="bg-white dark:bg-[#0B192C] border border-gray-150 dark:border-slate-800 rounded-[32px] shadow-sm overflow-hidden">
-          <div className="h-1.5 bg-gradient-to-r from-[#0A4DA6] via-[#E58C28] to-[#0A4DA6]" />
+          <div className="h-1.5 bg-gradient-to-r from-[#F28C28] via-[#E58C28] to-[#F28C28]" />
 
           {offer.bannerImage && (
             <img
@@ -196,7 +196,7 @@ export const OfferDetailPage: React.FC = () => {
 
           <div className="p-6 sm:p-8 space-y-4">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-slate-800 text-[#0A4DA6] dark:text-blue-400 text-xs font-black tracking-wider">
+              <span className="px-3 py-1 rounded-full bg-[#FFF4E5] text-[#F28C28] dark:text-amber-400 text-xs font-black tracking-wider">
                 {offer.offerType || "Special Promotion"}
               </span>
               <span className="px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 text-xs font-black flex items-center gap-1.5">
@@ -290,7 +290,7 @@ export const OfferDetailPage: React.FC = () => {
                 >
                   <CheckCircle2
                     size={16}
-                    className="text-[#0A4DA6] dark:text-amber-400 shrink-0 mt-0.5"
+                    className="text-[#F28C28] dark:text-amber-400 shrink-0 mt-0.5"
                   />
                   <span className="text-xs font-bold text-gray-700 dark:text-gray-200">
                     {h}
@@ -303,7 +303,7 @@ export const OfferDetailPage: React.FC = () => {
           {primaryAshram && (
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 sm:p-8 space-y-4 shadow-sm">
               <h2 className="text-xl font-black text-[#0B192C] dark:text-white flex items-center gap-2">
-                <Building size={20} className="text-[#0A4DA6]" /> Applicable
+                <Building size={20} className="text-[#F28C28]" /> Applicable
                 Ashram Accommodation
               </h2>
 
@@ -313,7 +313,7 @@ export const OfferDetailPage: React.FC = () => {
                     {primaryAshram.name}
                   </h3>
                   <div className="flex items-center gap-1.5 text-xs text-gray-500 font-bold">
-                    <MapPin size={13} className="text-[#0A4DA6]" />
+                    <MapPin size={13} className="text-[#F28C28]" />
                     <span>
                       {primaryAshram.address?.city || "Haridwar"},{" "}
                       {primaryAshram.address?.state || "Uttarakhand"}
@@ -323,7 +323,7 @@ export const OfferDetailPage: React.FC = () => {
 
                 <button
                   onClick={handleBookNow}
-                  className="px-6 py-3 bg-[#0A4DA6] hover:bg-[#083b80] text-white font-extrabold text-xs rounded-full cursor-pointer shadow-md shadow-[#0A4DA6]/20 transition-all shrink-0"
+                  className="px-6 py-3 bg-[#F28C28] hover:bg-[#B45309] text-white font-extrabold text-xs rounded-full cursor-pointer shadow-md shadow-[#F28C28]/20 transition-all shrink-0"
                 >
                   Book This Ashram
                 </button>
@@ -391,7 +391,7 @@ export const OfferDetailPage: React.FC = () => {
               </div>
               <div className="flex justify-between">
                 <span>Remaining Redemptions:</span>
-                <span className="font-black text-[#0A4DA6] dark:text-amber-400">
+                <span className="font-black text-[#F28C28] dark:text-amber-400">
                   {offer.remainingRedemptions} Left
                 </span>
               </div>
@@ -400,7 +400,7 @@ export const OfferDetailPage: React.FC = () => {
             <button
               onClick={handleBookNow}
               disabled={hasExpired}
-              className="w-full py-4 bg-[#0A4DA6] hover:bg-[#083b80] disabled:bg-gray-300 dark:disabled:bg-slate-700 disabled:shadow-none disabled:cursor-not-allowed text-white font-black text-sm rounded-full shadow-xl shadow-[#0A4DA6]/30 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 disabled:active:scale-100"
+              className="w-full py-4 bg-[#F28C28] hover:bg-[#B45309] disabled:bg-gray-300 dark:disabled:bg-slate-700 disabled:shadow-none disabled:cursor-not-allowed text-white font-black text-sm rounded-full shadow-xl shadow-[#F28C28]/30 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 disabled:active:scale-100"
             >
               {hasExpired ? (
                 "Offer Expired"
@@ -428,7 +428,7 @@ export const OfferDetailPage: React.FC = () => {
           <button
             onClick={handleBookNow}
             disabled={hasExpired}
-            className="px-8 py-3 bg-[#0A4DA6] hover:bg-[#083b80] disabled:bg-gray-300 dark:disabled:bg-slate-700 disabled:shadow-none disabled:cursor-not-allowed text-white font-black text-xs sm:text-sm rounded-full shadow-lg shadow-[#0A4DA6]/30 flex items-center gap-2 cursor-pointer active:scale-95 disabled:active:scale-100 shrink-0"
+            className="px-8 py-3 bg-[#F28C28] hover:bg-[#B45309] disabled:bg-gray-300 dark:disabled:bg-slate-700 disabled:shadow-none disabled:cursor-not-allowed text-white font-black text-xs sm:text-sm rounded-full shadow-lg shadow-[#F28C28]/30 flex items-center gap-2 cursor-pointer active:scale-95 disabled:active:scale-100 shrink-0"
           >
             {hasExpired ? (
               "Offer Expired"

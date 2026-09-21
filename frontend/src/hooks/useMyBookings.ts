@@ -35,6 +35,15 @@ export interface UnifiedBooking {
   createdAt: string;
   cancellable: boolean;
   rawBooking?: any;
+  bookingType?: string;
+  dayStayDetails?: {
+    productCode?: string;
+    productType?: string;
+    slotStartTime?: string;
+    slotEndTime?: string;
+    durationMinutes?: number;
+    graceMinutes?: number;
+  };
 }
 
 const STAY_CATEGORY: Record<string, BookingCategory> = {
@@ -63,8 +72,23 @@ const joinAddress = (address?: Record<string, string | undefined>) =>
 
 const fromStay = (b: any): UnifiedBooking => {
   const ashram = typeof b.ashramId === "object" ? b.ashramId : null;
-  const room = typeof b.roomId === "object" ? b.roomId : null;
+  const room =
+    typeof b.roomId === "object"
+      ? b.roomId
+      : b.rooms?.[0]?.roomId && typeof b.rooms[0].roomId === "object"
+      ? b.rooms[0].roomId
+      : null;
   const status = String(b.status || "pending");
+  const isDayStay =
+    (b.bookingType === "day_rest" ||
+      b.bookingType === "freshen_up" ||
+      Boolean(b.dayStayDetails?.productCode)) &&
+    b.bookingType !== "overnight";
+  const dayStayLabel = isDayStay
+    ? b.dayStayDetails?.productCode === "DAY_REST_6H"
+      ? "Day Rest (6h)"
+      : "Day Rest (4h)"
+    : null;
 
   return {
     kind: "stay",
@@ -72,8 +96,9 @@ const fromStay = (b: any): UnifiedBooking => {
     reference: b.bookingId || b._id,
     reservationNumber: b.reservationNumber,
     assignedRoomNumber: b.assignedRoomNumber,
-    assignedRoomNumbers: b.assignedRoomNumbers || (b.assignedRoomNumber ? [b.assignedRoomNumber] : []),
-    paymentMode: b.paymentMode || "pay_at_ashram",
+    assignedRoomNumbers:
+      b.assignedRoomNumbers || (b.assignedRoomNumber ? [b.assignedRoomNumber] : []),
+    paymentMode: b.paymentMode || "online",
     specialRequests: b.specialRequests,
     addOnsList: b.services?.selectedAddOns || [],
     title: ashram?.name || "Ashram stay",
@@ -82,6 +107,7 @@ const fromStay = (b: any): UnifiedBooking => {
     start: b.checkInDate,
     end: b.checkOutDate,
     meta: [
+      dayStayLabel ? `⚡ ${dayStayLabel}` : null,
       `${b.guestsCount || 1} guest${(b.guestsCount || 1) === 1 ? "" : "s"}`,
       room?.name,
       b.roomsBookedCount > 1 ? `${b.roomsBookedCount} rooms` : null,
@@ -100,6 +126,8 @@ const fromStay = (b: any): UnifiedBooking => {
     createdAt: b.createdAt,
     cancellable: ["pending", "confirmed"].includes(status),
     rawBooking: b,
+    bookingType: b.bookingType,
+    dayStayDetails: b.dayStayDetails,
   };
 };
 

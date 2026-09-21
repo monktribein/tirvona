@@ -187,7 +187,7 @@ export const ParkingStaffRolesPage: React.FC = () => {
     }
   };
 
-  const inputClass = "w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#0A4DA6]/20 dark:border-slate-700 dark:bg-slate-900";
+  const inputClass = "w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#F28C28]/20 dark:border-slate-700 dark:bg-slate-900";
   const labelClass = "mb-1.5 block text-xs text-gray-500";
 
   return (
@@ -197,7 +197,7 @@ export const ParkingStaffRolesPage: React.FC = () => {
         subtitle="Create dedicated staff accounts scoped to one ashram and its parking facility."
         icon={<ShieldCheck size={22} />}
         actions={<div className="flex gap-2">
-          <button type="button" onClick={openCreate} className="flex items-center gap-2 rounded-full bg-[#0A4DA6] px-5 py-2.5 text-xs text-white"><UserPlus size={15} /> Create Parking Staff</button>
+          <button type="button" onClick={openCreate} className="flex items-center gap-2 rounded-full bg-[#F28C28] px-5 py-2.5 text-xs text-white"><UserPlus size={15} /> Create Parking Staff</button>
           <button type="button" onClick={() => void load()} className="rounded-full border border-gray-200 p-2.5 text-gray-600" title="Refresh"><RefreshCw size={16} className={loading ? "animate-spin" : ""} /></button>
         </div>}
       />
@@ -221,7 +221,7 @@ export const ParkingStaffRolesPage: React.FC = () => {
                 <td className="px-5 py-4">{(grant.locationIds ?? []).map((row: any) => row.name).join(", ") || "All partner parking"}</td>
                 <td className="px-5 py-4 font-mono text-xs">{grant.employeeCode || "—"}</td>
                 <td className="px-5 py-4"><EnterpriseStatusBadge status={grant.status} size="sm" /></td>
-                <td className="px-5 py-4 text-right"><div className="flex justify-end gap-2">{grant.status === "pending_approval" && canApprove && <button type="button" onClick={() => void approve(grant)} disabled={busyId === String(grant._id)} className="rounded-full bg-[#0A4DA6] px-3 py-2 text-xs text-white disabled:opacity-50">Approve</button>}{["active", "pending_approval"].includes(grant.status) && <button type="button" onClick={() => void revoke(grant)} disabled={busyId === String(grant._id)} className="rounded-full border border-red-200 p-2 text-red-600 disabled:opacity-50" title="Remove parking access">{busyId === String(grant._id) ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}</button>}</div></td>
+                <td className="px-5 py-4 text-right"><div className="flex justify-end gap-2">{grant.status === "pending_approval" && canApprove && <button type="button" onClick={() => void approve(grant)} disabled={busyId === String(grant._id)} className="rounded-full bg-[#F28C28] px-3 py-2 text-xs text-white disabled:opacity-50">Approve</button>}{["active", "pending_approval"].includes(grant.status) && <button type="button" onClick={() => void revoke(grant)} disabled={busyId === String(grant._id)} className="rounded-full border border-red-200 p-2 text-red-600 disabled:opacity-50" title="Remove parking access">{busyId === String(grant._id) ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}</button>}</div></td>
               </tr>)}
               {!loading && visibleGrants.length === 0 && <tr><td colSpan={6} className="px-5 py-12 text-center text-sm text-gray-400">No parking staff found.</td></tr>}
             </tbody>
@@ -242,7 +242,7 @@ export const ParkingStaffRolesPage: React.FC = () => {
               <div className="rounded-2xl bg-gray-50 p-4"><div className="text-xs text-gray-400">Email</div><div className="mt-1 break-all">{credentials.account?.email}</div></div>
               <div className="rounded-2xl bg-gray-50 p-4"><div className="text-xs text-gray-400">Employee code</div><div className="mt-1 font-mono">{credentials.account?.employeeCode}</div></div>
             </div>
-            <button type="button" onClick={() => setShowForm(false)} className="w-full rounded-full bg-[#0A4DA6] py-3 text-sm text-white">Done</button>
+            <button type="button" onClick={() => setShowForm(false)} className="w-full rounded-full bg-[#F28C28] py-3 text-sm text-white">Done</button>
           </div> : <form onSubmit={submit} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <label><span className={labelClass}>Full name</span><input required minLength={2} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} /></label>
@@ -255,7 +255,7 @@ export const ParkingStaffRolesPage: React.FC = () => {
               <label><span className={labelClass}>Password</span><input required type="password" minLength={8} autoComplete="new-password" placeholder="Minimum 8 characters" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className={inputClass} /></label>
               <label><span className={labelClass}>Confirm password</span><input required type="password" minLength={8} autoComplete="new-password" placeholder="Re-enter password" value={form.confirmPassword} onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })} className={inputClass} /></label>
             </div>
-            <div className="flex gap-3 border-t border-gray-100 pt-4 dark:border-slate-800"><button type="button" onClick={() => setShowForm(false)} className="flex-1 rounded-full bg-gray-100 py-3 text-sm">Cancel</button><button disabled={saving} type="submit" className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[#0A4DA6] py-3 text-sm text-white disabled:opacity-60">{saving && <Loader2 size={16} className="animate-spin" />} Create Account</button></div>
+            <div className="flex gap-3 border-t border-gray-100 pt-4 dark:border-slate-800"><button type="button" onClick={() => setShowForm(false)} className="flex-1 rounded-full bg-gray-100 py-3 text-sm">Cancel</button><button disabled={saving} type="submit" className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[#F28C28] py-3 text-sm text-white disabled:opacity-60">{saving && <Loader2 size={16} className="animate-spin" />} Create Account</button></div>
           </form>}
         </div>
       </div>}

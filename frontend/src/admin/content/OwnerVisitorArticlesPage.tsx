@@ -286,7 +286,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-2 rounded-xl capitalize transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                 isActive
-                  ? "bg-[#0A4DA6] text-white shadow-sm"
+                  ? "bg-[#F28C28] text-white shadow-sm"
                   : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800"
               }`}
             >
@@ -349,7 +349,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
                     <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 rounded-full text-[10px] font-black flex items-center gap-1">
                       <ShieldCheck size={11} /> Verified Visitor Stay
                     </span>
-                    <span className="px-2.5 py-0.5 bg-blue-50 text-[#0A4DA6] dark:bg-blue-950/40 dark:text-blue-300 rounded-full text-[10px] font-black">
+                    <span className="px-2.5 py-0.5 bg-blue-50 text-[#F28C28] dark:bg-blue-950/40 dark:text-amber-300 rounded-full text-[10px] font-black">
                       {humanizeLabel(art.category)}
                     </span>
                     <span
@@ -401,7 +401,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
                 <button
                   onClick={() => openEditor(art)}
                   disabled={processing}
-                  className="px-4 py-2 bg-[#EBF2FA] hover:bg-[#dbe8f7] dark:bg-blue-950/40 text-[#0A4DA6] dark:text-blue-300 text-xs font-extrabold rounded-full transition-colors cursor-pointer flex items-center gap-1.5"
+                  className="px-4 py-2 bg-[#FFF4E5] hover:bg-[#FFF4E5] dark:bg-blue-950/40 text-[#F28C28] dark:text-amber-300 text-xs font-extrabold rounded-full transition-colors cursor-pointer flex items-center gap-1.5"
                 >
                   <Pencil size={13} /> Edit
                 </button>
@@ -463,7 +463,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
                   type="button"
                   onClick={() => openEditor(selectedArticle)}
                   disabled={processing}
-                  className="px-5 py-2 bg-[#EBF2FA] hover:bg-[#dbe8f7] dark:bg-blue-950/40 text-[#0A4DA6] dark:text-blue-300 rounded-full font-black cursor-pointer flex items-center gap-1.5"
+                  className="px-5 py-2 bg-[#FFF4E5] hover:bg-[#FFF4E5] dark:bg-blue-950/40 text-[#F28C28] dark:text-amber-300 rounded-full font-black cursor-pointer flex items-center gap-1.5"
                 >
                   <Pencil size={14} /> Edit
                 </button>
@@ -649,7 +649,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
                   onChange={(e) =>
                     setEditForm({ ...editForm, title: e.target.value })
                   }
-                  className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-medium focus:outline-none focus:border-[#0A4DA6]"
+                  className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-medium focus:outline-none focus:border-[#F28C28]"
                 />
               </div>
               <div className="space-y-1">
@@ -661,7 +661,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
                   onChange={(e) =>
                     setEditForm({ ...editForm, category: e.target.value })
                   }
-                  className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-medium focus:outline-none focus:border-[#0A4DA6]"
+                  className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-medium focus:outline-none focus:border-[#F28C28]"
                 />
               </div>
             </div>
@@ -701,7 +701,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
                       type="button"
                       onClick={() => coverInputRef.current?.click()}
                       disabled={uploadingCover}
-                      className="px-3 py-1.5 bg-white/95 text-[#0A4DA6] rounded-full text-[11px] font-extrabold shadow-sm cursor-pointer"
+                      className="px-3 py-1.5 bg-white/95 text-[#F28C28] rounded-full text-[11px] font-extrabold shadow-sm cursor-pointer"
                     >
                       Replace
                     </button>
@@ -721,7 +721,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
                   type="button"
                   onClick={() => coverInputRef.current?.click()}
                   disabled={uploadingCover}
-                  className="w-full py-6 rounded-2xl border-2 border-dashed border-[#0A4DA6]/35 bg-blue-50/40 dark:bg-slate-900 text-[#0A4DA6] flex flex-col items-center justify-center gap-1 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-60"
+                  className="w-full py-6 rounded-2xl border-2 border-dashed border-[#F28C28]/35 bg-blue-50/40 dark:bg-slate-900 text-[#F28C28] flex flex-col items-center justify-center gap-1 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-60"
                 >
                   {uploadingCover ? (
                     <Loader2 size={18} className="animate-spin" />
@@ -773,7 +773,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
                       type="button"
                       onClick={() => videoInputRef.current?.click()}
                       disabled={uploadingVideo}
-                      className="px-3 py-1.5 text-[#0A4DA6] rounded-full text-[11px] font-extrabold cursor-pointer"
+                      className="px-3 py-1.5 text-[#F28C28] rounded-full text-[11px] font-extrabold cursor-pointer"
                     >
                       Replace
                     </button>
@@ -837,7 +837,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
                     shortDescription: e.target.value,
                   })
                 }
-                className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-medium focus:outline-none focus:border-[#0A4DA6]"
+                className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-medium focus:outline-none focus:border-[#F28C28]"
               />
             </div>
 
@@ -851,7 +851,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
                 onChange={(e) =>
                   setEditForm({ ...editForm, content: e.target.value })
                 }
-                className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-medium focus:outline-none focus:border-[#0A4DA6] leading-relaxed"
+                className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-medium focus:outline-none focus:border-[#F28C28] leading-relaxed"
               />
             </div>
 
@@ -871,7 +871,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={processing}
-                className="flex-1 py-2.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white rounded-full font-extrabold shadow-md cursor-pointer disabled:opacity-60 flex items-center justify-center gap-1.5"
+                className="flex-1 py-2.5 bg-[#F28C28] hover:bg-[#B45309] text-white rounded-full font-extrabold shadow-md cursor-pointer disabled:opacity-60 flex items-center justify-center gap-1.5"
               >
                 {processing && <Loader2 size={14} className="animate-spin" />}
                 Save Changes

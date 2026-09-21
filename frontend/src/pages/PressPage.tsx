@@ -58,7 +58,7 @@ const coverage = [
 ];
 
 const tagColors: Record<string, string> = {
-  Milestone: "bg-[#0A4DA6]/10 text-[#0A4DA6]",
+  Milestone: "bg-[#F28C28]/10 text-[#F28C28]",
   Award: "bg-[#D4AF37]/10 text-[#D4AF37]",
   Product: "bg-[#0E7B6C]/10 text-[#0E7B6C]",
   Funding: "bg-[#6B21A8]/10 text-[#6B21A8]",
@@ -68,7 +68,7 @@ const tagColors: Record<string, string> = {
 const PressPage: React.FC = () => (
   <div className="pb-20">
     <section className="bg-[#0B192C] text-white py-16 px-4 sm:px-6 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#0A4DA6]/10 rounded-full blur-[80px] pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#F28C28]/10 rounded-full blur-[80px] pointer-events-none" />
       <div className="max-w-4xl mx-auto text-center relative z-10 space-y-4">
         <span className="inline-block text-[10px] font-extrabold tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
           Newsroom
@@ -150,13 +150,13 @@ const PressPage: React.FC = () => (
                   {pr.date}
                 </span>
               </div>
-              <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white leading-snug group-hover:text-[#0A4DA6] transition-colors">
+              <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white leading-snug group-hover:text-[#F28C28] transition-colors">
                 {pr.title}
               </h3>
             </div>
             <ArrowRight
               size={16}
-              className="text-gray-300 group-hover:text-[#0A4DA6] transition-colors flex-shrink-0 mt-1"
+              className="text-gray-300 group-hover:text-[#F28C28] transition-colors flex-shrink-0 mt-1"
             />
           </div>
         ))}
@@ -165,7 +165,7 @@ const PressPage: React.FC = () => (
 
     <section className="max-w-3xl mx-auto px-4 sm:px-6 pb-14">
       <div className="bg-[#0B192C] text-white rounded-3xl p-8 text-center space-y-4 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[200px] h-[200px] bg-[#0A4DA6]/15 rounded-full blur-[60px] pointer-events-none" />
+        <div className="absolute top-0 right-0 w-[200px] h-[200px] bg-[#F28C28]/15 rounded-full blur-[60px] pointer-events-none" />
         <h2
           className="font-extrabold relative z-10"
           style={{ fontSize: "clamp(1.1rem, 4vw, 1.4rem)" }}

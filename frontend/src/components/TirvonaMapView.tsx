@@ -51,7 +51,7 @@ const esc = (value: string) =>
   );
 
 const buildIcon = (marker: MapMarker) => {
-  const colour = marker.active ? "#E58C28" : "#0A4DA6";
+  const colour = marker.active ? "#E58C28" : "#F28C28";
   const badge = marker.badge
     ? `<span style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);white-space:nowrap;background:#0B192C;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:9999px;">${esc(marker.badge)}</span>`
     : "";
@@ -78,8 +78,8 @@ const buildPopup = (marker: MapMarker) => {
     : "";
   const gmapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(marker.title + " " + (marker.subtitle || ""))}`;
   const link = marker.href
-    ? `<a href="${esc(marker.href)}" style="display:inline-block;margin-top:6px;font-size:11px;font-weight:800;color:#0A4DA6;text-decoration:none;">View details →</a>`
-    : `<a href="${gmapsLink}" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:6px;font-size:11px;font-weight:800;color:#0A4DA6;text-decoration:none;">Open in Google Maps ↗</a>`;
+    ? `<a href="${esc(marker.href)}" style="display:inline-block;margin-top:6px;font-size:11px;font-weight:800;color:#F28C28;text-decoration:none;">View details →</a>`
+    : `<a href="${gmapsLink}" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:6px;font-size:11px;font-weight:800;color:#F28C28;text-decoration:none;">Open in Google Maps ↗</a>`;
 
   return `<div style="min-width:160px;font-family:Inter,system-ui,sans-serif;">
       <p style="margin:0;font-size:12px;font-weight:800;color:#0B192C;">${esc(marker.title)}</p>
@@ -91,7 +91,7 @@ const buildPopup = (marker: MapMarker) => {
 export const TirvonaMapView: React.FC<TirvonaMapProps> = ({
   markers = [],
   path,
-  pathColour = "#0A4DA6",
+  pathColour = "#F28C28",
   center,
   zoom = 14,
   height = "320px",

@@ -63,7 +63,7 @@ const ContactPage: React.FC = () => {
   return (
     <div className="pb-20">
       <section className="bg-[#0B192C] text-white py-14 px-4 sm:px-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#0A4DA6]/10 rounded-full blur-[80px] pointer-events-none" />
+        <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#F28C28]/10 rounded-full blur-[80px] pointer-events-none" />
         <div className="max-w-3xl mx-auto text-center relative z-10 space-y-4">
           <span className="inline-block text-[10px] font-extrabold tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
             Get In Touch
@@ -145,7 +145,7 @@ const ContactPage: React.FC = () => {
                           [f.key]: e.target.value,
                         }))
                       }
-                      className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 text-[#0B192C] dark:text-white placeholder:text-gray-300"
+                      className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 text-[#0B192C] dark:text-white placeholder:text-gray-300"
                     />
                   </div>
                 ))}
@@ -162,12 +162,12 @@ const ContactPage: React.FC = () => {
                   onChange={(e) =>
                     setForm((prev) => ({ ...prev, message: e.target.value }))
                   }
-                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 text-[#0B192C] dark:text-white placeholder:text-gray-300"
+                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 text-[#0B192C] dark:text-white placeholder:text-gray-300"
                 />
               </div>
               <button
                 type="submit"
-                className="w-full min-h-[52px] bg-[#0A4DA6] text-white font-extrabold text-sm rounded-full flex items-center justify-center gap-2 shadow-lg"
+                className="w-full min-h-[52px] bg-[#F28C28] text-white font-extrabold text-sm rounded-full flex items-center justify-center gap-2 shadow-lg"
               >
                 Send Message <ArrowRight size={15} />
               </button>
@@ -179,7 +179,7 @@ const ContactPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
               {
-                icon: <Phone size={18} className="text-[#0A4DA6]" />,
+                icon: <Phone size={18} className="text-[#F28C28]" />,
                 label: "Phone",
                 val: "+91 78360 55511",
                 href: "tel:+917836055511",
@@ -193,20 +193,20 @@ const ContactPage: React.FC = () => {
                 sub: "Instant chat support",
               },
               {
-                icon: <Mail size={18} className="text-[#0A4DA6]" />,
+                icon: <Mail size={18} className="text-[#F28C28]" />,
                 label: "Email",
                 val: "info@nktech.in",
                 href: "mailto:info@nktech.in",
                 sub: "Reply within 2 hours",
               },
               {
-                icon: <Clock size={18} className="text-[#0A4DA6]" />,
+                icon: <Clock size={18} className="text-[#F28C28]" />,
                 label: "Emergency",
                 val: "24/7 Support",
                 sub: "Medical & safety only",
               },
               {
-                icon: <MapPin size={18} className="text-[#0A4DA6]" />,
+                icon: <MapPin size={18} className="text-[#F28C28]" />,
                 label: "HQ Address",
                 val: "Sector 62, Noida",
                 sub: "Uttar Pradesh 201301",
@@ -216,7 +216,7 @@ const ContactPage: React.FC = () => {
                 key={i}
                 className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 space-y-2 shadow-sm"
               >
-                <div className="w-9 h-9 rounded-xl bg-[#0A4DA6]/5 border border-[#0A4DA6]/10 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl bg-[#F28C28]/5 border border-[#F28C28]/10 flex items-center justify-center">
                   {c.icon}
                 </div>
                 <p className="text-[10px] font-extrabold tracking-wider text-gray-400">
@@ -234,7 +234,7 @@ const ContactPage: React.FC = () => {
                         trackClickWhatsApp({ page_type: "contact" });
                       }
                     }}
-                    className="text-sm font-extrabold text-[#0B192C] dark:text-white hover:text-[#0A4DA6] transition-colors block"
+                    className="text-sm font-extrabold text-[#0B192C] dark:text-white hover:text-[#F28C28] transition-colors block"
                   >
                     {c.val}
                   </a>
@@ -257,26 +257,26 @@ const ContactPage: React.FC = () => {
                 key={i}
                 className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 space-y-1.5 shadow-sm"
               >
-                <h4 className="font-extrabold text-xs text-[#0A4DA6]">
+                <h4 className="font-extrabold text-xs text-[#F28C28]">
                   {o.city}
                 </h4>
                 <p className="text-xs text-gray-500 leading-relaxed flex items-start gap-1.5">
                   <MapPin
                     size={10}
-                    className="mt-0.5 flex-shrink-0 text-[#0A4DA6]"
+                    className="mt-0.5 flex-shrink-0 text-[#F28C28]"
                   />
                   {o.address}
                 </p>
                 <a
                   href={`tel:${o.phone.replace(/[^0-9+]/g, "")}`}
                   onClick={() => trackClickCall({ page_type: "contact" })}
-                  className="text-xs text-gray-500 hover:text-[#0A4DA6] flex items-center gap-1.5 transition-colors"
+                  className="text-xs text-gray-500 hover:text-[#F28C28] flex items-center gap-1.5 transition-colors"
                 >
-                  <Phone size={10} className="text-[#0A4DA6]" />
+                  <Phone size={10} className="text-[#F28C28]" />
                   {o.phone}
                 </a>
                 <p className="text-xs text-gray-500 flex items-center gap-1.5">
-                  <Mail size={10} className="text-[#0A4DA6]" />
+                  <Mail size={10} className="text-[#F28C28]" />
                   {o.email}
                 </p>
               </div>

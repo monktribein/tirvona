@@ -294,7 +294,7 @@ export const ParkingDetailPage: React.FC = () => {
         </p>
         <button
           onClick={() => navigate("/parking")}
-          className="bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold px-5 py-2.5 rounded-full transition-all active:scale-95 cursor-pointer"
+          className="bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold px-5 py-2.5 rounded-full transition-all active:scale-95 cursor-pointer"
         >
           Browse all parking
         </button>
@@ -309,7 +309,7 @@ export const ParkingDetailPage: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-16 space-y-10">
       <div className="flex flex-col items-center text-center gap-3 pb-4">
         <div className="flex flex-wrap items-center justify-center gap-2">
-          <span className="px-3 py-1 bg-[#0A4DA6] text-white text-[9px] font-extrabold rounded-full flex items-center gap-1 shadow-sm tracking-wider">
+          <span className="px-3 py-1 bg-[#F28C28] text-white text-[9px] font-extrabold rounded-full flex items-center gap-1 shadow-sm tracking-wider">
             <ShieldCheck size={12} />{" "}
             {parking.isVerified ? "Verified Parking" : "Parking"}
           </span>
@@ -334,7 +334,7 @@ export const ParkingDetailPage: React.FC = () => {
         </h2>
 
         <p className="text-xs text-gray-500 flex items-center justify-center gap-1">
-          <MapPin size={12} className="text-[#0A4DA6]" />
+          <MapPin size={12} className="text-[#F28C28]" />
           {[parking.address?.line1, parking.address?.landmark]
             .filter(Boolean)
             .join(", ")}
@@ -392,7 +392,7 @@ export const ParkingDetailPage: React.FC = () => {
                 onClick={() => setActiveImage(idx)}
                 aria-label={`Show image ${idx + 1}`}
                 className={`relative shrink-0 w-24 h-16 sm:w-28 sm:h-20 rounded-2xl overflow-hidden cursor-pointer border-2 transition-all snap-start group ${idx === activeImage
-                  ? "border-[#0A4DA6] ring-2 ring-[#0A4DA6]/20"
+                  ? "border-[#F28C28] ring-2 ring-[#F28C28]/20"
                   : "border-transparent opacity-70 hover:opacity-100"
                   }`}
               >
@@ -547,7 +547,7 @@ export const ParkingDetailPage: React.FC = () => {
                     <span className="inline-flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-gray-200">
                       <Navigation
                         size={13}
-                        className="text-[#0A4DA6] stroke-[2.5] shrink-0"
+                        className="text-[#F28C28] stroke-[2.5] shrink-0"
                       />
                       {d.name}
                     </span>
@@ -566,7 +566,7 @@ export const ParkingDetailPage: React.FC = () => {
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-3 shadow-sm">
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <h2 className="inline-flex items-center gap-2 font-extrabold text-sm text-[#0B192C] dark:text-white">
-                  <MapPin size={15} className="text-[#0A4DA6] stroke-[2.5]" />
+                  <MapPin size={15} className="text-[#F28C28] stroke-[2.5]" />
                   Location
                 </h2>
                 {parking.googleMapsUrl && (
@@ -574,7 +574,7 @@ export const ParkingDetailPage: React.FC = () => {
                     href={parking.googleMapsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-[#0A4DA6] dark:text-blue-300 hover:underline"
+                    className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-[#F28C28] dark:text-amber-300 hover:underline"
                   >
                     <Navigation size={12} className="stroke-[2.5]" />
                     Get directions
@@ -693,7 +693,7 @@ export const ParkingDetailPage: React.FC = () => {
                       const minimumExit = getMinimumParkingExit(nextEntry);
                       if (exitAt < minimumExit) setExitAt(minimumExit);
                     }}
-                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30"
+                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30"
                   />
                 </div>
                 <div>
@@ -709,7 +709,7 @@ export const ParkingDetailPage: React.FC = () => {
                     value={exitAt}
                     min={getMinimumParkingExit(entryAt)}
                     onChange={(e) => setExitAt(e.target.value)}
-                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30"
+                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30"
                   />
                 </div>
               </div>
@@ -747,7 +747,7 @@ export const ParkingDetailPage: React.FC = () => {
                   {checkingAvailability && (
                     <Loader2
                       size={12}
-                      className="animate-spin text-[#0A4DA6]"
+                      className="animate-spin text-[#F28C28]"
                     />
                   )}
                 </span>
@@ -770,10 +770,10 @@ export const ParkingDetailPage: React.FC = () => {
                             disabled={disabled}
                             onClick={() => setSelectedSlotType(slot.slotTypeId)}
                             className={`w-full text-left rounded-2xl border p-3 transition-all cursor-pointer ${isSelected
-                              ? "border-[#0A4DA6] bg-blue-50/70 dark:bg-slate-800 ring-2 ring-[#0A4DA6]/20"
+                              ? "border-[#F28C28] bg-blue-50/70 dark:bg-slate-800 ring-2 ring-[#F28C28]/20"
                               : disabled
                                 ? "border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 opacity-60 cursor-not-allowed"
-                                : "border-gray-200 dark:border-slate-700 bg-white dark:bg-[#0B192C] hover:border-[#0A4DA6]"
+                                : "border-gray-200 dark:border-slate-700 bg-white dark:bg-[#0B192C] hover:border-[#F28C28]"
                               }`}
                           >
                             <div className="flex items-start justify-between gap-2">
@@ -782,12 +782,12 @@ export const ParkingDetailPage: React.FC = () => {
                                   {isSelected && (
                                     <CheckCircle2
                                       size={13}
-                                      className="text-[#0A4DA6] shrink-0 stroke-[2.5]"
+                                      className="text-[#F28C28] shrink-0 stroke-[2.5]"
                                     />
                                   )}
                                   {slot.name}
                                   {isSelected && (
-                                    <span className="rounded-full bg-[#0A4DA6]/10 px-2 py-0.5 text-[8px] font-black text-[#0A4DA6]">
+                                    <span className="rounded-full bg-[#F28C28]/10 px-2 py-0.5 text-[8px] font-black text-[#F28C28]">
                                       Best match
                                     </span>
                                   )}
@@ -832,7 +832,7 @@ export const ParkingDetailPage: React.FC = () => {
               )}
 
               {checkingAvailability && (
-                <div className="flex items-center justify-center gap-2 rounded-2xl bg-blue-50 px-3 py-4 text-xs font-bold text-[#0A4DA6] dark:bg-blue-950/30">
+                <div className="flex items-center justify-center gap-2 rounded-2xl bg-blue-50 px-3 py-4 text-xs font-bold text-[#F28C28] dark:bg-blue-950/30">
                   <Loader2 size={14} className="animate-spin" /> Calculating parking amount...
                 </div>
               )}
@@ -875,7 +875,7 @@ export const ParkingDetailPage: React.FC = () => {
                     <span className="text-xs font-black text-[#0B192C] dark:text-white">
                       Total
                     </span>
-                    <span className="text-base font-black text-[#0A4DA6] dark:text-blue-300">
+                    <span className="text-base font-black text-[#F28C28] dark:text-amber-300">
                       {formatCurrency(selected.pricing.totalAmount)}
                     </span>
                   </div>
@@ -886,7 +886,7 @@ export const ParkingDetailPage: React.FC = () => {
                 type="button"
                 onClick={handleProceed}
                 disabled={!selected || checkingAvailability}
-                className="w-full bg-[#0A4DA6] hover:bg-[#083D85] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-extrabold px-5 py-3 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
+                className="w-full bg-[#F28C28] hover:bg-[#D97706] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-extrabold px-5 py-3 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
               >
                 {checkingAvailability
                   ? "Finding the best available bay..."
@@ -905,7 +905,7 @@ export const ParkingDetailPage: React.FC = () => {
                 href={parking.googleMapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 hover:border-[#0A4DA6] text-[#0A4DA6] dark:text-blue-300 text-xs font-extrabold px-5 py-3 rounded-full shadow-sm transition-all active:scale-95 inline-flex items-center justify-center gap-2"
+                className="w-full bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 hover:border-[#F28C28] text-[#F28C28] dark:text-amber-300 text-xs font-extrabold px-5 py-3 rounded-full shadow-sm transition-all active:scale-95 inline-flex items-center justify-center gap-2"
               >
                 <Navigation size={14} className="stroke-[2.5]" />
                 Navigate with Google Maps

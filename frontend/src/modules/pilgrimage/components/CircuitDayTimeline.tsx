@@ -24,7 +24,7 @@ export const CircuitDayTimeline: React.FC<{ days: CircuitDay[] }> = ({
       >
         <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-gray-100 dark:border-slate-800">
           <div className="flex items-center gap-3">
-            <span className="w-9 h-9 shrink-0 rounded-2xl bg-[#0A4DA6]/10 text-[#0A4DA6] text-xs font-black flex items-center justify-center border border-[#0A4DA6]/15">
+            <span className="w-9 h-9 shrink-0 rounded-2xl bg-[#F28C28]/10 text-[#F28C28] text-xs font-black flex items-center justify-center border border-[#F28C28]/15">
               {day.dayNumber}
             </span>
             <div className="min-w-0">
@@ -70,7 +70,7 @@ export const CircuitDayTimeline: React.FC<{ days: CircuitDay[] }> = ({
                       {stopTypeLabel(stop.stopType)}
                     </span>
                     {stop.isOvernightStop ? (
-                      <span className="inline-flex items-center gap-1 bg-blue-50 dark:bg-slate-800 text-[#0A4DA6] dark:text-blue-300 text-[9px] font-bold px-2 py-0.5 rounded-full">
+                      <span className="inline-flex items-center gap-1 bg-[#FFF4E5] text-[#F28C28] dark:text-amber-300 text-[9px] font-bold px-2 py-0.5 rounded-full">
                         <Moon size={9} className="stroke-[2.5]" /> Overnight
                       </span>
                     ) : null}

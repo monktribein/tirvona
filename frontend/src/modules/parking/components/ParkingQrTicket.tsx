@@ -27,7 +27,7 @@ export const ParkingQrTicket: React.FC<ParkingQrTicketProps> = ({
 
   return (
     <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] overflow-hidden shadow-lg max-w-sm mx-auto w-full">
-      <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white px-5 py-4 text-center relative overflow-hidden">
+      <div className="bg-gradient-to-r from-[#0B192C] via-[#F28C28] to-[#0B192C] text-white px-5 py-4 text-center relative overflow-hidden">
         <div className="absolute right-0 top-0 w-40 h-40 bg-[#E58C28]/20 rounded-full blur-3xl pointer-events-none" />
         <div className="relative">
           <p className="inline-flex items-center gap-1.5 text-[9px] font-black tracking-[0.2em] text-blue-100">
@@ -139,7 +139,7 @@ export const ParkingQrTicket: React.FC<ParkingQrTicketProps> = ({
           type="button"
           onClick={handleDownload}
           disabled={!pass.image}
-          className="w-full bg-[#0A4DA6] hover:bg-[#083D85] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-extrabold px-4 py-2.5 rounded-full inline-flex items-center justify-center gap-2 shadow-md transition-all active:scale-95"
+          className="w-full bg-[#F28C28] hover:bg-[#D97706] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-extrabold px-4 py-2.5 rounded-full inline-flex items-center justify-center gap-2 shadow-md transition-all active:scale-95"
         >
           <Download size={14} className="stroke-[2.5]" />
           Download QR Pass

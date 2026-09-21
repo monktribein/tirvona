@@ -19,7 +19,7 @@ const Stat: React.FC<{ label: string; value: string | number; accent?: boolean }
       {label}
     </p>
     <p
-      className={`text-xl font-black ${accent ? "text-[#0A4DA6]" : "text-[#0B192C] dark:text-white"}`}
+      className={`text-xl font-black ${accent ? "text-[#F28C28]" : "text-[#0B192C] dark:text-white"}`}
     >
       {value}
     </p>
@@ -106,7 +106,7 @@ export const SmartContactAnalyticsPage: React.FC = () => {
           </div>
 
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-5 shadow-sm">
-            <h4 className="text-[11px] font-black uppercase tracking-wider text-[#0A4DA6] mb-3">
+            <h4 className="text-[11px] font-black uppercase tracking-wider text-[#F28C28] mb-3">
               Top representatives by scans
             </h4>
 
@@ -135,7 +135,7 @@ export const SmartContactAnalyticsPage: React.FC = () => {
                         <td className="py-2.5 pr-3">
                           <Link
                             to={`/admin/smart-contacts/${profile.id}`}
-                            className="text-xs font-black text-[#0B192C] dark:text-white hover:text-[#0A4DA6]"
+                            className="text-xs font-black text-[#0B192C] dark:text-white hover:text-[#F28C28]"
                           >
                             {profile.displayName}
                           </Link>
@@ -152,7 +152,7 @@ export const SmartContactAnalyticsPage: React.FC = () => {
                         <td className="py-2.5 px-3 text-right text-xs font-bold text-[#0B192C] dark:text-white">
                           {profile.metrics?.saveContacts ?? 0}
                         </td>
-                        <td className="py-2.5 pl-3 text-right text-xs font-black text-[#0A4DA6]">
+                        <td className="py-2.5 pl-3 text-right text-xs font-black text-[#F28C28]">
                           {(profile.metrics?.conversionRate ?? 0).toFixed(1)}%
                         </td>
                       </tr>

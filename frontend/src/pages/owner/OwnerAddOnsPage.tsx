@@ -354,7 +354,7 @@ export const OwnerAddOnsPage: React.FC = () => {
     const cat = item.category?.toLowerCase() || "";
     const name = item.name.toLowerCase();
     if (cat === "bed" || name.includes("bed") || name.includes("mattress")) {
-      return <BedDouble size={18} className="text-[#0A4DA6] shrink-0" />;
+      return <BedDouble size={18} className="text-[#F28C28] shrink-0" />;
     }
     if (cat === "meals" || name.includes("meal") || name.includes("food")) {
       return <Utensils size={18} className="text-emerald-600 shrink-0" />;
@@ -368,7 +368,7 @@ export const OwnerAddOnsPage: React.FC = () => {
     if (cat === "locker" || name.includes("locker")) {
       return <Lock size={18} className="text-indigo-600 shrink-0" />;
     }
-    return <Sparkles size={18} className="text-[#0A4DA6] shrink-0" />;
+    return <Sparkles size={18} className="text-[#F28C28] shrink-0" />;
   };
 
   const isBedItem = (item: AddOnServiceItem) => {
@@ -386,7 +386,7 @@ export const OwnerAddOnsPage: React.FC = () => {
             <h1 className="text-xl font-black text-[#0B192C] dark:text-white">
               Add-On Services (Dynamic Pricing)
             </h1>
-            <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-blue-100 text-[#0A4DA6] dark:bg-blue-950 dark:text-blue-300">
+            <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-blue-100 text-[#F28C28] dark:bg-blue-950 dark:text-amber-300">
               Extra Beds & Guest Services
             </span>
           </div>
@@ -421,7 +421,7 @@ export const OwnerAddOnsPage: React.FC = () => {
           <button
             type="button"
             onClick={() => handleOpenAddModal("bed")}
-            className="px-4 py-2.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer"
+            className="px-4 py-2.5 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer"
           >
             <Plus size={15} /> Add Service
           </button>
@@ -442,11 +442,11 @@ export const OwnerAddOnsPage: React.FC = () => {
                   key={preset.key}
                   type="button"
                   onClick={() => handleOpenAddModal(preset.key)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 hover:border-[#0A4DA6] text-slate-700 dark:text-slate-200 text-xs font-bold transition-all cursor-pointer shadow-2xs hover:-translate-y-0.5"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 hover:border-[#F28C28] text-slate-700 dark:text-slate-200 text-xs font-bold transition-all cursor-pointer shadow-2xs hover:-translate-y-0.5"
                 >
-                  <IconComp size={13} className="text-[#0A4DA6]" />
+                  <IconComp size={13} className="text-[#F28C28]" />
                   <span>{preset.label}</span>
-                  <span className="text-[10px] font-extrabold text-[#0A4DA6] bg-blue-50 dark:bg-blue-950/60 px-1.5 py-0.2 rounded">
+                  <span className="text-[10px] font-extrabold text-[#F28C28] bg-[#FFF4E5]/60 px-1.5 py-0.2 rounded">
                     ₹{preset.defaultPrice}
                   </span>
                 </button>
@@ -474,7 +474,7 @@ export const OwnerAddOnsPage: React.FC = () => {
           <button
             type="button"
             onClick={() => handleOpenAddModal("bed")}
-            className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 bg-[#0A4DA6] text-white text-xs font-bold rounded-xl shadow cursor-pointer hover:bg-[#083b80]"
+            className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 bg-[#F28C28] text-white text-xs font-bold rounded-xl shadow cursor-pointer hover:bg-[#B45309]"
           >
             <BedDouble size={14} /> Add First Extra Bed / Service
           </button>
@@ -496,7 +496,7 @@ export const OwnerAddOnsPage: React.FC = () => {
               >
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex items-start gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center shrink-0">
+                    <div className="w-9 h-9 rounded-xl bg-[#FFF4E5]/60 flex items-center justify-center shrink-0">
                       {getItemIcon(item)}
                     </div>
                     <div>
@@ -510,7 +510,7 @@ export const OwnerAddOnsPage: React.FC = () => {
                           </span>
                         )}
                       </div>
-                      <span className="text-[10px] font-extrabold text-[#0A4DA6] bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-md mt-1 inline-block">
+                      <span className="text-[10px] font-extrabold text-[#F28C28] bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-md mt-1 inline-block">
                         {formatCurrency(item.price)} / {item.unitLabel || "Unit"}
                       </span>
                       {isAllSelected && item.ashramName && (
@@ -525,7 +525,7 @@ export const OwnerAddOnsPage: React.FC = () => {
                     type="button"
                     onClick={() => handleToggleEnable(item)}
                     title={item.enabled ? "Click to Disable" : "Click to Enable"}
-                    className="text-gray-400 hover:text-[#0A4DA6] transition-colors cursor-pointer"
+                    className="text-gray-400 hover:text-[#F28C28] transition-colors cursor-pointer"
                   >
                     {item.enabled ? (
                       <ToggleRight size={26} className="text-emerald-500" />
@@ -580,7 +580,7 @@ export const OwnerAddOnsPage: React.FC = () => {
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <div>
                 <h3 className="font-black text-base text-[#0B192C] dark:text-white flex items-center gap-2">
-                  <Sparkles size={16} className="text-[#0A4DA6]" />
+                  <Sparkles size={16} className="text-[#F28C28]" />
                   {editingItem ? "Edit Add-On Service" : "Add Service / Extra Bed"}
                 </h3>
                 <p className="text-xs text-gray-400 font-semibold mt-0.5">
@@ -610,8 +610,8 @@ export const OwnerAddOnsPage: React.FC = () => {
                       onClick={() => handleApplyPreset(tpl)}
                       className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition cursor-pointer flex items-center gap-1 ${
                         formData.category === tpl.key
-                          ? "bg-[#0A4DA6] text-white border-[#0A4DA6]"
-                          : "bg-gray-50 dark:bg-slate-900 border-gray-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-[#0A4DA6]"
+                          ? "bg-[#F28C28] text-white border-[#F28C28]"
+                          : "bg-gray-50 dark:bg-slate-900 border-gray-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-[#F28C28]"
                       }`}
                     >
                       <tpl.icon size={12} />
@@ -639,7 +639,7 @@ export const OwnerAddOnsPage: React.FC = () => {
                   value={formAshramId}
                   onChange={(e) => setFormAshramId(e.target.value)}
                   disabled={!!editingItem}
-                  className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6] disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28] disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {myAshrams.map((a) => (
                     <option key={a._id} value={a._id}>
@@ -663,7 +663,7 @@ export const OwnerAddOnsPage: React.FC = () => {
                     onChange={(e) =>
                       setFormData((p) => ({ ...p, name: e.target.value }))
                     }
-                    className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6] dark:text-white"
+                    className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-[#F28C28] dark:text-white"
                   />
                 </div>
 
@@ -712,7 +712,7 @@ export const OwnerAddOnsPage: React.FC = () => {
                           price: parseFloat(e.target.value) || 0,
                         }))
                       }
-                      className="w-full pl-8 pr-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-black text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                      className="w-full pl-8 pr-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-black text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                     />
                   </div>
                 </div>
@@ -817,7 +817,7 @@ export const OwnerAddOnsPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-5 py-2.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-bold rounded-xl transition-all shadow cursor-pointer flex items-center gap-1.5"
+                  className="px-5 py-2.5 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-bold rounded-xl transition-all shadow cursor-pointer flex items-center gap-1.5"
                 >
                   {saving ? (
                     <>

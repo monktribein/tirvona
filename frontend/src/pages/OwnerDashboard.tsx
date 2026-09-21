@@ -692,7 +692,7 @@ export const OwnerDashboard: React.FC = () => {
             <h1 className="text-lg font-black text-slate-900 dark:text-white">Stay Overview</h1>
             <p className="text-xs text-slate-400 font-medium">Real-time metrics, booking trends & live calendar bookings</p>
           </div>
-          <button type="button" onClick={() => void load(true)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-white dark:bg-[#0B192C] dark:border-slate-700 px-4 py-2 text-xs text-slate-700 dark:text-slate-200 hover:border-[#0A4DA6] disabled:opacity-60 cursor-pointer shadow-xs">
+          <button type="button" onClick={() => void load(true)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-white dark:bg-[#0B192C] dark:border-slate-700 px-4 py-2 text-xs text-slate-700 dark:text-slate-200 hover:border-[#F28C28] disabled:opacity-60 cursor-pointer shadow-xs">
             <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} /> Refresh data
           </button>
         </div>
@@ -708,10 +708,10 @@ export const OwnerDashboard: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-2">
-                <CalendarIcon size={18} className="text-[#0A4DA6]" />
+                <CalendarIcon size={18} className="text-[#F28C28]" />
                 Live Booking & Inventory Calendar
               </h2>
-              <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-blue-100 text-[#0A4DA6] dark:bg-blue-950 dark:text-blue-300">
+              <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-blue-100 text-[#F28C28] dark:bg-blue-950 dark:text-amber-300">
                 Today ± 7 Days
               </span>
               <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 flex items-center gap-1">
@@ -775,7 +775,7 @@ export const OwnerDashboard: React.FC = () => {
               <button
                 type="submit"
                 disabled={!searchDateInput}
-                className="p-2 bg-[#0A4DA6] text-white rounded-xl hover:bg-[#083b80] transition disabled:opacity-40 cursor-pointer shadow-xs"
+                className="p-2 bg-[#F28C28] text-white rounded-xl hover:bg-[#B45309] transition disabled:opacity-40 cursor-pointer shadow-xs"
                 title="Jump to date and view booking details"
               >
                 <Search size={14} />
@@ -790,7 +790,7 @@ export const OwnerDashboard: React.FC = () => {
             <button
               type="button"
               onClick={handlePrev7Days}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[#0A4DA6] hover:text-[#0A4DA6] transition cursor-pointer shadow-2xs"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[#F28C28] hover:text-[#F28C28] transition cursor-pointer shadow-2xs"
             >
               <ChevronLeft size={14} /> 7 Days Back
             </button>
@@ -799,8 +799,8 @@ export const OwnerDashboard: React.FC = () => {
               onClick={handleResetToday}
               className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer shadow-2xs ${
                 centerDate === todayStr
-                  ? "bg-[#0A4DA6] text-white"
-                  : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-[#0A4DA6]"
+                  ? "bg-[#F28C28] text-white"
+                  : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-[#F28C28]"
               }`}
             >
               <CalendarCheck size={13} /> Reset to Today
@@ -808,7 +808,7 @@ export const OwnerDashboard: React.FC = () => {
             <button
               type="button"
               onClick={handleNext7Days}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[#0A4DA6] hover:text-[#0A4DA6] transition cursor-pointer shadow-2xs"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[#F28C28] hover:text-[#F28C28] transition cursor-pointer shadow-2xs"
             >
               Next 7 Days <ChevronRight size={14} />
             </button>
@@ -824,7 +824,7 @@ export const OwnerDashboard: React.FC = () => {
               <strong className="tabular-nums">{windowFreeRooms} Free Left</strong>
             </span>
             <span className="text-slate-300 dark:text-slate-700">|</span>
-            <span className="text-[#0A4DA6] dark:text-blue-400">
+            <span className="text-[#F28C28] dark:text-amber-400">
               Avg: <strong className="tabular-nums">{formatCurrency(avgNightPrice)}/nt</strong>
             </span>
           </div>
@@ -852,10 +852,10 @@ export const OwnerDashboard: React.FC = () => {
                     onClick={() => setActiveDetailDate(day.date)}
                     className={`relative shrink-0 flex-1 min-w-[95px] max-w-[125px] rounded-2xl p-2.5 text-center cursor-pointer transition-all duration-200 flex flex-col justify-between select-none ${
                       isSelected
-                        ? "ring-2 ring-[#0A4DA6] bg-blue-50/90 dark:bg-blue-950/50 shadow-md transform -translate-y-0.5"
+                        ? "ring-2 ring-[#F28C28] bg-blue-50/90 dark:bg-blue-950/50 shadow-md transform -translate-y-0.5"
                         : isToday
                           ? "border-2 border-orange-500 bg-orange-50/70 dark:bg-orange-950/30 shadow-xs ring-2 ring-orange-400/30 font-semibold"
-                          : "border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/70 hover:border-[#0A4DA6]/60 hover:bg-blue-50/40 hover:-translate-y-0.5"
+                          : "border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/70 hover:border-[#F28C28]/60 hover:bg-blue-50/40 hover:-translate-y-0.5"
                     }`}
                   >
                     {/* Top Badge (TODAY / Day Name) */}
@@ -887,7 +887,7 @@ export const OwnerDashboard: React.FC = () => {
 
                     {/* Booked / Free Mini Badges */}
                     <div className="space-y-1 mt-1 pt-1.5 border-t border-slate-200/60 dark:border-slate-800">
-                      <div className={`text-[9px] font-black py-0.5 px-1 rounded ${day.booked > 0 ? "bg-[#0A4DA6] text-white" : "bg-slate-200/60 dark:bg-slate-800 text-slate-500"}`}>
+                      <div className={`text-[9px] font-black py-0.5 px-1 rounded ${day.booked > 0 ? "bg-[#F28C28] text-white" : "bg-slate-200/60 dark:bg-slate-800 text-slate-500"}`}>
                         {day.booked} Bkd
                       </div>
                       <div className="text-[9px] font-black py-0.5 px-1 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
@@ -896,7 +896,7 @@ export const OwnerDashboard: React.FC = () => {
                     </div>
 
                     {/* Action link */}
-                    <div className="mt-1 text-[8px] font-extrabold text-[#0A4DA6] dark:text-blue-400 underline flex items-center justify-center gap-0.5">
+                    <div className="mt-1 text-[8px] font-extrabold text-[#F28C28] dark:text-amber-400 underline flex items-center justify-center gap-0.5">
                       Details →
                     </div>
                   </div>
@@ -916,7 +916,7 @@ export const OwnerDashboard: React.FC = () => {
               <div className="space-y-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-                    <CalendarDays size={20} className="text-[#0A4DA6]" />
+                    <CalendarDays size={20} className="text-[#F28C28]" />
                     Bookings for {activeDateMeta?.fullDateStr || activeDetailDate}
                   </h3>
                   {activeDetailDate === todayStr && (
@@ -943,7 +943,7 @@ export const OwnerDashboard: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 shrink-0">
               <div className="flex items-center justify-between sm:justify-start gap-3">
                 <div className="text-xs font-bold text-slate-400">Total Bookings</div>
-                <div className="text-sm font-black text-[#0A4DA6] dark:text-blue-400">
+                <div className="text-sm font-black text-[#F28C28] dark:text-amber-400">
                   {dateBookings.length} Guests Booked
                 </div>
               </div>
@@ -965,14 +965,14 @@ export const OwnerDashboard: React.FC = () => {
                     }
                     setShowOverride(true);
                   }}
-                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[#0A4DA6] hover:text-[#0A4DA6] transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[#F28C28] hover:text-[#F28C28] transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
                 >
                   <Edit2 size={12} /> Edit Date Rate
                 </button>
                 <button
                   type="button"
                   onClick={() => navigate(`${basePath}/self-booking`)}
-                  className="px-3 py-1.5 rounded-xl bg-[#0A4DA6] text-white text-xs font-bold hover:bg-[#083b80] transition cursor-pointer flex items-center gap-1 shadow-2xs"
+                  className="px-3 py-1.5 rounded-xl bg-[#F28C28] text-white text-xs font-bold hover:bg-[#B45309] transition cursor-pointer flex items-center gap-1 shadow-2xs"
                 >
                   <Plus size={12} /> Add Booking
                 </button>
@@ -991,7 +991,7 @@ export const OwnerDashboard: React.FC = () => {
             <div className="flex-1 overflow-y-auto space-y-3 pr-1">
               {dateBookingsLoading ? (
                 <div className="py-12 text-center space-y-3">
-                  <RefreshCw size={24} className="animate-spin mx-auto text-[#0A4DA6]" />
+                  <RefreshCw size={24} className="animate-spin mx-auto text-[#F28C28]" />
                   <p className="text-xs font-bold text-slate-400">Loading booking records for {activeDetailDate}...</p>
                 </div>
               ) : dateBookings.length === 0 ? (
@@ -1006,7 +1006,7 @@ export const OwnerDashboard: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => navigate(`${basePath}/self-booking`)}
-                    className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0A4DA6] text-white text-xs font-bold hover:bg-[#083D85] transition cursor-pointer"
+                    className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#F28C28] text-white text-xs font-bold hover:bg-[#D97706] transition cursor-pointer"
                   >
                     <Plus size={13} /> Create Counter Reservation
                   </button>
@@ -1026,12 +1026,12 @@ export const OwnerDashboard: React.FC = () => {
                     return (
                       <div
                         key={booking._id}
-                        className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 hover:border-[#0A4DA6]/40 transition space-y-3 shadow-2xs"
+                        className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 hover:border-[#F28C28]/40 transition space-y-3 shadow-2xs"
                       >
                         {/* TOP ROW: GUEST & STATUS */}
                         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
                           <div className="flex items-center gap-2.5">
-                            <div className="grid h-8 w-8 place-items-center rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] dark:text-blue-400 font-black text-xs">
+                            <div className="grid h-8 w-8 place-items-center rounded-full bg-[#F28C28]/10 text-[#F28C28] dark:text-amber-400 font-black text-xs">
                               {guestName.charAt(0).toUpperCase()}
                             </div>
                             <div>
@@ -1047,7 +1047,7 @@ export const OwnerDashboard: React.FC = () => {
                           <div className="flex items-center gap-2">
                             <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
                               isCheckedIn
-                                ? "bg-blue-100 text-[#0A4DA6] dark:bg-blue-950 dark:text-blue-300"
+                                ? "bg-blue-100 text-[#F28C28] dark:bg-blue-950 dark:text-amber-300"
                                 : isConfirmed
                                   ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
                                   : isCancelled
@@ -1071,7 +1071,7 @@ export const OwnerDashboard: React.FC = () => {
 
                           <div>
                             <span className="text-[10px] font-bold text-slate-400 block">Assigned Room #</span>
-                            <span className="font-mono font-black text-[#0A4DA6] dark:text-blue-400">
+                            <span className="font-mono font-black text-[#F28C28] dark:text-amber-400">
                               {assignedRoom !== "Unassigned" ? `Room #${assignedRoom}` : "Not Assigned"}
                             </span>
                           </div>
@@ -1098,7 +1098,7 @@ export const OwnerDashboard: React.FC = () => {
                             {guestPhone !== "N/A" && (
                               <a
                                 href={`tel:${guestPhone}`}
-                                className="hover:text-[#0A4DA6] flex items-center gap-1 font-bold"
+                                className="hover:text-[#F28C28] flex items-center gap-1 font-bold"
                               >
                                 <Phone size={12} /> {guestPhone}
                               </a>
@@ -1120,7 +1120,7 @@ export const OwnerDashboard: React.FC = () => {
                                   setEditRoomNumber(assignedRoom !== "Unassigned" ? assignedRoom : "");
                                   setRoomNumberInputs({});
                                 }}
-                                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:border-[#0A4DA6] hover:text-[#0A4DA6] transition cursor-pointer flex items-center gap-1"
+                                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:border-[#F28C28] hover:text-[#F28C28] transition cursor-pointer flex items-center gap-1"
                               >
                                 <Tag size={11} /> {assignedRoom !== "Unassigned" ? "Edit Room #" : "Assign Room"}
                               </button>
@@ -1142,7 +1142,7 @@ export const OwnerDashboard: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={() => void handleQuickCheckout(booking)}
-                                className="px-2.5 py-1 rounded-lg bg-blue-600 text-white text-[11px] font-bold hover:bg-blue-700 transition cursor-pointer flex items-center gap-1"
+                                className="px-2.5 py-1 rounded-lg bg-blue-600 text-white text-[11px] font-bold hover:bg-[#D97706] transition cursor-pointer flex items-center gap-1"
                               >
                                 <ArrowRight size={11} /> Check Out
                               </button>
@@ -1166,7 +1166,7 @@ export const OwnerDashboard: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => navigate(`${basePath}/bookings`)}
-                              className="px-2 py-1 text-slate-400 hover:text-[#0A4DA6] text-[11px] font-bold transition cursor-pointer"
+                              className="px-2 py-1 text-slate-400 hover:text-[#F28C28] text-[11px] font-bold transition cursor-pointer"
                               title="Open in Booking Center"
                             >
                               <ExternalLink size={13} />
@@ -1207,7 +1207,7 @@ export const OwnerDashboard: React.FC = () => {
           >
             <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
               <h3 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                <Tag size={16} className="text-[#0A4DA6]" /> Assign Room Number
+                <Tag size={16} className="text-[#F28C28]" /> Assign Room Number
               </h3>
               <button
                 type="button"
@@ -1278,7 +1278,7 @@ export const OwnerDashboard: React.FC = () => {
             <button
               type="submit"
               disabled={savingRoomNo}
-              className="w-full py-3 bg-[#0A4DA6] text-white rounded-full font-extrabold text-xs shadow-md hover:bg-[#083b80] transition disabled:opacity-50 cursor-pointer"
+              className="w-full py-3 bg-[#F28C28] text-white rounded-full font-extrabold text-xs shadow-md hover:bg-[#B45309] transition disabled:opacity-50 cursor-pointer"
             >
               {savingRoomNo ? "Saving..." : "Save Room Allocation"}
             </button>
@@ -1373,14 +1373,14 @@ export const OwnerDashboard: React.FC = () => {
                   key={metric}
                   type="button"
                   onClick={() => setChartMetric(metric)}
-                  className={`rounded-lg px-3 py-1.5 capitalize cursor-pointer ${chartMetric === metric ? "bg-[#0A4DA6] text-white" : "text-slate-500 dark:text-slate-400"}`}
+                  className={`rounded-lg px-3 py-1.5 capitalize cursor-pointer ${chartMetric === metric ? "bg-[#F28C28] text-white" : "text-slate-500 dark:text-slate-400"}`}
                 >
                   {metric}
                 </button>
               ))}
             </div>
           </div>
-          <AnalyticsAreaChart data={trend} series={[{ key: chartMetric, label: chartMetric === "revenue" ? "Collected revenue" : "Bookings", color: chartMetric === "revenue" ? "#0A4DA6" : "#8B5CF6" }]} valueFormatter={chartMetric === "revenue" ? (value) => formatCurrency(value) : (value) => formatIndianNumber(value)} />
+          <AnalyticsAreaChart data={trend} series={[{ key: chartMetric, label: chartMetric === "revenue" ? "Collected revenue" : "Bookings", color: chartMetric === "revenue" ? "#F28C28" : "#8B5CF6" }]} valueFormatter={chartMetric === "revenue" ? (value) => formatCurrency(value) : (value) => formatIndianNumber(value)} />
         </article>
 
         <article className="xl:col-span-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B192C] p-5 shadow-sm">
@@ -1395,7 +1395,7 @@ export const OwnerDashboard: React.FC = () => {
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
           <div>
             <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-              <Tag size={18} className="text-[#0A4DA6]" />
+              <Tag size={18} className="text-[#F28C28]" />
               Active Deals & Promotional Offers ({activeDealsList.length})
             </h2>
             <p className="text-xs text-slate-400 font-semibold mt-0.5">
@@ -1406,7 +1406,7 @@ export const OwnerDashboard: React.FC = () => {
             <button
               type="button"
               onClick={() => navigate(`${basePath}/offers`)}
-              className="px-4 py-2 rounded-xl bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-sm"
+              className="px-4 py-2 rounded-xl bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-sm"
             >
               <Plus size={14} /> Create / Manage Deals
             </button>
@@ -1423,7 +1423,7 @@ export const OwnerDashboard: React.FC = () => {
             <button
               type="button"
               onClick={() => navigate(`${basePath}/offers`)}
-              className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0A4DA6] text-white text-xs font-bold hover:bg-[#083D85] transition cursor-pointer"
+              className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#F28C28] text-white text-xs font-bold hover:bg-[#D97706] transition cursor-pointer"
             >
               <Sparkles size={13} /> Launch Last Minute Deal
             </button>
@@ -1448,7 +1448,7 @@ export const OwnerDashboard: React.FC = () => {
                 return (
                   <div
                     key={offer._id}
-                    className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 hover:border-[#0A4DA6]/40 transition space-y-3 relative overflow-hidden flex flex-col justify-between"
+                    className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 hover:border-[#F28C28]/40 transition space-y-3 relative overflow-hidden flex flex-col justify-between"
                   >
                     {offer.isLastMinuteDeal && (
                       <div className="absolute top-0 right-0">
@@ -1460,7 +1460,7 @@ export const OwnerDashboard: React.FC = () => {
 
                     <div className="space-y-1.5 pt-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-mono font-black text-xs px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[#0A4DA6] dark:text-blue-400 rounded-lg shadow-xs tracking-wider">
+                        <span className="font-mono font-black text-xs px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[#F28C28] dark:text-amber-400 rounded-lg shadow-xs tracking-wider">
                           {offer.promoCode}
                         </span>
                         <span className="text-[10px] font-black bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md">
@@ -1486,7 +1486,7 @@ export const OwnerDashboard: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => navigate(`${basePath}/offers`)}
-                        className="text-[#0A4DA6] dark:text-blue-400 hover:underline font-extrabold cursor-pointer"
+                        className="text-[#F28C28] dark:text-amber-400 hover:underline font-extrabold cursor-pointer"
                       >
                         Edit →
                       </button>
@@ -1517,9 +1517,9 @@ export const OwnerDashboard: React.FC = () => {
                 key={action.path}
                 type="button"
                 onClick={() => navigate(action.path)}
-                className="group flex min-h-20 items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 p-3 text-left transition hover:-translate-y-0.5 hover:border-[#0A4DA6] hover:bg-blue-50 dark:hover:bg-slate-800 cursor-pointer"
+                className="group flex min-h-20 items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 p-3 text-left transition hover:-translate-y-0.5 hover:border-[#F28C28] hover:bg-blue-50 dark:hover:bg-slate-800 cursor-pointer"
               >
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white dark:bg-slate-800 text-[#0A4DA6] shadow-sm group-hover:bg-[#0A4DA6] group-hover:text-white">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white dark:bg-slate-800 text-[#F28C28] shadow-sm group-hover:bg-[#F28C28] group-hover:text-white">
                   {action.icon}
                 </span>
                 <span>
@@ -1541,7 +1541,7 @@ export const OwnerDashboard: React.FC = () => {
           >
             <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
               <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                <Sparkles size={16} className="text-[#0A4DA6]" /> Override Daily Rate / Inventory
+                <Sparkles size={16} className="text-[#F28C28]" /> Override Daily Rate / Inventory
               </h3>
               <button
                 type="button"
@@ -1607,7 +1607,7 @@ export const OwnerDashboard: React.FC = () => {
 
             <button
               type="submit"
-              className="w-full py-3 bg-[#0A4DA6] text-white rounded-full font-extrabold text-xs shadow-md hover:bg-[#083b80] transition-all cursor-pointer"
+              className="w-full py-3 bg-[#F28C28] text-white rounded-full font-extrabold text-xs shadow-md hover:bg-[#B45309] transition-all cursor-pointer"
             >
               Apply Daily Adjustments
             </button>
