@@ -2,7 +2,6 @@ import {
   Injectable,
   Logger,
   NotFoundException,
-  ForbiddenException,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
@@ -30,11 +29,6 @@ export class DayStayVendorService {
     if (!ashram.dayStayConfig) {
       ashram.dayStayConfig = { enabled: false };
     }
-
-    const todayStr = new Date().toISOString().split("T")[0];
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().split("T")[0];
 
     switch (dto.action) {
       case "today":

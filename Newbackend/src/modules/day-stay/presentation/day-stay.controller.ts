@@ -4,8 +4,6 @@ import {
   Post,
   Body,
   Query,
-  UseGuards,
-  ForbiddenException,
 } from "@nestjs/common";
 import { CurrentUser } from "../../../common/decorators/current-user.decorator";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";

@@ -14,7 +14,6 @@ import { TransactionService } from "../../../common/database/transaction.service
 import {
   bookingReference,
   checkinCode,
-  financialReference,
   reservationReference,
   roundMoney,
 } from "../../bookings/domain/booking.utils";

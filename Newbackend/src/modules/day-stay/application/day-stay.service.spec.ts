@@ -1,4 +1,5 @@
-import { Test, TestingModule } from "@nestjs/testing";
+import type { TestingModule } from "@nestjs/testing";
+import { Test } from "@nestjs/testing";
 import { getModelToken } from "@nestjs/mongoose";
 import { ConfigService } from "@nestjs/config";
 import { DayStayInventoryService } from "../application/day-stay-inventory.service";
@@ -280,7 +281,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
 
       mockAshramModel.findOne.mockResolvedValue(ashramDoc);
 
-      const resToday = await vendorService.blockDayStay(
+      await vendorService.blockDayStay(
         { ashramId: "ashram_01", action: "today" },
         "owner_01",
       );
@@ -291,8 +292,6 @@ describe("DayStay Engine Unit & Integration Tests", () => {
   });
 
   describe("4. Payment Reconciliation & Orphaned Payment Recovery (DAYSTAY-020 Scenarios)", () => {
-    const validSignature = "valid_sig_hex";
-
     const createPendingBookingDoc = (overrides: any = {}) => ({
       _id: "bk_id_001",
       bookingId: "BK-DAY-001",

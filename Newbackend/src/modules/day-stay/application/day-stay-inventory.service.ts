@@ -1,4 +1,4 @@
-import { Injectable, Logger, BadRequestException, NotFoundException } from "@nestjs/common";
+import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
 import { DayStayProductsService } from "./day-stay-products.service";
@@ -44,7 +44,6 @@ export class DayStayInventoryService {
     }
 
     // Check blackout / quick blocks
-    const targetDate = new Date(`${dateStr}T00:00:00.000Z`);
     if (ashram.dayStayConfig.blackoutDates?.some((d: Date) => new Date(d).toISOString().split("T")[0] === dateStr)) {
       return [];
     }
