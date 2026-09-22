@@ -42,6 +42,9 @@ import { AartiModule } from "./modules/aarti/aarti.module";
 import { EventsModule } from "./modules/events/events.module";
 import { PilgrimageModule } from "./modules/pilgrimage/pilgrimage.module";
 import { DayStayModule } from "./modules/day-stay/day-stay.module";
+// WhatsApp as a second customer frontend over the existing services. Inbound
+// conversation only; outbound transactional delivery stays in WhatsAppModule.
+import { WhatsAppChannelModule } from "./modules/whatsapp-channel/whatsapp-channel.module";
 import {
   hybridRateLimitTracker,
   ipRateLimitTracker,
@@ -155,6 +158,7 @@ import {
     EventsModule,
     PilgrimageModule,
     DayStayModule,
+    WhatsAppChannelModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

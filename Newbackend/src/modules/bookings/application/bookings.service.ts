@@ -23,6 +23,7 @@ import {
 } from "../domain/booking.repository";
 import {
   PLATFORM_FEE_GST_PERCENT,
+  WHATSAPP_BOOKING_CHANNEL,
   bookingReference,
   checkinCode,
   financialReference,
@@ -41,10 +42,32 @@ import type {
   ManualConfirmBookingDto,
   UpdateBookingStatusDto,
 } from "../presentation/dtos/booking.dto";
+import {
+  actorFromUser,
+  actorIdentityFields,
+  actorOwnerFields,
+  bookingBelongsTo,
+  bookingOwnerFilter,
+  withBookingCustomer,
+  withBookingCustomers,
+  type BookingActor,
+} from "../domain/booking-customer";
+import { computeCancellationRefund } from "../domain/booking-refund";
 import { BookingIdentityService } from "./booking-identity.service";
 import { BookingPricingService } from "./booking-pricing.service";
 import { bookingConfirmedOutboxEvent } from "./booking-notification.factory";
 import { normalizeWhatsAppNumber } from "../../../integrations/whatsapp/utils/whatsapp-phone.util";
+
+/**
+ * Matches a coupon redemption to the identity that made it. A redemption row
+ * names its owner `userId` (website) or `whatsappCustomerId` (WhatsApp), so
+ * the per-customer cap has to be counted against the right field — counting
+ * the wrong one would silently give every WhatsApp guest an unlimited cap.
+ */
+const redemptionOwnerFilter = (actor: BookingActor): Record<string, unknown> =>
+  actor.whatsappCustomerId
+    ? { whatsappCustomerId: actor.whatsappCustomerId }
+    : { userId: actor.userId };
 
 @Injectable()
 export class BookingsService {
@@ -230,6 +253,11 @@ export class BookingsService {
     const quote = await this.pricing.quote(dto);
     return {
       pricing: quote.pricing,
+      // Additive: the itemised services and payment summary the pricing
+      // service already computes, so a client (the website or WhatsApp) can
+      // show each line without recomputing any of it.
+      services: quote.services,
+      paymentSummary: quote.paymentSummary,
       nights: quote.dates.length,
       coupon: quote.coupon
         ? {
@@ -244,7 +272,17 @@ export class BookingsService {
     };
   }
 
-  async create(user: AuthenticatedUser, dto: CreateBookingDto): Promise<any> {
+  /**
+   * Holds inventory and creates a pending booking.
+   *
+   * Takes a `BookingActor` rather than an `AuthenticatedUser` because the
+   * customer is not always a website account: a WhatsApp guest has no `users`
+   * row, so their identity travels as `whatsappCustomerId`. Everything else —
+   * pricing, the inventory hold, coupon reservation, the identity code, the
+   * outbox row and the audit trail — is identical whichever channel called,
+   * which is what makes a WhatsApp booking an ordinary Tirvona booking.
+   */
+  async create(actor: BookingActor, dto: CreateBookingDto): Promise<any> {
     const quote = await this.pricing.quote(dto);
     const code = await this.issueActiveCheckinCode();
     const normalizedRooms = Array.isArray(dto.rooms) && dto.rooms.length
@@ -270,7 +308,9 @@ export class BookingsService {
         const used = await this.redemptions
           .countDocuments({
             couponId: quote.coupon._id,
-            userId: user.id,
+            // Counted against whichever identity is booking, so a WhatsApp
+            // guest gets the same per-customer cap as a website account.
+            ...redemptionOwnerFilter(actor),
             status: { $in: ["reserved", "redeemed"] },
           })
           .session(session);
@@ -311,7 +351,8 @@ export class BookingsService {
             bookingId: bookingReference(),
             reservationNumber: reservationReference(),
             identityCode,
-            customerId: user.id,
+            ...actorIdentityFields(actor),
+            channel: actor.channel,
             ashramId: dto.ashramId,
             rooms: roomsWithSnapshot,
             roomsBookedCount: totalUnits,
@@ -364,8 +405,8 @@ export class BookingsService {
               bookingId: created._id,
               toStatus: "pending",
               note: "Inventory held; awaiting payment",
-              actorId: user.id,
-              actorRole: user.role,
+              actorId: actor.userId,
+              actorRole: actor.role,
             },
           ],
           { session },
@@ -374,7 +415,7 @@ export class BookingsService {
           [
             {
               bookingId: created._id,
-              customerId: user.id,
+              ...actorIdentityFields(actor),
               guests: dto.guests ?? [],
             },
           ],
@@ -383,12 +424,17 @@ export class BookingsService {
         this.notifications.create(
           [
             {
-              userId: user.id,
+              ...actorOwnerFields(actor),
               bookingId: created._id,
               ashramId: dto.ashramId,
               event: "booking_held",
               title: "Reservation held",
               message: `Complete payment for ${created.bookingId} before the hold expires.`,
+              // A WhatsApp guest has no account phone to fall back on, so the
+              // number they are reachable on travels on the row itself.
+              ...(actor.phone
+                ? { recipientPhone: normalizeWhatsAppNumber(actor.phone) }
+                : {}),
             },
           ],
           { session },
@@ -396,10 +442,16 @@ export class BookingsService {
         this.audits.create(
           [
             {
-              userId: user.id,
+              userId: actor.userId,
               action: "BOOKING_HOLD_CREATED",
               bookingId: created._id,
               ashramId: dto.ashramId,
+              details: {
+                channel: actor.channel,
+                ...(actor.whatsappCustomerId
+                  ? { whatsappCustomerId: actor.whatsappCustomerId }
+                  : {}),
+              },
               after: {
                 status: "pending",
                 totalAmount: quote.pricing.totalAmount,
@@ -415,7 +467,7 @@ export class BookingsService {
             {
               couponId: quote.coupon._id,
               bookingId: created._id,
-              userId: user.id,
+              ...actorOwnerFields(actor),
               ashramId: dto.ashramId,
               promoCode: quote.coupon.promoCode,
               bookingAmount: quote.pricing.originalAmount,
@@ -431,19 +483,30 @@ export class BookingsService {
     return booking;
   }
 
+  /**
+   * The actor may pay for this booking if it is theirs, or if they are staff
+   * with management rights over the ashram.
+   *
+   * A WhatsApp guest only ever satisfies the first branch: they have no
+   * website principal, so there are no roles to check and `assertCanManage`
+   * is not reachable for them. Ownership is compared against whichever
+   * identity the booking actually carries, never against a reference supplied
+   * by the caller.
+   */
   private async assertCanPayFor(
-    user: AuthenticatedUser,
+    actor: BookingActor,
     booking: any,
   ): Promise<void> {
-    if (String(booking.customerId?._id ?? booking.customerId) === String(user.id))
-      return;
-    await this.assertCanManage(user, booking);
+    if (bookingBelongsTo(booking, actor)) return;
+    if (!actor.principal)
+      throw new ForbiddenException("This booking belongs to someone else.");
+    await this.assertCanManage(actor.principal, booking);
   }
 
-  async paymentOrder(id: string, user: AuthenticatedUser): Promise<any> {
+  async paymentOrder(id: string, actor: BookingActor): Promise<any> {
     const booking = await this.bookings.findOne({ _id: id });
     if (!booking) throw new NotFoundException("Booking not found");
-    await this.assertCanPayFor(user, booking);
+    await this.assertCanPayFor(actor, booking);
     if (booking.paymentStatus === "fully_paid")
       throw new BadRequestException("Booking is already paid");
     if (
@@ -457,18 +520,45 @@ export class BookingsService {
       throw new ServiceUnavailableException(
         "Razorpay is not configured. Real payment is required for booking confirmation.",
       );
+    const amountPaise = Math.round(booking.pricing.totalAmount * 100);
+    // One open order per booking. A Razorpay order can be paid only once, so
+    // handing the same order back on a repeat call (a re-opened payment page,
+    // a retried tap) means a guest can never end up paying two different
+    // orders for one booking — the second of which would confirm nothing.
+    const openOrder = await this.payments
+      .findOne({
+        bookingId: booking._id,
+        status: "pending",
+        "gateway.provider": "razorpay",
+        "gateway.orderId": { $exists: true, $ne: null },
+        amount: booking.pricing.totalAmount,
+      })
+      .sort({ createdAt: -1 })
+      .lean();
+    if (openOrder?.gateway?.orderId)
+      return {
+        demo: false,
+        data: {
+          orderId: openOrder.gateway.orderId,
+          amount: amountPaise,
+          currency: "INR",
+          keyId,
+        },
+      };
     const gateway = new Razorpay({
       key_id: keyId,
       key_secret: keySecret,
     });
     const order = await gateway.orders.create({
-      amount: Math.round(booking.pricing.totalAmount * 100),
+      amount: amountPaise,
       currency: "INR",
       receipt: booking.bookingId,
     });
     await this.payments.create({
       bookingId: booking._id,
-      userId: user.id,
+      // The payment is recorded against the identity that is paying, which
+      // for a WhatsApp guest is their WhatsApp customer record.
+      ...actorOwnerFields(actor),
       ashramId: booking.ashramId,
       amount: booking.pricing.totalAmount,
       method: "razorpay",
@@ -510,10 +600,97 @@ export class BookingsService {
     );
   }
 
+  /**
+   * Refuses a payment that cannot be shown to belong to this booking.
+   *
+   * A valid Razorpay signature only proves that an (order, payment) pair is
+   * genuine for this merchant — not that the order was created for *this*
+   * booking. Without this check a real, cheap payment made against another
+   * order could be presented to confirm a different, dearer booking. Every
+   * fact compared here is read from the server's own records, never from the
+   * browser: the order id must match the pending payment this service created
+   * for the booking, and that payment's amount must equal the booking's
+   * authoritative total.
+   */
+  private assertPaymentBoundToBooking(
+    booking: any,
+    payment: any,
+    gateway?: { amountPaise?: number; currency?: string },
+  ): void {
+    if (!payment)
+      throw new BadRequestException(
+        "This payment does not belong to this booking",
+      );
+    if (payment.status === "success")
+      throw new ConflictException("Booking is already paid");
+    if (payment.status !== "pending")
+      throw new BadRequestException("This payment can no longer be confirmed");
+    if (String(payment.bookingId) !== String(booking._id))
+      throw new BadRequestException(
+        "This payment does not belong to this booking",
+      );
+    const expectedPaise = Math.round(
+      Number(booking.pricing?.totalAmount) * 100,
+    );
+    if (
+      !Number.isFinite(expectedPaise) ||
+      expectedPaise <= 0 ||
+      Math.round(Number(payment.amount) * 100) !== expectedPaise
+    )
+      throw new BadRequestException(
+        "The payment amount does not match this booking",
+      );
+    // The webhook carries what Razorpay actually captured; the client
+    // callback does not, and is covered by the order having been created for
+    // exactly `expectedPaise`.
+    if (
+      gateway?.amountPaise !== undefined &&
+      Math.round(Number(gateway.amountPaise)) !== expectedPaise
+    )
+      throw new BadRequestException(
+        "The captured amount does not match this booking",
+      );
+    if (gateway?.currency && gateway.currency.toUpperCase() !== "INR")
+      throw new BadRequestException("Unexpected payment currency");
+  }
+
+  private async recordRejectedPayment(
+    bookingId: string,
+    dto: ConfirmBookingPaymentDto,
+    reason: string,
+  ): Promise<void> {
+    await this.paymentEvents
+      .updateOne(
+        {
+          provider: "razorpay",
+          eventId: dto.razorpay_payment_id ?? financialReference("REJECTED"),
+        },
+        {
+          $setOnInsert: {
+            provider: "razorpay",
+            eventType: "payment_rejected",
+            bookingId,
+            signatureVerified: true,
+            payload: dto,
+            status: "failed",
+            processingError: reason,
+            processedAt: new Date(),
+          },
+        },
+        { upsert: true },
+      )
+      .catch((error: unknown) =>
+        this.logger.warn(
+          `Could not record rejected payment for ${bookingId}: ${String(error)}`,
+        ),
+      );
+  }
+
   async confirmPayment(
     id: string,
-    user: AuthenticatedUser,
+    actor: BookingActor,
     dto: ConfirmBookingPaymentDto,
+    gateway?: { amountPaise?: number; currency?: string },
   ): Promise<any> {
     if (!this.signatureValid(dto)) {
       await this.paymentEvents.updateOne(
@@ -536,7 +713,7 @@ export class BookingsService {
         { upsert: true },
       );
       await this.notifications.create({
-        userId: user.id,
+        ...actorOwnerFields(actor),
         bookingId: id,
         event: "payment_failed",
         title: "Payment failed",
@@ -552,7 +729,13 @@ export class BookingsService {
     return this.transactions.run(async (session) => {
       if (dto.idempotencyKey) {
         const prior = await this.payments
-          .findOne({ idempotencyKey: dto.idempotencyKey, status: "success" })
+          .findOne({
+            idempotencyKey: dto.idempotencyKey,
+            // Scoped to this booking: a key reused against another booking
+            // must never replay that booking's result.
+            bookingId: id,
+            status: "success",
+          })
           .session(session);
         if (prior)
           return {
@@ -566,9 +749,29 @@ export class BookingsService {
         .findOne({ _id: id })
         .session(session);
       if (!booking) throw new NotFoundException("Booking not found");
-      await this.assertCanPayFor(user, booking);
+      await this.assertCanPayFor(actor, booking);
       if (booking.paymentStatus === "fully_paid")
         throw new ConflictException("Booking is already paid");
+
+      // Bind the Razorpay order to *this* booking's pending payment before
+      // anything is confirmed or any inventory is touched.
+      const payment = await this.payments
+        .findOne({
+          bookingId: booking._id,
+          "gateway.orderId": dto.razorpay_order_id,
+        })
+        .session(session);
+      try {
+        this.assertPaymentBoundToBooking(booking, payment, gateway);
+      } catch (error) {
+        if (!(error instanceof ConflictException))
+          await this.recordRejectedPayment(
+            String(booking._id),
+            dto,
+            error instanceof Error ? error.message : "Payment rejected",
+          );
+        throw error;
+      }
 
       const holdLapsed =
         booking.status !== "pending" ||
@@ -594,7 +797,7 @@ export class BookingsService {
         await this.audits.create(
           [
             {
-              userId: user.id,
+              userId: actor.userId,
               action: "BOOKING_HOLD_RECOVERED_ON_PAYMENT",
               bookingId: booking._id,
               ashramId: booking.ashramId,
@@ -625,24 +828,6 @@ export class BookingsService {
         },
         { session },
       );
-      let payment = await this.payments
-        .findOne({ bookingId: booking._id, status: "pending" })
-        .sort({ createdAt: -1 })
-        .session(session);
-      if (!payment)
-        [payment] = await this.payments.create(
-          [
-            {
-              bookingId: booking._id,
-              userId: user.id,
-              ashramId: booking.ashramId,
-              amount: booking.pricing.totalAmount,
-              method: dto.method,
-              status: "pending",
-            },
-          ],
-          { session },
-        );
       payment.status = "success";
       payment.paidAt = new Date();
       payment.transactionId =
@@ -711,8 +896,8 @@ export class BookingsService {
       booking.reservationExpiresAt = null;
       await booking.save({ session });
       const confirmedNotification = bookingConfirmedOutboxEvent({
-        userId: user.id,
-        customerPhone: user.phone,
+        ...actorOwnerFields(actor),
+        customerPhone: actor.phone,
         booking,
         payment,
       });
@@ -728,7 +913,7 @@ export class BookingsService {
             amount: booking.pricing.totalAmount,
             reference: financialReference("BKTXN"),
             description: `Ashram booking ${booking.bookingId}`,
-            recordedBy: user.id,
+            recordedBy: actor.userId,
           },
         ],
         { session },
@@ -771,8 +956,8 @@ export class BookingsService {
               fromStatus: "pending",
               toStatus: "confirmed",
               note: "Payment verified",
-              actorId: user.id,
-              actorRole: user.role,
+              actorId: actor.userId,
+              actorRole: actor.role,
             },
           ],
           { session },
@@ -784,7 +969,7 @@ export class BookingsService {
         this.audits.create(
           [
             {
-              userId: user.id,
+              userId: actor.userId,
               action: "BOOKING_PAYMENT_SUCCESS",
               bookingId: booking._id,
               ashramId: booking.ashramId,
@@ -820,7 +1005,7 @@ export class BookingsService {
           {
             invoiceNumber: invoiceNo,
             bookingId: booking._id,
-            customerId: user.id,
+            ...actorIdentityFields(actor),
             ashramId: booking.ashramId,
             lineItems: [
               {
@@ -1012,16 +1197,35 @@ export class BookingsService {
       booking.reservationExpiresAt = null;
       await booking.save({ session });
 
+      // The confirmation is addressed to whoever owns the booking, never to
+      // the staff member confirming it. A WhatsApp guest has no `users` row,
+      // so their number comes from their WhatsApp customer record.
       let customerPhone = "";
       if (booking.customerId) {
-         const customer = await this.bookings.db.model("User").findById(booking.customerId).session(session);
-         customerPhone = customer?.phone || "";
+        const customer = await this.bookings.db
+          .model("User")
+          .findById(booking.customerId)
+          .session(session);
+        customerPhone = customer?.phone || "";
+      } else if (booking.whatsappCustomerId) {
+        const guest = await this.bookings.db
+          .model("WhatsAppCustomer")
+          .findById(booking.whatsappCustomerId)
+          .session(session);
+        customerPhone = guest?.phone || "";
       } else if (booking.walkInGuest) {
-         customerPhone = booking.walkInGuest.phone;
+        customerPhone = booking.walkInGuest.phone;
       }
 
       const confirmedNotification = bookingConfirmedOutboxEvent({
-        userId: booking.customerId || user.id,
+        // `user.id` is the last resort for a legacy row with no customer at
+        // all; a WhatsApp booking is addressed by its own identity.
+        userId: booking.whatsappCustomerId
+          ? null
+          : booking.customerId || user.id,
+        whatsappCustomerId: booking.whatsappCustomerId
+          ? String(booking.whatsappCustomerId)
+          : null,
         customerPhone: customerPhone,
         booking,
         payment,
@@ -1202,15 +1406,29 @@ export class BookingsService {
     });
   }
 
-  async historyFor(userId: string): Promise<any[]> {
-    return this.bookings
-      .find({ customerId: userId })
+  /**
+   * Every booking belonging to one customer, whichever identity they are.
+   *
+   * The same collection serves both channels, so a guest's bookings read the
+   * same from the website and from WhatsApp — there is no per-channel copy to
+   * fall out of step.
+   */
+  async historyFor(owner: {
+    userId?: string | null;
+    whatsappCustomerId?: string | null;
+  }): Promise<any[]> {
+    const rows = await this.bookings
+      // No `deletedAt` filter: the website's history endpoint has never had
+      // one, and adding it here would change what an existing customer sees.
+      .find(bookingOwnerFilter(owner))
       .populate("ashramId", "name address rules images")
       .populate("rooms.roomId", "name acType type")
+      .populate("whatsappCustomerId", "wappId name phone")
       .sort({ createdAt: -1 })
       .lean();
+    return withBookingCustomers(rows as any[]);
   }
-  async get(idOrReference: string, user: AuthenticatedUser): Promise<any> {
+  async get(idOrReference: string, actor: BookingActor): Promise<any> {
     // Public URLs carry the human booking reference (TRV-…), never the id.
     const isObjectId = /^[0-9a-f]{24}$/i.test(String(idOrReference ?? ""));
     const row = await this.bookings
@@ -1222,11 +1440,17 @@ export class BookingsService {
       .populate("ashramId", "name address rules images")
       .populate("rooms.roomId", "name acType type")
       .populate("customerId", "name email phone")
+      .populate("whatsappCustomerId", "wappId name phone")
       .lean();
     if (!row) throw new NotFoundException("Booking not found");
-    if (String(row.customerId?._id ?? row.customerId) !== user.id)
-      await this.assertCanView(user, row);
-    return row;
+    // Ownership is checked against the booking's own identity. A reference
+    // typed into a chat never authorizes anything by itself.
+    if (!bookingBelongsTo(row, actor)) {
+      if (!actor.principal)
+        throw new NotFoundException("Booking not found");
+      await this.assertCanView(actor.principal, row);
+    }
+    return withBookingCustomer(row as any);
   }
 
   async dashboard(
@@ -1244,6 +1468,11 @@ export class BookingsService {
         : {}),
       ...(query.source && query.source !== "all"
         ? { bookingSource: query.source }
+        : {}),
+      // Optional reporting filter. Absent by default, so the owner and admin
+      // views keep returning every channel exactly as before.
+      ...(query.channel && query.channel !== "all"
+        ? { channel: query.channel }
         : {}),
       ...(query.ashramId
         ? { ashramId: query.ashramId }
@@ -1305,15 +1534,19 @@ export class BookingsService {
     const page = Math.max(1, Number(query?.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(query?.limit) || 20));
 
-    return this.bookings
+    const rows = await this.bookings
       .find(filter)
       .populate("customerId", "name email phone")
+      .populate("whatsappCustomerId", "wappId name phone")
       .populate("ashramId", "name address")
       .populate("rooms.roomId", "name type acType")
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
       .lean();
+    // Renders a WhatsApp guest in the same shape the owner and admin views
+    // already read, and exposes their WAPP id alongside.
+    return withBookingCustomers(rows as any[]);
   }
 
   async frontdeskSummary(
@@ -1560,15 +1793,17 @@ export class BookingsService {
     const page = Math.max(1, Number(query?.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(query?.limit) || 20));
 
-    return this.bookings
+    const rows = await this.bookings
       .find(filter)
       .populate("customerId", "name email phone")
+      .populate("whatsappCustomerId", "wappId name phone")
       .populate("ashramId", "name address")
       .populate("rooms.roomId", "name type acType")
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
       .lean();
+    return withBookingCustomers(rows as any[]);
   }
 
   async adminUpdate(
@@ -1666,12 +1901,18 @@ export class BookingsService {
       );
     });
 
-    return this.bookings
-      .findById(id)
-      .populate("customerId", "name email phone")
-      .populate("ashramId", "name address")
-      .populate("rooms.roomId", "name type acType")
-      .lean();
+    // Same customer resolution as every other admin read path, so a booking
+    // made by a WhatsApp guest comes back with a customer on it rather than
+    // a null where the name should be.
+    return withBookingCustomer(
+      (await this.bookings
+        .findById(id)
+        .populate("customerId", "name email phone")
+        .populate("whatsappCustomerId", "wappId name phone")
+        .populate("ashramId", "name address")
+        .populate("rooms.roomId", "name type acType")
+        .lean()) as any,
+    );
   }
 
   async adminDelete(id: string, user: AuthenticatedUser): Promise<any> {
@@ -2052,35 +2293,98 @@ export class BookingsService {
     });
   }
 
-  async cancel(
-    id: string,
-    user: AuthenticatedUser,
-    dto: CancelBookingDto,
-  ): Promise<any> {
-    const existing = await this.bookings.findById(id);
-    if (!existing) throw new NotFoundException("Booking not found");
-    if (String(existing.customerId) !== user.id)
-      await this.assertCanManage(user, existing);
-    if (!["pending", "confirmed"].includes(existing.status))
-      throw new BadRequestException("This booking can no longer be cancelled");
-    const policy = await this.pricing["policies"]
+  /**
+   * Cancels a booking under the existing policy.
+   *
+   * One cancellation path for every channel: the same policy lookup, the same
+   * refund percentage, the same inventory release, the same commission
+   * reversal and the same coupon restoration whether the request came from
+   * the website, an admin, or a WhatsApp conversation. WhatsApp does not get
+   * its own rules, because there are none to give it.
+   */
+  private async cancellationPolicyFor(ashramId: unknown): Promise<any> {
+    return this.pricing["policies"]
       .findOne({
-        $or: [
-          { scope: "ashram", ashramId: existing.ashramId },
-          { scope: "platform" },
-        ],
+        $or: [{ scope: "ashram", ashramId }, { scope: "platform" }],
         isActive: true,
       })
       .sort({ scope: 1 })
       .lean();
-    const isHostOrAdminCancel = String(existing.customerId) !== user.id;
-    const hoursBefore =
-      (new Date(existing.checkInDate).getTime() - Date.now()) / 3_600_000;
-    const refundPercent = isHostOrAdminCancel
-      ? 100
-      : hoursBefore >= Number(policy?.cancellationFreeHours ?? 24)
-        ? Number(policy?.refundBeforeWindowPercent ?? 100)
-        : Number(policy?.refundInsideWindowPercent ?? 0);
+  }
+
+  /**
+   * What cancelling this booking would do, without doing it.
+   *
+   * Applies the very same `computeCancellationRefund` `cancel` applies, after
+   * the very same ownership check, so the figure quoted to a guest is the
+   * figure `cancel` will then record. A booking that is not the caller's is
+   * reported as not found, so a reference typed into a chat confirms nothing.
+   */
+  async previewCancellation(
+    id: string,
+    actor: BookingActor,
+  ): Promise<{
+    bookingId: string;
+    cancellable: boolean;
+    status: string;
+    amountPaid: number;
+    refundAmount: number;
+    refundPercent: number;
+    hoursBefore: number;
+    freeCancellationHours: number;
+  }> {
+    const existing = await this.bookings.findById(id);
+    if (!existing) throw new NotFoundException("Booking not found");
+    const isOwnBooking = bookingBelongsTo(existing, actor);
+    if (!isOwnBooking) {
+      if (!actor.principal) throw new NotFoundException("Booking not found");
+      await this.assertCanManage(actor.principal, existing);
+    }
+    const policy = await this.cancellationPolicyFor(existing.ashramId);
+    const decision = computeCancellationRefund({
+      policy,
+      booking: existing,
+      hostOrAdminCancel: !isOwnBooking,
+    });
+    const cancellable = ["pending", "confirmed"].includes(existing.status);
+    return {
+      bookingId: existing.bookingId,
+      cancellable,
+      status: existing.status,
+      amountPaid: Number(existing.pricing?.amountPaid ?? 0),
+      // A booking that cannot be cancelled refunds nothing further.
+      refundAmount: cancellable ? decision.refundAmount : 0,
+      refundPercent: cancellable ? decision.refundPercent : 0,
+      hoursBefore: decision.hoursBefore,
+      freeCancellationHours: decision.freeCancellationHours,
+    };
+  }
+
+  async cancel(
+    id: string,
+    actor: BookingActor,
+    dto: CancelBookingDto,
+  ): Promise<any> {
+    const existing = await this.bookings.findById(id);
+    if (!existing) throw new NotFoundException("Booking not found");
+    const isOwnBooking = bookingBelongsTo(existing, actor);
+    if (!isOwnBooking) {
+      // A WhatsApp guest has no staff principal, so they can only ever reach
+      // their own bookings — and a booking that is not theirs is reported as
+      // not found rather than forbidden, which would confirm it exists.
+      if (!actor.principal) throw new NotFoundException("Booking not found");
+      await this.assertCanManage(actor.principal, existing);
+    }
+    if (!["pending", "confirmed"].includes(existing.status))
+      throw new BadRequestException("This booking can no longer be cancelled");
+    const policy = await this.cancellationPolicyFor(existing.ashramId);
+    // The single refund decision. Previews call the same function.
+    const decision = computeCancellationRefund({
+      policy,
+      booking: existing,
+      hostOrAdminCancel: !isOwnBooking,
+    });
+    const refundPercent = decision.refundPercent;
     return this.transactions.run(async (session) => {
       const state = existing.status === "pending" ? "held" : "booked";
       for (const room of this.roomUnits(existing))
@@ -2103,10 +2407,7 @@ export class BookingsService {
         },
         { session },
       );
-      const refundAmount =
-        existing.paymentStatus === "fully_paid"
-          ? Math.round(existing.pricing.amountPaid * refundPercent) / 100
-          : 0;
+      const refundAmount = decision.refundAmount;
       existing.status = "cancelled";
       existing.cancellation = {
         reason: dto.reason,
@@ -2127,15 +2428,12 @@ export class BookingsService {
                 refundReference: financialReference("REF"),
                 bookingId: existing._id,
                 paymentId: payment._id,
-                requestedBy: user.id,
+                requestedBy: actor.userId,
+                requestedByWhatsAppCustomerId: actor.whatsappCustomerId,
                 amount: refundAmount,
                 percentage: refundPercent,
                 reason: dto.reason,
-                policySnapshot: policy ?? {
-                  cancellationFreeHours: 24,
-                  refundBeforeWindowPercent: 100,
-                  refundInsideWindowPercent: 0,
-                },
+                policySnapshot: decision.policySnapshot,
                 status: "pending",
               },
             ],
@@ -2173,8 +2471,8 @@ export class BookingsService {
               fromStatus: state === "held" ? "pending" : "confirmed",
               toStatus: "cancelled",
               note: dto.reason,
-              actorId: user.id,
-              actorRole: user.role,
+              actorId: actor.userId,
+              actorRole: actor.role,
             },
           ],
           { session },
@@ -2182,7 +2480,10 @@ export class BookingsService {
         this.notifications.create(
           [
             {
+              // Addressed to whoever owns the booking, not to whoever
+              // cancelled it — an admin cancelling still notifies the guest.
               userId: existing.customerId,
+              whatsappCustomerId: existing.whatsappCustomerId,
               bookingId: existing._id,
               ashramId: existing.ashramId,
               event: "booking_cancelled",
@@ -2226,6 +2527,72 @@ export class BookingsService {
     return row;
   }
 
+  /**
+   * Rebuilds the acting identity from a stored payment row.
+   *
+   * Used by the Razorpay webhook, which has no request principal. A website
+   * payment yields a customer principal exactly as before; a WhatsApp payment
+   * yields a WhatsApp actor carrying the guest's number, so the confirmation
+   * outbox row still gets a phone to deliver to.
+   */
+  private async actorFromPayment(payment: any): Promise<BookingActor> {
+    return this.actorForOwner({
+      whatsappCustomerId: payment.whatsappCustomerId,
+      userId: payment.userId,
+    });
+  }
+
+  /**
+   * The acting identity for a booking, rebuilt from the booking's own owner
+   * fields. Used where there is no request principal — the public signed
+   * payment page, like the Razorpay webhook — so the identity is whatever the
+   * server's record says, never something a caller supplied.
+   */
+  async actorForBooking(booking: any): Promise<BookingActor> {
+    return this.actorForOwner({
+      whatsappCustomerId: booking.whatsappCustomerId,
+      userId: booking.customerId,
+    });
+  }
+
+  private async actorForOwner(owner: {
+    whatsappCustomerId?: unknown;
+    userId?: unknown;
+  }): Promise<BookingActor> {
+    if (owner.whatsappCustomerId) {
+      const guest = await this.bookings.db
+        .model("WhatsAppCustomer")
+        .findById(owner.whatsappCustomerId)
+        .select("name phone")
+        .lean();
+      return {
+        userId: null,
+        whatsappCustomerId: String(owner.whatsappCustomerId),
+        role: "whatsapp_customer",
+        channel: WHATSAPP_BOOKING_CHANNEL,
+        name: (guest as any)?.name ?? "",
+        phone: (guest as any)?.phone ?? "",
+      };
+    }
+    const account = await this.bookings.db
+      .model("User")
+      .findById(owner.userId)
+      .select("name email phone")
+      .lean();
+    return actorFromUser({
+      _id: String(owner.userId),
+      id: String(owner.userId),
+      name: (account as any)?.name ?? "",
+      email: (account as any)?.email ?? "",
+      phone: (account as any)?.phone ?? "",
+      role: "customer",
+      status: "active",
+      permissions: [],
+      scopedAshramIds: [],
+      scopedTempleIds: [],
+    } as AuthenticatedUser);
+  }
+
   /// Confirms a booking's payment from a verified Razorpay webhook event
   /// (`payment.captured`), independent of any client callback.
   ///
@@ -2250,6 +2617,7 @@ export class BookingsService {
   async confirmPaymentFromWebhook(
     razorpayOrderId: string,
     razorpayPaymentId: string,
+    captured?: { amountPaise?: number; currency?: string },
   ): Promise<boolean> {
     const payment = await this.payments
       .findOne({ "gateway.orderId": razorpayOrderId })
@@ -2262,25 +2630,24 @@ export class BookingsService {
       .update(`${razorpayOrderId}|${razorpayPaymentId}`)
       .digest("hex");
 
-    const actingUser = {
-      _id: String(payment.userId),
-      id: String(payment.userId),
-      name: "",
-      email: "",
-      role: "customer",
-      status: "active",
-      permissions: [],
-      scopedAshramIds: [],
-      scopedTempleIds: [],
-    } as AuthenticatedUser;
+    // The acting identity is reconstructed from the payment row, which
+    // recorded it when the order was created — a webhook has no request
+    // principal of its own. The row names either a website account or a
+    // WhatsApp customer, so both channels confirm through this one path.
+    const actor = await this.actorFromPayment(payment);
 
     try {
-      await this.confirmPayment(String(payment.bookingId), actingUser, {
-        razorpay_order_id: razorpayOrderId,
-        razorpay_payment_id: razorpayPaymentId,
-        razorpay_signature: signature,
-        method: "razorpay",
-      });
+      await this.confirmPayment(
+        String(payment.bookingId),
+        actor,
+        {
+          razorpay_order_id: razorpayOrderId,
+          razorpay_payment_id: razorpayPaymentId,
+          razorpay_signature: signature,
+          method: "razorpay",
+        },
+        captured,
+      );
     } catch (error) {
       // Already confirmed (e.g. the client callback won the race) — the
       // webhook arriving after is expected and not an error from its

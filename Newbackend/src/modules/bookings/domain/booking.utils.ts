@@ -52,6 +52,28 @@ export const platformFeeGst = (
   percent: number = PLATFORM_FEE_GST_PERCENT,
 ): number => roundMoney((Math.max(0, platformFee) * percent) / 100);
 
+/**
+ * The interface a booking came in through.
+ *
+ * Deliberately distinct from `BOOKING_SOURCES`. `bookingSource` answers "is
+ * this a platform booking or an ashram counter walk-in" and drives the owner
+ * Booking Centre's filter, the online/offline inventory tallies and payment
+ * tagging. `channel` answers "which front door did it arrive at" and is used
+ * for reporting and support only. A WhatsApp booking is a platform booking
+ * that arrived through WhatsApp: `bookingSource: "tirvona"`, `channel:
+ * "whatsapp"`.
+ */
+export const BOOKING_CHANNELS = [
+  "website",
+  "whatsapp",
+  "admin",
+  "owner",
+  "app",
+] as const;
+export type BookingChannel = (typeof BOOKING_CHANNELS)[number];
+export const DEFAULT_BOOKING_CHANNEL: BookingChannel = "website";
+export const WHATSAPP_BOOKING_CHANNEL: BookingChannel = "whatsapp";
+
 export const BOOKING_SOURCES = ["tirvona", "self"] as const;
 export type BookingSource = (typeof BOOKING_SOURCES)[number];
 export const SELF_BOOKING_SOURCE: BookingSource = "self";

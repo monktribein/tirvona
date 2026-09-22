@@ -84,7 +84,10 @@ export const BookingOfferRedemptionSchema = new Schema(
   {
     couponId: id("BookingCoupon", true),
     bookingId: { ...id("Booking", true), unique: true },
-    userId: id("User", true),
+    // Optional for a WhatsApp guest with no website account. The per-user
+    // redemption cap is applied against whichever identity is present.
+    userId: id("User"),
+    whatsappCustomerId: id("WhatsAppCustomer"),
     ashramId: id("Ashram", true),
     promoCode: String,
     bookingAmount: Number,
@@ -104,7 +107,20 @@ BookingOfferRedemptionSchema.index({ couponId: 1, userId: 1, status: 1 });
 
 export const BookingNotificationSchema = new Schema(
   {
-    userId: id("User", true),
+    /**
+     * Optional only so a WhatsApp guest — who has no website account — can
+     * still raise an outbox row and therefore still receive the ordinary
+     * booking confirmation. A row for such a guest carries
+     * `whatsappCustomerId` and `recipientPhone` instead; the worker already
+     * prefers the row's own `recipientPhone` over the account's phone, so
+     * WhatsApp delivery works unchanged.
+     *
+     * In-app and push delivery are skipped for those rows, because a guest
+     * with no account has no socket session and no FCM token — there is
+     * nowhere to deliver them to.
+     */
+    userId: id("User"),
+    whatsappCustomerId: id("WhatsAppCustomer"),
     bookingId: id("Booking"),
     ashramId: id("Ashram"),
     event: { type: String, required: true },
@@ -134,6 +150,10 @@ export const BookingNotificationSchema = new Schema(
   opts("booking_notifications"),
 );
 BookingNotificationSchema.index({ userId: 1, createdAt: -1 });
+BookingNotificationSchema.index(
+  { whatsappCustomerId: 1, createdAt: -1 },
+  { sparse: true },
+);
 BookingNotificationSchema.index({ bookingId: 1, event: 1 });
 
 export const BookingReviewSchema = new Schema(

@@ -25,8 +25,29 @@ export const BookingSchema = new Schema(
       trim: true,
       match: IDENTITY_CODE_PATTERN,
     },
-    customerId: id("User", true),
+    /**
+     * The website account that made this booking.
+     *
+     * Optional only because a WhatsApp guest has no website account: they
+     * never register, so there is no `users` row to point at and inventing one
+     * would mean inventing an email and a password. Such a booking carries
+     * `whatsappCustomerId` instead. The pre-validate hook below enforces that
+     * exactly one of the two is always present, so a booking can never end up
+     * with no customer at all — which is stricter than "required" was, since
+     * that allowed no second identity to exist.
+     */
+    customerId: id("User"),
+    /** The WhatsApp identity that made this booking. See whatsapp_customers. */
+    whatsappCustomerId: id("WhatsAppCustomer"),
     ashramId: id("Ashram", true),
+    /**
+     * Platform booking vs ashram counter walk-in.
+     *
+     * This is NOT the channel. It drives the owner Booking Centre's Tirvona /
+     * Self filter, the online-vs-offline inventory tallies and payment
+     * tagging, so a booking taken over WhatsApp is still a platform booking
+     * and keeps `tirvona` here. Where it came from is recorded in `channel`.
+     */
     bookingSource: {
       type: String,
       enum: ["tirvona", "self"],
@@ -70,6 +91,17 @@ export const BookingSchema = new Schema(
           },
         },
       ],
+    },
+    /**
+     * The interface the booking came in through. Reporting and support only —
+     * it never changes how a booking behaves, and every existing row reads as
+     * the default without a backfill.
+     */
+    channel: {
+      type: String,
+      enum: ["website", "whatsapp", "admin", "owner", "app"],
+      default: "website",
+      index: true,
     },
     walkInGuest: {
       name: String,
@@ -159,6 +191,13 @@ export const BookingSchema = new Schema(
     discountType: String,
     discountPercentage: Number,
     reservationExpiresAt: Date,
+    // The most recently issued WhatsApp payment link for this booking. Only
+    // its `jti` is stored — never the token — so a newer link supersedes an
+    // older one and an old forwarded link stops working.
+    paymentLink: {
+      jti: String,
+      issuedAt: Date,
+    },
     paymentSummary: SchemaTypes.Mixed,
     assignedRoomNumbers: [String],
     paymentMode: {
@@ -196,7 +235,34 @@ export const BookingSchema = new Schema(
   },
   opts("booking_bookings"),
 );
+/**
+ * Every booking has exactly one customer identity — a website account or a
+ * WhatsApp customer, never both and never neither.
+ *
+ * This replaces `customerId: required` with something stronger: previously a
+ * booking had to have a `users` row, which is why a WhatsApp guest could not
+ * have one without a fake account being invented for them. Now the rule is
+ * about the identity existing, not about which collection it lives in.
+ */
+BookingSchema.pre("validate", function enforceOneCustomerIdentity() {
+  const row = this as any;
+  const hasAccount = Boolean(row.customerId);
+  const hasWhatsApp = Boolean(row.whatsappCustomerId);
+  if (hasAccount === hasWhatsApp)
+    throw new Error(
+      hasAccount
+        ? "A booking cannot belong to both a website account and a WhatsApp customer"
+        : "A booking must belong to either a website account or a WhatsApp customer",
+    );
+});
+
 BookingSchema.index({ customerId: 1, createdAt: -1 });
+// Sparse: only WhatsApp bookings carry this, so website rows stay out of it.
+BookingSchema.index(
+  { whatsappCustomerId: 1, createdAt: -1 },
+  { sparse: true },
+);
+BookingSchema.index({ ashramId: 1, channel: 1, createdAt: -1 });
 BookingSchema.index({ ashramId: 1, status: 1, createdAt: -1 });
 BookingSchema.index({ ashramId: 1, bookingSource: 1, createdAt: -1 });
 BookingSchema.index({ ashramId: 1, checkInDate: 1 });
@@ -221,7 +287,13 @@ BookingStatusHistorySchema.index({ bookingId: 1, occurredAt: 1 });
 export const BookingGuestDetailSchema = new Schema(
   {
     bookingId: id("Booking", true),
-    customerId: id("User", true),
+    /**
+     * Optional so a WhatsApp guest, who has no website account, can still
+     * have their guest details recorded against the booking. Such a row
+     * carries `whatsappCustomerId` instead.
+     */
+    customerId: id("User"),
+    whatsappCustomerId: id("WhatsAppCustomer"),
     guests: [
       {
         name: String,

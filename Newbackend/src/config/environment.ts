@@ -39,6 +39,7 @@ export interface Environment {
   redisUrl: string;
   queuePrefix: string;
   jwtSecret: string;
+  paymentLinkSecret: string;
   jwtExpiresIn: string;
   jwtIssuer: string;
   jwtAudience: string;
@@ -152,6 +153,7 @@ export const environment = (): Environment => ({
   redisUrl: process.env.REDIS_URL ?? "redis://127.0.0.1:6379",
   queuePrefix: process.env.QUEUE_PREFIX ?? "tirvona",
   jwtSecret: process.env.JWT_SECRET ?? "",
+  paymentLinkSecret: process.env.PAYMENT_LINK_SECRET ?? "",
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? "30d",
   jwtIssuer: process.env.JWT_ISSUER ?? "tirvona-api",
   jwtAudience: process.env.JWT_AUDIENCE ?? "tirvona-clients",

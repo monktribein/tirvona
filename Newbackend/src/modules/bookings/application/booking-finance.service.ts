@@ -137,10 +137,16 @@ export class BookingFinanceService {
       .populate({
         path: "bookingId",
         select:
-          "bookingId reservationNumber customerId status paymentStatus checkInDate checkOutDate pricing",
-        populate: { path: "customerId", select: "name email phone" },
+          "bookingId reservationNumber customerId whatsappCustomerId status paymentStatus checkInDate checkOutDate pricing",
+        // A booking carries exactly one of these two identities, so both are
+        // populated and whichever is present is the customer.
+        populate: [
+          { path: "customerId", select: "name email phone" },
+          { path: "whatsappCustomerId", select: "wappId name phone" },
+        ],
       })
       .populate("userId", "name email phone")
+      .populate("whatsappCustomerId", "wappId name phone")
       .populate("ashramId", "name ashramCode")
       .select("-gateway.signature -idempotencyKey")
       .sort({ createdAt: -1 })
@@ -148,8 +154,21 @@ export class BookingFinanceService {
     return rows.map((payment: any) => ({
       ...payment,
       bookingSource: payment.bookingSource ?? "tirvona",
-      bookedBy: payment.bookingId?.customerId ?? payment.userId ?? null,
-      paidBy: payment.userId ?? payment.bookingId?.customerId ?? null,
+      // Falls through to the WhatsApp identity so a payment taken over that
+      // channel shows a customer in the admin payments view rather than a
+      // blank where a website account would have been.
+      bookedBy:
+        payment.bookingId?.customerId ??
+        payment.bookingId?.whatsappCustomerId ??
+        payment.userId ??
+        payment.whatsappCustomerId ??
+        null,
+      paidBy:
+        payment.userId ??
+        payment.whatsappCustomerId ??
+        payment.bookingId?.customerId ??
+        payment.bookingId?.whatsappCustomerId ??
+        null,
     }));
   }
 
@@ -348,7 +367,16 @@ export class BookingFinanceService {
     }
     return this.refunds
       .find(filter)
-      .populate("bookingId paymentId requestedBy")
+      .populate([
+        { path: "bookingId" },
+        { path: "paymentId" },
+        { path: "requestedBy" },
+        // A WhatsApp guest's cancellation names them here instead of a User.
+        {
+          path: "requestedByWhatsAppCustomerId",
+          select: "wappId name phone",
+        },
+      ])
       .sort({ createdAt: -1 })
       .lean();
   }

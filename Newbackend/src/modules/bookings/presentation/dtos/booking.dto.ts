@@ -1,4 +1,5 @@
 import { PartialType } from "@nestjs/swagger";
+import { BOOKING_CHANNELS } from "../../domain/booking.utils";
 import { Type } from "class-transformer";
 import {
   IsArray,
@@ -66,6 +67,14 @@ export class BookingDashboardQueryDto {
   @IsOptional() @IsString() paymentStatus?: string;
   @IsOptional() @IsMongoId() ashramId?: string;
   @IsOptional() @IsIn(["tirvona", "self", "all"]) source?: string;
+  /**
+   * Optional reporting filter on the interface a booking arrived through.
+   * Distinct from `source`, which is platform-vs-walk-in and must keep its
+   * existing meaning — a WhatsApp booking is `source: "tirvona"`.
+   */
+  @IsOptional()
+  @IsIn([...BOOKING_CHANNELS, "all"])
+  channel?: string;
   @IsOptional() @IsString() search?: string;
   @IsOptional() @IsString() date?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) page = 1;
