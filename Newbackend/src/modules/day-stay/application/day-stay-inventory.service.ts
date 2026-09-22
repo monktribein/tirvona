@@ -35,6 +35,7 @@ export class DayStayInventoryService {
     roomId: string,
     dateStr: string, // YYYY-MM-DD
     productCode?: string,
+    excludeBookingId?: string,
   ): Promise<TimeSlotAvailability[]> {
     const ashram = await this.ashramModel.findById(ashramId).lean();
     if (!ashram) throw new NotFoundException("Property not found");
@@ -55,7 +56,12 @@ export class DayStayInventoryService {
       return [];
     }
 
-    const totalAllocated = room.dayStayConfig?.allocatedInventory || room.totalInventory || room.count || 5;
+    // `allocatedInventory` defaults to 0, which legitimately means "the
+    // owner hasn't allocated any units to Day Stay yet" — `||` would treat
+    // that 0 as "unset" and fall back to the room's full overnight
+    // inventory, so this must be a nullish check instead.
+    const totalAllocated =
+      room.dayStayConfig?.allocatedInventory ?? room.totalInventory ?? room.count ?? 5;
     const graceMinutes = ashram.dayStayConfig.defaultGraceMinutes ?? 15;
     const bufferMinutes = ashram.dayStayConfig.defaultHousekeepingBufferMinutes ?? 45;
 
@@ -112,6 +118,7 @@ export class DayStayInventoryService {
     const existingBookings = await this.bookingModel.find({
       "rooms.roomId": roomId,
       status: { $in: ["confirmed", "checked_in", "pending"] },
+      ...(excludeBookingId ? { _id: { $ne: excludeBookingId } } : {}),
       $or: [
         {
           bookingType: { $in: ["day_rest", "freshen_up"] },

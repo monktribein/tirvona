@@ -288,6 +288,10 @@ export const RoomSchema = new Schema(
       hasHotWater: { type: Boolean, default: true },
       hasTowels: { type: Boolean, default: true },
     },
+    // Short-lived mutex used to serialize Day Stay slot-hold requests for
+    // this room (see DayStayBookingService.holdSlot). Not a business field.
+    dayStayLockToken: { type: String, select: false },
+    dayStayLockExpiresAt: { type: Date, select: false },
     status: {
       type: String,
       enum: ["active", "under_maintenance"],

@@ -1159,6 +1159,11 @@ export const AshramDetailPage: React.FC = () => {
       return;
     }
 
+    if (user.role !== "customer") {
+      setBookingError("Only registered Guests can book rooms.");
+      return;
+    }
+
     if (!checkIn || !checkOut) {
       setBookingError("Please choose check-in and check-out dates.");
       return;

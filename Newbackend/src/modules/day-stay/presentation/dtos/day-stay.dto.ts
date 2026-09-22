@@ -7,9 +7,17 @@ import {
   IsEnum,
   IsBoolean,
   Min,
-  IsDateString,
   Matches,
 } from "class-validator";
+
+// Plain calendar date only (no time-of-day / timezone component). The
+// services build UTC instants by string-concatenating this with a
+// separately-validated "HH:mm" time (e.g. `${date}T${startTime}:00.000Z`),
+// so a full ISO datetime string here (which @IsDateString() would accept)
+// produces a malformed double-"T" string and an Invalid Date.
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const IsDateOnly = () =>
+  Matches(DATE_ONLY_PATTERN, { message: "date must be in YYYY-MM-DD format" });
 
 export class CreateDayStayProductDto {
   @IsString()
@@ -45,7 +53,7 @@ export class DayStayAvailabilityQueryDto {
   @IsNotEmpty()
   ashramId: string;
 
-  @IsDateString()
+  @IsDateOnly()
   @IsNotEmpty()
   date: string; // YYYY-MM-DD
 
@@ -71,7 +79,7 @@ export class DayStayHoldDto {
   @IsNotEmpty()
   productCode: string;
 
-  @IsDateString()
+  @IsDateOnly()
   @IsNotEmpty()
   date: string; // YYYY-MM-DD
 

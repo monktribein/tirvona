@@ -8,7 +8,7 @@ import {
 import { InjectModel } from "@nestjs/mongoose";
 import { ConfigService } from "@nestjs/config";
 import type { Model } from "mongoose";
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import Razorpay from "razorpay";
 import { TransactionService } from "../../../common/database/transaction.service";
 import {
@@ -42,6 +42,14 @@ export class DayStayBookingService {
 
   /**
    * Holds a Day Stay slot atomically and initiates a payment order.
+   *
+   * Atomicity is provided by a short-lived mutex on the Room document
+   * (`dayStayLockToken`/`dayStayLockExpiresAt`), claimed with a single
+   * atomic `findOneAndUpdate`. This serializes the "check availability,
+   * then create a pending booking" critical section per room, which a
+   * plain read-then-write (or even a bare Mongo transaction, since two
+   * concurrent transactions can both read 0 competing bookings before
+   * either inserts) does not prevent.
    */
   async holdSlot(dto: DayStayHoldDto, customerId: string): Promise<any> {
     const ashram = await this.ashramModel.findById(dto.ashramId).lean();
@@ -54,6 +62,43 @@ export class DayStayBookingService {
     if (!room || !room.dayStayConfig?.enabled) {
       throw new BadRequestException("Room is not available for Day Stay");
     }
+
+    const lockToken = randomBytes(12).toString("hex");
+    const lockNow = new Date();
+    const lockExpiresAt = new Date(lockNow.getTime() + 8000);
+    const lockedRoom = await this.roomModel.findOneAndUpdate(
+      {
+        _id: dto.roomId,
+        $or: [
+          { dayStayLockExpiresAt: { $exists: false } },
+          { dayStayLockExpiresAt: null },
+          { dayStayLockExpiresAt: { $lt: lockNow } },
+        ],
+      },
+      { $set: { dayStayLockToken: lockToken, dayStayLockExpiresAt: lockExpiresAt } },
+      { new: true },
+    );
+    if (!lockedRoom) {
+      throw new ConflictException(
+        "This room is busy processing another booking request. Please try again in a moment.",
+      );
+    }
+    try {
+      return await this.holdSlotLocked(dto, customerId, room, ashram);
+    } finally {
+      await this.roomModel.updateOne(
+        { _id: dto.roomId, dayStayLockToken: lockToken },
+        { $unset: { dayStayLockToken: "", dayStayLockExpiresAt: "" } },
+      );
+    }
+  }
+
+  private async holdSlotLocked(
+    dto: DayStayHoldDto,
+    customerId: string,
+    room: any,
+    ashram: any,
+  ): Promise<any> {
 
     const product = room.dayStayConfig.products?.find(
       (p: any) => p.productCode === dto.productCode.toUpperCase() && p.enabled,
@@ -88,7 +133,8 @@ export class DayStayBookingService {
     const resNo = reservationReference();
     const cCode = checkinCode();
 
-    // Check availability one more time atomically
+    // Re-check availability now that the per-room lock is held, so this
+    // read-then-write is no longer racing any other hold for this room.
     const slots = await this.inventoryService.getRoomSlots(dto.ashramId, dto.roomId, dto.date, dto.productCode);
     const selectedSlot = slots.find((s) => s.startTime === dto.startTime);
     if (!selectedSlot || selectedSlot.availableUnits <= 0) {
@@ -224,6 +270,14 @@ export class DayStayBookingService {
       throw new NotFoundException("Active Day Stay booking not found for this payment order");
     }
 
+    // Ownership check: only the customer who created this hold (browser
+    // checkout callback path) may confirm it. `customerId` is undefined
+    // for the server-to-server webhook path, which is trusted separately
+    // via PaymentsWebhookService.verifySignature on the raw webhook body.
+    if (customerId && String(booking.customerId) !== String(customerId)) {
+      throw new NotFoundException("Active Day Stay booking not found for this payment order");
+    }
+
     // 1. Idempotency Check: If already confirmed, return success immediately
     if (booking.status === "confirmed" || booking.paymentStatus === "fully_paid") {
       return {
@@ -242,7 +296,15 @@ export class DayStayBookingService {
       };
     }
 
-    // 2. Cryptographic signature check if provided and not in mock/demo mode
+    // 2. Cryptographic signature check.
+    // - Client-invoked (customerId set, from the browser checkout
+    //   callback): a valid signature is mandatory whenever live Razorpay
+    //   keys are configured. Without this, anyone could POST an arbitrary
+    //   bookingId + made-up order/payment ids and get a free confirmation.
+    // - Webhook-invoked (customerId undefined): the caller
+    //   (PaymentsWebhookService) has already verified Razorpay's
+    //   `X-Razorpay-Signature` over the raw webhook body with a separate
+    //   webhook secret, so no per-payment signature is expected here.
     const keySecret = this.config.get<string>("razorpayKeySecret");
     const isMock =
       dto.razorpayOrderId?.startsWith("mock_") ||
@@ -250,16 +312,33 @@ export class DayStayBookingService {
       dto.razorpayPaymentId?.startsWith("mock_") ||
       dto.razorpaySignature === "demo_simulated_sig";
 
-    if (keySecret && dto.razorpaySignature && !isMock) {
-      const generatedSig = createHmac("sha256", keySecret)
-        .update(`${dto.razorpayOrderId}|${dto.razorpayPaymentId}`)
-        .digest("hex");
+    if (keySecret && !isMock) {
+      if (customerId) {
+        if (!dto.razorpaySignature) {
+          throw new BadRequestException("Payment signature is required to confirm this booking");
+        }
+        const generatedSig = createHmac("sha256", keySecret)
+          .update(`${dto.razorpayOrderId}|${dto.razorpayPaymentId}`)
+          .digest("hex");
 
-      const expected = Buffer.from(generatedSig);
-      const actual = Buffer.from(dto.razorpaySignature);
-      const isValid = expected.length === actual.length && timingSafeEqual(expected, actual);
-      if (!isValid) {
-        throw new BadRequestException("Invalid payment signature");
+        const expected = Buffer.from(generatedSig);
+        const actual = Buffer.from(dto.razorpaySignature);
+        const isValid = expected.length === actual.length && timingSafeEqual(expected, actual);
+        if (!isValid) {
+          throw new BadRequestException("Invalid payment signature");
+        }
+      } else if (dto.razorpaySignature) {
+        // Webhook path shouldn't normally carry a per-payment signature,
+        // but if one is present, validate it rather than ignore it.
+        const generatedSig = createHmac("sha256", keySecret)
+          .update(`${dto.razorpayOrderId}|${dto.razorpayPaymentId}`)
+          .digest("hex");
+        const expected = Buffer.from(generatedSig);
+        const actual = Buffer.from(dto.razorpaySignature);
+        const isValid = expected.length === actual.length && timingSafeEqual(expected, actual);
+        if (!isValid) {
+          throw new BadRequestException("Invalid payment signature");
+        }
       }
     }
 
@@ -269,11 +348,16 @@ export class DayStayBookingService {
     const now = new Date();
     const isHoldExpired = booking.reservationExpiresAt && new Date(booking.reservationExpiresAt) < now;
     if (isHoldExpired) {
+      // Exclude this booking itself from the availability recount —
+      // otherwise a booking that's still "pending" (we haven't confirmed
+      // it yet) counts as its own competing occupant, reads 0 available,
+      // and wrongly auto-cancels + refunds a payment that just succeeded.
       const slots = await this.inventoryService.getRoomSlots(
         String(booking.ashramId),
         String(booking.rooms?.[0]?.roomId),
         new Date(booking.dayStayDetails.slotStartTime).toISOString().split("T")[0],
         booking.dayStayDetails.productCode,
+        String(booking._id),
       );
       const startStr = new Date(booking.dayStayDetails.slotStartTime).toISOString().substring(11, 16);
       const matchedSlot = slots.find((s) => s.startTime === startStr);
