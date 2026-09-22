@@ -125,12 +125,15 @@ export class AuthService {
     const role =
       dto.role === "owner" ? ASHRAM_OWNER_ROLE : dto.role ?? "customer";
     const email = dto.email.trim().toLowerCase();
+    const phone = dto.phone.trim();
     return {
       otpRequired: true,
-      challenge: await this.createChallenge("register", email, {
+      // Registration OTPs are delivered over WhatsApp (via the phone number)
+      // for both customers and ashram owners, instead of email.
+      challenge: await this.createChallenge("register", phone, {
         name: dto.name.trim(),
         email,
-        phone: dto.phone,
+        phone,
         passwordHash: await bcrypt.hash(dto.password, 12),
         role,
         status: role === ASHRAM_OWNER_ROLE ? "pending_approval" : "active",
