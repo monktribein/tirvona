@@ -2,11 +2,18 @@ import type { TestingModule } from "@nestjs/testing";
 import { Test } from "@nestjs/testing";
 import { getModelToken } from "@nestjs/mongoose";
 import { ConfigService } from "@nestjs/config";
+import { createHmac } from "node:crypto";
 import { DayStayInventoryService } from "../application/day-stay-inventory.service";
 import { DayStayBookingService } from "../application/day-stay-booking.service";
 import { DayStayProductsService } from "../application/day-stay-products.service";
 import { DayStayVendorService } from "../application/day-stay-vendor.service";
 import { TransactionService } from "../../../common/database/transaction.service";
+
+// Mirrors DayStayBookingService's own signature computation so tests can
+// simulate a real, valid Razorpay checkout callback instead of relying on
+// the (now-closed) "missing signature" bypass.
+const validSignature = (orderId: string, paymentId: string) =>
+  createHmac("sha256", "mock_secret").update(`${orderId}|${paymentId}`).digest("hex");
 
 describe("DayStay Engine Unit & Integration Tests", () => {
   let inventoryService: DayStayInventoryService;
@@ -20,6 +27,8 @@ describe("DayStay Engine Unit & Integration Tests", () => {
 
   const mockRoomModel: any = {
     findOne: jest.fn(),
+    findOneAndUpdate: jest.fn(),
+    updateOne: jest.fn(),
   };
 
   const mockBookingModel: any = {
@@ -70,6 +79,10 @@ describe("DayStay Engine Unit & Integration Tests", () => {
     inventoryService = module.get<DayStayInventoryService>(DayStayInventoryService);
     bookingService = module.get<DayStayBookingService>(DayStayBookingService);
     vendorService = module.get<DayStayVendorService>(DayStayVendorService);
+
+    // holdSlot's per-room lock: grant it by default (simulates no contention).
+    mockRoomModel.findOneAndUpdate.mockResolvedValue({ _id: "room_01" });
+    mockRoomModel.updateOne.mockResolvedValue({});
   });
 
   describe("1. Time Interval Overlap & Availability Engine", () => {
@@ -142,6 +155,43 @@ describe("DayStay Engine Unit & Integration Tests", () => {
       const slot12pm = slots.find((s) => s.startTime === "11:00");
       // 11:00 overlaps turnaround (which ends at 12:00)
       expect(slot12pm?.isAvailable).toBe(false);
+    });
+
+    it("treats an explicit allocatedInventory of 0 as zero slots, not 'unset'", async () => {
+      mockAshramModel.findById.mockReturnValue({
+        lean: jest.fn().mockResolvedValue({
+          _id: "ashram_01",
+          dayStayConfig: { enabled: true, operatingHours: { start: "08:00", end: "12:00" } },
+        }),
+      });
+
+      mockRoomModel.findOne.mockReturnValue({
+        lean: jest.fn().mockResolvedValue({
+          _id: "room_01",
+          ashramId: "ashram_01",
+          totalInventory: 15, // the room's full overnight inventory
+          dayStayConfig: {
+            enabled: true,
+            allocatedInventory: 0, // owner enabled Day Stay but never allocated units
+            products: [
+              {
+                productCode: "DAY_REST_3H",
+                productType: "day_rest",
+                durationMinutes: 180,
+                price: 800,
+                enabled: true,
+              },
+            ],
+          },
+        }),
+      });
+
+      mockBookingModel.find.mockReturnValue({ lean: jest.fn().mockResolvedValue([]) });
+
+      const slots = await inventoryService.getRoomSlots("ashram_01", "room_01", "2026-10-01", "DAY_REST_3H");
+
+      expect(slots.length).toBeGreaterThan(0);
+      expect(slots.every((s) => s.availableUnits === 0 && !s.isAvailable)).toBe(true);
     });
   });
 
@@ -268,6 +318,41 @@ describe("DayStay Engine Unit & Integration Tests", () => {
         ),
       ).rejects.toThrow(/ConflictException|just selected by another pilgrim/);
     });
+
+    it("rejects hold when the per-room lock is already held by another in-flight request", async () => {
+      mockAshramModel.findById.mockReturnValue({
+        lean: jest.fn().mockResolvedValue({
+          _id: "ashram_01",
+          dayStayConfig: { enabled: true, operatingHours: { start: "06:00", end: "20:00" } },
+        }),
+      });
+      mockRoomModel.findOne.mockReturnValue({
+        lean: jest.fn().mockResolvedValue({
+          _id: "room_01",
+          dayStayConfig: {
+            enabled: true,
+            allocatedInventory: 2,
+            products: [{ productCode: "DAY_REST_4H", durationMinutes: 240, price: 700, enabled: true }],
+          },
+        }),
+      });
+      // Lock is currently held by someone else's in-flight hold request.
+      mockRoomModel.findOneAndUpdate.mockResolvedValueOnce(null);
+
+      await expect(
+        bookingService.holdSlot(
+          {
+            ashramId: "ashram_01",
+            roomId: "room_01",
+            productCode: "DAY_REST_4H",
+            date: "2026-10-01",
+            startTime: "09:00",
+            guestsCount: 1,
+          },
+          "customer_01",
+        ),
+      ).rejects.toThrow(/busy processing another booking request/);
+    });
   });
 
   describe("3. Vendor Blocking Controls", () => {
@@ -326,6 +411,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
           bookingId: "BK-DAY-001",
           razorpayOrderId: "order_rzp_001",
           razorpayPaymentId: "pay_rzp_001",
+          razorpaySignature: validSignature("order_rzp_001", "pay_rzp_001"),
         },
         "cust_01",
       );
@@ -334,6 +420,41 @@ describe("DayStay Engine Unit & Integration Tests", () => {
       expect(doc.status).toBe("confirmed");
       expect(doc.paymentStatus).toBe("fully_paid");
       expect(doc.save).toHaveBeenCalled();
+    });
+
+    it("A2. Browser confirmation without a signature is rejected", async () => {
+      const doc = createPendingBookingDoc();
+      mockBookingModel.findOne.mockResolvedValue(doc);
+
+      await expect(
+        bookingService.confirmPayment(
+          {
+            bookingId: "BK-DAY-001",
+            razorpayOrderId: "order_rzp_001",
+            razorpayPaymentId: "pay_rzp_001",
+          },
+          "cust_01",
+        ),
+      ).rejects.toThrow(/signature/i);
+      expect(doc.status).toBe("pending");
+    });
+
+    it("A3. Browser confirmation for someone else's booking is rejected", async () => {
+      const doc = createPendingBookingDoc();
+      mockBookingModel.findOne.mockResolvedValue(doc);
+
+      await expect(
+        bookingService.confirmPayment(
+          {
+            bookingId: "BK-DAY-001",
+            razorpayOrderId: "order_rzp_001",
+            razorpayPaymentId: "pay_rzp_001",
+            razorpaySignature: validSignature("order_rzp_001", "pay_rzp_001"),
+          },
+          "someone_else",
+        ),
+      ).rejects.toThrow(/not found/i);
+      expect(doc.status).toBe("pending");
     });
 
     it("B. Webhook succeeds for orphaned payment when browser disconnects (Scenario G)", async () => {
@@ -418,6 +539,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
             bookingId: "BK-DAY-001",
             razorpayOrderId: "order_rzp_001",
             razorpayPaymentId: "pay_rzp_001",
+            razorpaySignature: validSignature("order_rzp_001", "pay_rzp_001"),
           },
           "cust_01",
         ),
@@ -425,6 +547,59 @@ describe("DayStay Engine Unit & Integration Tests", () => {
 
       expect(expiredDoc.status).toBe("cancelled");
       expect(expiredDoc.paymentStatus).toBe("refunded");
+    });
+
+    it("H2. Payment succeeds after hold expiry but the booking's own pending row must not count as a competing occupant", async () => {
+      // Fixed, 30-minute-grid-aligned slot time (rather than "now") so the
+      // inventory engine's generated slots are guaranteed to include an
+      // exact match regardless of when this test happens to run.
+      const expiredDoc = createPendingBookingDoc({
+        reservationExpiresAt: new Date(Date.now() - 60000), // Expired 1 min ago
+        dayStayDetails: {
+          productCode: "DAY_REST_3H",
+          slotStartTime: new Date("2026-10-01T09:00:00.000Z"),
+          slotEndTime: new Date("2026-10-01T12:00:00.000Z"),
+          durationMinutes: 180,
+        },
+      });
+      mockBookingModel.findOne.mockResolvedValue(expiredDoc);
+
+      mockAshramModel.findById.mockReturnValue({
+        lean: jest.fn().mockResolvedValue({
+          _id: "ashram_01",
+          dayStayConfig: { enabled: true, operatingHours: { start: "06:00", end: "20:00" } },
+        }),
+      });
+      mockRoomModel.findOne.mockReturnValue({
+        lean: jest.fn().mockResolvedValue({
+          _id: "room_01",
+          dayStayConfig: { enabled: true, allocatedInventory: 1, products: [{ productCode: "DAY_REST_3H", enabled: true, durationMinutes: 180 }] },
+        }),
+      });
+      // No genuinely competing booking exists — the availability recheck
+      // must exclude the booking being confirmed itself.
+      mockBookingModel.find.mockReturnValue({
+        lean: jest.fn().mockResolvedValue([]),
+      });
+
+      const res = await bookingService.confirmPayment(
+        {
+          bookingId: "BK-DAY-001",
+          razorpayOrderId: "order_rzp_001",
+          razorpayPaymentId: "pay_rzp_001",
+          razorpaySignature: validSignature("order_rzp_001", "pay_rzp_001"),
+        },
+        "cust_01",
+      );
+
+      expect(res.status).toBe("confirmed");
+      expect(expiredDoc.status).toBe("confirmed");
+      expect(expiredDoc.paymentStatus).toBe("fully_paid");
+
+      // The recheck must have asked the inventory service to exclude this
+      // booking's own id from the competing-bookings query.
+      const findCall = mockBookingModel.find.mock.calls.at(-1)?.[0];
+      expect(findCall?._id?.$ne).toBe("bk_id_001");
     });
 
     it("L. Unknown payment/order ID returns false from webhook handler", async () => {
@@ -450,6 +625,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
             bookingId: "BK-DAY-001",
             razorpayOrderId: "order_rzp_001",
             razorpayPaymentId: "pay_rzp_001",
+            razorpaySignature: validSignature("order_rzp_001", "pay_rzp_001"),
           },
           "cust_01",
         ),

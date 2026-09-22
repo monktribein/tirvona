@@ -71,11 +71,14 @@ export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
   const [roomDropdownOpen, setRoomDropdownOpen] = useState<boolean>(false);
   const [timeFilter, setTimeFilter] = useState<"all" | "morning" | "afternoon" | "evening">("all");
 
-  // Eligible day stay rooms: active rooms that do not have dayStay explicitly disabled
+  // Eligible day stay rooms: only rooms the owner has explicitly opted into
+  // Day Stay. A missing dayStayConfig (legacy rooms created before this
+  // feature existed) must NOT be treated as eligible — such rooms were
+  // never given day-stay pricing/inventory/amenities by the owner.
   const eligibleRooms = (rooms || []).filter(
-    (r) => r.dayStayConfig?.enabled !== false && r.status !== "inactive"
+    (r) => r.dayStayConfig?.enabled === true && r.status !== "inactive"
   );
-  const activeRooms = eligibleRooms.length > 0 ? eligibleRooms : (rooms || []);
+  const activeRooms = eligibleRooms;
 
   const selectedRoomId = externalSelectedRoomId || internalRoomId || (activeRooms[0] ? String(activeRooms[0]._id) : "");
 
@@ -155,7 +158,7 @@ export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
     loadAvailability();
   }, [ashram?._id, selectedRoomId, date, selectedProduct]);
 
-  if (!ashram?.dayStayConfig?.enabled && ashram?.dayStayConfig?.enabled !== undefined && !ashram?.dayStayConfig) {
+  if (!ashram?.dayStayConfig?.enabled || activeRooms.length === 0) {
     return (
       <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-center space-y-2">
         <Sparkles className="w-8 h-8 text-slate-900 dark:text-white mx-auto" />
