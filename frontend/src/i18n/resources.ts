@@ -2194,6 +2194,7 @@ export const hiUi: Record<string, string> = {
   "Service ID": "सर्विस आईडी",
   "Create Account": "खाता बनाएँ",
   "Verify Email": "ईमेल सत्यापित करें",
+  "Verify Mobile": "मोबाइल सत्यापित करें",
   "Sacred Journey": "पावन यात्रा",
   "Enterprise Digital Infrastructure": "एंटरप्राइज डिजिटल अवसंरचना",
   "India's Digital Infrastructure for Religious Destinations": "धार्मिक गंतव्यों हेतु भारत की डिजिटल अवसंरचना",

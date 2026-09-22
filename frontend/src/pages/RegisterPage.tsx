@@ -206,8 +206,8 @@ export const RegisterPage: React.FC = () => {
             ) : challenge ? (
               <OtpChallengeForm
                 challenge={challenge}
-                destination={email}
-                title="Verify Email"
+                destination={phone}
+                title="Verify Mobile"
                 onVerify={(otp) =>
                   verifyRegistrationOtp(challenge.otpToken, otp)
                 }
