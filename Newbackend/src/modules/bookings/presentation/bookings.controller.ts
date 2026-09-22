@@ -16,6 +16,7 @@ import {
 } from "../../../common/decorators/current-user.decorator";
 import { Public } from "../../../common/decorators/public.decorator";
 import { Roles } from "../../../common/decorators/roles.decorator";
+import { actorFromUser } from "../domain/booking-customer";
 import { BookingsService } from "../application/bookings.service";
 import {
   AssignRoomDto,
@@ -47,7 +48,8 @@ export class BookingsController {
     return {
       success: true,
       message: "Reservation held successfully. Complete payment to confirm.",
-      data: await this.service.create(user, dto),
+      // A booking made through this controller came in from the website.
+      data: await this.service.create(actorFromUser(user), dto),
     };
   }
   @Post(":id/payment/order")
@@ -66,7 +68,10 @@ export class BookingsController {
     @Param("id") id: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return { success: true, ...(await this.service.paymentOrder(id, user)) };
+    return {
+      success: true,
+      ...(await this.service.paymentOrder(id, actorFromUser(user))),
+    };
   }
   @Post(":id/payment")
   @Roles(
@@ -85,7 +90,11 @@ export class BookingsController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: ConfirmBookingPaymentDto,
   ) {
-    const result = await this.service.confirmPayment(id, user, dto);
+    const result = await this.service.confirmPayment(
+      id,
+      actorFromUser(user),
+      dto,
+    );
     return {
       success: true,
       message: "Payment verified successfully and booking confirmed",
@@ -137,7 +146,7 @@ export class BookingsController {
   @Get("history") @Roles("customer") async history(
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return { success: true, data: await this.service.historyFor(user.id) };
+    return { success: true, data: await this.service.historyFor({ userId: user.id }) };
   }
   @Get("frontdesk-summary")
   @Roles(
@@ -204,7 +213,10 @@ export class BookingsController {
     "super_admin",
   )
   async get(@Param("id") id: string, @CurrentUser() user: AuthenticatedUser) {
-    return { success: true, data: await this.service.get(id, user) };
+    return {
+      success: true,
+      data: await this.service.get(id, actorFromUser(user)),
+    };
   }
   @Put(":id/room-number")
   @Roles(
@@ -337,7 +349,7 @@ export class BookingsController {
     return {
       success: true,
       message: "Booking cancelled successfully",
-      data: await this.service.cancel(id, user, dto),
+      data: await this.service.cancel(id, actorFromUser(user), dto),
     };
   }
 }

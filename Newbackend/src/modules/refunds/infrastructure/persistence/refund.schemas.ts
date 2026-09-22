@@ -99,7 +99,11 @@ export const RefundRequestSchema = new Schema(
     module: { type: String, enum: REFUND_MODULES, required: true, index: true },
     sourceId: { type: SchemaTypes.ObjectId, required: true, index: true },
     sourceReference: { type: String, default: "" },
-    customerId: id("User", true),
+    // Exactly one of these names the customer — see the pre-validate rule
+    // below. A WhatsApp guest has no website account, so their refund names
+    // their WhatsApp customer record rather than a User that does not exist.
+    customerId: id("User"),
+    whatsappCustomerId: id("WhatsAppCustomer"),
     ashramId: id("Ashram"),
 
     reason: { type: String, required: true },
@@ -115,7 +119,10 @@ export const RefundRequestSchema = new Schema(
     calculationId: id("RefundCalculation"),
     policyId: id("RefundPolicy"),
 
-    requestedBy: id("User", true),
+    // Who raised the request: a website user or staff member (`requestedBy`),
+    // or a WhatsApp guest (`requestedByWhatsAppCustomerId`). One is set.
+    requestedBy: id("User"),
+    requestedByWhatsAppCustomerId: id("WhatsAppCustomer"),
     reviewedBy: id("User"),
     reviewedAt: Date,
     approvedBy: id("User"),
@@ -132,8 +139,32 @@ export const RefundRequestSchema = new Schema(
   },
   opts("refund_requests"),
 );
+/**
+ * A refund request belongs to exactly one customer identity, and was raised
+ * by exactly one requester identity — never both, never neither. This is the
+ * same rule `Booking` enforces, and it replaces `required: true` on the User
+ * refs, which is what forced a fake account to exist for a WhatsApp guest.
+ * Existing rows all carry `customerId` and `requestedBy`, so they stay valid.
+ */
+RefundRequestSchema.pre("validate", function enforceOneIdentity() {
+  const row = this as any;
+  if (Boolean(row.customerId) === Boolean(row.whatsappCustomerId))
+    throw new Error(
+      row.customerId
+        ? "A refund request cannot belong to both a website account and a WhatsApp customer"
+        : "A refund request must belong to either a website account or a WhatsApp customer",
+    );
+  if (Boolean(row.requestedBy) === Boolean(row.requestedByWhatsAppCustomerId))
+    throw new Error(
+      "A refund request must be raised by exactly one of a website user or a WhatsApp customer",
+    );
+});
 RefundRequestSchema.index({ status: 1, createdAt: -1 });
 RefundRequestSchema.index({ customerId: 1, createdAt: -1 });
+RefundRequestSchema.index(
+  { whatsappCustomerId: 1, createdAt: -1 },
+  { sparse: true },
+);
 RefundRequestSchema.index({ ashramId: 1, status: 1, createdAt: -1 });
 RefundRequestSchema.index({ module: 1, status: 1, createdAt: -1 });
 RefundRequestSchema.index(
@@ -222,6 +253,9 @@ export const RefundStatusHistorySchema = new Schema(
     toStatus: { type: String, required: true },
     note: { type: String, default: "" },
     actorId: id("User"),
+    // Set instead of `actorId` when a WhatsApp guest made the change, so the
+    // trail still says who acted without inventing a User for them.
+    actorWhatsAppCustomerId: id("WhatsAppCustomer"),
     actorRole: String,
     occurredAt: { type: Date, default: Date.now },
   },
@@ -235,6 +269,7 @@ export const RefundAuditLogSchema = new Schema(
     policyId: id("RefundPolicy"),
     action: { type: String, required: true, index: true },
     actorId: id("User"),
+    actorWhatsAppCustomerId: id("WhatsAppCustomer"),
     actorRole: String,
     before: { type: SchemaTypes.Mixed },
     after: { type: SchemaTypes.Mixed },

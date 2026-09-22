@@ -13,12 +13,24 @@ import Razorpay from "razorpay";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { canManageAllAshrams } from "../../../common/auth/ashram-access";
 import { resolveAshramScope } from "../../../common/auth/ashram-scope";
+import {
+  actorFromUser,
+  bookingBelongsTo,
+  bookingOwnerFilter,
+  type BookingActor,
+} from "../../bookings/domain/booking-customer";
 import { calculateRefund } from "../domain/refund-calculator";
 import {
   REFUND_TRANSITIONS,
   type RefundStatus,
 } from "../infrastructure/persistence/refund.schemas";
 import { RefundPolicyService } from "./refund-policy.service";
+
+interface AuditActor {
+  id?: string | null;
+  role?: string;
+  whatsappCustomerId?: string | null;
+}
 
 const PLATFORM_ROLES = ["super_admin", "national_admin"];
 const FINANCE_ROLES = ["finance_manager"];
@@ -95,17 +107,29 @@ export class RefundsService {
     });
   }
 
+  /**
+   * Who acted, for the audit trail: a website user or staff member by `id`,
+   * a WhatsApp guest by `whatsappCustomerId`. Never both, and never an
+   * invented User for a guest.
+   */
+  private actorFields(actor: AuditActor | null): Record<string, unknown> {
+    return {
+      actorId: actor?.id ?? null,
+      actorWhatsAppCustomerId: actor?.whatsappCustomerId ?? null,
+      actorRole: actor?.role ?? "system",
+    };
+  }
+
   private log(
     action: string,
-    user: AuthenticatedUser | null,
+    user: AuditActor | null,
     requestId: unknown,
     extra: Record<string, unknown> = {},
   ): Promise<any> {
     return this.audit.create({
       requestId,
       action,
-      actorId: user?.id ?? null,
-      actorRole: user?.role ?? "system",
+      ...this.actorFields(user),
       ...extra,
     });
   }
@@ -119,10 +143,22 @@ export class RefundsService {
     if (!booking) throw new NotFoundException("Booking not found");
     const pricing = booking.pricing ?? {};
     return {
-      customerId: String(booking.customerId),
+      // A booking belongs to a website account or to a WhatsApp customer,
+      // never both. Whichever it is, the refund request follows it.
+      customerId: booking.customerId ? String(booking.customerId) : null,
+      whatsappCustomerId: booking.whatsappCustomerId
+        ? String(booking.whatsappCustomerId)
+        : null,
       ashramId: booking.ashramId ? String(booking.ashramId) : null,
       reference: booking.bookingId ?? "",
       status: booking.status,
+      // What `BookingsService.cancel` decided, when it has run.
+      cancellationRefundAmount:
+        booking.cancellation?.refundAmount === undefined ||
+        booking.cancellation?.refundAmount === null
+          ? null
+          : Number(booking.cancellation.refundAmount),
+      row: booking,
       source: {
         amountPaid: Number(pricing.amountPaid ?? 0),
         baseAmount: Number(pricing.basePrice ?? 0),
@@ -144,10 +180,35 @@ export class RefundsService {
       customerNote?: string;
     },
   ): Promise<any> {
-    const loaded = await this.loadSource(dto.module, dto.sourceId);
+    return this.createFor(actorFromUser(user), dto);
+  }
 
-    const onBehalf = this.canReview(user);
-    if (!onBehalf && loaded.customerId !== String(user.id))
+  /**
+   * Opens a refund request for a website user, a member of staff acting for a
+   * customer, or a WhatsApp guest — through one path. Ownership is decided by
+   * `bookingBelongsTo` against whichever identity the booking carries, so a
+   * guest can reach only their own booking and no User row is ever invented.
+   */
+  async createFor(
+    actor: BookingActor,
+    dto: {
+      module: string;
+      sourceId: string;
+      reason: string;
+      customerNote?: string;
+    },
+  ): Promise<any> {
+    const loaded = await this.loadSource(dto.module, dto.sourceId);
+    const requester: AuditActor = {
+      id: actor.userId,
+      whatsappCustomerId: actor.whatsappCustomerId,
+      role: actor.role,
+    };
+
+    const onBehalf = Boolean(
+      actor.principal && this.canReview(actor.principal),
+    );
+    if (!onBehalf && !bookingBelongsTo(loaded.row, actor))
       throw new ForbiddenException("This purchase belongs to another account");
 
     if (loaded.source.amountPaid <= 0)
@@ -155,11 +216,44 @@ export class RefundsService {
         "Nothing has been collected against this booking, so there is nothing to refund",
       );
 
+    // A cancellation that already recorded a refund is being paid out through
+    // the booking's own refund. Opening a second claim for the same money is
+    // how a guest gets refunded twice.
+    const settledElsewhere = await (
+      this.bookings.db?.models?.BookingRefund as Model<any> | undefined
+    )
+      ?.findOne({
+        bookingId: dto.sourceId,
+        status: { $in: ["processing", "success"] },
+      })
+      .lean();
+    if (settledElsewhere)
+      throw new ConflictException(
+        "This booking's cancellation refund has already been processed",
+      );
+
     const { policy, policyId } = await this.policies.resolve(
       dto.module,
       loaded.ashramId,
     );
     const breakdown = calculateRefund(policy, loaded.source, new Date());
+
+    // One authoritative refund decision. When the booking has been cancelled,
+    // `BookingsService.cancel` has already decided how much comes back, and
+    // this request is only the review/payout lifecycle for that amount — it
+    // does not get to recompute it under a second policy model.
+    if (loaded.cancellationRefundAmount !== null) {
+      if (loaded.cancellationRefundAmount <= 0)
+        throw new BadRequestException(
+          "This booking's cancellation does not refund anything",
+        );
+      breakdown.netRefundable = loaded.cancellationRefundAmount;
+      breakdown.grossRefundable = loaded.cancellationRefundAmount;
+      breakdown.notes = [
+        ...(breakdown.notes ?? []),
+        "Amount fixed by the booking's cancellation decision",
+      ];
+    }
 
     let request: any;
     try {
@@ -169,12 +263,14 @@ export class RefundsService {
         sourceId: new Types.ObjectId(dto.sourceId),
         sourceReference: loaded.reference,
         customerId: loaded.customerId,
+        whatsappCustomerId: loaded.whatsappCustomerId,
         ashramId: loaded.ashramId,
         reason: dto.reason,
         customerNote: dto.customerNote ?? "",
         requestedAmount: breakdown.netRefundable,
         policyId,
-        requestedBy: user.id,
+        requestedBy: actor.userId,
+        requestedByWhatsAppCustomerId: actor.whatsappCustomerId,
         status: "pending",
       });
     } catch (error: any) {
@@ -214,10 +310,9 @@ export class RefundsService {
       requestId: request._id,
       toStatus: "pending",
       note: "Refund requested",
-      actorId: user.id,
-      actorRole: user.role,
+      ...this.actorFields(requester),
     });
-    await this.log("REFUND_REQUESTED", user, request._id, {
+    await this.log("REFUND_REQUESTED", requester, request._id, {
       after: { amount: breakdown.netRefundable, policyId },
     });
 
@@ -235,7 +330,9 @@ export class RefundsService {
     }
 
     await request.save();
-    return this.get(user, String(request._id));
+    return actor.principal
+      ? this.get(actor.principal, String(request._id))
+      : this.getOwned(actor, String(request._id));
   }
 
   async list(
@@ -257,6 +354,7 @@ export class RefundsService {
         .skip((page - 1) * limit)
         .limit(limit)
         .populate("customerId", "name email")
+        .populate("whatsappCustomerId", "wappId name phone")
         .populate("ashramId", "name")
         .populate("calculationId")
         .lean(),
@@ -269,9 +367,27 @@ export class RefundsService {
     if (!Types.ObjectId.isValid(id))
       throw new NotFoundException("Refund request not found");
     const scope = await this.scopeFor(user);
+    return this.loadDetail({ _id: id, ...scope }, id);
+  }
+
+  /** One refund request, but only if it belongs to this customer identity. */
+  async getOwned(actor: BookingActor, id: string): Promise<any> {
+    if (!Types.ObjectId.isValid(id))
+      throw new NotFoundException("Refund request not found");
+    return this.loadDetail(
+      { _id: id, isDeleted: false, ...bookingOwnerFilter(actor) },
+      id,
+    );
+  }
+
+  private async loadDetail(
+    filter: Record<string, unknown>,
+    id: string,
+  ): Promise<any> {
     const request = await this.requests
-      .findOne({ _id: id, ...scope })
+      .findOne(filter)
       .populate("customerId", "name email")
+      .populate("whatsappCustomerId", "wappId name phone")
       .populate("ashramId", "name")
       .populate("calculationId")
       .lean();
@@ -283,6 +399,61 @@ export class RefundsService {
     return { ...request, history, transactions };
   }
 
+  /**
+   * The refund state of one booking, for the customer who owns it. This is
+   * what a WhatsApp guest asks ("mera refund kahan hai") and what a website
+   * user's booking page can show. Ownership is checked against the booking's
+   * own identity, so a reference alone reveals nothing.
+   *
+   * Reports both records honestly: the refund the cancellation recorded on the
+   * booking, and any review/payout request opened for it.
+   */
+  async statusForBooking(actor: BookingActor, bookingId: string): Promise<any> {
+    if (!Types.ObjectId.isValid(bookingId))
+      throw new NotFoundException("Booking not found");
+    const booking = await this.bookings.findById(bookingId).lean();
+    if (!booking || !bookingBelongsTo(booking, actor))
+      throw new NotFoundException("Booking not found");
+    const BookingRefund = this.bookings.db?.models?.BookingRefund as
+      | Model<any>
+      | undefined;
+    const [request, cancellationRefund] = await Promise.all([
+      this.requests
+        .findOne({
+          module: "ashram_booking",
+          sourceId: booking._id,
+          isDeleted: false,
+          ...bookingOwnerFilter(actor),
+        })
+        .sort({ createdAt: -1 })
+        .lean(),
+      BookingRefund
+        ? BookingRefund.findOne({ bookingId: booking._id })
+            .sort({ createdAt: -1 })
+            .lean()
+        : Promise.resolve(null),
+    ]);
+    return {
+      bookingId: booking.bookingId,
+      bookingStatus: booking.status,
+      decidedRefundAmount: booking.cancellation?.refundAmount ?? null,
+      cancellationRefund: cancellationRefund
+        ? {
+            reference: (cancellationRefund as any).refundReference,
+            amount: (cancellationRefund as any).amount,
+            status: (cancellationRefund as any).status,
+          }
+        : null,
+      request: request
+        ? {
+            refundNumber: (request as any).refundNumber,
+            status: (request as any).status,
+            amount: (request as any).requestedAmount,
+          }
+        : null,
+    };
+  }
+
   private async notifyCustomer(
     request: any,
     event: string,
@@ -291,7 +462,10 @@ export class RefundsService {
     data?: Record<string, string>,
   ): Promise<void> {
     await this.notifications.create({
-      userId: request.customerId,
+      // Addressed to whichever identity owns the request. A WhatsApp guest has
+      // no `userId`; the notification worker delivers to their WhatsApp number.
+      userId: request.customerId ?? undefined,
+      whatsappCustomerId: request.whatsappCustomerId ?? undefined,
       bookingId: request.sourceId,
       ashramId: request.ashramId,
       event,

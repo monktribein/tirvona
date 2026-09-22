@@ -14,7 +14,10 @@ const opts = (collection: string) => ({
 export const BookingPaymentSchema = new Schema(
   {
     bookingId: id("Booking", true),
-    userId: id("User", true),
+    // Optional so a WhatsApp guest's payment can be recorded without a
+    // website account. Exactly one of these is set, matching the booking.
+    userId: id("User"),
+    whatsappCustomerId: id("WhatsAppCustomer"),
     ashramId: id("Ashram", true),
     bookingSource: {
       type: String,
@@ -197,7 +200,11 @@ export const BookingRefundSchema = new Schema(
     refundReference: { type: String, required: true, unique: true },
     bookingId: id("Booking", true),
     paymentId: id("BookingPayment", true),
-    requestedBy: id("User", true),
+    // A cancellation raised by a WhatsApp guest has no website account behind
+    // it; `requestedByWhatsAppCustomerId` records who asked instead. An
+    // owner- or admin-initiated refund still fills `requestedBy` as before.
+    requestedBy: id("User"),
+    requestedByWhatsAppCustomerId: id("WhatsAppCustomer"),
     amount: { type: Number, required: true },
     percentage: Number,
     reason: String,
@@ -219,7 +226,11 @@ export const BookingInvoiceSchema = new Schema(
   {
     invoiceNumber: { type: String, required: true, unique: true },
     bookingId: { ...id("Booking", true), unique: true },
-    customerId: id("User", true),
+    // Optional for a WhatsApp guest, who is identified by
+    // `whatsappCustomerId`. Exactly one of the two is set, matching the
+    // booking this invoice belongs to.
+    customerId: id("User"),
+    whatsappCustomerId: id("WhatsAppCustomer"),
     ashramId: id("Ashram", true),
     lineItems: [
       {

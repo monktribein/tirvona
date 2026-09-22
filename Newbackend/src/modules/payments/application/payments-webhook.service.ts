@@ -86,7 +86,16 @@ export class PaymentsWebhookService {
       event.orderId = orderId;
       event.paymentId = paymentId;
 
-      const matchedModule = await this.dispatch(orderId, paymentId);
+      const matchedModule = await this.dispatch(orderId, paymentId, {
+        amountPaise:
+          typeof paymentEntity?.amount === "number"
+            ? paymentEntity.amount
+            : undefined,
+        currency:
+          typeof paymentEntity?.currency === "string"
+            ? paymentEntity.currency
+            : undefined,
+      });
       event.matchedModule = matchedModule ?? undefined;
       event.status = matchedModule ? "processed" : "ignored";
       event.processedAt = new Date();
@@ -112,10 +121,17 @@ export class PaymentsWebhookService {
   private async dispatch(
     orderId: string,
     paymentId: string,
+    captured?: { amountPaise?: number; currency?: string },
   ): Promise<string | null> {
     if (await this.dayStay.confirmPaymentFromWebhook(orderId, paymentId))
       return "day_stay";
-    if (await this.bookings.confirmPaymentFromWebhook(orderId, paymentId))
+    if (
+      await this.bookings.confirmPaymentFromWebhook(
+        orderId,
+        paymentId,
+        captured,
+      )
+    )
       return "bookings";
     if (await this.parking.confirmPaymentFromWebhook(orderId, paymentId))
       return "parking";

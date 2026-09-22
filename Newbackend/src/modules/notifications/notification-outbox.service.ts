@@ -140,7 +140,10 @@ export class NotificationOutboxService implements OnApplicationBootstrap {
           {
             domain: "booking",
             notificationId: String(row._id),
-            userId: String(row.userId),
+            // A WhatsApp guest has no website account, so this row carries
+            // no userId. The worker treats an empty string as "no account"
+            // and skips the account-only channels.
+            userId: row.userId ? String(row.userId) : "",
             event: row.event,
             title: row.title,
             message: row.message,
@@ -246,7 +249,10 @@ export class NotificationOutboxService implements OnApplicationBootstrap {
           {
             domain,
             notificationId: String(row._id),
-            userId: String(row.userId),
+            // A WhatsApp guest has no website account, so this row carries
+            // no userId. The worker treats an empty string as "no account"
+            // and skips the account-only channels.
+            userId: row.userId ? String(row.userId) : "",
             event: row.event,
             title: row.title,
             message: row.message,

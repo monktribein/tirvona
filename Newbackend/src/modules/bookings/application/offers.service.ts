@@ -375,21 +375,6 @@ export class OffersService {
     });
   }
   async validate(dto: ValidatePromoDto): Promise<any> {
-    const code = (dto.promoCode || "").trim().toUpperCase();
-
-    if (code === "TEST1") {
-      return {
-        _id: "test-1inr-coupon-id",
-        title: "Test Coupon (₹1 Payment Testing)",
-        promoCode: "TEST1",
-        discountType: "Test ₹1",
-        discountValue: 1,
-        status: "active",
-        validTill: new Date(Date.now() + 365 * 86400000).toISOString(),
-        message: "TEST1 Coupon Applied! Total amount set to ₹1.",
-      };
-    }
-
     const now = new Date();
     const offer = await this.offers
       .findOne({

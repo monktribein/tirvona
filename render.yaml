@@ -91,6 +91,22 @@ services:
         value: false
       - key: WHATSAPP_DRY_RUN
         value: true
+      # Inbound conversational channel. Off until the webhook has been verified
+      # in Meta and tested against WHATSAPP_TEST_RECIPIENTS. With this false the
+      # webhook still answers Meta so the subscription stays healthy, but no
+      # conversation runs and no booking can be created from a message.
+      - key: WHATSAPP_CONVERSATION_ENABLED
+        value: false
+      # Meta webhook verify token and app secret. Set in the dashboard only;
+      # with no app secret configured, no inbound delivery is trusted at all.
+      - key: WHATSAPP_WEBHOOK_VERIFY_TOKEN
+        sync: false
+      - key: WHATSAPP_APP_SECRET
+        sync: false
+      # AI interpreter in front of the deterministic menu and keyword routing.
+      # The channel works fully with this off.
+      - key: WHATSAPP_NLU_ENABLED
+        value: false
       - key: AK_NEXUS_API_BASE_URL
         value: https://app.aknexus.in/api
       - key: AK_NEXUS_API_TOKEN

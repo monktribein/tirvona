@@ -1,7 +1,14 @@
 import { normalizeWhatsAppNumber } from "../../../integrations/whatsapp/utils/whatsapp-phone.util";
 
 interface BookingConfirmedNotificationInput {
-  userId: string;
+  /**
+   * The website account the confirmation belongs to, when there is one. A
+   * WhatsApp guest has no account, so this is null for them and
+   * `whatsappCustomerId` identifies the recipient instead. Exactly one of the
+   * two is set, matching the booking.
+   */
+  userId: string | null;
+  whatsappCustomerId?: string | null;
   customerPhone?: string;
   booking: {
     _id: unknown;
@@ -27,9 +34,19 @@ export const bookingConfirmedOutboxEvent = (
       "booking_confirmed cannot be emitted before successful confirmation",
     );
 
+  if (!input.userId && !input.whatsappCustomerId)
+    throw new Error(
+      "booking_confirmed needs a customer identity to be delivered to",
+    );
+
   const correlationId = `booking:${String(input.booking._id)}:confirmed`;
   return {
     userId: input.userId,
+    // Only carried for a WhatsApp guest, so a website booking's outbox row is
+    // byte-for-byte what it has always been.
+    ...(input.whatsappCustomerId
+      ? { whatsappCustomerId: input.whatsappCustomerId }
+      : {}),
     bookingId: input.booking._id,
     ashramId: input.booking.ashramId,
     event: "booking_confirmed",
