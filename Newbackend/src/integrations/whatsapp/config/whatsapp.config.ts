@@ -259,6 +259,26 @@ export const whatsappConfig = registerAs("whatsapp", () => ({
     timeoutMs: INTERNAL_DEFAULTS.msg91TimeoutMs,
     templates: msg91Templates(),
   },
+  /**
+   * Inbound conversational channel. Off unless explicitly enabled, so merging
+   * this code cannot start answering customers on its own: with the flag off
+   * the webhook still verifies and acknowledges Meta (so the subscription
+   * stays healthy) but no conversation is run and no action is executed.
+   *
+   * `verifyToken` and `appSecret` are read from the environment and never
+   * logged. Without an app secret no inbound delivery is trusted at all.
+   */
+  conversation: {
+    enabled: bool(process.env.WHATSAPP_CONVERSATION_ENABLED, false),
+    verifyToken: process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN?.trim() ?? "",
+    appSecret: process.env.WHATSAPP_APP_SECRET?.trim() ?? "",
+    /**
+     * Rule-based language detection and menu routing always run. This gates
+     * only the AI interpreter that turns free text into a structured intent;
+     * with it off the channel still works through the menu and keywords.
+     */
+    nluEnabled: bool(process.env.WHATSAPP_NLU_ENABLED, false),
+  },
   metaCloud: {
     graphBaseUrl: INTERNAL_DEFAULTS.metaGraphBaseUrl,
     apiVersion: process.env.WHATSAPP_API_VERSION?.trim() ?? "",

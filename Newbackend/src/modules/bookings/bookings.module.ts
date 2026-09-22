@@ -9,6 +9,8 @@ import { SelfBookingService } from "./application/self-booking.service";
 import { SelfBookingController } from "./presentation/self-booking.controller";
 import { QrService } from "../smart-contact/application/qr.service";
 import { OffersService } from "./application/offers.service";
+import { BookingPaymentLinkService } from "./application/booking-payment-link.service";
+import { PublicBookingPaymentController } from "./presentation/public-booking-payment.controller";
 import { ReviewsService } from "./application/reviews.service";
 import { BookingMaintenanceService } from "./application/booking-maintenance.service";
 import { BookingCheckinReminderService } from "./application/booking-checkin-reminder.service";
@@ -101,11 +103,13 @@ const models = [
     BookingFinanceController,
     BookingIdentityController,
     SelfBookingController,
+    PublicBookingPaymentController,
   ],
   providers: [
     BookingPricingService,
     BookingIdentityService,
     BookingsService,
+    BookingPaymentLinkService,
     SelfBookingService,
     QrService,
     OffersService,
@@ -116,6 +120,13 @@ const models = [
     MongooseBookingRepository,
     { provide: BOOKING_REPOSITORY, useExisting: MongooseBookingRepository },
   ],
-  exports: [BookingsService, SelfBookingService, BookingPricingService, MongooseModule],
+  exports: [
+    BookingsService,
+    BookingPaymentLinkService,
+    SelfBookingService,
+    BookingPricingService,
+    OffersService,
+    MongooseModule,
+  ],
 })
 export class BookingsModule {}

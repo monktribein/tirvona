@@ -143,15 +143,23 @@ export class NotificationWorker
         .findById(data.notificationId)
         .select("meta recipientPhone bookingId registrationId createdAt")
         .lean();
-      const user = await this.users
-        .findById(data.userId)
-        .select("name email phone")
-        .lean();
+      // A WhatsApp guest has no `users` row, so there is nothing to look up.
+      // Their name and phone come from the outbox row and the booking itself.
+      const user = data.userId
+        ? await this.users
+            .findById(data.userId)
+            .select("name email phone")
+            .lean()
+        : null;
       let providerMessageId = "";
       let whatsappProviderMessageId = "";
       let deferredDeliveryError: unknown;
+      // Socket and push are account-bound: a guest with no website account
+      // has no live session and no FCM token, so there is nowhere to send
+      // them. Their WhatsApp message below is the delivery that matters.
       if (
         !whatsappOnly &&
+        Boolean(data.userId) &&
         ["socket", "push", "in_app"].includes(data.channel)
       ) {
         try {
@@ -759,10 +767,20 @@ export class NotificationWorker
       .populate("ashramId", "name address")
       .populate("rooms.roomId", "name type")
       .populate("customerId", "name")
+      // A WhatsApp guest has no `users` row, so their name and the number
+      // they are reachable on come from their WhatsApp customer record. This
+      // one lookup covers every stay event — confirmation, cancellation,
+      // check-in, check-out and the reminders — rather than each of them
+      // having to carry a phone on its own outbox row.
+      .populate("whatsappCustomerId", "name phone wappId")
       .lean();
     if (!booking) return null;
     return {
-      guestName: booking.walkInGuest?.name || booking.customerId?.name,
+      guestName:
+        booking.walkInGuest?.name ||
+        booking.customerId?.name ||
+        booking.whatsappCustomerId?.name ||
+        booking.whatsappCustomerId?.wappId,
       reference: booking.bookingId,
       ashramName: booking.ashramId?.name,
       ashramCity: booking.ashramId?.address?.city,
@@ -784,7 +802,10 @@ export class NotificationWorker
       amountPaid: booking.pricing?.amountPaid,
       totalAmount: booking.pricing?.totalAmount,
       currency: booking.pricing?.currency,
-      contactPhone: booking.walkInGuest?.phone || undefined,
+      contactPhone:
+        booking.walkInGuest?.phone ||
+        booking.whatsappCustomerId?.phone ||
+        undefined,
       reservationExpiresAt: booking.reservationExpiresAt,
       checkedInAt: booking.checkedInAt,
       checkedOutAt: booking.checkedOutAt,

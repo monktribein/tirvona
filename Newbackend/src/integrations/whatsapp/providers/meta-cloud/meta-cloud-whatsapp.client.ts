@@ -92,6 +92,164 @@ const NOT_SENT_CAUSES = new Set([
   "UND_ERR_CONNECT_TIMEOUT",
 ]);
 
+/**
+ * Meta's hard limits on interactive session messages. Exceeding any of them
+ * is a 400 from the Graph API, which in a conversation means the guest simply
+ * gets nothing — so values are clipped to fit rather than sent and rejected.
+ */
+export const META_LIMITS = {
+  bodyText: 4096,
+  interactiveBody: 1024,
+  header: 60,
+  footer: 60,
+  buttonCount: 3,
+  buttonTitle: 20,
+  listRows: 10,
+  listRowTitle: 24,
+  listRowDescription: 72,
+  listButton: 20,
+  replyId: 256,
+} as const;
+
+/** Clips to `max`, marking the cut so a truncated label is never mistaken for the whole value. */
+const clip = (value: string, max: number): string => {
+  const text = String(value ?? "").trim();
+  return text.length <= max ? text : `${text.slice(0, Math.max(1, max - 1))}…`;
+};
+
+export interface MetaListRow {
+  id: string;
+  title: string;
+  description?: string;
+}
+
+export interface MetaReplyButton {
+  id: string;
+  title: string;
+}
+
+export type MetaConversationalMessage =
+  | { kind: "text"; body: string; previewUrl?: boolean }
+  | {
+      kind: "buttons";
+      body: string;
+      buttons: MetaReplyButton[];
+      header?: string;
+      footer?: string;
+    }
+  | {
+      kind: "list";
+      body: string;
+      button: string;
+      rows: MetaListRow[];
+      header?: string;
+      footer?: string;
+      sectionTitle?: string;
+    };
+
+/**
+ * Builds the Graph API body for one conversational message, clipping every
+ * field to Meta's limits.
+ *
+ * Lists are capped at ten rows and buttons at three because that is Meta's
+ * ceiling; a caller with more options must paginate rather than rely on
+ * silent truncation, so the excess is dropped here only as a last defence.
+ */
+export const buildConversationalPayload = (
+  to: string,
+  message: MetaConversationalMessage,
+): Record<string, unknown> => {
+  const envelope = {
+    messaging_product: "whatsapp",
+    recipient_type: "individual",
+    to,
+  } as const;
+
+  if (message.kind === "text")
+    return {
+      ...envelope,
+      type: "text",
+      text: {
+        body: clip(message.body, META_LIMITS.bodyText),
+        preview_url: message.previewUrl ?? false,
+      },
+    };
+
+  if (message.kind === "buttons")
+    return {
+      ...envelope,
+      type: "interactive",
+      interactive: {
+        type: "button",
+        ...(message.header
+          ? {
+              header: {
+                type: "text",
+                text: clip(message.header, META_LIMITS.header),
+              },
+            }
+          : {}),
+        body: { text: clip(message.body, META_LIMITS.interactiveBody) },
+        ...(message.footer
+          ? { footer: { text: clip(message.footer, META_LIMITS.footer) } }
+          : {}),
+        action: {
+          buttons: message.buttons
+            .slice(0, META_LIMITS.buttonCount)
+            .map((button) => ({
+              type: "reply",
+              reply: {
+                id: clip(button.id, META_LIMITS.replyId),
+                title: clip(button.title, META_LIMITS.buttonTitle),
+              },
+            })),
+        },
+      },
+    };
+
+  return {
+    ...envelope,
+    type: "interactive",
+    interactive: {
+      type: "list",
+      ...(message.header
+        ? {
+            header: {
+              type: "text",
+              text: clip(message.header, META_LIMITS.header),
+            },
+          }
+        : {}),
+      body: { text: clip(message.body, META_LIMITS.interactiveBody) },
+      ...(message.footer
+        ? { footer: { text: clip(message.footer, META_LIMITS.footer) } }
+        : {}),
+      action: {
+        button: clip(message.button, META_LIMITS.listButton),
+        sections: [
+          {
+            title: clip(message.sectionTitle ?? "Options", META_LIMITS.header),
+            rows: message.rows
+              .slice(0, META_LIMITS.listRows)
+              .map((row) => ({
+                id: clip(row.id, META_LIMITS.replyId),
+                title: clip(row.title, META_LIMITS.listRowTitle),
+                ...(row.description
+                  ? {
+                      description: clip(
+                        row.description,
+                        META_LIMITS.listRowDescription,
+                      ),
+                    }
+                  : {}),
+              })),
+          },
+        ],
+      },
+    },
+  };
+};
+
 /** HTTP transport for Meta's WhatsApp Cloud API. */
 @Injectable()
 export class MetaCloudWhatsAppClient {
@@ -624,6 +782,151 @@ export class MetaCloudWhatsAppClient {
       const causeCode = (error as { cause?: { code?: unknown } } | undefined)?.cause?.code;
       const neverSent =
         !timedOut && typeof causeCode === "string" && NOT_SENT_CAUSES.has(causeCode);
+      this.logger.error(
+        JSON.stringify({
+          event: "whatsapp.provider_error",
+          ...diagnostics,
+          httpStatus: null,
+          providerStatus: neverSent ? "network_error" : "unconfirmed",
+        }),
+      );
+      if (neverSent)
+        throw new WhatsAppIntegrationError(
+          "Meta WhatsApp request failed before reaching Meta",
+          "PROVIDER_UNAVAILABLE",
+          true,
+          undefined,
+          { cause: error },
+        );
+      throw new WhatsAppDeliveryUnconfirmedError(META_CLOUD_PROVIDER_NAME, {
+        cause: error,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  /**
+   * Sends one conversational message: plain text, an interactive button set,
+   * or an interactive list.
+   *
+   * These are *session* messages, not templates. Meta only delivers them
+   * inside the 24-hour customer service window opened by the guest's own last
+   * message, so this is only ever called in reply to an inbound message — the
+   * conversation engine checks the window before calling. Nothing here is
+   * template-approved and nothing here can be used for proactive outreach.
+   *
+   * Kept apart from `sendTransactionalTemplate` so the approved transactional
+   * path is left exactly as it is. A request left without a confirming
+   * response raises WhatsAppDeliveryUnconfirmedError for the same reason it
+   * does there: Meta may already have delivered it, and a retry would put a
+   * second copy in the guest's chat.
+   */
+  async sendConversationalMessage(
+    request: Pick<WhatsAppProviderRequest, "to" | "correlationId" | "idempotencyKey">,
+    message: MetaConversationalMessage,
+  ): Promise<WhatsAppProviderResult> {
+    const {
+      graphBaseUrl,
+      apiVersion,
+      accessToken,
+      phoneNumberId,
+      businessAccountId,
+      timeoutMs,
+    } = this.config.metaCloud;
+    if (!apiVersion || !accessToken || !phoneNumberId || !businessAccountId)
+      throw new WhatsAppIntegrationError(
+        "Meta WhatsApp Cloud API configuration is incomplete",
+        "CONFIGURATION_INVALID",
+      );
+    const number = normalizeWhatsAppNumber(request.to);
+    if (!number)
+      throw new WhatsAppIntegrationError(
+        "WhatsApp recipient number is invalid",
+        "INVALID_RECIPIENT",
+      );
+
+    const payload = buildConversationalPayload(number, message);
+    // Message bodies carry the guest's own booking details, so only the shape
+    // is logged — never the text, the row titles or the number in full.
+    const diagnostics = {
+      provider: META_CLOUD_PROVIDER_NAME,
+      requestId: request.correlationId || request.idempotencyKey,
+      method: "POST",
+      messageKind: message.kind,
+      optionCount:
+        message.kind === "list"
+          ? message.rows.length
+          : message.kind === "buttons"
+            ? message.buttons.length
+            : 0,
+      maskedNumber: maskWhatsAppNumber(number),
+    } as const;
+
+    this.logger.log(
+      JSON.stringify({
+        event: "whatsapp.provider_request",
+        ...diagnostics,
+        providerStatus: "pending",
+      }),
+    );
+
+    const abort = new AbortController();
+    const timeout = setTimeout(() => abort.abort(), timeoutMs);
+    try {
+      const response = await fetch(
+        `${graphBaseUrl}/${apiVersion}/${phoneNumberId}/messages`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "content-type": "application/json",
+            accept: "application/json",
+          },
+          body: JSON.stringify(payload),
+          signal: abort.signal,
+        },
+      );
+      const body = (await response
+        .json()
+        .catch(() => ({}))) as MetaCloudResponse;
+      if (!response.ok) {
+        const error = this.classify(response.status);
+        this.logger.warn(
+          JSON.stringify({
+            event: "whatsapp.provider_response",
+            ...diagnostics,
+            httpStatus: response.status,
+            providerStatus: error.retryable ? "transient_error" : "rejected",
+            code: error.code,
+          }),
+        );
+        throw error;
+      }
+      const messageId = body.messages?.[0]?.id;
+      this.logger.log(
+        JSON.stringify({
+          event: "whatsapp.provider_accepted",
+          ...diagnostics,
+          httpStatus: response.status,
+          providerStatus: "accepted",
+        }),
+      );
+      return {
+        status: "accepted",
+        provider: META_CLOUD_PROVIDER_NAME,
+        providerMessageId:
+          typeof messageId === "string" ? messageId : undefined,
+      };
+    } catch (error) {
+      if (error instanceof WhatsAppIntegrationError) throw error;
+      const timedOut = abort.signal.aborted;
+      const causeCode = (error as { cause?: { code?: unknown } } | undefined)
+        ?.cause?.code;
+      const neverSent =
+        !timedOut &&
+        typeof causeCode === "string" &&
+        NOT_SENT_CAUSES.has(causeCode);
       this.logger.error(
         JSON.stringify({
           event: "whatsapp.provider_error",

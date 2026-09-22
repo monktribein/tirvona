@@ -247,60 +247,33 @@ export class BookingPricingService {
     }
     const donationAmount = 0;
     const originalAmount = basePrice + servicesPrice;
-    const extraGuestAmount =
-      Math.max(0, dto.guestsCount - 2) * 200 * dates.length;
+    // Guests are already capped at the selected rooms' capacity above, so
+    // every guest is covered by the room rate; there is no extra-guest charge.
+    const extraGuestAmount = 0;
 
-    const propertyType = (
-      (ashram as any)?.ashramType ||
-      (ashram as any)?.listingType ||
-      (ashram as any)?.type ||
-      ""
-    ).toLowerCase();
-    const isHotel =
-      propertyType.includes("hotel") ||
-      ((ashram as any)?.name || "").toLowerCase().includes("hotel");
-
-    let platformFee = 0;
-    let gstAmount = 0;
-    let gstPercent = 0;
-
-    if (isHotel) {
-      // Hotel Pricing Rule: 10% Platform Fee + 2% GST = 12% Total Platform Cut
-      platformFee = roundMoney(originalAmount * 0.10);
-      gstAmount = roundMoney(originalAmount * 0.02);
-      gstPercent = 2;
-    } else {
-      // Ashram Pricing Rule: Standard platform fee & GST
-      platformFee = resolvePlatformFee({
-        settings: settings?.platformFee,
-        scope: "ashram_booking",
-        baseAmount: originalAmount,
-        policyPercent: policy?.platformFeePercent,
-      });
-      gstPercent = Number(
-        settings?.platformFeeGstRate ?? PLATFORM_FEE_GST_PERCENT,
-      );
-      gstAmount = platformFeeGst(platformFee, gstPercent);
-    }
+    // The platform fee and its GST come only from the admin Platform Fee
+    // settings; a disabled or out-of-scope fee charges nothing, and GST is
+    // levied on the platform fee alone.
+    const platformFee = resolvePlatformFee({
+      settings: settings?.platformFee,
+      scope: "ashram_booking",
+      baseAmount: originalAmount,
+      policyPercent: policy?.platformFeePercent,
+    });
+    const gstPercent =
+      platformFee > 0
+        ? Number(settings?.platformFeeGstRate ?? PLATFORM_FEE_GST_PERCENT)
+        : 0;
+    const gstAmount = platformFeeGst(platformFee, gstPercent);
 
     const grossPayable = originalAmount + extraGuestAmount + platformFee + gstAmount;
 
     let coupon: any = null;
     let discountAmount = 0;
-    const inputCode = (dto.promoCode || "").trim().toUpperCase();
-
-    if (inputCode === "TEST1") {
-      coupon = {
-        _id: "test-1inr-coupon-id",
-        title: "Test Coupon (₹1 Payment Testing)",
-        promoCode: "TEST1",
-        discountType: "Test ₹1",
-        discountValue: 1,
-        minimumBookingAmount: 0,
-        status: "active",
-      };
-      discountAmount = Math.max(0, grossPayable - 1);
-    } else if (dto.promoCode || dto.appliedOfferId) {
+    // Every discount comes from a stored coupon. There is deliberately no
+    // built-in code that overrides the total: a hard-coded "test" coupon in
+    // this path would let anyone who learns it pay ₹1 for any stay.
+    if (dto.promoCode || dto.appliedOfferId) {
       coupon = await this.coupons
         .findOne({
           ...(dto.appliedOfferId
