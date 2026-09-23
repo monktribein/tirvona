@@ -268,6 +268,37 @@ export class ParkingDiscoveryService {
     );
   }
 
+  /**
+   * Prices a slot exactly as `ParkingPublicController.quote` does — the same
+   * location/slot-type lookup, the same `ParkingPricingService.quote`. Shared
+   * here so a second caller (WhatsApp) cannot compute a different price for
+   * the same request.
+   */
+  async quote(dto: {
+    locationId: string;
+    slotTypeId: string;
+    vehicleType: string;
+    entryAt: string;
+    exitAt: string;
+  }): Promise<
+    | { ok: true; quote: any }
+    | { ok: false; code?: string; message: string }
+  > {
+    const [location, slotType] = await Promise.all([
+      this.locations.findOne({ _id: dto.locationId, status: "active" }),
+      this.slotTypes.findOne({
+        _id: dto.slotTypeId,
+        locationId: dto.locationId,
+        isActive: true,
+      }),
+    ]);
+    if (!location) return { ok: false, message: "Parking not found." };
+    if (!slotType) return { ok: false, message: "Parking area not found." };
+    const result = await this.pricing.quote(location, slotType, dto);
+    if (!result.ok) return { ok: false, code: result.code, message: result.message };
+    return { ok: true, quote: result.quote };
+  }
+
   async vehicleTypeList(): Promise<any[]> {
     const rows = await this.vehicleTypes
       .find({ isActive: true })

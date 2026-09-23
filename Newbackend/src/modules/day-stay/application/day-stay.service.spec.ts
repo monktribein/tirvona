@@ -9,6 +9,10 @@ import { DayStayProductsService } from "../application/day-stay-products.service
 import { DayStayVendorService } from "../application/day-stay-vendor.service";
 import { TransactionService } from "../../../common/database/transaction.service";
 
+/** A genuine Razorpay checkout signature under the test key secret. */
+const sign = (orderId: string, paymentId: string, secret = "mock_secret") =>
+  createHmac("sha256", secret).update(`${orderId}|${paymentId}`).digest("hex");
+
 // Mirrors DayStayBookingService's own signature computation so tests can
 // simulate a real, valid Razorpay checkout callback instead of relying on
 // the (now-closed) "missing signature" bypass.
@@ -52,7 +56,11 @@ describe("DayStay Engine Unit & Integration Tests", () => {
     create: jest.fn(),
   };
 
+  /** Per-test config overrides; anything unset reads as "mock_secret". */
+  let configOverrides: Record<string, string | undefined> = {};
+
   beforeEach(async () => {
+    configOverrides = {};
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         DayStayInventoryService,
@@ -71,7 +79,11 @@ describe("DayStay Engine Unit & Integration Tests", () => {
         },
         {
           provide: ConfigService,
-          useValue: { get: jest.fn().mockReturnValue("mock_secret") },
+          useValue: {
+            get: jest.fn((key: string) =>
+              key in configOverrides ? configOverrides[key] : "mock_secret",
+            ),
+          },
         },
       ],
     }).compile();
@@ -411,7 +423,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
           bookingId: "BK-DAY-001",
           razorpayOrderId: "order_rzp_001",
           razorpayPaymentId: "pay_rzp_001",
-          razorpaySignature: validSignature("order_rzp_001", "pay_rzp_001"),
+          razorpaySignature: sign("order_rzp_001", "pay_rzp_001"),
         },
         "cust_01",
       );
@@ -441,7 +453,10 @@ describe("DayStay Engine Unit & Integration Tests", () => {
 
     it("A3. Browser confirmation for someone else's booking is rejected", async () => {
       const doc = createPendingBookingDoc();
-      mockBookingModel.findOne.mockResolvedValue(doc);
+      // Ownership is enforced in the query filter, so the mock must honour it.
+      mockBookingModel.findOne.mockImplementation((filter: any) =>
+        Promise.resolve(filter?.customerId === doc.customerId ? doc : null),
+      );
 
       await expect(
         bookingService.confirmPayment(
@@ -449,7 +464,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
             bookingId: "BK-DAY-001",
             razorpayOrderId: "order_rzp_001",
             razorpayPaymentId: "pay_rzp_001",
-            razorpaySignature: validSignature("order_rzp_001", "pay_rzp_001"),
+            razorpaySignature: sign("order_rzp_001", "pay_rzp_001"),
           },
           "someone_else",
         ),
@@ -484,6 +499,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
           bookingId: "BK-DAY-001",
           razorpayOrderId: "order_rzp_001",
           razorpayPaymentId: "pay_rzp_001",
+          razorpaySignature: sign("order_rzp_001", "pay_rzp_001"),
         },
         "cust_01",
       );
@@ -539,7 +555,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
             bookingId: "BK-DAY-001",
             razorpayOrderId: "order_rzp_001",
             razorpayPaymentId: "pay_rzp_001",
-            razorpaySignature: validSignature("order_rzp_001", "pay_rzp_001"),
+            razorpaySignature: sign("order_rzp_001", "pay_rzp_001"),
           },
           "cust_01",
         ),
@@ -625,7 +641,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
             bookingId: "BK-DAY-001",
             razorpayOrderId: "order_rzp_001",
             razorpayPaymentId: "pay_rzp_001",
-            razorpaySignature: validSignature("order_rzp_001", "pay_rzp_001"),
+            razorpaySignature: sign("order_rzp_001", "pay_rzp_001"),
           },
           "cust_01",
         ),
@@ -636,6 +652,82 @@ describe("DayStay Engine Unit & Integration Tests", () => {
       expect(webhookResult).toBe(true);
       expect(doc.status).toBe("confirmed");
       expect(doc.paymentStatus).toBe("fully_paid");
+    });
+
+    describe("client confirmation cannot settle a booking without a real payment", () => {
+      const attempt = (dto: Record<string, string | undefined>, customer = "cust_01") =>
+        bookingService.confirmPayment(
+          {
+            bookingId: "BK-DAY-001",
+            razorpayOrderId: "order_rzp_001",
+            razorpayPaymentId: "pay_rzp_001",
+            ...dto,
+          } as any,
+          customer,
+        );
+
+      beforeEach(() => {
+        mockNotificationModel.findOne.mockResolvedValue(null);
+      });
+
+      it("refuses a confirmation with no signature", async () => {
+        const doc = createPendingBookingDoc();
+        mockBookingModel.findOne.mockResolvedValue(doc);
+        await expect(attempt({})).rejects.toThrow(/signature is required/);
+        expect(doc.status).toBe("pending");
+        expect(doc.save).not.toHaveBeenCalled();
+      });
+
+      it.each([
+        ["a mock_ payment id", { razorpayPaymentId: "mock_1", razorpaySignature: "x" }],
+        ["a pay_sim_ payment id", { razorpayPaymentId: "pay_sim_1", razorpaySignature: "x" }],
+        ["the demo signature", { razorpaySignature: "demo_simulated_sig" }],
+        ["a forged signature", { razorpaySignature: sign("order_rzp_001", "pay_rzp_001", "wrong") }],
+      ])("refuses %s", async (_label, dto) => {
+        const doc = createPendingBookingDoc();
+        mockBookingModel.findOne.mockResolvedValue(doc);
+        await expect(attempt(dto)).rejects.toThrow(/signature/);
+        expect(doc.paymentStatus).toBe("pending");
+        expect(doc.save).not.toHaveBeenCalled();
+      });
+
+      it("refuses a genuine payment for a different Razorpay order", async () => {
+        const doc = createPendingBookingDoc();
+        mockBookingModel.findOne.mockResolvedValue(doc);
+        await expect(
+          attempt({
+            razorpayOrderId: "order_other",
+            razorpaySignature: sign("order_other", "pay_rzp_001"),
+          }),
+        ).rejects.toThrow(/does not belong to this booking/);
+        expect(doc.save).not.toHaveBeenCalled();
+      });
+
+      it("only ever looks up the caller's own booking", async () => {
+        mockBookingModel.findOne.mockResolvedValue(null);
+        await expect(
+          attempt({ razorpaySignature: sign("order_rzp_001", "pay_rzp_001") }, "someone_else"),
+        ).rejects.toThrow(/not found/i);
+        expect(mockBookingModel.findOne).toHaveBeenLastCalledWith(
+          expect.objectContaining({ customerId: "someone_else" }),
+        );
+      });
+
+      it("refuses in production when no Razorpay secret is configured", async () => {
+        configOverrides = { razorpayKeySecret: undefined, nodeEnv: "production" };
+        const doc = createPendingBookingDoc();
+        mockBookingModel.findOne.mockResolvedValue(doc);
+        await expect(attempt({})).rejects.toThrow(/not configured/);
+        expect(doc.save).not.toHaveBeenCalled();
+      });
+
+      it("allows an unsigned confirmation only in local development without a secret", async () => {
+        configOverrides = { razorpayKeySecret: undefined, nodeEnv: "development" };
+        const doc = createPendingBookingDoc();
+        mockBookingModel.findOne.mockResolvedValue(doc);
+        const res = await attempt({});
+        expect(res.status).toBe("confirmed");
+      });
     });
   });
 });

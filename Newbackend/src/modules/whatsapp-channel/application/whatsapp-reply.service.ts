@@ -7,6 +7,7 @@ import type {
   MetaReplyButton,
 } from "../../../integrations/whatsapp/providers/meta-cloud/meta-cloud-whatsapp.client";
 import { WhatsAppDeliveryUnconfirmedError } from "../../../integrations/whatsapp/errors/whatsapp.errors";
+import { maskWhatsAppNumber } from "../../../integrations/whatsapp/utils/whatsapp-phone.util";
 import {
   WHATSAPP_TEST_MODE_BLOCK_REASON,
   isAllowedTestRecipient,
@@ -87,6 +88,17 @@ export class WhatsAppReplyService {
       );
       return;
     }
+    // Logged before the call, so a reply that was attempted can be told apart
+    // from one that was never generated at all. The provider logs the HTTP
+    // result under the same correlation id.
+    this.logger.log(
+      JSON.stringify({
+        event: "whatsapp.reply_sending",
+        messageKind: message.kind,
+        correlationId,
+        maskedNumber: maskWhatsAppNumber(phone),
+      }),
+    );
     try {
       await this.meta.sendConversationalMessage(
         { to: phone, correlationId, idempotencyKey: correlationId },

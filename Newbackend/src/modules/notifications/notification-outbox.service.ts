@@ -23,6 +23,15 @@ const WHATSAPP_RECOVERY_WINDOW_MS = 60 * 60 * 1_000;
  * as `skipped` so no guest is messaged about a long-past booking.
  */
 const ACTIVATION_WINDOW_MS = 60 * 60 * 1_000;
+/**
+ * How long a claim on an outbox row is honoured before another poller may
+ * take it.
+ *
+ * Comfortably longer than the worker's five attempts (5s backoff, doubling —
+ * under three minutes all told), and short enough that a poller which died
+ * between claiming a row and queueing it cannot strand the message.
+ */
+const DISPATCH_CLAIM_TTL_MS = 15 * 60 * 1_000;
 
 interface EnqueueSummary {
   found: number;
@@ -46,6 +55,43 @@ export class NotificationOutboxService implements OnApplicationBootstrap {
     @InjectModel(EVENT_MODEL.Notification) private readonly event: Model<any>,
     private readonly schedulerRegistry: SchedulerRegistry,
   ) {}
+
+  /**
+   * Takes this row for delivery, atomically, and says whether we got it.
+   *
+   * A BullMQ job id only deduplicates within one queue prefix. Two backends
+   * that share this database but not a queue namespace — a developer's
+   * machine running alongside the deployed backend — would each find the same
+   * `queued` row, each enqueue it into its own queue, and the guest would
+   * receive the message twice. The database is the one thing they do share,
+   * so the claim is taken here rather than in the queue.
+   *
+   * A claim older than `DISPATCH_CLAIM_TTL_MS` may be taken again, so a
+   * poller that died between claiming and queueing does not lose the message.
+   */
+  private async claimForDispatch(
+    model: Model<any>,
+    filter: Record<string, unknown>,
+    jobIdField: string,
+    claimedAtField: string,
+    jobId: string,
+  ): Promise<boolean> {
+    const claimed = await model.findOneAndUpdate(
+      {
+        ...filter,
+        $or: [
+          { [claimedAtField]: { $exists: false } },
+          {
+            [claimedAtField]: {
+              $lt: new Date(Date.now() - DISPATCH_CLAIM_TTL_MS),
+            },
+          },
+        ],
+      },
+      { $set: { [jobIdField]: jobId, [claimedAtField]: new Date() } },
+    );
+    return Boolean(claimed);
+  }
 
   async onApplicationBootstrap(): Promise<void> {
     this.logger.log(
@@ -133,6 +179,24 @@ export class NotificationOutboxService implements OnApplicationBootstrap {
     };
     for (const row of rows as any[]) {
       const jobId = `booking-${row._id}-whatsapp-recovery-v1`;
+      // Claimed under its own field: the ordinary dispatch of this same row
+      // is a different delivery and must not block the recovery, or be
+      // blocked by it.
+      if (
+        !(await this.claimForDispatch(
+          this.booking,
+          {
+            _id: row._id,
+            "meta.whatsappStatus": { $nin: ["sent", "unconfirmed"] },
+          },
+          "meta.whatsappRecoveryJobId",
+          "meta.whatsappRecoveryClaimedAt",
+          jobId,
+        ))
+      ) {
+        summary.alreadyRegistered += 1;
+        continue;
+      }
       const existingJob = await this.queue.getJob(jobId);
       if (!existingJob) {
         await this.queue.add(
@@ -166,13 +230,6 @@ export class NotificationOutboxService implements OnApplicationBootstrap {
       } else {
         summary.alreadyRegistered += 1;
       }
-      await this.booking.updateOne(
-        {
-          _id: row._id,
-          "meta.whatsappStatus": { $nin: ["sent", "unconfirmed"] },
-        },
-        { $set: { "meta.whatsappRecoveryJobId": jobId } },
-      );
       this.logger.log(
         JSON.stringify({
           event: "notification.outbox_whatsapp_recovery_enqueued",
@@ -242,6 +299,19 @@ export class NotificationOutboxService implements OnApplicationBootstrap {
     };
     for (const row of rows as any[]) {
       const jobId = `${domain}-${row._id}`;
+      // Another backend sharing this database may already have taken the row.
+      if (
+        !(await this.claimForDispatch(
+          model,
+          { _id: row._id, status: "queued" },
+          "meta.queueJobId",
+          "meta.queueClaimedAt",
+          jobId,
+        ))
+      ) {
+        summary.alreadyRegistered += 1;
+        continue;
+      }
       const existingJob = await this.queue.getJob(jobId);
       if (!existingJob) {
         await this.queue.add(
@@ -280,13 +350,6 @@ export class NotificationOutboxService implements OnApplicationBootstrap {
       } else {
         summary.alreadyRegistered += 1;
       }
-      await model.updateOne(
-        {
-          _id: row._id,
-          status: "queued",
-        },
-        { $set: { "meta.queueJobId": jobId } },
-      );
       this.logger.log(
         JSON.stringify({
           event: "notification.outbox_enqueued",

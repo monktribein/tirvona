@@ -125,3 +125,14 @@ export const openParkingQr = (
 };
 export const hashParkingQr = (token: string): string =>
   createHash("sha256").update(token).digest("hex");
+
+/**
+ * Who owns a parking row, in the two fields every parking collection uses.
+ * Exactly one is set: a website account, or a WhatsApp guest.
+ */
+export const parkingOwnerFields = (
+  owner: { customerId?: unknown; whatsappCustomerId?: unknown },
+): { userId: unknown; whatsappCustomerId: unknown } => ({
+  userId: owner.customerId ?? null,
+  whatsappCustomerId: owner.whatsappCustomerId ?? null,
+});

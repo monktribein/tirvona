@@ -25,13 +25,14 @@ import {
   ParkingRepository,
 } from "../domain/parking.repository";
 import { Inject } from "@nestjs/common";
+import { parkingOwnerFields } from "../domain/parking.utils";
 
 /** Outbox row for a gate transition; the worker loads the booking behind it. */
 const parkingGateNotification = (
   booking: any,
   event: "checked_in" | "checked_out",
 ) => ({
-  userId: booking.customerId,
+  ...parkingOwnerFields(booking),
   bookingId: booking._id,
   event,
   title:
@@ -338,7 +339,7 @@ export class ParkingScanService {
           [
             {
               bookingId: booking._id,
-              userId: booking.customerId,
+              ...parkingOwnerFields(booking),
               partnerId: booking.partnerId,
               amount,
               purpose: "overstay",

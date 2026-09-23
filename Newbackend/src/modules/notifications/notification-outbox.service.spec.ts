@@ -12,6 +12,10 @@ const model = (rows: unknown[], recoveryRows: unknown[] = []) => ({
   })),
   updateOne: jest.fn().mockResolvedValue({ modifiedCount: 1 }),
   updateMany: jest.fn().mockResolvedValue({ modifiedCount: 0 }),
+  // The claim a poller takes on a row before queueing it. A truthy document
+  // means this poller won it; the "another backend got there first" case is
+  // exercised by overriding this to resolve null.
+  findOneAndUpdate: jest.fn().mockResolvedValue({ _id: "claimed" }),
   collection: { collectionName: "test_notifications" },
 });
 
@@ -62,10 +66,54 @@ describe("NotificationOutboxService", () => {
       }),
       expect.objectContaining({ jobId: "booking-notification-1" }),
     );
-    expect(booking.updateOne).toHaveBeenCalledWith(
-      { _id: "notification-1", status: "queued" },
-      { $set: { "meta.queueJobId": "booking-notification-1" } },
+    // The row is claimed in the database, not just in the queue, so a second
+    // backend sharing this database cannot enqueue it as well.
+    expect(booking.findOneAndUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ _id: "notification-1", status: "queued" }),
+      expect.objectContaining({
+        $set: expect.objectContaining({
+          "meta.queueJobId": "booking-notification-1",
+        }),
+      }),
     );
+  });
+
+  it("leaves the row alone when another backend has already claimed it", async () => {
+    // Two deployments share this database but have their own queue prefixes,
+    // so the BullMQ job id cannot deduplicate across them — losing the claim
+    // is the only thing that stops the guest being messaged twice.
+    const booking = model([
+      {
+        _id: "notification-1",
+        userId: "customer-1",
+        bookingId: "booking-1",
+        event: "booking_confirmed",
+        title: "Booking confirmed",
+        message: "Your booking TIR-1001 is confirmed.",
+        channel: "in_app",
+        recipientPhone: "919936968762",
+        meta: {},
+      },
+    ]);
+    booking.findOneAndUpdate.mockResolvedValue(null);
+    const empty = model([]);
+    const queue = {
+      getJob: jest.fn().mockResolvedValue(null),
+      add: jest.fn().mockResolvedValue({ id: "job" }),
+    };
+    const service = new NotificationOutboxService(
+      queue as never,
+      booking as never,
+      empty as never,
+      empty as never,
+      empty as never,
+      empty as never,
+      schedulerRegistry as never,
+    );
+
+    await service.dispatch();
+
+    expect(queue.add).not.toHaveBeenCalled();
   });
 
   it("does not duplicate an existing deterministic BullMQ job", async () => {
