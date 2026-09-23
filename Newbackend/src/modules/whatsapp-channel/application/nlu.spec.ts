@@ -22,6 +22,15 @@ describe("intent classification", () => {
       expect(understand(value, NOW).intent).toBe("greeting");
   });
 
+  it("recognises stretched and misspelled greetings", () => {
+    for (const value of ["hii", "Hii", "hiii", "heyy", "helo", "hlo", "hy", "hlw", "hellooo"])
+      expect(understand(value, NOW).intent).toBe("greeting");
+  });
+
+  it("does not mistake 'hai' (Hindi for 'is') for a greeting", () => {
+    expect(understand("theek hai", NOW).intent).toBe("affirm");
+  });
+
   it("recognises a stay request across languages", () => {
     for (const value of [
       "I want to book a room",
@@ -157,6 +166,16 @@ describe("place extraction", () => {
   it("returns nothing when there is no place left after the noise", () => {
     expect(extractPlace("room chahiye")).toBeNull();
     expect(extractPlace("kal ke liye")).toBeNull();
+  });
+
+  it("never reads a stretched or misspelled greeting as a place", () => {
+    for (const value of ["hiii", "heyy", "helo", "hellooo", "hlw"])
+      expect(extractPlace(value)).toBeNull();
+    expect(extractPlace("hiii Vrindavan")).toBe("Vrindavan");
+  });
+
+  it("keeps Devanagari vowel signs in a Hindi place name", () => {
+    expect(extractPlace("वृंदावन में कमरा चाहिए")).toContain("वृंदावन");
   });
 });
 

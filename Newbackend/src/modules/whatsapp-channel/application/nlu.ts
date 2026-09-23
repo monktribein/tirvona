@@ -83,6 +83,34 @@ const GREETING = [
   "नमस्ते", "नमस्कार", "प्रणाम", "हाय", "हैलो",
 ];
 
+/**
+ * Common shortenings and misspellings of the greetings above. "hai" is
+ * deliberately absent: it is also Hindi for "is", and "theek hai" must stay
+ * an affirmation rather than restart the conversation.
+ */
+const GREETING_VARIANTS = ["helo", "hlo", "hy", "hlw"];
+
+/**
+ * Collapses a run of the same letter to one, so a stretched greeting ("hii",
+ * "heyyy", "hellooo") compares equal to the word it stretches.
+ */
+const squeeze = (word: string): string => word.replace(/(\p{L})\1+/gu, "$1");
+
+const GREETING_TOKENS = new Set(
+  [...GREETING, ...GREETING_VARIANTS].map((term) => squeeze(term.toLowerCase())),
+);
+
+/** True for a word that is a greeting, however it was stretched or shortened. */
+const isGreetingToken = (token: string): boolean =>
+  GREETING_TOKENS.has(squeeze(token.toLowerCase()));
+
+/** Every word of a message, keeping Devanagari vowel signs attached. */
+const wordsOf = (text: string): string[] =>
+  String(text ?? "")
+    .toLowerCase()
+    .split(/[^\p{L}\p{M}\p{N}]+/u)
+    .filter(Boolean);
+
 const STAY = [
   "room", "rooms", "stay", "stays", "kamra", "kamre", "ashram", "asharam",
   "dharamshala", "dharmshala", "homestay", "guesthouse", "accommodation",
@@ -538,12 +566,15 @@ export const extractPlace = (text: string): string | null => {
   const relevant = parts.length > 1 ? parts[parts.length - 1] : raw;
 
   const tokens = relevant
-    .replace(/[^\p{L}\p{N}\s'-]/gu, " ")
+    // \p{M} keeps Devanagari vowel signs: without it "कमरा" became "कमर".
+    .replace(/[^\p{L}\p{M}\p{N}\s'-]/gu, " ")
     .split(/\s+/)
     .filter(Boolean)
     .filter((token) => !/\d/.test(token))
     .filter((token) => token.length > 1)
     .filter((token) => !PLACE_STOPWORDS.has(token.toLowerCase()))
+    // "hiii" or "heyy" is a greeting, never a destination.
+    .filter((token) => !isGreetingToken(token))
     .filter((token) => !(token.toLowerCase() in NUMBER_WORDS));
 
   if (!tokens.length) return null;
@@ -980,7 +1011,8 @@ export const understand = (text: string, from = new Date()): Understanding => {
     if (has(value, ...STAY)) return "search_stay";
     if (has(value, ...HELP)) return "help";
     if (has(value, "menu", "options", "vikalp", "मेनू", "विकल्प")) return "menu";
-    if (has(value, ...GREETING)) return "greeting";
+    if (has(value, ...GREETING) || wordsOf(value).some(isGreetingToken))
+      return "greeting";
     if (has(value, ...DENY)) return "deny";
     if (has(value, ...AFFIRM)) return "affirm";
     return "unknown";
