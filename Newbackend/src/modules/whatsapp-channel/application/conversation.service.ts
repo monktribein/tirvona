@@ -315,9 +315,15 @@ export class ConversationService {
         });
 
       // Language follows the guest: what they wrote this time, else what the
-      // conversation was already in, else what we remembered about them.
+      // conversation was already in, else what we remembered about them. A
+      // tapped row or button carries our own title, not the guest's words —
+      // "Stay book karein" read as English — so it never changes the language.
+      const typed =
+        !message.replyId &&
+        message.messageType !== "interactive" &&
+        message.messageType !== "button";
       const language = resolveReplyLanguage(
-        message.text,
+        typed ? message.text : "",
         session.language,
         customer.language,
       );
@@ -529,7 +535,14 @@ export class ConversationService {
         bookings: "my_bookings",
         help: "help",
       };
-      return this.routeIntent(context, intents[value] ?? "menu");
+      // The row title ("🏠 Stay book karein") is our own copy, not something
+      // the guest typed. Handing it on would have the slot reader take
+      // "karein" for a place and search for it, so the flow starts from
+      // nothing, exactly as if the guest had asked for it with no details.
+      return this.routeIntent(
+        { ...context, message: { ...message, text: "" } },
+        intents[value] ?? "menu",
+      );
     }
 
     if (kind === "location") {

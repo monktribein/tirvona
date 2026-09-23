@@ -311,6 +311,74 @@ describe("resolving to an existing website account", () => {
   });
 });
 
+describe("menu taps and greetings (reported 'near karein' bug)", () => {
+  const tap = (replyId: string, title: string) =>
+    message({ messageType: "interactive", replyId, text: title });
+
+  it.each([
+    ["Hinglish", "🏠 Stay book karein", "hinglish"],
+    ["Hindi", "🏠 कमरा बुक करें", "hi"],
+    ["English", "🏠 Book a stay", "en"],
+  ] as const)(
+    "a tapped %s stay row asks for the place instead of searching its title",
+    async (_label, title, language) => {
+      const { service, sessions, actions, reply } = build();
+      seedSession(sessions, { language });
+      await service.handle(tap("menu:stay", title));
+      expect(actions.searchStays).not.toHaveBeenCalled();
+      expect(allText(reply)).not.toMatch(/karein|कमर कर|couldn't find|nahi mila|नहीं मिला/i);
+      expect(allText(reply)).toMatch(/jagah|place|जगह/i);
+      expect(sessions.current().flow).toBe("stay_booking");
+      expect(sessions.current().data.location).toBeUndefined();
+    },
+  );
+
+  it("keeps the conversation's language when a row title looks like English", async () => {
+    const { service, sessions, identity } = build();
+    seedSession(sessions, { language: "hinglish" });
+    await service.handle(tap("menu:stay", "🏠 Stay book karein"));
+    expect(sessions.current().language).toBe("hinglish");
+    expect(identity.setLanguage).not.toHaveBeenCalled();
+  });
+
+  it("does not change the language on a button tap either", async () => {
+    const { service, sessions } = build();
+    seedSession(sessions, { language: "hi" });
+    await service.handle(
+      message({ messageType: "button", replyId: "menu:help", text: "Get support now please" }),
+    );
+    expect(sessions.current().language).toBe("hi");
+  });
+
+  it.each(["hii", "hiii", "heyy", "helo", "hlo", "hy", "hlw"])(
+    "'%s' during an active stay flow restarts at the greeting, not the old search",
+    async (greeting) => {
+      const { service, sessions, actions, reply } = build();
+      seedSession(sessions, {
+        flow: "stay_booking",
+        data: { location: "karein" },
+      });
+      await service.handle(message({ text: greeting }));
+      expect(actions.searchStays).not.toHaveBeenCalled();
+      expect(reply.list).toHaveBeenCalled();
+      expect(allText(reply)).toContain("Namaste");
+      expect(sessions.current().flow).toBeNull();
+      expect(sessions.current().data).toEqual({});
+    },
+  );
+
+  it("replays the reported sequence: Hi, tap stay, hii", async () => {
+    const { service, sessions, actions, reply } = build();
+    await service.handle(message({ text: "Hi" }));
+    await service.handle(tap("menu:stay", "🏠 Stay book karein"));
+    await service.handle(message({ text: "hii" }));
+    expect(actions.searchStays).not.toHaveBeenCalled();
+    expect(allText(reply)).not.toMatch(/karein/);
+    expect(sessions.current().language).toBe("hinglish");
+    expect(sessions.current().flow).toBeNull();
+  });
+});
+
 describe("stay booking flow — slot filling", () => {
   it("asks only for what the opening message did not give", async () => {
     // "Mujhe kal Prem Mandir ke paas 2 din ke liye room chahiye, 3 log hain"
