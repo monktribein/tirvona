@@ -32,6 +32,7 @@ import type { ParkingAccess } from "./parking-access.service";
 import { ParkingAccessService } from "./parking-access.service";
 import { ParkingPricingService } from "./parking-pricing.service";
 import { ParkingReportService } from "./parking-report.service";
+import { parkingOwnerFields } from "../domain/parking.utils";
 
 const assertParkingPhotos = (images: unknown, coverImage: unknown): void => {
   const unique = new Set(
@@ -680,7 +681,7 @@ export class ParkingManagementService {
         await this.notifications.create(
           [
             {
-              userId: booking.customerId,
+              ...parkingOwnerFields(booking),
               bookingId: booking._id,
               event: "expired",
               title: "Parking reservation expired",
@@ -743,7 +744,7 @@ export class ParkingManagementService {
         await this.notifications.create(
           [
             {
-              userId: booking.customerId,
+              ...parkingOwnerFields(booking),
               bookingId: booking._id,
               event: "no_show",
               title: "Parking booking marked no-show",

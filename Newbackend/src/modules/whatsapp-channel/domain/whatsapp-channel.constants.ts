@@ -27,6 +27,7 @@ export {
 export const WHATSAPP_FLOWS = [
   "stay_booking",
   "parking_booking",
+  "parking_cancellation",
   "aarti_booking",
   "event_registration",
   "my_bookings",

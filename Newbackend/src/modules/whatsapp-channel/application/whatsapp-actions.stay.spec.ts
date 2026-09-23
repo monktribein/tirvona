@@ -23,25 +23,21 @@ const account = {
   status: "active",
 } as any;
 
-const roomsModel = (rows: any[]) => ({
-  find: jest.fn(() => {
-    const q: any = { select: () => q, sort: () => q, limit: () => q, lean: async () => rows };
-    return q;
-  }),
-});
-
 const build = (
   opts: {
     rooms?: any[];
     calendar?: (roomId: string) => any;
     quote?: jest.Mock;
     validate?: jest.Mock;
+    destinations?: { city: string; state: string; count: number }[];
   } = {},
 ) => {
   const ashrams: any = {
     publicList: jest.fn(),
     publicCalendar: jest.fn(async (roomId: string) => opts.calendar?.(roomId) ?? []),
-    detail: jest.fn(),
+    // The website's own stay-page record: approved property, active rooms.
+    detail: jest.fn(async () => ({ ashram: { _id: "ashram-1" }, rooms: opts.rooms ?? [] })),
+    destinations: jest.fn(async () => opts.destinations ?? []),
   };
   const bookings: any = {
     quote:
@@ -69,16 +65,27 @@ const build = (
       reference: "TRV-1",
     })),
   };
+  const parkingDiscovery: any = { search: jest.fn(), detail: jest.fn(), quote: jest.fn() };
+  const parkingBookings: any = {
+    createFor: jest.fn(),
+    listMineFor: jest.fn(),
+    getFor: jest.fn(),
+    refundPreviewFor: jest.fn(),
+    cancelFor: jest.fn(),
+  };
+  const parkingLinks: any = { issue: jest.fn() };
   const service = new WhatsAppActionsService(
     ashrams,
     bookings,
     offers,
     refunds,
     links,
+    parkingDiscovery,
+    parkingBookings,
+    parkingLinks,
     { get: jest.fn() } as any,
-    roomsModel(opts.rooms ?? []) as any,
   );
-  return { service, ashrams, bookings, offers, refunds, links };
+  return { service, ashrams, bookings, offers, refunds, links, parkingDiscovery, parkingBookings, parkingLinks };
 };
 
 const stay = (extra: Record<string, unknown> = {}) => ({
@@ -285,6 +292,110 @@ describe("roomsFor reads availability from the public calendar", () => {
     const { service, ashrams } = build({ rooms: [room("r1")], calendar: () => days(1, 1) });
     await service.roomsFor("ashram-1", dates);
     expect(ashrams.publicCalendar).toHaveBeenCalledWith("r1", "2030-10-01", "2030-10-02");
+  });
+});
+
+describe("roomsFor reads live room data the way the website's stay page does", () => {
+  it("returns every active category, cheapest selling price first — none dropped past ten", async () => {
+    const rooms = Array.from({ length: 13 }, (_, i) => ({
+      _id: `r${i}`,
+      name: `Room ${i}`,
+      basePrice: 3000,
+      sellingPrice: 3000 - i * 100,
+    }));
+    const { service } = build({ rooms });
+    const rows = await service.roomsFor("ashram-1");
+    expect(rows).toHaveLength(13);
+    expect(rows[0]._id).toBe("r12");
+    expect(rows[0].sellingPrice).toBe(1800);
+  });
+
+  it("is read through AshramsService.detail, which only serves an approved, live property", async () => {
+    const { service, ashrams } = build();
+    ashrams.detail.mockRejectedValue(new NotFoundException("Stay not found"));
+    await expect(service.roomsFor("unapproved-or-deleted")).resolves.toEqual([]);
+    expect(ashrams.detail).toHaveBeenCalledWith("unapproved-or-deleted");
+  });
+
+  it("sees a room the owner adds, and stops offering one they disable, on the very next call", async () => {
+    const { service, ashrams } = build();
+    ashrams.detail
+      .mockResolvedValueOnce({ ashram: {}, rooms: [{ _id: "r1", name: "Old" }] })
+      .mockResolvedValueOnce({
+        ashram: {},
+        rooms: [{ _id: "r2", name: "New" }],
+      });
+    expect((await service.roomsFor("ashram-1")).map((r) => r._id)).toEqual(["r1"]);
+    expect((await service.roomsFor("ashram-1")).map((r) => r._id)).toEqual(["r2"]);
+  });
+
+  it("surfaces a database failure instead of pretending there are no rooms", async () => {
+    const { service, ashrams } = build();
+    ashrams.detail.mockRejectedValue(new Error("connection reset"));
+    await expect(service.roomsFor("ashram-1")).rejects.toThrow("connection reset");
+  });
+});
+
+describe("searchStays pages through the website's own search", () => {
+  it("asks publicList for the requested page and reports how many pages exist", async () => {
+    const { service, ashrams } = build();
+    ashrams.publicList.mockResolvedValue({
+      data: [{ _id: "a9", name: "Ninth" }],
+      page: 2,
+      totalPages: 3,
+    });
+    const rows = await service.searchStays({ place: "Vrindavan", page: 2 });
+    expect(ashrams.publicList).toHaveBeenCalledWith(
+      expect.objectContaining({ query: "Vrindavan", page: 2, limit: 8 }),
+    );
+    expect(rows.map((r) => r._id)).toEqual(["a9"]);
+    expect(rows.page).toBe(2);
+    expect(rows.totalPages).toBe(3);
+  });
+
+  it("runs the query every time, so a stay approved a minute ago is in the next search", async () => {
+    const { service, ashrams } = build();
+    ashrams.publicList
+      .mockResolvedValueOnce({ data: [], totalPages: 1 })
+      .mockResolvedValueOnce({ data: [{ _id: "new", name: "Just approved" }], totalPages: 1 });
+    expect(await service.searchStays({ place: "Prayagraj" })).toHaveLength(0);
+    expect((await service.searchStays({ place: "Prayagraj" }))[0].name).toBe("Just approved");
+    expect(ashrams.publicList).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("topDestinations reads the same aggregation the website's destinations page uses", () => {
+  it("orders cities by how many stays they actually have, most first", async () => {
+    const { service, ashrams } = build({
+      destinations: [
+        { city: "Haridwar", state: "UP", count: 3 },
+        { city: "Vrindavan", state: "UP", count: 12 },
+        { city: "Rishikesh", state: "UP", count: 7 },
+      ],
+    });
+    const rows = await service.topDestinations();
+    expect(ashrams.destinations).toHaveBeenCalled();
+    expect(rows).toEqual([
+      { city: "Vrindavan", count: 12 },
+      { city: "Rishikesh", count: 7 },
+      { city: "Haridwar", count: 3 },
+    ]);
+  });
+
+  it("caps the list at the given limit", async () => {
+    const { service } = build({
+      destinations: Array.from({ length: 20 }, (_, i) => ({
+        city: `City${i}`,
+        state: "UP",
+        count: 20 - i,
+      })),
+    });
+    expect(await service.topDestinations(5)).toHaveLength(5);
+  });
+
+  it("returns an empty list rather than invent a city when there are none", async () => {
+    const { service } = build({ destinations: [] });
+    expect(await service.topDestinations()).toEqual([]);
   });
 });
 

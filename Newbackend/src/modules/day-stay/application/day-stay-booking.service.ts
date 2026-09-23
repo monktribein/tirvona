@@ -4,6 +4,7 @@ import {
   ConflictException,
   BadRequestException,
   NotFoundException,
+  ServiceUnavailableException,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { ConfigService } from "@nestjs/config";
@@ -165,6 +166,12 @@ export class DayStayBookingService {
     } else {
       isDemo = true;
     }
+    // A simulated order can never be paid for real, so in production it would
+    // only lock a slot for nothing. Refuse before anything is written.
+    if (isDemo && this.isProduction())
+      throw new ServiceUnavailableException(
+        "Online payment is temporarily unavailable. Please try again shortly.",
+      );
 
     const bookingType = product.productType || "day_rest";
 
@@ -247,10 +254,20 @@ export class DayStayBookingService {
     };
   }
 
+  private isProduction(): boolean {
+    return this.config.get<string>("nodeEnv") === "production";
+  }
+
   /**
-   * Confirms a Day Stay booking after Razorpay signature verification.
-   * Both browser checkout callback and server-to-server webhook converge here idempotently.
+   * The browser's proof that Razorpay took the money: the checkout signature
+   * over `order_id|payment_id`, keyed by the API secret.
+   *
+   * There is no way around it. The only unsigned case is local development
+   * with no Razorpay secret configured at all — the same rule parking, aarti
+   * and the marketplace apply — and production with a missing secret refuses
+   * outright rather than trusting the client.
    */
+<<<<<<< Updated upstream
   async confirmPayment(dto: DayStayConfirmPaymentDto, customerId?: string): Promise<any> {
     const isHexId = typeof dto.bookingId === "string" && /^[0-9a-fA-F]{24}$/.test(dto.bookingId);
     const lookupConditions: any[] = [];
@@ -340,7 +357,85 @@ export class DayStayBookingService {
           throw new BadRequestException("Invalid payment signature");
         }
       }
+=======
+  private assertClientSignature(dto: DayStayConfirmPaymentDto): void {
+    const keySecret = this.config.get<string>("razorpayKeySecret");
+    if (!keySecret) {
+      if (this.isProduction())
+        throw new ServiceUnavailableException("Payments are not configured.");
+      return;
+>>>>>>> Stashed changes
     }
+    if (!dto.razorpaySignature)
+      throw new BadRequestException("Payment signature is required");
+    const expected = Buffer.from(
+      createHmac("sha256", keySecret)
+        .update(`${dto.razorpayOrderId}|${dto.razorpayPaymentId}`)
+        .digest("hex"),
+    );
+    const actual = Buffer.from(dto.razorpaySignature);
+    if (expected.length !== actual.length || !timingSafeEqual(expected, actual))
+      throw new BadRequestException("Invalid payment signature");
+  }
+
+  private confirmedResponse(booking: any): any {
+    return {
+      success: true,
+      bookingId: booking.bookingId,
+      reservationNumber: booking.reservationNumber,
+      status: "confirmed",
+      checkInCode: booking.checkInCode,
+      pricing: booking.pricing,
+      slotStartTime: booking.dayStayDetails?.slotStartTime,
+      slotEndTime: booking.dayStayDetails?.slotEndTime,
+      durationMinutes: booking.dayStayDetails?.durationMinutes,
+      bookingType: booking.bookingType,
+      dayStayDetails: booking.dayStayDetails,
+      rooms: booking.rooms,
+    };
+  }
+
+  /**
+   * Confirms a Day Stay booking from the browser checkout callback.
+   *
+   * Only the caller's own booking is found, the Razorpay order must be the
+   * one this booking opened, and the checkout signature must verify. A client
+   * can no longer settle a booking by naming it — previously an omitted
+   * signature, or ids shaped like `mock_…`/`pay_sim_…`, skipped verification
+   * entirely and marked any booking paid.
+   */
+  async confirmPayment(dto: DayStayConfirmPaymentDto, customerId: string): Promise<any> {
+    if (!customerId) throw new NotFoundException("Booking not found");
+    const isHexId = typeof dto.bookingId === "string" && /^[0-9a-fA-F]{24}$/.test(dto.bookingId);
+    const booking = await this.bookingModel.findOne({
+      $or: [{ bookingId: dto.bookingId }, ...(isHexId ? [{ _id: dto.bookingId }] : [])],
+      customerId,
+      bookingType: { $in: ["day_rest", "freshen_up"] },
+    });
+    if (!booking) throw new NotFoundException("Booking not found");
+
+    if (booking.status === "confirmed" || booking.paymentStatus === "fully_paid")
+      return this.confirmedResponse(booking);
+
+    const openedOrder = booking.paymentSummary?.razorpayOrderId;
+    if (!openedOrder || dto.razorpayOrderId !== openedOrder)
+      throw new BadRequestException("This payment does not belong to this booking");
+    this.assertClientSignature(dto);
+    return this.settle(booking, dto, customerId);
+  }
+
+  /**
+   * Marks a verified payment against the booking. Reached only after the
+   * client signature (`confirmPayment`) or the Razorpay webhook signature
+   * (`PaymentsWebhookService.verifySignature`) has been checked.
+   */
+  private async settle(
+    booking: any,
+    dto: DayStayConfirmPaymentDto,
+    customerId?: string,
+  ): Promise<any> {
+    if (booking.status === "confirmed" || booking.paymentStatus === "fully_paid")
+      return this.confirmedResponse(booking);
 
     // 3. Hold Expiry Race Handling:
     // If hold expired but customer successfully paid on Razorpay:
@@ -467,7 +562,9 @@ export class DayStayBookingService {
     }
 
     try {
-      await this.confirmPayment({
+      // The webhook body was HMAC-verified before dispatch, and the booking
+      // was found by the order id Razorpay itself reported.
+      await this.settle(booking, {
         bookingId: booking.bookingId,
         razorpayOrderId,
         razorpayPaymentId,

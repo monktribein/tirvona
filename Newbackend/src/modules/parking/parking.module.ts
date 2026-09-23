@@ -15,12 +15,14 @@ import { ParkingScanService } from "./application/parking-scan.service";
 import { ParkingReportService } from "./application/parking-report.service";
 import { ParkingManagementService } from "./application/parking-management.service";
 import { ParkingExpiryAlertService } from "./application/parking-expiry-alert.service";
+import { ParkingPaymentLinkService } from "./application/parking-payment-link.service";
 import { ParkingCapabilityGuard } from "./presentation/guards/parking-capability.guard";
 import { ParkingPublicController } from "./presentation/controllers/parking-public.controller";
 import { ParkingBookingController } from "./presentation/controllers/parking-booking.controller";
 import { ParkingScanController } from "./presentation/controllers/parking-scan.controller";
 import { ParkingPartnerController } from "./presentation/controllers/parking-partner.controller";
 import { ParkingAdminController } from "./presentation/controllers/parking-admin.controller";
+import { PublicParkingPaymentController } from "./presentation/controllers/public-parking-payment.controller";
 import { MongooseParkingRepository } from "./infrastructure/persistence/mongoose-parking.repository";
 import {
   ParkingPartnerSchema,
@@ -81,6 +83,7 @@ const tenantSchemas = [
     ParkingScanController,
     ParkingPartnerController,
     ParkingAdminController,
+    PublicParkingPaymentController,
   ],
   providers: [
     ParkingAccessService,
@@ -92,6 +95,7 @@ const tenantSchemas = [
     ParkingReportService,
     ParkingManagementService,
     ParkingExpiryAlertService,
+    ParkingPaymentLinkService,
     { provide: PARKING_REPOSITORY, useClass: MongooseParkingRepository },
   ],
   exports: [
@@ -99,7 +103,9 @@ const tenantSchemas = [
     ParkingAccessService,
     ParkingCapabilityGuard,
     ParkingPricingService,
+    ParkingDiscoveryService,
     ParkingBookingService,
+    ParkingPaymentLinkService,
     PARKING_REPOSITORY,
   ],
 })

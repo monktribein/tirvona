@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  GoneException,
   Inject,
   Injectable,
   NotFoundException,
@@ -122,15 +123,16 @@ export class CommerceService {
     if (!data) throw new NotFoundException("Spiritual product not found.");
     return { success: true, data };
   }
-  async order(user: AuthenticatedUser, dto: MarketplaceOrderDto): Promise<any> {
-    const data = await this.repository.create("orders", {
-      ...dto,
-      orderNumber: `TVN-ORD-${Date.now().toString().slice(-8)}`,
-      customerId: user.id,
-      paymentStatus: "pending",
-      orderStatus: "processing",
-    });
-    return { success: true, message: "Order placed successfully!", data };
+  /**
+   * Retired. This wrote the caller's own `items` and `totalAmount` straight
+   * into an order marked `processing`, trusting a client-supplied price. No
+   * frontend calls it; checkout goes through `POST /marketplace/orders`, where
+   * `MarketplaceOrderService` prices the cart from the product records.
+   */
+  async order(_user: AuthenticatedUser, _dto: MarketplaceOrderDto): Promise<never> {
+    throw new GoneException(
+      "This checkout endpoint has been retired. Use POST /marketplace/orders.",
+    );
   }
   async createProduct(dto: ProductDto): Promise<any> {
     const data = await this.repository.create("products", {

@@ -38,6 +38,29 @@ describe("MongooseBookingRepository", () => {
       }),
     ).rejects.toBeInstanceOf(ConflictException);
   });
+  it.each([
+    ["zero", 0],
+    ["unknown", undefined],
+  ])("never invents units for a room whose count is %s", async (_label, capacity) => {
+    const inventory = {
+      updateOne: jest.fn().mockResolvedValue({}),
+      findOneAndUpdate: jest.fn().mockResolvedValue({ _id: "row" }),
+    } as any;
+    await new MongooseBookingRepository(inventory).holdInventory({
+      ashramId: "a",
+      roomId: "r",
+      dates: [new Date("2026-08-01")],
+      count: 1,
+      capacity: capacity as any,
+      session,
+    });
+    // A brand-new daily row is seeded with the room's real count (0), not the
+    // old fallback of 10, so the conditional hold below it cannot succeed.
+    expect(inventory.updateOne.mock.calls[0][1].$setOnInsert.totalInventory).toBe(0);
+    expect(inventory.updateOne.mock.calls[1][1]).toEqual({
+      $max: { totalInventory: 0 },
+    });
+  });
   it("converts held inventory rather than incrementing it a second time", async () => {
     const inventory = {
       updateOne: jest.fn().mockResolvedValue({ modifiedCount: 1 }),

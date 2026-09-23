@@ -1,12 +1,13 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
 import { ConfigService } from "@nestjs/config";
-import type { Model } from "mongoose";
 import { AshramsService } from "../../ashrams/application/ashrams.service";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { BookingsService } from "../../bookings/application/bookings.service";
 import { BookingPaymentLinkService } from "../../bookings/application/booking-payment-link.service";
 import { OffersService } from "../../bookings/application/offers.service";
+import { ParkingBookingService } from "../../parking/application/parking-booking.service";
+import { ParkingDiscoveryService } from "../../parking/application/parking-discovery.service";
+import { ParkingPaymentLinkService } from "../../parking/application/parking-payment-link.service";
 import { RefundsService } from "../../refunds/application/refunds.service";
 import {
   actorFromResolvedIdentity,
@@ -42,6 +43,15 @@ export interface PropertyDetails {
   }[];
 }
 
+/**
+ * One page of a database-backed list. The rows are an ordinary array, so a
+ * caller that only wants the rows can ignore the paging fields.
+ */
+export type PagedRows<T = any> = T[] & { page: number; totalPages: number };
+
+/** Rows per WhatsApp list page, leaving room for "previous" and "next" rows (Meta allows 10). */
+export const LIST_PAGE_SIZE = 8;
+
 /** The outcome of trying a coupon: applied with a quote, or refused with the reason. */
 export type PromoResult =
   | { ok: true; quote: any; offer: any; discountAmount: number }
@@ -76,8 +86,10 @@ export class WhatsAppActionsService {
     private readonly offers: OffersService,
     private readonly refunds: RefundsService,
     private readonly links: BookingPaymentLinkService,
+    private readonly parkingDiscovery: ParkingDiscoveryService,
+    private readonly parkingBookings: ParkingBookingService,
+    private readonly parkingLinks: ParkingPaymentLinkService,
     private readonly config: ConfigService,
-    @InjectModel("Room") private readonly rooms: Model<any>,
   ) {}
 
   private actor(identity: WhatsAppResolvedIdentity): BookingActor {
@@ -85,30 +97,25 @@ export class WhatsAppActionsService {
   }
 
   /**
-   * Stays matching a place and a date range.
+   * Stays matching a place, optionally narrowed by dates and a guest count —
+   * one page at a time.
    *
    * Delegates to the same `publicList` the website's search page calls, so
-   * the results, the ranking and the availability filtering are identical.
-   * Nothing is cached: a chat result is a snapshot, and the authoritative
-   * check happens when the booking is created.
-   */
-  /**
-   * Stays matching a place, optionally narrowed by dates and a guest count.
-   *
-   * Dates and guests are optional so the same method serves two distinct
-   * conversation modes: a plain browse ("Vrindavan mein chahiye", "asharam ka
-   * list do" — item 9's DISCOVER step, no dates demanded yet) and a dated
-   * search once the guest has actually given check-in/check-out ("kal 4 baje
-   * ... agle din 11 baje"). Both go through the identical website search —
-   * discovery is not a second, lesser search implementation, just this one
-   * called with fewer filters.
+   * the results, the ranking and the availability filtering are identical,
+   * and a stay an admin approves a minute ago is in the very next search.
+   * Dates and guests are optional so the same method serves both a plain
+   * browse ("Vrindavan mein chahiye") and a dated search. Nothing is cached:
+   * "next page" runs the query again for that page, and the authoritative
+   * availability check still happens when the booking is created.
    */
   async searchStays(input: {
     place?: string;
     checkIn?: Date;
     checkOut?: Date;
     guests?: number;
-  }): Promise<any[]> {
+    page?: number;
+  }): Promise<PagedRows> {
+    const page = Math.max(1, Math.floor(Number(input.page) || 1));
     // Field names match AshramQueryDto exactly (`checkIn`/`checkOut` as
     // YYYY-MM-DD) — the same query the website's search page sends, so the
     // date availability filter in `discoveryDates` actually applies.
@@ -117,11 +124,27 @@ export class WhatsAppActionsService {
       ...(input.checkIn ? { checkIn: input.checkIn.toISOString().slice(0, 10) } : {}),
       ...(input.checkOut ? { checkOut: input.checkOut.toISOString().slice(0, 10) } : {}),
       ...(input.guests ? { guests: input.guests } : {}),
-      page: 1,
-      limit: 8,
+      page,
+      limit: LIST_PAGE_SIZE,
     } as any);
     const rows = Array.isArray(result) ? result : (result?.data ?? result?.items ?? []);
-    return Array.isArray(rows) ? rows.slice(0, 8) : [];
+    const list = (Array.isArray(rows) ? rows.slice(0, LIST_PAGE_SIZE) : []) as PagedRows;
+    list.page = page;
+    list.totalPages = Math.max(page, Number(result?.totalPages) || 1);
+    return list;
+  }
+
+  /**
+   * The cities Tirvona actually has stays in, most-listed first — the same
+   * aggregation the website's destinations page reads. Used so "which place"
+   * is a tap, not a blank prompt: nothing here is a guess at what exists.
+   */
+  async topDestinations(limit = 8): Promise<{ city: string; count: number }[]> {
+    const rows = await this.ashrams.destinations();
+    return [...rows]
+      .sort((a, b) => b.count - a.count)
+      .slice(0, limit)
+      .map((row) => ({ city: row.city, count: row.count }));
   }
 
   /**
@@ -185,7 +208,13 @@ export class WhatsAppActionsService {
   }
 
   /**
-   * Bookable room categories for one ashram.
+   * Every bookable room category of one ashram, cheapest first.
+   *
+   * Read through `AshramsService.detail` — the record the website's stay page
+   * renders — so only an approved, live property's active rooms come back,
+   * and each carries the same `sellingPrice` (the room's own rate discount
+   * applied) that `BookingPricingService` charges. A room added or disabled
+   * by the owner shows up, or disappears, on the next call.
    *
    * With dates, each category also carries `unitsLeft` — the fewest units
    * open on any night of the stay, read from the very public calendar the
@@ -195,14 +224,18 @@ export class WhatsAppActionsService {
     ashramId: string,
     stay?: { checkIn: Date; checkOut: Date },
   ): Promise<any[]> {
-    const rooms: any[] = await this.rooms
-      .find({ ashramId, status: "active", deletedAt: null })
-      .select(
-        "_id name type acType capacity basePrice pricePerNight totalInventory amenities description",
-      )
-      .sort({ basePrice: 1 })
-      .limit(10)
-      .lean();
+    let detail: { rooms?: any[] } | null = null;
+    try {
+      detail = await this.ashrams.detail(ashramId);
+    } catch (error) {
+      if (error instanceof NotFoundException) return [];
+      throw error;
+    }
+    const rooms: any[] = [...(detail?.rooms ?? [])].sort(
+      (a, b) =>
+        Number(a.sellingPrice ?? a.basePrice ?? 0) -
+        Number(b.sellingPrice ?? b.basePrice ?? 0),
+    );
     if (!stay) return rooms;
     const lastNight = new Date(stay.checkOut.getTime() - 86_400_000);
     return Promise.all(
@@ -434,6 +467,159 @@ export class WhatsAppActionsService {
         wappId: identity.displayId ?? undefined,
         userId: identity.userId ?? undefined,
         bookingId: booking?.bookingId,
+      }),
+    );
+    return result;
+  }
+
+  // ---- parking --------------------------------------------------------
+
+  /**
+   * Parking locations matching a place, one page at a time — the same
+   * `ParkingDiscoveryService.search` the website's Parking Hub calls, so a
+   * location an admin just approved is found on the very next search.
+   */
+  async searchParking(input: {
+    place?: string;
+    entryAt?: string;
+    exitAt?: string;
+    vehicleType?: string;
+    page?: number;
+  }): Promise<PagedRows> {
+    const page = Math.max(1, Math.floor(Number(input.page) || 1));
+    const result = await this.parkingDiscovery.search({
+      ...(input.place ? { destination: input.place } : {}),
+      ...(input.entryAt ? { entryAt: input.entryAt } : {}),
+      ...(input.exitAt ? { exitAt: input.exitAt } : {}),
+      ...(input.vehicleType ? { vehicleType: input.vehicleType } : {}),
+      page,
+      limit: LIST_PAGE_SIZE,
+    } as any);
+    const rows = (Array.isArray(result?.data) ? result.data : []) as PagedRows;
+    rows.page = Number(result?.page) || page;
+    rows.totalPages = Math.max(rows.page, Number(result?.totalPages) || 1);
+    return rows;
+  }
+
+  /**
+   * One parking location's bay categories, priced for the given window and
+   * vehicle type — the same `ParkingDiscoveryService.detail` the website's
+   * location page reads, so "3 bays left, ₹80/hr" here is the same figure
+   * there.
+   */
+  async parkingLocationDetail(
+    idOrSlug: string,
+    input: { entryAt?: string; exitAt?: string; vehicleType?: string } = {},
+  ): Promise<any | null> {
+    return this.parkingDiscovery.detail(idOrSlug, input);
+  }
+
+  /**
+   * Prices one bay for one window and vehicle, through the same pricing
+   * service the public quote endpoint uses. WhatsApp never computes a
+   * parking fee itself.
+   */
+  async quoteParking(input: {
+    locationId: string;
+    slotTypeId: string;
+    vehicleType: string;
+    entryAt: string;
+    exitAt: string;
+  }): Promise<{ ok: true; quote: any } | { ok: false; message: string }> {
+    return this.parkingDiscovery.quote(input);
+  }
+
+  /**
+   * Holds a bay through `ParkingBookingService.createFor` — the same method
+   * the website calls, so the atomic inventory hold, the pricing and the
+   * cancellation policy are identical whichever channel booked.
+   */
+  async createParkingBooking(
+    identity: WhatsAppResolvedIdentity,
+    dto: {
+      locationId: string;
+      slotTypeId: string;
+      vehicleType: string;
+      vehicleNumber: string;
+      entryAt: string;
+      exitAt: string;
+      driverName?: string;
+      driverPhone?: string;
+    },
+  ): Promise<any> {
+    const result = await this.parkingBookings.createFor(this.actor(identity), dto as any);
+    this.logger.log(
+      JSON.stringify({
+        event: "whatsapp.parking_booking_created",
+        identityKind: identity.kind,
+        wappId: identity.displayId ?? undefined,
+        userId: identity.userId ?? undefined,
+        bookingReference: result?.booking?.bookingReference,
+        channel: "whatsapp",
+      }),
+    );
+    return result;
+  }
+
+  /**
+   * A signed, short-lived link to Tirvona's public parking payment page —
+   * the parking equivalent of `createPaymentLink`. The order is opened and
+   * the payment confirmed only by the server; nothing here charges anything.
+   */
+  async createParkingPaymentLink(
+    identity: WhatsAppResolvedIdentity,
+    bookingId: string,
+  ): Promise<{ url: string; amount: number; reference: string; expiresAt: Date }> {
+    return this.parkingLinks.issue(this.actor(identity), bookingId);
+  }
+
+  /** Every parking booking belonging to this identity, account or guest alike. */
+  async myParkingBookings(
+    identity: WhatsAppResolvedIdentity,
+    status: string | undefined,
+    page: number,
+  ): Promise<{ items: any[]; total: number }> {
+    return this.parkingBookings.listMineFor(this.actor(identity), status, page, LIST_PAGE_SIZE);
+  }
+
+  /** One parking booking, but only if it belongs to this customer. */
+  async getParkingBooking(
+    identity: WhatsAppResolvedIdentity,
+    bookingId: string,
+  ): Promise<any> {
+    return this.parkingBookings.getFor(this.actor(identity), bookingId);
+  }
+
+  /** What cancelling this parking booking now would refund, without cancelling it. */
+  async previewParkingCancellation(
+    identity: WhatsAppResolvedIdentity,
+    bookingId: string,
+  ): Promise<any> {
+    return this.parkingBookings.refundPreviewFor(this.actor(identity), bookingId);
+  }
+
+  /**
+   * Cancels a parking booking through the existing cancellation service,
+   * which owns the refund policy, the bay release and the commission
+   * reversal. WhatsApp contributes only the guest's confirmation.
+   */
+  async cancelParkingBooking(
+    identity: WhatsAppResolvedIdentity,
+    bookingId: string,
+    reason: string,
+  ): Promise<{ booking: any; refund: any }> {
+    const result = await this.parkingBookings.cancelFor(
+      this.actor(identity),
+      bookingId,
+      { reason } as any,
+    );
+    this.logger.log(
+      JSON.stringify({
+        event: "whatsapp.parking_booking_cancelled",
+        identityKind: identity.kind,
+        wappId: identity.displayId ?? undefined,
+        userId: identity.userId ?? undefined,
+        bookingId,
       }),
     );
     return result;

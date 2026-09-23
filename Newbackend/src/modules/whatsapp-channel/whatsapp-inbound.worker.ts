@@ -55,8 +55,18 @@ export class WhatsAppInboundWorker extends WorkerHost {
       return;
     }
 
+    const startedAt = Date.now();
+    this.logger.log(
+      JSON.stringify({
+        event: "whatsapp.inbound_job_started",
+        messageId: job.data.messageId,
+        queueJobId: job.id,
+        attempt: job.attemptsMade + 1,
+      }),
+    );
+
     try {
-      await this.conversation.handle({
+      const outcome = await this.conversation.handle({
         messageId: (event as any).messageId,
         phone: (event as any).phone,
         profileName: "",
@@ -65,9 +75,30 @@ export class WhatsAppInboundWorker extends WorkerHost {
         replyId: (event as any).replyId ?? "",
         sentAt: (event as any).sentAt ?? new Date(),
       });
+
+      // A turn the conversation could not complete is recorded as failed even
+      // though it did not throw. It is not retried: the guest was already sent
+      // an apology, and replaying the message would only repeat it.
+      const failed = outcome.status === "failed";
       await this.events.updateOne(
         { _id: job.data.eventId },
-        { $set: { status: "processed", processedAt: new Date() } },
+        {
+          $set: {
+            status: failed ? "failed" : "processed",
+            processedAt: new Date(),
+            ...(failed ? { processingError: outcome.errorType ?? "UnknownError" } : {}),
+          },
+        },
+      );
+      this.logger.log(
+        JSON.stringify({
+          event: "whatsapp.inbound_job_finished",
+          messageId: job.data.messageId,
+          queueJobId: job.id,
+          outcome: outcome.status,
+          errorType: outcome.errorType,
+          durationMs: Date.now() - startedAt,
+        }),
       );
     } catch (error) {
       // Only the error class is recorded — an error message can carry guest
@@ -81,6 +112,16 @@ export class WhatsAppInboundWorker extends WorkerHost {
               error instanceof Error ? error.name : "UnknownError",
           },
         },
+      );
+      this.logger.error(
+        JSON.stringify({
+          event: "whatsapp.inbound_job_threw",
+          messageId: job.data.messageId,
+          queueJobId: job.id,
+          attempt: job.attemptsMade + 1,
+          errorType: error instanceof Error ? error.name : "UnknownError",
+          durationMs: Date.now() - startedAt,
+        }),
       );
       throw error;
     }

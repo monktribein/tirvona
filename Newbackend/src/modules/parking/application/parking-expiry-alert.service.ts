@@ -3,6 +3,7 @@ import { Interval } from "@nestjs/schedule";
 import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
 import { PARKING_MODEL } from "../domain/parking.constants";
+import { parkingOwnerFields } from "../domain/parking.utils";
 
 const ALERT_WINDOW_START_MS = 10 * 60 * 1000;
 const ALERT_WINDOW_END_MS = 15 * 60 * 1000;
@@ -32,7 +33,7 @@ export class ParkingExpiryAlertService {
         exitAt: { $gte: windowStart, $lte: windowEnd },
         expiryAlertSentAt: null,
       })
-      .select("_id customerId bookingReference driverPhone")
+      .select("_id customerId whatsappCustomerId bookingReference driverPhone")
       .limit(200)
       .lean();
 
@@ -44,7 +45,7 @@ export class ParkingExpiryAlertService {
       if (!result.modifiedCount) continue;
 
       await this.notifications.create({
-        userId: booking.customerId,
+        ...parkingOwnerFields(booking),
         bookingId: booking._id,
         event: "exit_reminder",
         recipientPhone: booking.driverPhone || "",

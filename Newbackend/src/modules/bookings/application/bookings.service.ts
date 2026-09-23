@@ -294,7 +294,10 @@ export class BookingsService {
     const booking = await this.transactions.run(async (session) => {
       for (const reqRoom of normalizedRooms) {
         const foundRoom = quote.rooms?.find((r: any) => String(r._id) === String(reqRoom.roomId)) || quote.room;
-        const capacity = Number(foundRoom?.totalInventory) || Number(foundRoom?.inventory) || Number(foundRoom?.capacity) || Math.max(10, reqRoom.units);
+        // The room's own unit count, exactly as the public calendar reads it.
+        // `capacity` is guests per room, not rooms, and a 0 is a real 0 — an
+        // unknown count is treated as nothing to sell, never as a made-up 10.
+        const capacity = Number(foundRoom?.totalInventory ?? foundRoom?.inventory);
         await this.repository.holdInventory({
           ashramId: dto.ashramId,
           roomId: reqRoom.roomId,

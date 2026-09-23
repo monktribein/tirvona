@@ -329,7 +329,7 @@ export class SelfBookingService {
           roomId: roomReq.roomId,
           dates: quote.dates,
           count: roomReq.units,
-          capacity: quote.room?.totalInventory ?? 10,
+          capacity: quote.room?.totalInventory,
           session,
         });
       }

@@ -133,15 +133,92 @@ export const stayCopy = {
       language,
     ),
 
+  /**
+   * The same question before any date is known. The guest picks the kind of
+   * room first and the calendar is then read for that category, so the dates
+   * offered are the ones that category actually has open — which is why this
+   * cannot mention nights or guests yet.
+   */
+  pickRoomCategoryUndated: (language: ReplyLanguage): string =>
+    pick(
+      {
+        en: "Here are the room categories at this stay. Tap the one you'd like.",
+        hi: "यहाँ इस ठहरने की कमरा श्रेणियाँ हैं। जो चाहिए उसे चुनें।",
+        hinglish:
+          "Yahan is stay ki room categories hain. Jo chahiye use tap karein.",
+      },
+      language,
+    ),
+
+  /** Heads the tappable list of dates this room category actually has open. */
+  pickStayDate: (
+    language: ReplyLanguage,
+    which: "checkIn" | "checkOut",
+  ): string =>
+    pick(
+      which === "checkIn"
+        ? {
+            en: "These dates are open for this room. Tap your check-in date.",
+            hi: "इस कमरे के लिए ये तारीखें खुली हैं। चेक-इन तारीख चुनें।",
+            hinglish:
+              "Is room ke liye ye dates open hain. Check-in date tap karein.",
+          }
+        : {
+            en: "Tap your check-out date.",
+            hi: "चेक-आउट तारीख चुनें।",
+            hinglish: "Check-out date tap karein.",
+          },
+      language,
+    ),
+
+  /** Per-night price and units left, as the calendar reports them. */
+  dateRowDescription: (
+    language: ReplyLanguage,
+    r: { price?: number; available?: number },
+  ): string => {
+    const parts = [
+      r.price ? money(Number(r.price)) : null,
+      r.available !== undefined && r.available !== null
+        ? pick(
+            {
+              en: `${r.available} left`,
+              hi: `${r.available} बचे`,
+              hinglish: `${r.available} bache`,
+            },
+            language,
+          )
+        : null,
+    ].filter(Boolean);
+    return parts.join(" · ");
+  },
+
+  /**
+   * No night in the calendar is open for this category. The guest is offered
+   * another category rather than left at a dead end.
+   */
+  noOpenDates: (language: ReplyLanguage): string =>
+    pick(
+      {
+        en: "This room has no open dates in the next month. Please pick another category.",
+        hi: "इस कमरे की अगले महीने कोई तारीख खाली नहीं है। कृपया दूसरी श्रेणी चुनें।",
+        hinglish:
+          "Is room ki agle mahine koi date khali nahi hai. Kripya dusri category chunein.",
+      },
+      language,
+    ),
+
   roomRowDescription: (
     language: ReplyLanguage,
     r: {
       acType?: string;
       capacity?: number;
       basePrice?: number;
+      /** The room's own rate discount applied — what pricing actually charges. */
+      sellingPrice?: number;
       unitsLeft?: number | null;
     },
   ): string => {
+    const nightly = r.sellingPrice ?? r.basePrice;
     const guests = r.capacity
       ? pick(
           {
@@ -166,7 +243,7 @@ export const stayCopy = {
     return [
       r.acType,
       guests,
-      r.basePrice ? `${money(r.basePrice)}/night` : "",
+      nightly ? `${money(nightly)}/night` : "",
       left,
     ]
       .filter(Boolean)
@@ -605,4 +682,87 @@ export const stayCopy = {
     });
     return [head, ...lines].join("\n");
   },
+  // ---- paging, stale state and domain refusals ----------------------------
+
+  /** The row that fetches the next page of a list from the database. */
+  nextPageRow: (language: ReplyLanguage, page: number, totalPages: number) => ({
+    title: pick({ en: "Next ▶", hi: "आगे ▶", hinglish: "Aage ▶" }, language),
+    description: pick(
+      {
+        en: `Page ${page + 1} of ${totalPages}`,
+        hi: `पेज ${page + 1} / ${totalPages}`,
+        hinglish: `Page ${page + 1} / ${totalPages}`,
+      },
+      language,
+    ),
+  }),
+
+  prevPageRow: (language: ReplyLanguage, page: number, totalPages: number) => ({
+    title: pick({ en: "◀ Previous", hi: "◀ पीछे", hinglish: "◀ Peeche" }, language),
+    description: pick(
+      {
+        en: `Page ${page - 1} of ${totalPages}`,
+        hi: `पेज ${page - 1} / ${totalPages}`,
+        hinglish: `Page ${page - 1} / ${totalPages}`,
+      },
+      language,
+    ),
+  }),
+
+  noMorePages: (language: ReplyLanguage): string =>
+    pick(
+      {
+        en: "There's nothing further in that list. Tell me a place, a date or what you're looking for and I'll search again.",
+        hi: "उस सूची में और कुछ नहीं है। कोई जगह, तारीख या ज़रूरत बताइए, मैं फिर से खोज दूँगा।",
+        hinglish: "Us list mein aur kuch nahi hai. Koi jagah, date ya zaroorat batayein, main phir se search kar dunga.",
+      },
+      language,
+    ),
+
+  /** The price moved between the summary and "confirm"; nothing was booked. */
+  priceChanged: (
+    language: ReplyLanguage,
+    input: { before: number; after: number },
+  ): string =>
+    pick(
+      {
+        en: `The price for this stay has just changed from ${money(input.before)} to *${money(input.after)}* — nothing has been booked. Here is the updated summary; confirm again if you'd like to go ahead.`,
+        hi: `इस ठहराव की कीमत अभी ${money(input.before)} से बदलकर *${money(input.after)}* हो गई है — अभी कुछ बुक नहीं हुआ है। नया सारांश नीचे है; आगे बढ़ना हो तो फिर से पुष्टि करें।`,
+        hinglish: `Is stay ka price abhi ${money(input.before)} se badal kar *${money(input.after)}* ho gaya hai — abhi kuch book nahi hua. Naya summary neeche hai; aage badhna ho to dobara confirm karein.`,
+      },
+      language,
+    ),
+
+  /** A "confirm" arrived for a booking step that is no longer in progress. */
+  bookingStepExpired: (language: ReplyLanguage): string =>
+    pick(
+      {
+        en: "That booking step is no longer open — nothing new was booked. Send “my bookings” to see your bookings, or tell me where you'd like to stay.",
+        hi: "वह बुकिंग चरण अब खुला नहीं है — कोई नई बुकिंग नहीं हुई। अपनी बुकिंग देखने के लिए “मेरी बुकिंग” भेजें, या बताइए कहाँ ठहरना है।",
+        hinglish: "Wo booking step ab open nahi hai — koi nayi booking nahi hui. Apni bookings dekhne ke liye “meri booking” bhejein, ya batayein kahan rukna hai.",
+      },
+      language,
+    ),
+
+  /** The rooms went between the summary and the hold; offered again from live data. */
+  roomsGoneAtBooking: (language: ReplyLanguage, reason: string): string =>
+    pick(
+      {
+        en: `I couldn't hold those rooms: ${reason} Nothing was booked or charged. Here is what is open right now:`,
+        hi: `ये कमरे होल्ड नहीं हो पाए: ${reason} कुछ बुक या चार्ज नहीं हुआ। अभी जो उपलब्ध है वह यह है:`,
+        hinglish: `Ye rooms hold nahi ho paaye: ${reason} Kuch book ya charge nahi hua. Abhi jo available hai wo ye hai:`,
+      },
+      language,
+    ),
+
+  /** A booking action the domain refused, with the service's own reason. */
+  actionRefused: (language: ReplyLanguage, reason: string): string =>
+    pick(
+      {
+        en: `That couldn't be done: ${reason}`,
+        hi: `यह नहीं हो सका: ${reason}`,
+        hinglish: `Ye nahi ho paaya: ${reason}`,
+      },
+      language,
+    ),
 };

@@ -1,3 +1,4 @@
+import { BadRequestException, ConflictException } from "@nestjs/common";
 import { ConversationService } from "./conversation.service";
 import type { InboundMessage } from "./whatsapp-webhook.service";
 
@@ -87,6 +88,10 @@ const build = (overrides: Record<string, any> = {}) => {
   const actions = {
     searchStays: jest.fn(async () => []),
     roomsFor: jest.fn(async () => []),
+    topDestinations: jest.fn(async () => [
+      { city: "Vrindavan", count: 12 },
+      { city: "Haridwar", count: 7 },
+    ]),
     propertyDetails: jest.fn(async () => ({
       id: "ashram-1",
       name: "Shanti Ashram",
@@ -123,6 +128,25 @@ const build = (overrides: Record<string, any> = {}) => {
     })),
     previewCancellationRefund: jest.fn(async () => 0),
     availabilityForRoom: jest.fn(async () => []),
+    searchParking: jest.fn(async () => []),
+    parkingLocationDetail: jest.fn(async () => null),
+    quoteParking: jest.fn(async () => ({ ok: false, message: "not configured" })),
+    createParkingBooking: jest.fn(async () => ({
+      booking: { _id: "pbooking-1", bookingReference: "TVN-PKG-1" },
+    })),
+    createParkingPaymentLink: jest.fn(async () => ({
+      expiresAt: new Date(Date.now() + 600_000),
+      url: "https://tirvona.com/parking/pay/TOKEN",
+      amount: 100,
+      reference: "TVN-PKG-1",
+    })),
+    myParkingBookings: jest.fn(async () => ({ items: [], total: 0 })),
+    getParkingBooking: jest.fn(async () => null),
+    previewParkingCancellation: jest.fn(async () => ({ refundAmount: 0 })),
+    cancelParkingBooking: jest.fn(async () => ({
+      booking: { bookingReference: "TVN-PKG-1" },
+      refund: { refundAmount: 0 },
+    })),
     ...overrides.actions,
   };
 
@@ -213,6 +237,8 @@ describe("resolving to an existing website account", () => {
         checkInDate: "2026-10-01",
         checkOutDate: "2026-10-03",
         guests: 2,
+        // The total the guest was shown and is confirming.
+        quotedTotal: 2400,
       },
       lastInboundAt: Date.now(),
       startedAt: Date.now(),
@@ -370,6 +396,8 @@ describe("stay booking flow — slot filling", () => {
         checkInDate: "2026-10-01",
         checkOutDate: "2026-10-03",
         guests: 2,
+        // The total the guest was shown and is confirming.
+        quotedTotal: 2400,
       },
       messageCount: 5,
     });
@@ -391,6 +419,7 @@ describe("stay booking flow — slot filling", () => {
         checkInDate: "2026-10-01",
         checkOutDate: "2026-10-03",
         guests: 2,
+        quotedTotal: 2400,
       },
       messageCount: 5,
     });
@@ -556,8 +585,14 @@ describe("stay booking flow — discovery (browse before booking)", () => {
     expect(reply.list).toHaveBeenCalled();
   });
 
-  it("moves into the booking flow once a discovered ashram is picked, asking only for what is missing", async () => {
-    const engine = build();
+  it("moves into the booking flow once a discovered ashram is picked, offering that property's room categories", async () => {
+    const engine = build({
+      actions: {
+        roomsFor: jest.fn(async () => [
+          { _id: "r-deluxe", name: "Deluxe", basePrice: 900, capacity: 2 },
+        ]),
+      },
+    });
     seedSession(engine.sessions, {
       flow: "stay_booking",
       data: { location: "Vrindavan" },
@@ -565,8 +600,23 @@ describe("stay booking flow — discovery (browse before booking)", () => {
     });
     await engine.service.handle(message({ replyId: "stay:ashram-1" }));
     expect(engine.sessions.current().data.ashramId).toBe("ashram-1");
-    // No dates yet, so it asks for check-in — it does not jump to rooms.
-    expect(allText(engine.reply)).toMatch(/check.?in|कब|kab/i);
+    // The category comes before any date: the calendar is per room, so the
+    // dates offered next can only be real once a category is known.
+    expect(engine.reply.list).toHaveBeenCalled();
+    const rows = engine.reply.list.mock.calls.at(-1)?.[4] ?? [];
+    expect(rows.some((row: any) => row.id === "room:r-deluxe")).toBe(true);
+  });
+
+  it("clears a picked property that has no room categories at all, rather than stranding the guest", async () => {
+    const engine = build();
+    seedSession(engine.sessions, {
+      flow: "stay_booking",
+      data: { location: "Vrindavan" },
+      messageCount: 2,
+    });
+    await engine.service.handle(message({ replyId: "stay:ashram-1" }));
+    expect(engine.sessions.current().data.ashramId).toBeUndefined();
+    expect(allText(engine.reply)).toMatch(/available|उपलब्ध|nahi mila/i);
   });
 
   it("goes straight to rooms when a dated search result is picked (dates already known)", async () => {
@@ -592,7 +642,13 @@ describe("stay booking flow — discovery (browse before booking)", () => {
   });
 
   it("resolves 'isme booking karni hai' to the one result just shown", async () => {
-    const engine = build();
+    const engine = build({
+      actions: {
+        roomsFor: jest.fn(async () => [
+          { _id: "r-deluxe", name: "Deluxe", basePrice: 900, capacity: 2 },
+        ]),
+      },
+    });
     seedSession(engine.sessions, {
       flow: "stay_booking",
       data: {
@@ -672,16 +728,26 @@ describe("stay booking flow — availability query", () => {
 
 describe("stay booking flow — loop protection", () => {
   it("does not repeat the exact same question verbatim twice in a row", async () => {
-    // The bot has already picked a specific ashram (so it is past the
-    // browse/discovery step) and asked for check-in; a reply it cannot parse
-    // at all must not produce the identical question a second time.
-    const engine = build();
+    // The property, its room category and the dates are settled, so the one
+    // question left is how many guests. A reply the parser cannot read at all
+    // must not produce the identical question a second time.
+    const engine = build({
+      actions: {
+        roomsFor: jest.fn(async () => [
+          { _id: "r-deluxe", name: "Deluxe", basePrice: 900, capacity: 2 },
+        ]),
+      },
+    });
     seedSession(engine.sessions, {
       flow: "stay_booking",
       data: {
         location: "Vrindavan",
         ashramId: "ashram-1",
-        _lastAskedSlot: "checkInDate",
+        rooms: [{ roomId: "r-deluxe", units: 1 }],
+        checkInDate: "2030-10-01",
+        checkOutDate: "2030-10-03",
+        _detailsShownFor: "ashram-1",
+        _lastAskedSlot: "guests",
         _lastAskedRepeat: 0,
       },
       messageCount: 2,
@@ -891,9 +957,435 @@ describe("error handling", () => {
 describe("services that are not conversational yet", () => {
   it("says so and links to the website instead of pretending", async () => {
     const { service, reply } = build();
-    await service.handle(message({ text: "parking book karni hai" }));
+    await service.handle(message({ text: "aarti book karni hai" }));
     const text = allText(reply);
     expect(text).toMatch(/available nahi|isn't available|उपलब्ध नहीं/i);
-    expect(text).toContain("https://tirvona.com/parking");
+    expect(text).toContain("https://tirvona.com/aarti");
+  });
+});
+
+describe("parking is a real, live flow — not a stub", () => {
+  it("starts the parking booking flow instead of pointing at the website", async () => {
+    const { service, reply } = build();
+    await service.handle(message({ text: "parking book karni hai" }));
+    const text = allText(reply);
+    expect(text).not.toContain("https://tirvona.com/parking");
+    // A real flow asks a follow-up slot-filling question; a stub never does.
+    expect(text).toMatch(/city|jagah|शहर|date|तारीख|enter|प्रवेश/i);
+  });
+});
+
+// ---- live data: nothing in the session is business truth -----------------
+
+describe("confirm never books on a stale price or a stale conversation", () => {
+  const atConfirm = (engine: ReturnType<typeof build>, data: Record<string, any> = {}) =>
+    seedSession(engine.sessions, {
+      flow: "stay_booking",
+      step: "confirm",
+      data: {
+        ashramId: "ashram-1",
+        rooms: [{ roomId: "room-1", units: 2 }],
+        checkInDate: "2026-10-01",
+        checkOutDate: "2026-10-03",
+        guests: 2,
+        quotedTotal: 2400,
+        ...data,
+      },
+    });
+
+  it("re-prices before holding and shows the new total instead of booking at the old one", async () => {
+    const engine = build({
+      actions: {
+        quoteStay: jest.fn(async () => ({ pricing: { totalAmount: 2900 }, nights: 2 })),
+      },
+    });
+    atConfirm(engine);
+    await engine.service.handle(message({ replyId: "confirm:yes" }));
+    expect(engine.actions.createStayBooking).not.toHaveBeenCalled();
+    expect(allText(engine.reply)).toMatch(/2,400[\s\S]*2,900/);
+    // The guest now confirms the figure they were just shown.
+    expect(engine.sessions.current().data.quotedTotal).toBe(2900);
+    await engine.service.handle(message({ replyId: "confirm:yes" }));
+    expect(engine.actions.createStayBooking).toHaveBeenCalledTimes(1);
+  });
+
+  it("never books a selection the guest was never shown a price for", async () => {
+    const engine = build();
+    atConfirm(engine, { quotedTotal: undefined });
+    await engine.service.handle(message({ replyId: "confirm:yes" }));
+    expect(engine.actions.createStayBooking).not.toHaveBeenCalled();
+    expect(engine.actions.quoteStay).toHaveBeenCalled();
+  });
+
+  it("ignores a confirm tapped on an old message after the booking was already made", async () => {
+    const engine = build();
+    seedSession(engine.sessions, { flow: null, step: null, data: {} });
+    await engine.service.handle(message({ replyId: "confirm:yes" }));
+    expect(engine.actions.createStayBooking).not.toHaveBeenCalled();
+    expect(engine.actions.createPaymentLink).not.toHaveBeenCalled();
+    expect(allText(engine.reply)).toMatch(/no longer open|ab open nahi|खुला नहीं/i);
+  });
+
+  it("offers what is open now when the rooms went between summary and hold", async () => {
+    const engine = build({
+      actions: {
+        createStayBooking: jest.fn(async () => {
+          throw new ConflictException("Rooms are no longer available on 2026-10-01.");
+        }),
+        roomsFor: jest.fn(async () => [
+          { _id: "room-2", name: "Standard", sellingPrice: 900, unitsLeft: 3 },
+        ]),
+      },
+    });
+    atConfirm(engine);
+    await engine.service.handle(message({ replyId: "confirm:yes" }));
+    expect(engine.actions.createPaymentLink).not.toHaveBeenCalled();
+    expect(allText(engine.reply)).toContain("no longer available on 2026-10-01");
+    // The room list shown next is today's, read again from the database.
+    const rows = (engine.reply.list.mock.calls.at(-1) as any[])[4];
+    expect(rows.map((r: any) => r.id)).toEqual(["room:room-2"]);
+    expect(engine.sessions.current().data.rooms).toBeUndefined();
+  });
+
+  it("drops a coupon that ran out at hold time, with the service's reason, and re-prices", async () => {
+    const engine = build({
+      actions: {
+        createStayBooking: jest.fn(async () => {
+          throw new ConflictException("This offer is no longer available");
+        }),
+      },
+    });
+    atConfirm(engine, { promoCode: "SAVE10" });
+    await engine.service.handle(message({ replyId: "confirm:yes" }));
+    expect(allText(engine.reply)).toContain("This offer is no longer available");
+    expect(engine.sessions.current().data.promoCode).toBeUndefined();
+    expect((engine.actions.quoteStay.mock.calls.at(-1) as any[])[0].promoCode).toBeUndefined();
+  });
+
+  it("still apologises generically for an unexpected failure, exposing nothing", async () => {
+    const engine = build({
+      actions: {
+        createStayBooking: jest.fn(async () => {
+          throw new Error("MongoServerError: connection pool closed at 10.0.0.4");
+        }),
+      },
+    });
+    atConfirm(engine);
+    await engine.service.handle(message({ replyId: "confirm:yes" }));
+    const text = allText(engine.reply);
+    expect(text).not.toContain("MongoServerError");
+    expect(text).not.toContain("10.0.0.4");
+    expect(text).toMatch(/nothing was charged|koi charge|कोई शुल्क/i);
+  });
+});
+
+describe("choosing a different property forgets the previous one's rooms", () => {
+  it("does not carry rooms, add-ons or a price from one ashram to another", async () => {
+    const engine = build({
+      actions: {
+        roomsFor: jest.fn(async () => [{ _id: "b-room", name: "Hall", unitsLeft: 5 }]),
+      },
+    });
+    seedSession(engine.sessions, {
+      flow: "stay_booking",
+      data: {
+        ashramId: "ashram-A",
+        rooms: [{ roomId: "a-room", units: 2 }],
+        addOns: [{ serviceId: "a-addon", quantity: 1 }],
+        quotedTotal: 5000,
+        _detailsShownFor: "ashram-A",
+        location: "Vrindavan",
+        checkInDate: "2026-10-01",
+        checkOutDate: "2026-10-03",
+        guests: 2,
+        promoCode: "KEEPME",
+      },
+    });
+    await engine.service.handle(message({ replyId: "stay:ashram-B" }));
+    const data = engine.sessions.current().data;
+    expect(data.ashramId).toBe("ashram-B");
+    expect(data.rooms).toBeUndefined();
+    expect(data.addOns).toBeUndefined();
+    expect(data.quotedTotal).toBeUndefined();
+    // The guest's own choices survive and are re-checked on the new stay.
+    expect(data.promoCode).toBe("KEEPME");
+    expect(data.guests).toBe(2);
+    expect(engine.actions.quoteStay).not.toHaveBeenCalled();
+    const rows = (engine.reply.list.mock.calls.at(-1) as any[])[4];
+    expect(rows.map((r: any) => r.id)).toEqual(["room:b-room"]);
+  });
+});
+
+describe("lists page through the database instead of dropping rows", () => {
+  const paged = (rows: any[], page: number, totalPages: number) =>
+    Object.assign(rows, { page, totalPages });
+  const stays = (from: number, count: number) =>
+    Array.from({ length: count }, (_, i) => ({ _id: `a${from + i}`, name: `Ashram ${from + i}` }));
+  const lastRows = (engine: ReturnType<typeof build>) =>
+    (engine.reply.list.mock.calls.at(-1) as any[])[4] as { id: string; description?: string }[];
+
+  it("adds a next-page row when the search has more results, and fetches page 2 on 'next'", async () => {
+    const searchStays = jest
+      .fn()
+      .mockResolvedValueOnce(paged(stays(1, 8), 1, 2))
+      .mockResolvedValueOnce(paged(stays(9, 3), 2, 2));
+    const engine = build({ actions: { searchStays } });
+    await engine.service.handle(message({ text: "Vrindavan mein ashram dikhao" }));
+    const first = lastRows(engine);
+    expect(first).toHaveLength(9);
+    expect(first.at(-1)!.id).toBe("page:stays:next");
+
+    await engine.service.handle(message({ text: "next" }));
+    expect(searchStays).toHaveBeenLastCalledWith(
+      expect.objectContaining({ place: "Vrindavan", page: 2 }),
+    );
+    expect(lastRows(engine).map((r) => r.id)).toEqual([
+      "stay:a9",
+      "stay:a10",
+      "stay:a11",
+      "page:stays:prev",
+    ]);
+  });
+
+  it("turns the page on a tapped next row too, and says so plainly past the end", async () => {
+    const searchStays = jest
+      .fn()
+      .mockResolvedValueOnce(paged(stays(1, 8), 1, 2))
+      .mockResolvedValueOnce(paged([], 2, 2));
+    const engine = build({ actions: { searchStays } });
+    await engine.service.handle(message({ text: "Vrindavan mein ashram dikhao" }));
+    await engine.service.handle(message({ replyId: "page:stays:next" }));
+    expect(searchStays).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2 }));
+    expect(allText(engine.reply)).toMatch(/nothing further|aur kuch nahi|और कुछ नहीं/i);
+  });
+
+  it("does not turn a list that is no longer on screen", async () => {
+    const engine = build();
+    seedSession(engine.sessions, { paging: { list: "bookings", page: 1 } });
+    await engine.service.handle(message({ replyId: "page:stays:next" }));
+    expect(engine.actions.searchStays).not.toHaveBeenCalled();
+  });
+
+  it("never reads 'next day' as a page turn", async () => {
+    const searchStays = jest.fn().mockResolvedValue(paged(stays(1, 8), 1, 3));
+    const engine = build({ actions: { searchStays } });
+    await engine.service.handle(message({ text: "Vrindavan mein ashram dikhao" }));
+    searchStays.mockClear();
+    await engine.service.handle(message({ text: "next day" }));
+    expect(searchStays).not.toHaveBeenCalledWith(expect.objectContaining({ page: 2 }));
+  });
+
+  const atProperty = (engine: ReturnType<typeof build>) =>
+    seedSession(engine.sessions, {
+      flow: "stay_booking",
+      data: {
+        ashramId: "ashram-1",
+        _detailsShownFor: "ashram-1",
+        location: "Vrindavan",
+        checkInDate: "2026-10-01",
+        checkOutDate: "2026-10-03",
+        guests: 2,
+      },
+    });
+
+  it("shows every open room category, eight at a time", async () => {
+    const rooms = Array.from({ length: 10 }, (_, i) => ({
+      _id: `r${i}`,
+      name: `Room ${i}`,
+      sellingPrice: 1000 + i,
+      unitsLeft: 2,
+    }));
+    const engine = build({ actions: { roomsFor: jest.fn(async () => rooms) } });
+    atProperty(engine);
+    await engine.service.handle(message({ replyId: "stay:ashram-1" }));
+    const first = lastRows(engine);
+    expect(first.filter((r) => r.id.startsWith("room:"))).toHaveLength(8);
+    expect(first.at(-1)!.id).toBe("page:rooms:next");
+    await engine.service.handle(message({ text: "aur dikhao" }));
+    expect(lastRows(engine).map((r) => r.id)).toEqual(["room:r8", "room:r9", "page:rooms:prev"]);
+  });
+
+  it("shows the room's selling price, the figure pricing charges, not its MRP", async () => {
+    const engine = build({
+      actions: {
+        roomsFor: jest.fn(async () => [
+          { _id: "r1", name: "Deluxe", basePrice: 2000, sellingPrice: 1500, unitsLeft: 1 },
+        ]),
+      },
+    });
+    atProperty(engine);
+    await engine.service.handle(message({ replyId: "stay:ashram-1" }));
+    const [row] = lastRows(engine);
+    expect(row.description).toContain("₹1,500");
+    expect(row.description).not.toContain("₹2,000");
+  });
+
+  it("pages through My Bookings, re-reading the history for each page", async () => {
+    const bookings = Array.from({ length: 11 }, (_, i) => ({
+      _id: `b${i}`,
+      bookingId: `TRV-${i}`,
+      status: "confirmed",
+      paymentStatus: "paid",
+      checkInDate: "2026-10-01",
+      checkOutDate: "2026-10-03",
+    }));
+    const myStayBookings = jest.fn(async () => bookings);
+    const engine = build({ actions: { myStayBookings } });
+    await engine.service.handle(message({ text: "meri booking" }));
+    expect(lastRows(engine).at(-1)!.id).toBe("page:bookings:next");
+    await engine.service.handle(message({ text: "next" }));
+    expect(lastRows(engine).map((r) => r.id)).toEqual([
+      "booking:view:b8",
+      "booking:view:b9",
+      "booking:view:b10",
+      "page:bookings:prev",
+    ]);
+    expect(myStayBookings).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("domain refusals reach the guest in the service's own words", () => {
+  it("explains why a payment link cannot be issued (already paid, expired, cancelled)", async () => {
+    const engine = build({
+      actions: {
+        createPaymentLink: jest.fn(async () => {
+          throw new ConflictException("This booking is already paid.");
+        }),
+      },
+    });
+    seedSession(engine.sessions);
+    await engine.service.handle(message({ replyId: "booking:pay:b1" }));
+    expect(allText(engine.reply)).toContain("This booking is already paid.");
+  });
+
+  it("explains a refused cancellation and leaves the cancel flow", async () => {
+    const engine = build({
+      actions: {
+        cancelBooking: jest.fn(async () => {
+          throw new BadRequestException("This booking can no longer be cancelled");
+        }),
+      },
+    });
+    seedSession(engine.sessions, {
+      flow: "cancellation",
+      step: "confirm",
+      data: { bookingId: "b1" },
+    });
+    await engine.service.handle(message({ replyId: "cancel:yes" }));
+    expect(allText(engine.reply)).toContain("This booking can no longer be cancelled");
+    expect(engine.sessions.current().flow).toBeNull();
+  });
+
+  it("explains when a booking is already past cancelling before asking to confirm", async () => {
+    const engine = build({
+      actions: {
+        getBooking: jest.fn(async () => ({ _id: "b1", bookingId: "TRV-1", status: "checked_in" })),
+        previewCancellationRefund: jest.fn(async () => {
+          throw new BadRequestException("This booking can no longer be cancelled");
+        }),
+      },
+    });
+    seedSession(engine.sessions);
+    await engine.service.handle(message({ replyId: "booking:cancel:b1" }));
+    expect(allText(engine.reply)).toContain("This booking can no longer be cancelled");
+    expect(engine.reply.buttons).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * The order the channel asks in once a property is chosen: room category
+ * first, then the dates that category actually has open, then the party size
+ * and one name per guest. The category comes first because the calendar is
+ * per room — dates offered before one is picked could not be real.
+ */
+describe("stay booking flow — category, real dates, then the party", () => {
+  /** Two open nights, then a gap, then another open night. */
+  const calendar = [
+    { date: "2030-10-01", price: 900, available: 3, isClosed: false },
+    { date: "2030-10-02", price: 900, available: 2, isClosed: false },
+    { date: "2030-10-03", price: 900, available: 0, isClosed: false },
+    { date: "2030-10-04", price: 950, available: 1, isClosed: true },
+    { date: "2030-10-05", price: 950, available: 4, isClosed: false },
+  ];
+
+  const withRooms = (extra: Record<string, any> = {}) =>
+    build({
+      actions: {
+        roomsFor: jest.fn(async () => [
+          { _id: "r-deluxe", name: "Deluxe", basePrice: 900, capacity: 2 },
+        ]),
+        availabilityForRoom: jest.fn(async () => calendar),
+        ...extra,
+      },
+    });
+
+  const rowsOfLastList = (engine: ReturnType<typeof build>) =>
+    (engine.reply.list.mock.calls.at(-1)?.[4] ?? []) as any[];
+
+  it("offers only the nights the calendar reports open, never a closed or sold-out one", async () => {
+    const engine = withRooms();
+    seedSession(engine.sessions, {
+      flow: "stay_booking",
+      data: { location: "Vrindavan", ashramId: "ashram-1", _detailsShownFor: "ashram-1" },
+    });
+    await engine.service.handle(message({ replyId: "room:r-deluxe" }));
+    expect(engine.actions.availabilityForRoom).toHaveBeenCalledWith("r-deluxe");
+    const ids = rowsOfLastList(engine).map((row) => row.id);
+    expect(ids).toContain("checkin:2030-10-01");
+    expect(ids).toContain("checkin:2030-10-02");
+    // Sold out, and closed.
+    expect(ids).not.toContain("checkin:2030-10-03");
+    expect(ids).not.toContain("checkin:2030-10-04");
+  });
+
+  it("offers check-out only to the end of the unbroken run of open nights", async () => {
+    const engine = withRooms();
+    seedSession(engine.sessions, {
+      flow: "stay_booking",
+      data: {
+        location: "Vrindavan",
+        ashramId: "ashram-1",
+        _detailsShownFor: "ashram-1",
+        rooms: [{ roomId: "r-deluxe", units: 1 }],
+      },
+    });
+    await engine.service.handle(message({ replyId: "checkin:2030-10-01" }));
+    expect(engine.sessions.current().data.checkInDate).toBe("2030-10-01");
+    const ids = rowsOfLastList(engine).map((row) => row.id);
+    // Nights of the 1st and 2nd are open, so check-out is the 2nd or the 3rd.
+    expect(ids).toEqual(
+      expect.arrayContaining(["checkout:2030-10-02", "checkout:2030-10-03"]),
+    );
+    // The 3rd is sold out, so the run stops: the 5th is never reachable.
+    expect(ids).not.toContain("checkout:2030-10-06");
+  });
+
+  it("puts the guest back on the categories when a room has no open dates at all", async () => {
+    const engine = withRooms({ availabilityForRoom: jest.fn(async () => []) });
+    seedSession(engine.sessions, {
+      flow: "stay_booking",
+      data: { location: "Vrindavan", ashramId: "ashram-1", _detailsShownFor: "ashram-1" },
+    });
+    await engine.service.handle(message({ replyId: "room:r-deluxe" }));
+    expect(engine.sessions.current().data.rooms).toBeUndefined();
+    expect(rowsOfLastList(engine).some((row) => row.id === "room:r-deluxe")).toBe(true);
+  });
+
+  it("prices the stay as soon as the party size is known, asking nothing further", async () => {
+    const engine = withRooms();
+    seedSession(engine.sessions, {
+      flow: "stay_booking",
+      data: {
+        location: "Vrindavan",
+        ashramId: "ashram-1",
+        _detailsShownFor: "ashram-1",
+        rooms: [{ roomId: "r-deluxe", units: 1 }],
+        checkInDate: "2030-10-01",
+        checkOutDate: "2030-10-03",
+      },
+    });
+    await engine.service.handle(message({ text: "2" }));
+    expect(engine.actions.quoteStay).toHaveBeenCalled();
+    expect(engine.sessions.current().step).toBe("confirm");
   });
 });
