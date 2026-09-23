@@ -267,104 +267,12 @@ export class DayStayBookingService {
    * and the marketplace apply — and production with a missing secret refuses
    * outright rather than trusting the client.
    */
-<<<<<<< Updated upstream
-  async confirmPayment(dto: DayStayConfirmPaymentDto, customerId?: string): Promise<any> {
-    const isHexId = typeof dto.bookingId === "string" && /^[0-9a-fA-F]{24}$/.test(dto.bookingId);
-    const lookupConditions: any[] = [];
-    if (dto.bookingId) {
-      lookupConditions.push({ bookingId: dto.bookingId });
-      if (isHexId) lookupConditions.push({ _id: dto.bookingId });
-    }
-    if (dto.razorpayOrderId) {
-      lookupConditions.push({ "paymentSummary.razorpayOrderId": dto.razorpayOrderId });
-    }
-
-    const booking = await this.bookingModel.findOne({
-      $or: lookupConditions.length > 0 ? lookupConditions : [{ bookingId: "non_existent" }],
-    });
-
-    if (!booking) {
-      throw new NotFoundException("Active Day Stay booking not found for this payment order");
-    }
-
-    // Ownership check: only the customer who created this hold (browser
-    // checkout callback path) may confirm it. `customerId` is undefined
-    // for the server-to-server webhook path, which is trusted separately
-    // via PaymentsWebhookService.verifySignature on the raw webhook body.
-    if (customerId && String(booking.customerId) !== String(customerId)) {
-      throw new NotFoundException("Active Day Stay booking not found for this payment order");
-    }
-
-    // 1. Idempotency Check: If already confirmed, return success immediately
-    if (booking.status === "confirmed" || booking.paymentStatus === "fully_paid") {
-      return {
-        success: true,
-        bookingId: booking.bookingId,
-        reservationNumber: booking.reservationNumber,
-        status: "confirmed",
-        checkInCode: booking.checkInCode,
-        pricing: booking.pricing,
-        slotStartTime: booking.dayStayDetails?.slotStartTime,
-        slotEndTime: booking.dayStayDetails?.slotEndTime,
-        durationMinutes: booking.dayStayDetails?.durationMinutes,
-        bookingType: booking.bookingType,
-        dayStayDetails: booking.dayStayDetails,
-        rooms: booking.rooms,
-      };
-    }
-
-    // 2. Cryptographic signature check.
-    // - Client-invoked (customerId set, from the browser checkout
-    //   callback): a valid signature is mandatory whenever live Razorpay
-    //   keys are configured. Without this, anyone could POST an arbitrary
-    //   bookingId + made-up order/payment ids and get a free confirmation.
-    // - Webhook-invoked (customerId undefined): the caller
-    //   (PaymentsWebhookService) has already verified Razorpay's
-    //   `X-Razorpay-Signature` over the raw webhook body with a separate
-    //   webhook secret, so no per-payment signature is expected here.
-    const keySecret = this.config.get<string>("razorpayKeySecret");
-    const isMock =
-      dto.razorpayOrderId?.startsWith("mock_") ||
-      dto.razorpayPaymentId?.startsWith("pay_sim_") ||
-      dto.razorpayPaymentId?.startsWith("mock_") ||
-      dto.razorpaySignature === "demo_simulated_sig";
-
-    if (keySecret && !isMock) {
-      if (customerId) {
-        if (!dto.razorpaySignature) {
-          throw new BadRequestException("Payment signature is required to confirm this booking");
-        }
-        const generatedSig = createHmac("sha256", keySecret)
-          .update(`${dto.razorpayOrderId}|${dto.razorpayPaymentId}`)
-          .digest("hex");
-
-        const expected = Buffer.from(generatedSig);
-        const actual = Buffer.from(dto.razorpaySignature);
-        const isValid = expected.length === actual.length && timingSafeEqual(expected, actual);
-        if (!isValid) {
-          throw new BadRequestException("Invalid payment signature");
-        }
-      } else if (dto.razorpaySignature) {
-        // Webhook path shouldn't normally carry a per-payment signature,
-        // but if one is present, validate it rather than ignore it.
-        const generatedSig = createHmac("sha256", keySecret)
-          .update(`${dto.razorpayOrderId}|${dto.razorpayPaymentId}`)
-          .digest("hex");
-        const expected = Buffer.from(generatedSig);
-        const actual = Buffer.from(dto.razorpaySignature);
-        const isValid = expected.length === actual.length && timingSafeEqual(expected, actual);
-        if (!isValid) {
-          throw new BadRequestException("Invalid payment signature");
-        }
-      }
-=======
   private assertClientSignature(dto: DayStayConfirmPaymentDto): void {
     const keySecret = this.config.get<string>("razorpayKeySecret");
     if (!keySecret) {
       if (this.isProduction())
         throw new ServiceUnavailableException("Payments are not configured.");
       return;
->>>>>>> Stashed changes
     }
     if (!dto.razorpaySignature)
       throw new BadRequestException("Payment signature is required");

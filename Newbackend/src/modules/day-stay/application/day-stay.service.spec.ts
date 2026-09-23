@@ -8,7 +8,6 @@ import { DayStayBookingService } from "../application/day-stay-booking.service";
 import { DayStayProductsService } from "../application/day-stay-products.service";
 import { DayStayVendorService } from "../application/day-stay-vendor.service";
 import { TransactionService } from "../../../common/database/transaction.service";
-import { createHmac } from "node:crypto";
 
 /** A genuine Razorpay checkout signature under the test key secret. */
 const sign = (orderId: string, paymentId: string, secret = "mock_secret") =>
@@ -424,11 +423,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
           bookingId: "BK-DAY-001",
           razorpayOrderId: "order_rzp_001",
           razorpayPaymentId: "pay_rzp_001",
-<<<<<<< Updated upstream
-          razorpaySignature: validSignature("order_rzp_001", "pay_rzp_001"),
-=======
           razorpaySignature: sign("order_rzp_001", "pay_rzp_001"),
->>>>>>> Stashed changes
         },
         "cust_01",
       );
@@ -557,11 +552,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
             bookingId: "BK-DAY-001",
             razorpayOrderId: "order_rzp_001",
             razorpayPaymentId: "pay_rzp_001",
-<<<<<<< Updated upstream
-            razorpaySignature: validSignature("order_rzp_001", "pay_rzp_001"),
-=======
             razorpaySignature: sign("order_rzp_001", "pay_rzp_001"),
->>>>>>> Stashed changes
           },
           "cust_01",
         ),
@@ -647,11 +638,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
             bookingId: "BK-DAY-001",
             razorpayOrderId: "order_rzp_001",
             razorpayPaymentId: "pay_rzp_001",
-<<<<<<< Updated upstream
-            razorpaySignature: validSignature("order_rzp_001", "pay_rzp_001"),
-=======
             razorpaySignature: sign("order_rzp_001", "pay_rzp_001"),
->>>>>>> Stashed changes
           },
           "cust_01",
         ),
