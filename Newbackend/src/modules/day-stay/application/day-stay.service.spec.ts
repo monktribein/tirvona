@@ -453,7 +453,10 @@ describe("DayStay Engine Unit & Integration Tests", () => {
 
     it("A3. Browser confirmation for someone else's booking is rejected", async () => {
       const doc = createPendingBookingDoc();
-      mockBookingModel.findOne.mockResolvedValue(doc);
+      // Ownership is enforced in the query filter, so the mock must honour it.
+      mockBookingModel.findOne.mockImplementation((filter: any) =>
+        Promise.resolve(filter?.customerId === doc.customerId ? doc : null),
+      );
 
       await expect(
         bookingService.confirmPayment(
@@ -461,7 +464,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
             bookingId: "BK-DAY-001",
             razorpayOrderId: "order_rzp_001",
             razorpayPaymentId: "pay_rzp_001",
-            razorpaySignature: validSignature("order_rzp_001", "pay_rzp_001"),
+            razorpaySignature: sign("order_rzp_001", "pay_rzp_001"),
           },
           "someone_else",
         ),
