@@ -135,7 +135,19 @@ const build = (actionOverrides: Record<string, any> = {}, identity = guest) => {
     searchStays: jest.fn(async () => [ASHRAM]),
     propertyDetails: jest.fn(async () => DETAILS),
     roomsFor: jest.fn(async () => ROOMS),
-    quoteStay: jest.fn(async (input: any) => quoteFor(input)),
+    topDestinations: jest.fn(async () => [
+      { city: "Vrindavan", count: 12 },
+      { city: "Haridwar", count: 7 },
+    ]),
+    // As the real pricing service does: a code on the request is applied.
+    quoteStay: jest.fn(async (input: any) =>
+      input.promoCode
+        ? quoteFor(input, {
+            discount: 500,
+            coupon: { promoCode: input.promoCode, offerTitle: "Monsoon offer" },
+          })
+        : quoteFor(input),
+    ),
     applyPromo: jest.fn(async (input: any) => ({
       ok: true,
       quote: quoteFor(input, {
@@ -1063,5 +1075,80 @@ describe("my bookings, cancellation and refund status", () => {
     await e.say("mera refund kahan hai");
     expect(e.state().rooms).toEqual([{ roomId: "r-deluxe", units: 2 }]);
     expect(e.session().flow).toBe("stay_booking");
+  });
+});
+
+describe("choosing a destination from a tappable list", () => {
+  it("offers real destinations alongside the 'which place' question, most-listed first", async () => {
+    const e = build();
+    await e.say("Mujhe stay chahiye");
+    expect(e.actions.topDestinations).toHaveBeenCalled();
+    const rows = e.reply.list.mock.calls.at(-1)![4];
+    expect(rows).toEqual([
+      { id: "location:Vrindavan", title: "Vrindavan", description: expect.stringContaining("12") },
+      { id: "location:Haridwar", title: "Haridwar", description: expect.stringContaining("7") },
+    ]);
+    // The text prompt still goes out too — tapping is an addition, not a replacement.
+    expect(e.texts()).toMatch(/which place|kis jagah|kaunsi jagah/i);
+  });
+
+  it("tapping a destination behaves exactly like typing its name", async () => {
+    const e = build();
+    await e.say("Mujhe stay chahiye");
+    await e.say("", "location:Vrindavan");
+    expect(e.state().location).toBe("Vrindavan");
+    expect(e.session().flow).toBe("stay_booking");
+    // A bare place with no dates yet is a browse, exactly as typing
+    // "Vrindavan" alone would be — not a silent skip to a booked result.
+    expect(e.actions.searchStays).toHaveBeenCalledWith(
+      expect.objectContaining({ place: "Vrindavan" }),
+    );
+    expect(e.state().ashramId).toBeUndefined();
+  });
+
+  it("reaches the same room list whether the place was tapped or typed", async () => {
+    const tapped = build();
+    await tapped.say("Mujhe stay chahiye");
+    await tapped.say("", "location:Vrindavan");
+    await tapped.say("2 guests ke liye 1 Oct se 3 Oct tak");
+    await tapped.say("", "stay:ashram-1");
+
+    const typed = build();
+    await typed.say("Vrindavan mein stay chahiye");
+    await typed.say("2 guests ke liye 1 Oct se 3 Oct tak");
+    await typed.say("", "stay:ashram-1");
+
+    expect(tapped.state().ashramId).toBe(typed.state().ashramId);
+    expect(tapped.reply.list.mock.calls.at(-1)![4].map((r: any) => r.id)).toEqual(
+      typed.reply.list.mock.calls.at(-1)![4].map((r: any) => r.id),
+    );
+  });
+
+  it("does not offer a list when there are no destinations to show", async () => {
+    const e = build({ topDestinations: jest.fn(async () => []) });
+    await e.say("Mujhe stay chahiye");
+    expect(e.reply.list).not.toHaveBeenCalled();
+    // The plain question still went out.
+    expect(e.texts().length).toBeGreaterThan(0);
+  });
+
+  it("still asks the question in text even if fetching destinations fails", async () => {
+    const e = build({
+      topDestinations: jest.fn().mockRejectedValue(new Error("db down")),
+    });
+    await e.say("Mujhe stay chahiye");
+    expect(e.reply.list).not.toHaveBeenCalled();
+    expect(e.texts()).toMatch(/which place|kis jagah|kaunsi jagah/i);
+  });
+
+  it("re-offers the list on a repeated, unanswered location question", async () => {
+    const e = build();
+    await e.say("Mujhe stay chahiye");
+    // Words the parser is built to never read as a place name (see
+    // nlu.ts's PLACE_STOPWORDS hedge-word comment) — so the location slot
+    // genuinely stays empty and the same question is asked again.
+    await e.say("hmm not sure yet");
+    expect(e.state().location).toBeUndefined();
+    expect(e.actions.topDestinations).toHaveBeenCalledTimes(2);
   });
 });

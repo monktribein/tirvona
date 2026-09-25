@@ -15,6 +15,12 @@ import { createHmac, hkdfSync, timingSafeEqual } from "node:crypto";
  */
 
 export const PAYMENT_LINK_PURPOSE = "stay_pay";
+/**
+ * A parking payment link. Same key and format, different purpose: a stay
+ * token is refused by the parking endpoints and a parking token by the stay
+ * ones, because each verifies the purpose it expects.
+ */
+export const PARKING_PAYMENT_LINK_PURPOSE = "parking_pay";
 export const PAYMENT_LINK_VERSION = 1;
 /** The longest a link lives, even if the booking hold would last longer. */
 export const PAYMENT_LINK_MAX_TTL_MS = 30 * 60_000;
@@ -90,6 +96,7 @@ export const verifyPaymentLink = (
   token: string,
   key: Buffer,
   now: number = Date.now(),
+  purpose: string = PAYMENT_LINK_PURPOSE,
 ): PaymentLinkVerdict => {
   if (typeof token !== "string" || token.length > 512)
     return { ok: false, reason: "malformed" };
@@ -117,7 +124,7 @@ export const verifyPaymentLink = (
     typeof claims.iat !== "number"
   )
     return { ok: false, reason: "malformed" };
-  if (claims.p !== PAYMENT_LINK_PURPOSE || claims.v !== PAYMENT_LINK_VERSION)
+  if (claims.p !== purpose || claims.v !== PAYMENT_LINK_VERSION)
     return { ok: false, reason: "purpose" };
   if (now >= claims.exp) return { ok: false, reason: "expired" };
   return { ok: true, claims };

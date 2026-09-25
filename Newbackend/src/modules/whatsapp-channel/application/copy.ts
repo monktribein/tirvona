@@ -123,6 +123,29 @@ export const copy = {
       language,
     ),
 
+  chooseDestination: (language: ReplyLanguage): string =>
+    pick(
+      {
+        en: "Or pick a popular destination:",
+        hi: "या एक लोकप्रिय जगह चुनें:",
+        hinglish: "Ya ek popular destination chunein:",
+      },
+      language,
+    ),
+
+  destinationRowDescription: (
+    language: ReplyLanguage,
+    count: number,
+  ): string =>
+    pick(
+      {
+        en: `${count} stay${count === 1 ? "" : "s"}`,
+        hi: `${count} ठहराव`,
+        hinglish: `${count} stay${count === 1 ? "" : "s"}`,
+      },
+      language,
+    ),
+
   askCheckIn: (language: ReplyLanguage): string =>
     pick(
       {
@@ -231,6 +254,24 @@ export const copy = {
         en: `I couldn't find an available stay near ${place} for those dates. Would you like to try different dates or another place?`,
         hi: `उन तारीखों में ${place} के पास कोई कमरा उपलब्ध नहीं मिला। क्या आप दूसरी तारीख या जगह देखना चाहेंगे?`,
         hinglish: `Un dates mein ${place} ke paas koi room available nahi mila. Kya aap dusri dates ya jagah try karna chahenge?`,
+      },
+      language,
+    ),
+
+  /**
+   * The property the guest tapped is gone from the live catalogue — delisted,
+   * unapproved or deleted between the list being sent and the tap arriving.
+   * Deliberately not `noStaysFound`: the dates are not the problem and the
+   * other stays in that place are still bookable, so telling the guest to try
+   * different dates would send them down the wrong path.
+   */
+  stayNoLongerAvailable: (language: ReplyLanguage): string =>
+    pick(
+      {
+        en: "That stay is no longer available. Please choose another one.",
+        hi: "वह ठहरने की जगह अब उपलब्ध नहीं है। कृपया कोई दूसरी चुनें।",
+        hinglish:
+          "Wo stay ab available nahi hai. Kripya koi dusri choose karein.",
       },
       language,
     ),

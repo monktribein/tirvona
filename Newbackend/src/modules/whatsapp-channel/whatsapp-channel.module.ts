@@ -7,6 +7,7 @@ import { MetaCloudWhatsAppClient } from "../../integrations/whatsapp/providers/m
 import { AshramsModule } from "../ashrams/ashrams.module";
 import { RefundsModule } from "../refunds/refunds.module";
 import { BookingsModule } from "../bookings/bookings.module";
+import { ParkingModule } from "../parking/parking.module";
 import { UsersModule } from "../users/users.module";
 import { ConversationService } from "./application/conversation.service";
 import { WhatsAppActionsService } from "./application/whatsapp-actions.service";
@@ -42,6 +43,7 @@ import { WhatsAppInboundWorker } from "./whatsapp-inbound.worker";
     ConfigModule.forFeature(whatsappConfig),
     BookingsModule,
     AshramsModule,
+    ParkingModule,
     RefundsModule,
     // Read-only access to the "User" model, so a WhatsApp sender can be
     // matched against an existing registered account by phone number. This

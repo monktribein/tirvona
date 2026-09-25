@@ -18,6 +18,19 @@ import { Public } from "../../../common/decorators/public.decorator";
 import { WhatsAppWebhookService } from "../application/whatsapp-webhook.service";
 
 /**
+ * How many delivery-status callbacks (sent / delivered / read / failed for
+ * our own outbound messages) this delivery carried. Counted only so the log
+ * can tell an empty delivery from a status-only one; nothing acts on them.
+ */
+const countStatuses = (payload: any): number => {
+  let count = 0;
+  for (const entry of payload?.entry ?? [])
+    for (const change of entry?.changes ?? [])
+      count += change?.value?.statuses?.length ?? 0;
+  return count;
+};
+
+/**
  * Meta's WhatsApp Cloud API webhook.
  *
  * Public (no JWT) because Meta is the caller. Authentication is the
@@ -83,6 +96,18 @@ export class WhatsAppWebhookController {
     }
 
     const messages = this.webhook.extractMessages(request.body);
+    // Meta delivers message and status callbacks on the same URL, and only
+    // the first kind is a conversation. Recording the count of each makes an
+    // "it returns 200 but nothing happens" report answerable from the log:
+    // zero extracted messages means the delivery carried no guest message.
+    this.logger.log(
+      JSON.stringify({
+        event: "whatsapp.webhook_received",
+        messageCount: messages.length,
+        statusCount: countStatuses(request.body),
+      }),
+    );
+
     for (const message of messages) {
       try {
         await this.webhook.receive(message);

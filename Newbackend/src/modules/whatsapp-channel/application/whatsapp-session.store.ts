@@ -36,10 +36,46 @@ export interface WhatsAppSession {
   language: ReplyLanguage;
   /** Ids and selections for the flow in progress. Never secrets. */
   data: Record<string, unknown>;
+  /**
+   * Which list "next"/"previous" would turn, and the page on screen. Only a
+   * cursor: turning a page runs the database query again for that page, so
+   * nothing about the rows themselves is ever read back from here.
+   */
+  paging?: WhatsAppPaging;
   /** Meta's 24-hour customer service window is measured from this. */
   lastInboundAt: number;
   startedAt: number;
   messageCount: number;
+}
+
+/** A list the guest can page through, and how to fetch it again. */
+export interface WhatsAppPaging {
+  list:
+    | "stays"
+    | "rooms"
+    /** Dates a chosen room category actually has open, paged a screen at a time. */
+    | "check_in_dates"
+    | "check_out_dates"
+    | "bookings"
+    | "cancel"
+    | "parking_locations"
+    | "parking_bays"
+    | "parking_bookings"
+    | "parking_cancel";
+  page: number;
+  /** For "stays"/"parking_locations": the search that produced the list, so page N is the same search. */
+  query?: {
+    place?: string;
+    checkIn?: string;
+    checkOut?: string;
+    guests?: number;
+    /** For "parking_locations": the calendar date/time halves of the window. */
+    entryAt?: string;
+    entryTime?: string;
+    exitAt?: string;
+    exitTime?: string;
+    vehicleType?: string;
+  };
 }
 
 const KEY_PREFIX = "wa:session:";

@@ -506,6 +506,61 @@ export const platformSettingsService = {
   updateSettings: (data: unknown) => api.put("/platform-settings", data),
 };
 
+/**
+ * The signed, login-free WhatsApp payment link's backend. Every call is
+ * scoped by the token alone — no booking id, amount or identity is ever sent
+ * from here; the server reads all of that from its own record. `skipToast`
+ * is set throughout because this page shows its own inline errors.
+ */
+export const publicBookingPaymentService = {
+  summary: (token: string) =>
+    api.get(`/public/pay/${encodeURIComponent(token)}`, { skipToast: true }),
+  createOrder: (token: string) =>
+    api.post(
+      `/public/pay/${encodeURIComponent(token)}/order`,
+      {},
+      { skipToast: true },
+    ),
+  confirm: (
+    token: string,
+    proof: {
+      razorpay_order_id: string;
+      razorpay_payment_id: string;
+      razorpay_signature: string;
+    },
+  ) =>
+    api.post(`/public/pay/${encodeURIComponent(token)}/confirm`, proof, {
+      skipToast: true,
+    }),
+};
+
+/**
+ * The signed, login-free WhatsApp parking payment link's backend — the
+ * parking counterpart of `publicBookingPaymentService`. Every call is scoped
+ * by the token alone.
+ */
+export const publicParkingPaymentService = {
+  summary: (token: string) =>
+    api.get(`/public/parking-pay/${encodeURIComponent(token)}`, { skipToast: true }),
+  createOrder: (token: string) =>
+    api.post(
+      `/public/parking-pay/${encodeURIComponent(token)}/order`,
+      {},
+      { skipToast: true },
+    ),
+  confirm: (
+    token: string,
+    proof: {
+      razorpay_order_id: string;
+      razorpay_payment_id: string;
+      razorpay_signature: string;
+    },
+  ) =>
+    api.post(`/public/parking-pay/${encodeURIComponent(token)}/confirm`, proof, {
+      skipToast: true,
+    }),
+};
+
 export { serviceEcosystemService } from "./service.service";
 export { marketplaceService } from "./marketplace.service";
 export { enterpriseNotificationService } from "./enterpriseNotification.service";

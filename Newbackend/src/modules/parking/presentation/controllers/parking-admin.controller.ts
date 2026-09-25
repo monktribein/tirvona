@@ -30,6 +30,7 @@ import {
   ParkingCapabilityGuard,
   type ParkingRequest,
 } from "../guards/parking-capability.guard";
+import { withBookingCustomers } from "../../../bookings/domain/booking-customer";
 
 @ApiTags("Parking Administration")
 @ApiBearerAuth()
@@ -164,15 +165,19 @@ export class ParkingAdminController {
         .replace(/[\s.-]/g, "");
     const page = Math.max(1, Number(query.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(query.limit) || 25));
-    const [data, total] = await Promise.all([
+    const [rows, total] = await Promise.all([
       this.service.bookings
         .find(filter)
         .populate("locationId slotTypeId customerId")
+        // A WhatsApp guest has no account; their WAPP identity is shown in
+        // the same customer fields instead (see withBookingCustomer).
+        .populate("whatsappCustomerId", "wappId name phone")
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit),
       this.service.bookings.countDocuments(filter),
     ]);
+    const data = withBookingCustomers(rows.map((row: any) => row.toObject()));
     return { success: true, count: data.length, total, data };
   }
 

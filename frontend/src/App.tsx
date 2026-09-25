@@ -27,6 +27,8 @@ const HomePage = lazy(() => import("./pages/HomePage"));
 const BannerDetailPage = lazy(() => import("./pages/BannerDetailPage"));
 const SearchPage = lazy(() => import("./pages/SearchPage"));
 const AshramDetailPage = lazy(() => import("./pages/AshramDetailPage"));
+const BookingPaymentPage = lazy(() => import("./pages/BookingPaymentPage"));
+const ParkingPaymentPage = lazy(() => import("./pages/ParkingPaymentPage"));
 const FaqPage = lazy(() => import("./pages/FaqPage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const RegisterPage = lazy(() => import("./pages/RegisterPage"));
@@ -634,6 +636,14 @@ const AppContent: React.FC = () => {
             <Route path="/aarti/:id" element={<AartiDetailPage />} />
 
           </Route>
+
+          {/* The signed WhatsApp payment link. Deliberately outside every
+              layout that assumes a website login — a WhatsApp guest has
+              none, and the token itself is the only credential this page
+              needs. It renders its own minimal, focused shell. */}
+          <Route path="/booking/pay/:token" element={<BookingPaymentPage />} />
+          {/* Same as above, for the WhatsApp parking payment link. */}
+          <Route path="/parking/pay/:token" element={<ParkingPaymentPage />} />
 
           <Route
             element={

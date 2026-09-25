@@ -8,6 +8,15 @@ import Razorpay from "razorpay";
 import { TransactionService } from "../../../common/database/transaction.service";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import {
+  actorFromUser,
+  bookingOwnerFilter,
+  type BookingActor,
+} from "../../bookings/domain/booking-customer";
+import {
+  DEFAULT_BOOKING_CHANNEL,
+  WHATSAPP_BOOKING_CHANNEL,
+} from "../../bookings/domain/booking.utils";
+import {
   PARKING_MODEL,
   PARKING_VEHICLE_META,
 } from "../domain/parking.constants";
@@ -23,6 +32,7 @@ import {
   normalizeVehicleNumber,
   parkingBookingReference,
   parkingDisplayCode,
+  parkingOwnerFields,
   parkingTransactionReference,
   sealParkingQr,
 } from "../domain/parking.utils";
@@ -35,6 +45,18 @@ import type {
 } from "../presentation/dtos/parking.dto";
 import { ParkingPricingService } from "./parking-pricing.service";
 
+const isObjectId = (value: unknown): boolean =>
+  /^[0-9a-f]{24}$/i.test(String(value ?? ""));
+
+/**
+ * Parking bookings for every channel.
+ *
+ * Each customer action has one implementation taking a `BookingActor` (the
+ * same identity type stays use), so a website account and a WhatsApp guest
+ * go through identical pricing, inventory, payment and cancellation rules.
+ * The website's existing `AuthenticatedUser` methods are thin wrappers over
+ * those, so its behaviour is unchanged.
+ */
 @Injectable()
 export class ParkingBookingService {
   constructor(
@@ -75,6 +97,14 @@ export class ParkingBookingService {
 
   async create(
     user: AuthenticatedUser,
+    dto: CreateParkingBookingDto,
+  ): Promise<any> {
+    return this.createFor(actorFromUser(user), dto);
+  }
+
+  /** Holds a bay for whichever identity is booking. */
+  async createFor(
+    actor: BookingActor,
     dto: CreateParkingBookingDto,
   ): Promise<any> {
     this.validateWindow(dto.entryAt, dto.exitAt);
@@ -138,15 +168,16 @@ export class ParkingBookingService {
         [
           {
             bookingReference: parkingBookingReference(),
-            customerId: user.id,
+            customerId: actor.userId,
+            whatsappCustomerId: actor.whatsappCustomerId,
             locationId: location._id,
             partnerId: location.partnerId,
             slotTypeId: slotType._id,
             vehicleType: dto.vehicleType,
             vehicleNumber: normalizeVehicleNumber(dto.vehicleNumber),
             vehicleModel: dto.vehicleModel ?? "",
-            driverName: dto.driverName || user.name,
-            driverPhone: dto.driverPhone || user.phone || "",
+            driverName: dto.driverName || actor.name || "",
+            driverPhone: dto.driverPhone || actor.phone || "",
             entryAt: new Date(dto.entryAt),
             exitAt: new Date(dto.exitAt),
             durationHours: billableHours(dto.entryAt, dto.exitAt),
@@ -175,10 +206,11 @@ export class ParkingBookingService {
               {
                 status: "pending",
                 note: "Booking created",
-                updatedBy: user.id,
+                updatedBy: actor.userId,
               },
             ],
-            source: "web",
+            source:
+              actor.channel === WHATSAPP_BOOKING_CHANNEL ? "whatsapp" : "web",
           },
         ],
         { session },
@@ -198,6 +230,53 @@ export class ParkingBookingService {
     return booking;
   }
 
+  /**
+   * One booking, only if it belongs to this actor. Anything else — someone
+   * else's booking, a malformed id — is "not found", so a reference confirms
+   * nothing about bookings that are not theirs.
+   */
+  async ownBookingFor(actor: BookingActor, id: string): Promise<any> {
+    if (!isObjectId(id)) throw new ParkingException("Booking not found.", 404);
+    const booking = await this.bookings.findOne({
+      _id: id,
+      ...bookingOwnerFilter(actor),
+    });
+    if (!booking) throw new ParkingException("Booking not found.", 404);
+    return booking;
+  }
+
+  /** This actor's parking bookings, newest first, with location and bay type. */
+  async listMineFor(
+    actor: BookingActor,
+    status: string | undefined,
+    page: number,
+    limit: number,
+  ): Promise<any> {
+    return this.repository.listBookings(
+      { ...bookingOwnerFilter(actor), ...(status ? { status } : {}) },
+      page,
+      Math.min(limit, 50),
+    );
+  }
+
+  /** One booking, with its location and bay type resolved for display. */
+  async getFor(actor: BookingActor, id: string): Promise<any> {
+    if (!isObjectId(id)) throw new ParkingException("Booking not found.", 404);
+    const booking = await this.bookings
+      .findOne({ _id: id, ...bookingOwnerFilter(actor) })
+      .populate("locationId", "name slug address")
+      .populate("slotTypeId", "name code");
+    if (!booking) throw new ParkingException("Booking not found.", 404);
+    return booking;
+  }
+
+  /** What cancelling now would refund, from the same policy `cancel` applies. */
+  async refundPreviewFor(actor: BookingActor, id: string): Promise<any> {
+    const booking = await this.ownBookingFor(actor, id);
+    const location = await this.locations.findById(booking.locationId);
+    return this.pricingService.refundQuote(booking, location);
+  }
+
   async listMine(
     userId: string,
     status: string | undefined,
@@ -212,7 +291,17 @@ export class ParkingBookingService {
   }
 
   async createPaymentOrder(id: string, user: AuthenticatedUser): Promise<any> {
-    const booking = await this.ownBooking(id, user.id);
+    return this.createPaymentOrderFor(actorFromUser(user), id);
+  }
+
+  /**
+   * Opens the Razorpay order for a booking, amount read from the booking.
+   * An order already opened for the same amount is handed back rather than a
+   * second one created, so repeated "pay" taps cannot leave several live
+   * orders against one booking.
+   */
+  async createPaymentOrderFor(actor: BookingActor, id: string): Promise<any> {
+    const booking = await this.ownBookingFor(actor, id);
     if (booking.paymentStatus === "paid")
       throw new ParkingException("This booking is already paid.", 400);
     if (booking.status !== "pending")
@@ -234,7 +323,7 @@ export class ParkingBookingService {
     if (!configured) {
       await this.payments.create({
         bookingId: booking._id,
-        userId: user.id,
+        ...parkingOwnerFields(booking),
         partnerId: booking.partnerId,
         amount: booking.pricing.totalAmount,
         purpose: "booking",
@@ -243,6 +332,25 @@ export class ParkingBookingService {
       });
       return { demo: true, data: { amount: booking.pricing.totalAmount } };
     }
+    const open = await this.payments
+      .findOne({
+        bookingId: booking._id,
+        purpose: "booking",
+        status: "pending",
+        amount: booking.pricing.totalAmount,
+        "gateway.orderId": { $type: "string", $ne: "" },
+      })
+      .sort({ createdAt: -1 });
+    if (open)
+      return {
+        demo: false,
+        data: {
+          orderId: open.gateway.orderId,
+          amount: Math.round(booking.pricing.totalAmount * 100),
+          currency: "INR",
+          keyId,
+        },
+      };
     const razorpay = new Razorpay({
       key_id: keyId!,
       key_secret: keySecret!,
@@ -254,7 +362,7 @@ export class ParkingBookingService {
     });
     await this.payments.create({
       bookingId: booking._id,
-      userId: user.id,
+      ...parkingOwnerFields(booking),
       partnerId: booking.partnerId,
       amount: booking.pricing.totalAmount,
       purpose: "booking",
@@ -319,7 +427,7 @@ export class ParkingBookingService {
       b: String(booking._id),
       r: booking.bookingReference,
       l: String(booking.locationId),
-      u: String(booking.customerId),
+      u: String(booking.customerId ?? booking.whatsappCustomerId),
       n: booking.vehicleNumber,
       e: booking.entryAt,
       x: booking.exitAt,
@@ -333,7 +441,8 @@ export class ParkingBookingService {
         {
           bookingId: booking._id,
           locationId: booking.locationId,
-          customerId: booking.customerId,
+          customerId: booking.customerId ?? null,
+          whatsappCustomerId: booking.whatsappCustomerId ?? null,
           tokenHash: hashParkingQr(token),
           token,
           displayCode,
@@ -353,9 +462,28 @@ export class ParkingBookingService {
     user: AuthenticatedUser,
     dto: ConfirmParkingPaymentDto,
   ): Promise<any> {
+    return this.confirmPaymentFor(actorFromUser(user), id, dto);
+  }
+
+  /**
+   * Settles a verified payment against the actor's own booking.
+   *
+   * The Razorpay signature proves the order/payment pair is genuine for this
+   * merchant; it does not prove the order was for *this* booking. So the
+   * order must be one this booking opened (its pending payment row carries
+   * the order id and the booking's amount) — a genuine payment for some other,
+   * cheaper order is refused rather than settling this booking.
+   */
+  async confirmPaymentFor(
+    actor: BookingActor,
+    id: string,
+    dto: ConfirmParkingPaymentDto,
+  ): Promise<any> {
+    if (!isObjectId(id)) throw new ParkingException("Booking not found.", 404);
     if (!this.verifyRazorpay(dto)) {
       await this.notifications.create({
-        userId: user.id,
+        userId: actor.userId,
+        whatsappCustomerId: actor.whatsappCustomerId,
         bookingId: id,
         event: "payment_failed",
         title: "Payment failed",
@@ -370,7 +498,7 @@ export class ParkingBookingService {
     }
     const result = await this.transactions.run(async (session) => {
       const booking = await this.bookings
-        .findOne({ _id: id, customerId: user.id })
+        .findOne({ _id: id, ...bookingOwnerFilter(actor) })
         .session(session);
       if (!booking) throw new ParkingException("Booking not found.", 404);
       if (booking.paymentStatus === "paid")
@@ -384,20 +512,35 @@ export class ParkingBookingService {
           "Your reservation hold expired. Please book again.",
           410,
         );
+      const gatewayConfigured = Boolean(
+        this.config.get<string>("razorpayKeySecret"),
+      );
       let payment = await this.payments
         .findOne({
           bookingId: booking._id,
           purpose: "booking",
           status: "pending",
+          ...(gatewayConfigured
+            ? {
+                "gateway.orderId": String(dto.razorpay_order_id ?? ""),
+                amount: booking.pricing.totalAmount,
+              }
+            : {}),
         })
         .sort({ createdAt: -1 })
         .session(session);
+      if (!payment && gatewayConfigured)
+        throw new ParkingException(
+          "This payment does not belong to this booking.",
+          400,
+          "PAYMENT_ORDER_MISMATCH",
+        );
       if (!payment)
         [payment] = await this.payments.create(
           [
             {
               bookingId: booking._id,
-              userId: user.id,
+              ...parkingOwnerFields(booking),
               partnerId: booking.partnerId,
               amount: booking.pricing.totalAmount,
               purpose: "booking",
@@ -434,7 +577,7 @@ export class ParkingBookingService {
       booking.history.push({
         status: "upcoming",
         note: "Payment confirmed",
-        updatedBy: user.id,
+        updatedBy: actor.userId,
       });
       await booking.save({ session });
       await this.commissions.updateOne(
@@ -469,7 +612,7 @@ export class ParkingBookingService {
               commissionPercent: commission.percent,
               commissionAmount: commission.amount,
             },
-            recordedBy: user.id,
+            recordedBy: actor.userId,
           },
         ],
         { session },
@@ -478,7 +621,7 @@ export class ParkingBookingService {
       await this.notifications.create(
         [
           {
-            userId: booking.customerId,
+            ...parkingOwnerFields(booking),
             bookingId: booking._id,
             event: "booking_confirmed",
             title: "Parking Confirmed",
@@ -537,8 +680,30 @@ export class ParkingBookingService {
     };
   }
 
+  /**
+   * The booking's canonical gate pass — the same QR the website shows and the
+   * gate scanner verifies. An active pass is returned as issued; one is
+   * minted only if a paid booking somehow has none.
+   */
   async currentPass(id: string, userId: string, format: string): Promise<any> {
     const booking = await this.assertPassable(id, userId);
+    return this.renderExistingOrMintedPass(booking, format);
+  }
+
+  /** Same as `currentPass`, but for either identity kind (WhatsApp). */
+  async currentPassFor(
+    actor: BookingActor,
+    id: string,
+    format: string,
+  ): Promise<any> {
+    const booking = await this.assertPassableFor(actor, id);
+    return this.renderExistingOrMintedPass(booking, format);
+  }
+
+  private async renderExistingOrMintedPass(
+    booking: any,
+    format: string,
+  ): Promise<any> {
     const existing = await this.qrCodes
       .findOne({ bookingId: booking._id, status: { $in: ["active", "used"] } })
       .sort({ version: -1 })
@@ -560,8 +725,23 @@ export class ParkingBookingService {
     return this.renderPass(pass, booking, format);
   }
 
+  /** Only reachable from the website, so ownership is checked via the repository. */
   private async assertPassable(id: string, userId: string): Promise<any> {
     const booking = await this.ownBooking(id, userId);
+    if (
+      booking.paymentStatus !== "paid" ||
+      ["cancelled", "expired", "no_show"].includes(booking.status)
+    )
+      throw new ParkingException(
+        "This booking no longer has a valid pass.",
+        400,
+      );
+    return booking;
+  }
+
+  /** Same check, for either identity kind. */
+  private async assertPassableFor(actor: BookingActor, id: string): Promise<any> {
+    const booking = await this.ownBookingFor(actor, id);
     if (
       booking.paymentStatus !== "paid" ||
       ["cancelled", "expired", "no_show"].includes(booking.status)
@@ -581,15 +761,42 @@ export class ParkingBookingService {
     return this.renderPass(pass, booking, format);
   }
 
+  /** Same as `reissueQr`, but for either identity kind (WhatsApp). */
+  async reissueQrFor(
+    actor: BookingActor,
+    id: string,
+    format: string,
+  ): Promise<any> {
+    const booking = await this.assertPassableFor(actor, id);
+    const pass = await this.transactions.run((session) =>
+      this.issueQr(booking, session),
+    );
+    return this.renderPass(pass, booking, format);
+  }
+
   async cancel(
     id: string,
     user: AuthenticatedUser,
     dto: CancelParkingDto,
     bypassOwnership = false,
   ): Promise<any> {
+    return this.cancelFor(actorFromUser(user), id, dto, bypassOwnership);
+  }
+
+  /**
+   * Cancels under the location's refund policy, releases the bay, revokes
+   * the pass and reverses commission — one path for every channel.
+   * `bypassOwnership` is reached only from staff routes with a principal.
+   */
+  async cancelFor(
+    actor: BookingActor,
+    id: string,
+    dto: CancelParkingDto,
+    bypassOwnership = false,
+  ): Promise<any> {
     const existing = bypassOwnership
       ? await this.repository.findBooking(id)
-      : await this.ownBooking(id, user.id);
+      : await this.ownBookingFor(actor, id);
     if (!existing) throw new ParkingException("Booking not found.", 404);
     const location = await this.locations.findById(existing.locationId);
     const refund = await this.pricingService.refundQuote(existing, location);
@@ -598,7 +805,7 @@ export class ParkingBookingService {
       const row = await this.bookings
         .findOne({
           _id: id,
-          ...(bypassOwnership ? {} : { customerId: user.id }),
+          ...(bypassOwnership ? {} : bookingOwnerFilter(actor)),
         })
         .session(session);
       if (!row || ["cancelled", "checked_out"].includes(row.status))
@@ -612,7 +819,7 @@ export class ParkingBookingService {
       row.cancellation = {
         reason: dto.reason || "Cancelled by user",
         cancelledAt: new Date(),
-        cancelledBy: user.id,
+        cancelledBy: actor.userId,
         refundAmount: refund.refundAmount,
         refundReference: refund.refundAmount
           ? `PKREF-${Date.now().toString().slice(-8)}`
@@ -624,7 +831,7 @@ export class ParkingBookingService {
       row.history.push({
         status: "cancelled",
         note: dto.reason,
-        updatedBy: user.id,
+        updatedBy: actor.userId,
       });
       await row.save({ session });
       await this.repository.releaseInventory({
@@ -657,7 +864,7 @@ export class ParkingBookingService {
               amount: -Math.abs(refund.refundAmount),
               description: `Refund for ${row.bookingReference}`,
               reference: parkingTransactionReference(),
-              recordedBy: user.id,
+              recordedBy: actor.userId,
             },
           ],
           { session },
@@ -678,7 +885,7 @@ export class ParkingBookingService {
       await this.notifications.create(
         [
           {
-            userId: row.customerId,
+            ...parkingOwnerFields(row),
             bookingId: row._id,
             event: refund.refundAmount ? "refund" : "cancellation",
             title: "Parking Booking Cancelled",
@@ -772,20 +979,24 @@ export class ParkingBookingService {
       .update(`${razorpayOrderId}|${razorpayPaymentId}`)
       .digest("hex");
 
-    const actingUser = {
-      _id: String(payment.userId),
-      id: String(payment.userId),
-      name: "",
-      email: "",
-      role: "customer",
-      status: "active",
-      permissions: [],
-      scopedAshramIds: [],
-      scopedTempleIds: [],
-    } as AuthenticatedUser;
+    // Whoever the payment row says is paying — an account or a WhatsApp
+    // guest — is the only identity that can settle this booking.
+    const actor: BookingActor = payment.whatsappCustomerId
+      ? {
+          userId: null,
+          whatsappCustomerId: String(payment.whatsappCustomerId),
+          role: "whatsapp_customer",
+          channel: WHATSAPP_BOOKING_CHANNEL,
+        }
+      : {
+          userId: String(payment.userId),
+          whatsappCustomerId: null,
+          role: "customer",
+          channel: DEFAULT_BOOKING_CHANNEL,
+        };
 
     try {
-      await this.confirmPayment(String(payment.bookingId), actingUser, {
+      await this.confirmPaymentFor(actor, String(payment.bookingId), {
         razorpay_order_id: razorpayOrderId,
         razorpay_payment_id: razorpayPaymentId,
         razorpay_signature: signature,

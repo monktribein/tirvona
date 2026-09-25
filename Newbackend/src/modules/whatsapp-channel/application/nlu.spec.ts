@@ -3,8 +3,12 @@ import {
   extractDate,
   extractGuests,
   extractNights,
+  extractParkingEntities,
   extractPlace,
   extractReference,
+  extractVehicleNumber,
+  extractVehicleType,
+  pageRequest,
   understand,
 } from "./nlu";
 
@@ -16,6 +20,15 @@ describe("intent classification", () => {
   it("recognises greetings across languages", () => {
     for (const value of ["hi", "Hello", "namaste", "नमस्ते", "start"])
       expect(understand(value, NOW).intent).toBe("greeting");
+  });
+
+  it("recognises stretched and misspelled greetings", () => {
+    for (const value of ["hii", "Hii", "hiii", "heyy", "helo", "hlo", "hy", "hlw", "hellooo"])
+      expect(understand(value, NOW).intent).toBe("greeting");
+  });
+
+  it("does not mistake 'hai' (Hindi for 'is') for a greeting", () => {
+    expect(understand("theek hai", NOW).intent).toBe("affirm");
   });
 
   it("recognises a stay request across languages", () => {
@@ -154,6 +167,16 @@ describe("place extraction", () => {
     expect(extractPlace("room chahiye")).toBeNull();
     expect(extractPlace("kal ke liye")).toBeNull();
   });
+
+  it("never reads a stretched or misspelled greeting as a place", () => {
+    for (const value of ["hiii", "heyy", "helo", "hellooo", "hlw"])
+      expect(extractPlace(value)).toBeNull();
+    expect(extractPlace("hiii Vrindavan")).toBe("Vrindavan");
+  });
+
+  it("keeps Devanagari vowel signs in a Hindi place name", () => {
+    expect(extractPlace("वृंदावन में कमरा चाहिए")).toContain("वृंदावन");
+  });
 });
 
 describe("reference extraction", () => {
@@ -194,5 +217,107 @@ describe("whole-message understanding", () => {
     expect(result.intent).toBe("search_stay");
     expect(result.parameters.checkIn).toBeUndefined();
     expect(result.parameters.guests).toBeUndefined();
+  });
+});
+
+describe("pageRequest", () => {
+  it.each(["next", "Next page", "more", "aur dikhao", "aage", "agla page", "और दिखाओ", "next."])(
+    "reads %p as the next page",
+    (text) => expect(pageRequest(text)).toBe("next"),
+  );
+
+  it.each(["previous", "prev page", "pichla", "पिछला"])("reads %p as the previous page", (text) =>
+    expect(pageRequest(text)).toBe("previous"),
+  );
+
+  it.each([
+    "next day",
+    "agle din",
+    "agla din checkout",
+    "next week Vrindavan",
+    "aur 2 log",
+    "back",
+    "show me more rooms in Haridwar please",
+  ])("never treats %p as a page turn", (text) => expect(pageRequest(text)).toBeNull());
+});
+
+describe("extractVehicleNumber", () => {
+  it.each([
+    ["UP32AB1234", "UP32AB1234"],
+    ["up 32 ab 1234", "UP32AB1234"],
+    ["UP-32-AB-1234", "UP32AB1234"],
+    ["MH12AB1234", "MH12AB1234"],
+    ["my car is DL3CAB1234, please park it", "DL3CAB1234"],
+  ])("reads %p as %p", (text, expected) => {
+    expect(extractVehicleNumber(text)).toBe(expected);
+  });
+
+  it.each(["abc123", "hello world", "12345", ""])(
+    "finds nothing in %p",
+    (text) => expect(extractVehicleNumber(text)).toBeNull(),
+  );
+});
+
+describe("extractVehicleType", () => {
+  it.each([
+    ["mera car hai", "car"],
+    ["bike lekar aa raha hoon", "bike"],
+    ["scooter par aaunga", "scooter"],
+    ["it's a luxury car", "luxury_car"],
+    ["mini bus book karni hai", "mini_bus"],
+    ["EV charge karni hai", "ev"],
+    ["gaadi se aaunga", "car"],
+  ])("reads %p as %p", (text, expected) => {
+    expect(extractVehicleType(text)).toBe(expected);
+  });
+
+  it("prefers the longer phrase over a shorter substring match", () => {
+    expect(extractVehicleType("luxury car chahiye")).toBe("luxury_car");
+  });
+
+  it("finds nothing when no vehicle word is present", () => {
+    expect(extractVehicleType("kal 4 baje aaunga")).toBeNull();
+  });
+});
+
+describe("extractParkingEntities", () => {
+  it("reads a place, entry and exit in one sentence", () => {
+    const result = extractParkingEntities(
+      "Vrindavan mein car ke liye kal 4 baje se agle din 11 baje tak",
+      { now: NOW },
+    );
+    expect(result.location).toBe("Vrindavan");
+    expect(result.entryTime).toBe("16:00");
+    expect(result.exitTime).toBe("11:00");
+    expect(result.vehicleType).toBe("car");
+    // exitDate is the day after entryDate.
+    expect(day(result.exitDate!)).toBe(day(result.entryDate!) + 86_400_000);
+  });
+
+  it("attributes a lone date/time to whichever slot is the current focus", () => {
+    const entry = extractParkingEntities("kal", { now: NOW, focusSlot: "entryDate" });
+    expect(entry.entryDate).toBeDefined();
+    expect(entry.exitDate).toBeUndefined();
+
+    const exit = extractParkingEntities("agle din", {
+      now: NOW,
+      focusSlot: "exitDate",
+      knownEntryDate: entry.entryDate,
+    });
+    expect(day(exit.exitDate!)).toBe(day(entry.entryDate!) + 86_400_000);
+  });
+
+  it("never reads 'parking' itself as the place name", () => {
+    expect(extractParkingEntities("parking chahiye", { now: NOW }).location).toBeUndefined();
+  });
+
+  it("picks up the vehicle number wherever it appears", () => {
+    const result = extractParkingEntities("UP32AB1234 hai meri gaadi", { now: NOW });
+    expect(result.vehicleNumber).toBe("UP32AB1234");
+  });
+
+  it("does not invent an exit date with no known entry date to anchor 'agle din' to", () => {
+    const result = extractParkingEntities("agle din", { now: NOW, focusSlot: "exitDate" });
+    expect(result.exitDate).toBeUndefined();
   });
 });

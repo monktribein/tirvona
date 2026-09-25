@@ -1,10 +1,12 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { copy, formatMoney } from "./copy";
-import { resolveReplyLanguage } from "./language";
+import { resolveReplyLanguage, type ReplyLanguage } from "./language";
 import {
+  extractParkingEntities,
   extractStayEntities,
   isDiscoveryPhrasing,
+  pageRequest,
   understand,
   type Intent,
   type StayEntities,
@@ -16,6 +18,14 @@ import {
   type RequiredStaySlot,
   type StaySlots,
 } from "./stay-slots";
+import {
+  mergeParkingSlots,
+  nextMissingParkingSlot,
+  parkingDateTimeToIso,
+  type ParkingSlots,
+  type RequiredParkingSlot,
+} from "./parking-slots";
+import { parkingCopy } from "./copy-parking";
 import { HttpException } from "@nestjs/common";
 import type { WhatsAppResolvedIdentity } from "../../bookings/domain/booking-customer";
 import { stayCopy, money } from "./copy-stay";
@@ -34,11 +44,16 @@ import {
   type RoomRequest,
 } from "./stay-selection";
 import type { StayBookingInput } from "./stay-booking-payload";
-import { WhatsAppActionsService } from "./whatsapp-actions.service";
+import {
+  LIST_PAGE_SIZE,
+  WhatsAppActionsService,
+  type PagedRows,
+} from "./whatsapp-actions.service";
 import { WhatsAppIdentityService } from "./whatsapp-identity.service";
 import { WhatsAppReplyService } from "./whatsapp-reply.service";
 import {
   WhatsAppSessionStore,
+  type WhatsAppPaging,
   type WhatsAppSession,
 } from "./whatsapp-session.store";
 import type { InboundMessage } from "./whatsapp-webhook.service";
@@ -58,6 +73,9 @@ const BOOKING_INTENT_VERBS =
 /** "isme booking karni hai" — picking the one thing just shown, by reference. */
 const SELECT_SHOWN_ITEM =
   /\bisme\b|iss\s*mein|ismein|is\s*mein|isi\s*mein|ye\s*wala|yeh\s*wala|this\s*one|isko|iske\s*liye/iu;
+
+/** Distinguishes "meri parking dikhao"/"parking cancel karo" from the stay equivalent. */
+const PARKING_WORD = /\bparking\b|\bpark\b|पार्किंग/iu;
 
 /** The extra, non-slot bookkeeping this flow keeps alongside the `StaySlots` fields. */
 interface StayFlowState extends StaySlots {
@@ -104,6 +122,89 @@ interface StayFlowState extends StaySlots {
   _offers?: { id: string; promoCode: string }[];
   /** True while the bot is waiting for the guest to send a coupon code. */
   _awaitingCoupon?: boolean;
+  /** The total the guest was last shown — what "confirm" agreed to pay. */
+  quotedTotal?: number;
+}
+
+/** One row of a WhatsApp interactive list. */
+type ListRow = { id: string; title: string; description?: string };
+
+/**
+ * What handling one inbound message actually did.
+ *
+ * `failed` is reported rather than thrown: the guest has already been sent an
+ * apology, so replaying the message through a BullMQ retry would only repeat
+ * it, but the inbound event still has to show that the turn went wrong.
+ */
+export interface ConversationOutcome {
+  status: "handled" | "rate_limited" | "skipped_locked" | "blocked" | "failed";
+  /** Error class name only — never a message, which can carry guest details. */
+  errorType?: string;
+}
+
+/**
+ * Everything in the stay state that belongs to one particular property.
+ * Choosing a different property drops all of it; the guest's own dates,
+ * guests, services and coupon are kept and re-checked on the new stay.
+ */
+const PROPERTY_SCOPED_KEYS = [
+  "rooms",
+  "roomId",
+  "addOns",
+  "quotedTotal",
+  "_roomOptions",
+  "_detailsShownFor",
+  "_propertyName",
+  "_propertyCity",
+  "_policy",
+  "_addOnOptions",
+  "_offers",
+] as const;
+
+/** The calendar date after this one, both `YYYY-MM-DD`. */
+const nextDay = (date: string): string =>
+  new Date(Date.parse(`${date}T00:00:00Z`) + 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+
+/**
+ * A calendar date as a WhatsApp list row title. Titles are capped at 24
+ * characters by Meta, so this stays short — "Fri, 25 Sep" — and is built in
+ * UTC to match the `YYYY-MM-DD` the calendar and the slots both use.
+ */
+const formatStayDate = (date: string, language: ReplyLanguage): string =>
+  new Date(`${date}T00:00:00Z`).toLocaleDateString(
+    language === "hi" ? "hi-IN" : "en-IN",
+    { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" },
+  );
+
+/** The status of a domain refusal worth telling the guest about, or null. */
+const refusalStatus = (error: unknown): number | null =>
+  error instanceof HttpException && error.getStatus() < 500
+    ? error.getStatus()
+    : null;
+
+/**
+ * The extra, non-slot bookkeeping the parking flow keeps alongside the
+ * `ParkingSlots` fields — display caches and loop-protection, mirroring
+ * `StayFlowState`.
+ */
+interface ParkingFlowState extends ParkingSlots {
+  _lastAskedSlot?: RequiredParkingSlot | null;
+  _lastAskedRepeat?: number;
+  /** Parking locations shown by the most recent search, for "isme parking karni hai". */
+  _shownResults?: { id: string; name: string }[];
+  _locationName?: string;
+  _locationCity?: string;
+  _bayOptions?: {
+    id: string;
+    name: string;
+    isCovered?: boolean;
+    availableCount?: number;
+    totalAmount?: number;
+  }[];
+  /** The total the guest was last shown — what "confirm" agreed to pay. */
+  quotedTotal?: number;
 }
 
 /** The rooms the guest has chosen, reading the older single-room field too. */
@@ -147,8 +248,14 @@ export class ConversationService {
    * Errors never reach the guest as a stack or a status code: an expected
    * domain refusal (sold out, expired hold) gets its own sentence, and
    * anything unexpected gets an apology that makes clear nothing was charged.
+   *
+   * The outcome is *returned* rather than thrown. A guest who has already
+   * been apologised to must not have the whole message replayed at them by a
+   * BullMQ retry, but the inbound event must still record that the turn
+   * failed — recording it as "processed" hid exactly the kind of fault this
+   * method is here to absorb.
    */
-  async handle(message: InboundMessage): Promise<void> {
+  async handle(message: InboundMessage): Promise<ConversationOutcome> {
     const phone = this.identity.normalize(message.phone);
     const correlationId = `wa:${message.messageId}`;
 
@@ -159,7 +266,7 @@ export class ConversationService {
         correlationId,
         copy.rateLimited(existing?.language ?? "hinglish"),
       );
-      return;
+      return { status: "rate_limited" };
     }
 
     // One message at a time per guest: a double-tapped confirmation must not
@@ -172,7 +279,7 @@ export class ConversationService {
           messageId: message.messageId,
         }),
       );
-      return;
+      return { status: "skipped_locked" };
     }
 
     try {
@@ -189,7 +296,7 @@ export class ConversationService {
             userId: customer.userId ?? undefined,
           }),
         );
-        return;
+        return { status: "blocked" };
       }
 
       const previous = await this.sessions.get(phone);
@@ -208,9 +315,15 @@ export class ConversationService {
         });
 
       // Language follows the guest: what they wrote this time, else what the
-      // conversation was already in, else what we remembered about them.
+      // conversation was already in, else what we remembered about them. A
+      // tapped row or button carries our own title, not the guest's words —
+      // "Stay book karein" read as English — so it never changes the language.
+      const typed =
+        !message.replyId &&
+        message.messageType !== "interactive" &&
+        message.messageType !== "button";
       const language = resolveReplyLanguage(
-        message.text,
+        typed ? message.text : "",
         session.language,
         customer.language,
       );
@@ -235,6 +348,25 @@ export class ConversationService {
       session.lastInboundAt = Date.now();
       session.messageCount += 1;
 
+      // The intent this turn resolved to is the single most useful fact when
+      // a guest reports "the bot said nothing" — it separates a routing fault
+      // from a delivery one. Only the intent and the flow are recorded; the
+      // guest's own words are not.
+      const understanding = understand(message.text);
+      this.logger.log(
+        JSON.stringify({
+          event: "whatsapp.conversation_routing",
+          messageId: message.messageId,
+          messageType: message.messageType,
+          replyId: message.replyId || undefined,
+          intent: understanding.intent,
+          flow: session.flow,
+          step: session.step,
+          identityKind: customer.kind,
+          language,
+        }),
+      );
+
       await this.route({
         message,
         correlationId,
@@ -244,8 +376,22 @@ export class ConversationService {
       });
 
       await this.sessions.save(session);
+      this.logger.log(
+        JSON.stringify({
+          event: "whatsapp.conversation_handled",
+          messageId: message.messageId,
+          intent: understanding.intent,
+          flow: session.flow,
+          step: session.step,
+        }),
+      );
+      return { status: "handled" };
     } catch (error) {
       await this.failGracefully(phone, correlationId, error);
+      return {
+        status: "failed",
+        errorType: error instanceof Error ? error.name : "UnknownError",
+      };
     } finally {
       await release();
     }
@@ -304,6 +450,10 @@ export class ConversationService {
     // the free-text reader might have inferred.
     if (message.replyId) return this.routeReplyId(context);
 
+    // "next" / "aur dikhao" while a list is on screen turns its page.
+    const turn = pageRequest(message.text);
+    if (turn && session.paging) return this.turnPage(context, turn);
+
     // Mid-booking, a message about the booking itself — a coupon, a room
     // count, a service, "price batao" — is a command on that booking, not a
     // switch to another service: "parking bhi chahiye" here is an add-on, and
@@ -336,8 +486,12 @@ export class ConversationService {
 
     if (session.flow === "stay_booking")
       return this.handleStayFlow(context, message.text);
+    if (session.flow === "parking_booking")
+      return this.handleParkingFlow(context, message.text);
     if (session.flow === "cancellation")
       return this.continueCancellation(context, understanding.intent);
+    if (session.flow === "parking_cancellation")
+      return this.continueParkingCancellation(context, understanding.intent);
 
     // No explicit stay keyword ("room", "ashram", ...), but a booking verb
     // together with a place name — "Vrindavan mein chahiye" — is enough to
@@ -381,7 +535,34 @@ export class ConversationService {
         bookings: "my_bookings",
         help: "help",
       };
-      return this.routeIntent(context, intents[value] ?? "menu");
+      // The row title ("🏠 Stay book karein") is our own copy, not something
+      // the guest typed. Handing it on would have the slot reader take
+      // "karein" for a place and search for it, so the flow starts from
+      // nothing, exactly as if the guest had asked for it with no details.
+      return this.routeIntent(
+        { ...context, message: { ...message, text: "" } },
+        intents[value] ?? "menu",
+      );
+    }
+
+    if (kind === "location") {
+      // Tapping a destination is read exactly like typing its name would be
+      // — through the same slot-filling entry point, so a place picked this
+      // way behaves identically to one typed in free text.
+      session.flow = "stay_booking";
+      return this.handleStayFlow(context, value);
+    }
+
+    if (kind === "page") {
+      const direction = extra === "prev" ? "previous" : "next";
+      // A tap on an old list's page row only turns the list it belongs to.
+      if (session.paging?.list !== value)
+        return this.reply.text(
+          session.phone,
+          context.correlationId,
+          stayCopy.noMorePages(session.language),
+        );
+      return this.turnPage(context, direction);
     }
 
     if (kind === "stay") {
@@ -389,12 +570,36 @@ export class ConversationService {
       // already known) or from a plain discovery browse (they are not),
       // `afterAshramChosen` is the single place that decides what happens
       // next: ask for whatever is still missing, or go straight to rooms.
-      (session.data as StayFlowState).ashramId = value;
+      const state = session.data as StayFlowState;
+      // Another property's rooms, add-ons and price mean nothing here.
+      if (state.ashramId && state.ashramId !== value) this.forgetProperty(state);
+      state.ashramId = value;
       session.flow = "stay_booking";
       return this.afterAshramChosen(context);
     }
 
     if (kind === "room") return this.chooseRoom(context, value);
+
+    if (kind === "checkin" || kind === "checkout") {
+      const state = this.stayState(session);
+      session.flow = "stay_booking";
+      if (kind === "checkin") {
+        state.checkInDate = value;
+        // A check-out that no longer sits after the new check-in is dropped
+        // rather than silently producing a zero- or negative-night stay.
+        if (state.checkOutDate && state.checkOutDate <= value)
+          delete state.checkOutDate;
+      } else {
+        // Only offered dates after the chosen check-in reach here, but a tap
+        // on an older list can still arrive late.
+        if (!state.checkInDate || value <= state.checkInDate)
+          return this.askForStayDate(context, "checkOut");
+        state.checkOutDate = value;
+      }
+      // The price was for the old dates.
+      delete state.quotedTotal;
+      return this.continueStay(context);
+    }
 
     if (kind === "offer") return this.applyCoupon(context, value);
 
@@ -406,6 +611,46 @@ export class ConversationService {
       session.step = null;
       session.data = {};
       return this.sendMenu(context, copy.cancelAborted(session.language));
+    }
+
+    if (kind === "parkinglocation") {
+      const state = context.session.data as ParkingFlowState;
+      if (state.locationId && state.locationId !== value) {
+        delete state.slotTypeId;
+        delete state.quotedTotal;
+        delete state._bayOptions;
+      }
+      state.locationId = value;
+      session.flow = "parking_booking";
+      return this.afterParkingLocationChosen(context);
+    }
+
+    if (kind === "parkingbay") return this.chooseParkingBay(context, value);
+
+    if (kind === "parkingconfirm") {
+      if (value === "yes") return this.createParkingBookingFlow(context);
+      session.flow = null;
+      session.step = null;
+      session.data = {};
+      return this.sendMenu(context, copy.cancelAborted(session.language));
+    }
+
+    if (kind === "parkingbooking") {
+      if (value === "cancel") return this.presentParkingCancellation(context, extra);
+      if (value === "pay") return this.sendParkingPaymentLink(context, extra);
+      return this.showParkingBooking(context, extra);
+    }
+
+    if (kind === "parkingcancel") {
+      if (value === "yes") return this.performParkingCancellation(context);
+      session.flow = null;
+      session.step = null;
+      session.data = {};
+      return this.reply.text(
+        session.phone,
+        context.correlationId,
+        copy.cancelAborted(session.language),
+      );
     }
 
     if (kind === "booking") {
@@ -454,6 +699,7 @@ export class ConversationService {
         session.flow = null;
         session.step = null;
         session.data = {};
+        session.paging = undefined;
         return this.sendGreeting(context);
 
       case "search_stay": {
@@ -471,16 +717,26 @@ export class ConversationService {
         session.flow = "stay_booking";
         return this.runAvailabilityQuery(context, context.message.text);
 
-      case "my_bookings":
+      case "my_bookings": {
         session.flow = null;
         session.step = null;
+        // "meri parking dikhao" asks about parking bookings, not stays.
+        if (PARKING_WORD.test(context.message.text))
+          return this.listParkingBookings(context, 1);
         return this.listBookings(context);
+      }
 
-      case "cancel":
+      case "cancel": {
+        session.data = {};
+        if (PARKING_WORD.test(context.message.text)) {
+          session.flow = "parking_cancellation";
+          session.step = "pick";
+          return this.listParkingBookingsToCancel(context, 1);
+        }
         session.flow = "cancellation";
         session.step = "pick";
-        session.data = {};
         return this.listBookingsToCancel(context);
+      }
 
       case "refund_status":
         return this.showRefundStatus(context);
@@ -504,7 +760,15 @@ export class ConversationService {
           ),
         );
 
-      case "parking":
+      case "parking": {
+        // Re-entering the flow the guest is already in must not wipe what
+        // they have already told the bot — only starting fresh clears it.
+        const alreadyInParkingFlow = session.flow === "parking_booking";
+        session.flow = "parking_booking";
+        if (!alreadyInParkingFlow) session.data = {};
+        return this.handleParkingFlow(context, context.message.text);
+      }
+
       case "aarti":
       case "event":
       case "prashad":
@@ -512,7 +776,6 @@ export class ConversationService {
         // These flows are not conversational yet. Rather than pretend, the
         // guest is told plainly and pointed at the website page that works.
         const label: Record<string, string> = {
-          parking: "Parking",
           aarti: "Aarti",
           event: "Events",
           prashad: "Prashad",
@@ -522,7 +785,6 @@ export class ConversationService {
           this.config.get<string>("frontendUrl") ?? "https://tirvona.com"
         ).replace(/\/+$/, "");
         const path: Record<string, string> = {
-          parking: "/parking",
           aarti: "/aarti",
           event: "/events",
           prashad: "/marketplace",
@@ -680,13 +942,7 @@ export class ConversationService {
     // A different place makes the old property's rooms and add-ons
     // meaningless. Dates, guests, coupon and services are the guest's own
     // choices and stay; the pricing service re-checks them on the new stay.
-    if (current.ashramId && !merged.ashramId) {
-      delete merged.rooms;
-      delete merged.roomId;
-      delete merged.addOns;
-      delete merged._roomOptions;
-      delete merged._detailsShownFor;
-    }
+    if (current.ashramId && !merged.ashramId) this.forgetProperty(merged);
     session.data = merged as unknown as Record<string, unknown>;
 
     // A place with no dates at all, or an explicit "show me the list"
@@ -696,6 +952,13 @@ export class ConversationService {
     // dates/guests are still missing for it.
     if (!merged.ashramId && !merged.checkInDate && (merged.location || isDiscoveryPhrasing(text)))
       return this.runDiscovery(context, merged.location);
+
+    // With a property chosen the channel asks in its own order — category,
+    // then the dates that category has open, then guests and their names —
+    // so the generic "next missing slot" question does not apply here. It
+    // still drives the undated discovery search below, which genuinely needs
+    // place, dates and guests before it can run at all.
+    if (merged.ashramId) return this.afterAshramChosen(context);
 
     const missing = nextMissingStaySlot(merged);
     if (missing) {
@@ -714,7 +977,6 @@ export class ConversationService {
     merged._lastAskedSlot = null;
     merged._lastAskedRepeat = 0;
 
-    if (merged.ashramId) return this.afterAshramChosen(context);
     return this.runDatedSearch(context);
   }
 
@@ -742,7 +1004,33 @@ export class ConversationService {
           checkOutDate: copy.askCheckOut,
           guests: copy.askGuests,
         }[slot](language);
-    return this.reply.text(session.phone, correlationId, prompt);
+    await this.reply.text(session.phone, correlationId, prompt);
+    // Naming a place by typing still works — this is a shortcut on top of
+    // it, not a replacement: a guest whose city is not in the list, or who
+    // just types ahead of the tap, is read exactly the same either way.
+    if (slot === "location") await this.offerDestinations(context);
+  }
+
+  /** The tappable list of cities that go with the "which place" question. */
+  private async offerDestinations(context: {
+    correlationId: string;
+    session: WhatsAppSession;
+  }): Promise<void> {
+    const { session, correlationId } = context;
+    const language = session.language;
+    const destinations = await this.actions.topDestinations().catch(() => []);
+    if (!destinations.length) return;
+    return this.reply.list(
+      session.phone,
+      `${correlationId}:destinations`,
+      copy.chooseDestination(language),
+      copy.menuButton(language),
+      destinations.map((d) => ({
+        id: `location:${d.city}`,
+        title: d.city,
+        description: copy.destinationRowDescription(language, d.count),
+      })),
+    );
   }
 
   /**
@@ -767,32 +1055,171 @@ export class ConversationService {
         copy.noStaysFound(language, location ?? ""),
       );
 
-    this.stayState(session)._shownResults = results.map((stay: any) => ({
-      id: String(stay._id),
-      name: String(stay.name ?? "Stay"),
-    }));
-
     await this.reply.text(
       session.phone,
       `${correlationId}:discovery`,
       copy.discoveryResults(language, location),
     );
+    return this.sendStaysList(context, results, { place: location });
+  }
+
+  /**
+   * One page of stays as a tappable list, with "previous"/"next" rows when
+   * the search has more pages. Every page is a fresh `publicList` query, so a
+   * stay approved since the first page was shown is found on the next.
+   */
+  private async sendStaysList(
+    context: { correlationId: string; session: WhatsAppSession },
+    results: PagedRows | any[],
+    query: NonNullable<WhatsAppPaging["query"]>,
+  ): Promise<void> {
+    const { session, correlationId } = context;
+    const language = session.language;
+    const page = Number((results as PagedRows).page) || 1;
+    const totalPages = Number((results as PagedRows).totalPages) || 1;
+    this.stayState(session)._shownResults = results.map((stay: any) => ({
+      id: String(stay._id),
+      name: String(stay.name ?? "Stay"),
+    }));
+    session.paging = { list: "stays", page, query };
     return this.reply.list(
       session.phone,
       `${correlationId}:stays`,
       copy.pickStay(language),
       copy.menuButton(language),
-      results.map((stay: any) => ({
-        id: `stay:${String(stay._id)}`,
-        title: String(stay.name ?? "Stay"),
-        description: [
-          stay.address?.city,
-          stay.startingPrice ? formatMoney(Number(stay.startingPrice)) : null,
-        ]
-          .filter(Boolean)
-          .join(" · "),
-      })),
+      this.withPageRows(
+        results.map((stay: any) => ({
+          id: `stay:${String(stay._id)}`,
+          title: String(stay.name ?? "Stay"),
+          description: [
+            stay.address?.city,
+            stay.startingPrice ? formatMoney(Number(stay.startingPrice)) : null,
+          ]
+            .filter(Boolean)
+            .join(" · "),
+        })),
+        "stays",
+        page,
+        totalPages,
+        language,
+      ),
     );
+  }
+
+  /** Appends "previous"/"next" rows to a page of list rows, as they apply. */
+  private withPageRows(
+    rows: ListRow[],
+    list: WhatsAppPaging["list"],
+    page: number,
+    totalPages: number,
+    language: WhatsAppSession["language"],
+  ): ListRow[] {
+    const nav: ListRow[] = [];
+    if (page > 1)
+      nav.push({ id: `page:${list}:prev`, ...stayCopy.prevPageRow(language, page, totalPages) });
+    if (page < totalPages)
+      nav.push({ id: `page:${list}:next`, ...stayCopy.nextPageRow(language, page, totalPages) });
+    return [...rows, ...nav];
+  }
+
+  /**
+   * Turns the page of whichever list is on screen. The session only holds
+   * the cursor; the page itself is always read again from the database.
+   */
+  private async turnPage(
+    context: {
+      correlationId: string;
+      customer: WhatsAppResolvedIdentity;
+      session: WhatsAppSession;
+    },
+    direction: "next" | "previous",
+  ): Promise<void> {
+    const { session, correlationId } = context;
+    const paging = session.paging;
+    const page = (paging?.page ?? 1) + (direction === "next" ? 1 : -1);
+    const nothingMore = () =>
+      this.reply.text(
+        session.phone,
+        `${correlationId}:nopage`,
+        stayCopy.noMorePages(session.language),
+      );
+    if (!paging || page < 1) return nothingMore();
+    this.logger.log(
+      JSON.stringify({
+        event: "whatsapp.list_page",
+        correlationId,
+        list: paging.list,
+        page,
+      }),
+    );
+    switch (paging.list) {
+      case "stays": {
+        const query = paging.query ?? {};
+        const results = await this.actions.searchStays({
+          place: query.place,
+          ...(query.checkIn ? { checkIn: isoDateToUtcMidnight(query.checkIn) } : {}),
+          ...(query.checkOut ? { checkOut: isoDateToUtcMidnight(query.checkOut) } : {}),
+          ...(query.guests ? { guests: query.guests } : {}),
+          page,
+        });
+        if (!results.length) return nothingMore();
+        session.flow = "stay_booking";
+        return this.sendStaysList(context, results, query);
+      }
+      case "rooms":
+        if (!this.stayState(session).ashramId) return nothingMore();
+        session.flow = "stay_booking";
+        return this.askForRoom(context, page);
+      case "check_in_dates":
+      case "check_out_dates": {
+        // The calendar is re-read for the turned page, so a night taken since
+        // the first page was shown is simply not on the next one.
+        if (!selectedRooms(this.stayState(session)).length)
+          return nothingMore();
+        session.flow = "stay_booking";
+        return this.askForStayDate(
+          context,
+          paging.list === "check_in_dates" ? "checkIn" : "checkOut",
+          page,
+        );
+      }
+      case "bookings":
+        return this.listBookings(context, page);
+      case "cancel":
+        return this.listBookingsToCancel(context, page);
+      case "parking_locations": {
+        const query = paging.query ?? {};
+        const results = await this.actions.searchParking({
+          place: query.place,
+          ...(query.entryAt && query.entryTime
+            ? { entryAt: parkingDateTimeToIso(query.entryAt, query.entryTime) }
+            : {}),
+          ...(query.exitAt && query.exitTime
+            ? { exitAt: parkingDateTimeToIso(query.exitAt, query.exitTime) }
+            : {}),
+          ...(query.vehicleType ? { vehicleType: query.vehicleType } : {}),
+          page,
+        });
+        if (!results.length) return nothingMore();
+        session.flow = "parking_booking";
+        return this.sendParkingLocationsList(context, results, query);
+      }
+      case "parking_bays":
+        if (!this.parkingState(session).locationId) return nothingMore();
+        session.flow = "parking_booking";
+        return this.askForParkingBay(context, page);
+      case "parking_bookings":
+        return this.listParkingBookings(context, page);
+      case "parking_cancel":
+        return this.listParkingBookingsToCancel(context, page);
+      default:
+        return nothingMore();
+    }
+  }
+
+  /** Drops everything that belonged to the previously chosen property. */
+  private forgetProperty(state: StayFlowState): void {
+    for (const key of PROPERTY_SCOPED_KEYS) delete (state as any)[key];
   }
 
   /**
@@ -808,8 +1235,9 @@ export class ConversationService {
   }): Promise<void> {
     const { session } = context;
     const state = this.stayState(session);
-    const missing = nextMissingStaySlot(state);
-    if (missing) return this.askForSlot(context, missing, false);
+    // A property reached by tap always carries the place it was listed under;
+    // one reached another way may not, and the search copy needs one.
+    if (!state.location) return this.askForSlot(context, "location", false);
 
     // Introduce the property once per choice — its details, then its rooms —
     // rather than dumping everything in one message, and never again just
@@ -818,10 +1246,41 @@ export class ConversationService {
       const shown = await this.showProperty(context);
       if (!shown) return;
     }
-    // A room configuration already chosen is kept across every later change
-    // of date, guests, services or coupon: go straight back to the summary.
-    if (selectedRooms(state).length) return this.presentSummary(context);
-    return this.askForRoom(context);
+    return this.continueStay(context);
+  }
+
+  /**
+   * The one place that decides what a chosen property still needs, in the
+   * order the channel asks for it: room category, then the dates that
+   * category actually has open, then how many guests, then their names.
+   *
+   * Every step is guarded on the fact being *absent*, so anything the guest
+   * volunteered earlier — "Vrindavan 25–27 Sep for 2" in one message — is
+   * never asked for again. The order only decides what to ask next, not what
+   * to overwrite.
+   *
+   * The room comes before the dates deliberately: the calendar is per room
+   * category, so the dates offered can only be real once a category is known.
+   */
+  private async continueStay(context: {
+    correlationId: string;
+    session: WhatsAppSession;
+  }): Promise<void> {
+    const state = this.stayState(context.session);
+    if (!selectedRooms(state).length) return this.askForRoom(context);
+    if (!state.checkInDate) return this.askForStayDate(context, "checkIn");
+    if (!state.checkOutDate) return this.askForStayDate(context, "checkOut");
+    if (!state.guests) {
+      // Same loop protection the discovery path has: an answer the parser
+      // could not read gets the question rephrased, not repeated verbatim.
+      const repeated = state._lastAskedSlot === "guests";
+      state._lastAskedSlot = "guests";
+      state._lastAskedRepeat = repeated ? (state._lastAskedRepeat ?? 0) + 1 : 0;
+      return this.askForSlot(context, "guests", repeated);
+    }
+    state._lastAskedSlot = null;
+    state._lastAskedRepeat = 0;
+    return this.presentSummary(context);
   }
 
   /**
@@ -838,13 +1297,27 @@ export class ConversationService {
     const state = this.stayState(session);
     const details = await this.actions.propertyDetails(String(state.ashramId));
     if (!details) {
+      // The property was delisted, unapproved or deleted between the list
+      // being sent and the tap arriving. The guest is told that specifically
+      // — not "no stays for those dates", which would be untrue — and the
+      // place's current stays are listed again so the conversation continues
+      // from something they can actually tap.
+      this.logger.warn(
+        JSON.stringify({
+          event: "whatsapp.stay_selection_stale",
+          correlationId,
+          ashramId: String(state.ashramId),
+        }),
+      );
       delete state.ashramId;
       delete state.rooms;
+      this.forgetProperty(state);
       await this.reply.text(
         session.phone,
         `${correlationId}:gone`,
-        copy.noStaysFound(session.language, state.location ?? ""),
+        copy.stayNoLongerAvailable(session.language),
       );
+      if (state.location) await this.runDiscovery(context, state.location);
       return false;
     }
     state._propertyName = details.name;
@@ -958,35 +1431,30 @@ export class ConversationService {
       );
     }
 
-    this.stayState(session)._shownResults = stays.map((stay: any) => ({
-      id: String(stay._id),
-      name: String(stay.name ?? "Stay"),
-    }));
-    return this.reply.list(
-      session.phone,
-      `${correlationId}:stays`,
-      copy.pickStay(language),
-      copy.menuButton(language),
-      stays.map((stay: any) => ({
-        id: `stay:${String(stay._id)}`,
-        title: String(stay.name ?? "Stay"),
-        description: [
-          stay.address?.city,
-          stay.startingPrice ? formatMoney(Number(stay.startingPrice)) : null,
-        ]
-          .filter(Boolean)
-          .join(" · "),
-      })),
-    );
+    return this.sendStaysList(context, stays, {
+      place: data.location,
+      checkIn: data.checkInDate,
+      checkOut: data.checkOutDate,
+      guests: data.guests,
+    });
   }
 
-  private async askForRoom(context: {
-    correlationId: string;
-    session: WhatsAppSession;
-  }): Promise<void> {
+  private async askForRoom(
+    context: {
+      correlationId: string;
+      session: WhatsAppSession;
+    },
+    page = 1,
+  ): Promise<void> {
     const { session, correlationId } = context;
     const data = this.stayState(session);
-    const stay = this.stayDates(data);
+    // The category is now chosen before any date, so the calendar cannot be
+    // consulted yet: with no dates the categories are listed as the property
+    // offers them, and `roomsFor` leaves `unitsLeft` unset rather than
+    // guessing a zero. Once dates are known — a guest who gave them up front,
+    // or a later change — the sold-out filter below applies exactly as before.
+    const dated = Boolean(data.checkInDate && data.checkOutDate);
+    const stay = dated ? this.stayDates(data) : undefined;
     const rooms = await this.actions.roomsFor(String(data.ashramId), stay);
     if (!rooms.length) {
       delete data.ashramId;
@@ -1008,25 +1476,40 @@ export class ConversationService {
         `${correlationId}:soldout`,
         stayCopy.noRoomsForDates(session.language),
       );
+    // Every open category stays reachable: past a page, "next" shows the rest.
+    const totalPages = Math.max(1, Math.ceil(open.length / LIST_PAGE_SIZE));
+    const current = Math.min(Math.max(1, page), totalPages);
     session.step = "pick_room";
+    session.paging = { list: "rooms", page: current };
     return this.reply.list(
       session.phone,
       `${correlationId}:rooms`,
-      stayCopy.pickRoomCategory(session.language, {
-        nights: this.nightsBetween(data),
-        guests: Number(data.guests ?? 1),
-      }),
+      dated
+        ? stayCopy.pickRoomCategory(session.language, {
+            nights: this.nightsBetween(data),
+            guests: Number(data.guests ?? 1),
+          })
+        : stayCopy.pickRoomCategoryUndated(session.language),
       copy.menuButton(session.language),
-      open.slice(0, 10).map((room: any) => ({
-        id: `room:${String(room._id)}`,
-        title: String(room.name ?? "Room"),
-        description: stayCopy.roomRowDescription(session.language, {
-          acType: room.acType,
-          capacity: room.capacity,
-          basePrice: room.basePrice,
-          unitsLeft: room.unitsLeft,
-        }),
-      })),
+      this.withPageRows(
+        open
+          .slice((current - 1) * LIST_PAGE_SIZE, current * LIST_PAGE_SIZE)
+          .map((room: any) => ({
+            id: `room:${String(room._id)}`,
+            title: String(room.name ?? "Room"),
+            description: stayCopy.roomRowDescription(session.language, {
+              acType: room.acType,
+              capacity: room.capacity,
+              basePrice: room.basePrice,
+              sellingPrice: room.sellingPrice,
+              unitsLeft: room.unitsLeft,
+            }),
+          })),
+        "rooms",
+        current,
+        totalPages,
+        session.language,
+      ),
     );
   }
 
@@ -1169,7 +1652,7 @@ export class ConversationService {
     }
 
     const pricing = quote?.pricing ?? {};
-    (data as any).quotedTotal = Number(pricing.totalAmount ?? 0);
+    data.quotedTotal = Number(pricing.totalAmount ?? 0);
     const services = quote?.services ?? {};
     const flatServices = (["prasad", "meals", "parking", "locker"] as const)
       .filter((key) => services[key]?.ordered)
@@ -1245,7 +1728,107 @@ export class ConversationService {
     delete (data as any)._pendingUnits;
     data.rooms = [{ roomId, units }];
     delete data.roomId;
-    return this.presentSummary(context);
+    // A category change re-opens the price, since the quote was for the old
+    // one. What still needs asking is decided in one place.
+    delete data.quotedTotal;
+    return this.continueStay(context);
+  }
+
+  /**
+   * The dates this room category actually has open, as tappable rows.
+   *
+   * Read from `publicCalendar` through `availabilityForRoom` — the same
+   * calendar the website's room page shows — so a night that is closed or
+   * sold out is never offered. Nothing is computed here beyond filtering and
+   * paging what that calendar returned.
+   *
+   * For check-out, only nights after the chosen check-in are offered, and the
+   * run stops at the first gap: a stay cannot span a night the room does not
+   * have. The check-out row is the morning *after* the last open night, which
+   * is why the run is extended by one day.
+   */
+  private async askForStayDate(
+    context: { correlationId: string; session: WhatsAppSession },
+    which: "checkIn" | "checkOut",
+    page = 1,
+  ): Promise<void> {
+    const { session, correlationId } = context;
+    const language = session.language;
+    const data = this.stayState(session);
+    const roomId = selectedRooms(data)[0]?.roomId;
+    if (!roomId) return this.askForRoom(context);
+
+    const calendar = await this.actions
+      .availabilityForRoom(String(roomId))
+      .catch(() => [] as any[]);
+    const open = calendar
+      .filter((day: any) => !day.isClosed && Number(day.available ?? 0) > 0)
+      .map((day: any) => ({
+        date: String(day.date).slice(0, 10),
+        price: day.price,
+        available: day.available,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    let offered = open;
+    if (which === "checkOut") {
+      const from = String(data.checkInDate);
+      // Contiguous run from the check-in night onwards; the first missing
+      // night ends it.
+      const run: typeof open = [];
+      let expected = from;
+      for (const day of open.filter((d) => d.date >= from)) {
+        if (day.date !== expected) break;
+        run.push(day);
+        expected = nextDay(day.date);
+      }
+      // Check-out is the morning after a night, so each open night N offers
+      // check-out on N+1, and the first night is not a valid check-out.
+      offered = run.map((day) => ({ ...day, date: nextDay(day.date) }));
+    }
+
+    if (!offered.length) {
+      // Never a dead end: the category simply cannot be booked, so the guest
+      // is put back on the list of categories that can.
+      await this.reply.text(
+        session.phone,
+        `${correlationId}:nodates`,
+        stayCopy.noOpenDates(language),
+      );
+      delete data.rooms;
+      delete data.roomId;
+      return this.askForRoom(context);
+    }
+
+    const totalPages = Math.max(1, Math.ceil(offered.length / LIST_PAGE_SIZE));
+    const current = Math.min(Math.max(1, page), totalPages);
+    session.step = which === "checkIn" ? "pick_check_in" : "pick_check_out";
+    session.paging = {
+      list: which === "checkIn" ? "check_in_dates" : "check_out_dates",
+      page: current,
+    };
+    return this.reply.list(
+      session.phone,
+      `${correlationId}:${which === "checkIn" ? "checkin" : "checkout"}`,
+      stayCopy.pickStayDate(language, which),
+      copy.menuButton(language),
+      this.withPageRows(
+        offered
+          .slice((current - 1) * LIST_PAGE_SIZE, current * LIST_PAGE_SIZE)
+          .map((day) => ({
+            id: `${which === "checkIn" ? "checkin" : "checkout"}:${day.date}`,
+            title: formatStayDate(day.date, language),
+            description: stayCopy.dateRowDescription(language, {
+              price: day.price,
+              available: day.available,
+            }),
+          })),
+        which === "checkIn" ? "check_in_dates" : "check_out_dates",
+        current,
+        totalPages,
+        language,
+      ),
+    );
   }
 
   /** The "Change" menu and each of its options. */
@@ -1554,6 +2137,14 @@ export class ConversationService {
   /**
    * Creates the booking and hands back a payment link.
    *
+   * Nothing the session remembers is trusted here. The stay is priced again
+   * against today's rates, offers and coupon state, and if that total is not
+   * the one the guest just agreed to, nothing is booked — they are shown the
+   * new figure and asked again. The hold itself is taken by
+   * `BookingsService.create`, which re-prices once more and reserves each
+   * night atomically; if the rooms went in the meantime, the guest is shown
+   * what is open now instead of an apology.
+   *
    * No confirmation message is sent from here. The booking is pending until
    * Razorpay's webhook verifies the payment, and the confirmation the guest
    * gets is the transactional one raised by the booking service.
@@ -1564,17 +2155,92 @@ export class ConversationService {
     session: WhatsAppSession;
   }): Promise<void> {
     const { session, customer, correlationId } = context;
+    const language = session.language;
     const data = this.stayState(session);
-    if (!selectedRooms(data).length || !data.ashramId || !data.checkInDate)
-      return this.askForRoom(context);
+    // A "confirm" from an old message, after the booking was already made or
+    // the conversation moved on, must not book anything.
+    if (!data.ashramId || !data.checkInDate || !data.checkOutDate)
+      return this.reply.text(
+        session.phone,
+        `${correlationId}:stale`,
+        stayCopy.bookingStepExpired(language),
+      );
+    if (!selectedRooms(data).length) return this.askForRoom(context);
+    // The guest has not been shown a price for this selection yet.
+    if (data.quotedTotal === undefined) return this.presentSummary(context);
+
+    let fresh: any;
+    try {
+      fresh = await this.actions.quoteStay(this.stayInput(data));
+    } catch (error) {
+      if (refusalStatus(error) === null) throw error;
+      // The summary path already explains a refused quote (a coupon that no
+      // longer applies, a paused property) and re-prices without it.
+      return this.presentSummary(context);
+    }
+    const freshTotal = Number(fresh?.pricing?.totalAmount ?? 0);
+    if (freshTotal !== Number(data.quotedTotal)) {
+      this.logStay("whatsapp.stay_price_changed", context, {
+        ashramId: data.ashramId,
+        confirmedTotal: data.quotedTotal,
+        currentTotal: freshTotal,
+      });
+      await this.reply.text(
+        session.phone,
+        `${correlationId}:repriced`,
+        stayCopy.priceChanged(language, {
+          before: Number(data.quotedTotal),
+          after: freshTotal,
+        }),
+      );
+      return this.presentSummary(context, { quote: fresh });
+    }
 
     // The same structure the website posts — the rooms with their units, the
     // services, the coupon — so the booking is priced and held exactly as
     // the summary the guest just confirmed.
-    const booking = await this.actions.createStayBooking(
-      customer,
-      this.stayInput(data, customer.name || undefined),
-    );
+    let booking: any;
+    try {
+      booking = await this.actions.createStayBooking(
+        customer,
+        this.stayInput(data, customer.name || undefined),
+      );
+    } catch (error) {
+      const status = refusalStatus(error);
+      if (status === null) throw error;
+      const reason = String((error as HttpException).message);
+      this.logStay("whatsapp.stay_booking_refused", context, {
+        ashramId: data.ashramId,
+        status,
+        reason,
+      });
+      if (status === 409 && data.promoCode && /offer|coupon|promo/i.test(reason)) {
+        const code = data.promoCode;
+        delete data.promoCode;
+        await this.reply.text(
+          session.phone,
+          `${correlationId}:promo`,
+          stayCopy.couponRefused(language, { code, reason }),
+        );
+        return this.presentSummary(context);
+      }
+      if (status === 409) {
+        await this.reply.text(
+          session.phone,
+          `${correlationId}:gone`,
+          stayCopy.roomsGoneAtBooking(language, reason),
+        );
+        delete data.rooms;
+        delete data.roomId;
+        delete data.quotedTotal;
+        return this.askForRoom(context);
+      }
+      return this.reply.text(
+        session.phone,
+        `${correlationId}:refused`,
+        stayCopy.quoteRefused(language, reason),
+      );
+    }
 
     const link = await this.actions.createPaymentLink(
       customer,
@@ -1584,6 +2250,7 @@ export class ConversationService {
     session.flow = null;
     session.step = null;
     session.data = {};
+    session.paging = undefined;
 
     const minutes = Math.max(
       1,
@@ -1604,24 +2271,60 @@ export class ConversationService {
     );
   }
 
+  /**
+   * One structured line per meaningful step of a booking. Carries the
+   * inbound message id and the guest's public identifier — never a phone
+   * number, a token or a payment secret.
+   */
+  private logStay(
+    event: string,
+    context: { correlationId: string; customer: WhatsAppResolvedIdentity },
+    fields: Record<string, unknown>,
+  ): void {
+    this.logger.log(
+      JSON.stringify({
+        event,
+        correlationId: context.correlationId,
+        identityKind: context.customer.kind,
+        wappId: context.customer.displayId ?? undefined,
+        userId: context.customer.userId ?? undefined,
+        ...fields,
+      }),
+    );
+  }
+
   // ---- my bookings --------------------------------------------------------
 
-  private async listBookings(context: {
-    correlationId: string;
-    customer: WhatsAppResolvedIdentity;
-    session: WhatsAppSession;
-  }): Promise<void> {
+  /**
+   * The guest's bookings, newest first, a page at a time. Each page re-reads
+   * the booking history, so a status that changed since the last page (paid,
+   * cancelled, refunded) is shown as it is now.
+   */
+  private async listBookings(
+    context: {
+      correlationId: string;
+      customer: WhatsAppResolvedIdentity;
+      session: WhatsAppSession;
+    },
+    page = 1,
+  ): Promise<void> {
     const { session, customer, correlationId } = context;
-    const bookings = await this.actions.myStayBookings(customer);
-    if (!bookings.length)
+    const all = await this.actions.myStayBookings(customer);
+    if (!all.length)
       return this.reply.text(
         session.phone,
         correlationId,
         copy.noBookings(session.language),
       );
+    const totalPages = Math.max(1, Math.ceil(all.length / LIST_PAGE_SIZE));
+    const current = Math.min(Math.max(1, page), totalPages);
+    const bookings = all.slice(
+      (current - 1) * LIST_PAGE_SIZE,
+      current * LIST_PAGE_SIZE,
+    );
+    session.paging = { list: "bookings", page: current };
 
     const lines = bookings
-      .slice(0, 10)
       .map((booking: any) =>
         [
           `*${booking.bookingId}*`,
@@ -1648,13 +2351,19 @@ export class ConversationService {
       `${correlationId}:actions`,
       stayCopy.openBookingPrompt(session.language),
       copy.menuButton(session.language),
-      bookings.slice(0, 10).map((booking: any) => ({
-        id: `booking:view:${String(booking._id)}`,
-        title: String(booking.bookingId),
-        description: [booking.ashramId?.name, `${booking.status} · ${booking.paymentStatus}`]
-          .filter(Boolean)
-          .join(" · "),
-      })),
+      this.withPageRows(
+        bookings.map((booking: any) => ({
+          id: `booking:view:${String(booking._id)}`,
+          title: String(booking.bookingId),
+          description: [booking.ashramId?.name, `${booking.status} · ${booking.paymentStatus}`]
+            .filter(Boolean)
+            .join(" · "),
+        })),
+        "bookings",
+        current,
+        totalPages,
+        session.language,
+      ),
     );
   }
 
@@ -1769,7 +2478,23 @@ export class ConversationService {
     bookingId: string,
   ): Promise<void> {
     const { session, customer, correlationId } = context;
-    const link = await this.actions.createPaymentLink(customer, bookingId);
+    let link: Awaited<ReturnType<WhatsAppActionsService["createPaymentLink"]>>;
+    try {
+      link = await this.actions.createPaymentLink(customer, bookingId);
+    } catch (error) {
+      // Already paid, cancelled, hold expired, not theirs — the payment-link
+      // service decides, and its own sentence is what the guest reads.
+      if (refusalStatus(error) === null) throw error;
+      this.logStay("whatsapp.payment_link_refused", context, {
+        bookingId,
+        status: refusalStatus(error),
+      });
+      return this.reply.text(
+        session.phone,
+        correlationId,
+        stayCopy.actionRefused(session.language, String((error as HttpException).message)),
+      );
+    }
     return this.reply.text(
       session.phone,
       correlationId,
@@ -1788,11 +2513,14 @@ export class ConversationService {
 
   // ---- cancellation -------------------------------------------------------
 
-  private async listBookingsToCancel(context: {
-    correlationId: string;
-    customer: WhatsAppResolvedIdentity;
-    session: WhatsAppSession;
-  }): Promise<void> {
+  private async listBookingsToCancel(
+    context: {
+      correlationId: string;
+      customer: WhatsAppResolvedIdentity;
+      session: WhatsAppSession;
+    },
+    page = 1,
+  ): Promise<void> {
     const { session, customer, correlationId } = context;
     const bookings = (await this.actions.myStayBookings(customer)).filter(
       (booking: any) => ["pending", "confirmed"].includes(booking.status),
@@ -1803,16 +2531,27 @@ export class ConversationService {
         correlationId,
         copy.noBookings(session.language),
       );
+    const totalPages = Math.max(1, Math.ceil(bookings.length / LIST_PAGE_SIZE));
+    const current = Math.min(Math.max(1, page), totalPages);
+    session.paging = { list: "cancel", page: current };
     return this.reply.list(
       session.phone,
       `${correlationId}:cancellist`,
       copy.cancelWhich(session.language),
       copy.menuButton(session.language),
-      bookings.slice(0, 10).map((booking: any) => ({
-        id: `booking:cancel:${String(booking._id)}`,
-        title: String(booking.bookingId),
-        description: String(booking.ashramId?.name ?? ""),
-      })),
+      this.withPageRows(
+        bookings
+          .slice((current - 1) * LIST_PAGE_SIZE, current * LIST_PAGE_SIZE)
+          .map((booking: any) => ({
+            id: `booking:cancel:${String(booking._id)}`,
+            title: String(booking.bookingId),
+            description: String(booking.ashramId?.name ?? ""),
+          })),
+        "cancel",
+        current,
+        totalPages,
+        session.language,
+      ),
     );
   }
 
@@ -1841,10 +2580,21 @@ export class ConversationService {
         copy.notYourBooking(session.language),
       );
     }
-    const refund = await this.actions.previewCancellationRefund(
-      customer,
-      booking,
-    );
+    let refund: number;
+    try {
+      refund = await this.actions.previewCancellationRefund(customer, booking);
+    } catch (error) {
+      // Already cancelled, checked in, or otherwise past cancelling.
+      if (refusalStatus(error) === null) throw error;
+      session.flow = null;
+      session.step = null;
+      session.data = {};
+      return this.reply.text(
+        session.phone,
+        correlationId,
+        stayCopy.actionRefused(session.language, String((error as HttpException).message)),
+      );
+    }
     session.data = { bookingId: String(booking._id) };
     session.step = "confirm";
     return this.reply.buttons(
@@ -1900,11 +2650,30 @@ export class ConversationService {
         copy.notYourBooking(session.language),
       );
 
-    const result = await this.actions.cancelBooking(
-      customer,
-      bookingId,
-      "Cancelled by the guest over WhatsApp",
-    );
+    let result: { booking: any; refundAmount: number };
+    try {
+      result = await this.actions.cancelBooking(
+        customer,
+        bookingId,
+        "Cancelled by the guest over WhatsApp",
+      );
+    } catch (error) {
+      // A booking cancelled on the website between the question and the
+      // "yes", or a double-tapped confirmation, is refused by the service.
+      if (refusalStatus(error) === null) throw error;
+      session.flow = null;
+      session.step = null;
+      session.data = {};
+      this.logStay("whatsapp.cancel_refused", context, {
+        bookingId,
+        status: refusalStatus(error),
+      });
+      return this.reply.text(
+        session.phone,
+        correlationId,
+        stayCopy.actionRefused(session.language, String((error as HttpException).message)),
+      );
+    }
     session.flow = null;
     session.step = null;
     session.data = {};
@@ -1917,4 +2686,833 @@ export class ConversationService {
       }),
     );
   }
+
+  // ---- parking booking -----------------------------------------------------
+
+  /** Reads `session.data` as the typed parking-flow state it actually holds. */
+  private parkingState(session: WhatsAppSession): ParkingFlowState {
+    return session.data as ParkingFlowState;
+  }
+
+  /**
+   * The single entry point for every message while the guest is talking about
+   * parking — same slot-filling shape as `handleStayFlow`: every message is
+   * read for everything it contains, merged onto whatever is already known,
+   * and the next question is always whichever required slot is still empty.
+   */
+  private async handleParkingFlow(
+    context: {
+      correlationId: string;
+      customer: WhatsAppResolvedIdentity;
+      session: WhatsAppSession;
+    },
+    text: string,
+  ): Promise<void> {
+    const { session, correlationId } = context;
+    const language = session.language;
+    const current = this.parkingState(session);
+
+    if (
+      !current.locationId &&
+      SELECT_SHOWN_ITEM.test(text) &&
+      current._shownResults?.length
+    ) {
+      if (current._shownResults.length === 1) {
+        current.locationId = current._shownResults[0].id;
+      } else {
+        return this.reply.text(
+          session.phone,
+          correlationId,
+          copy.pickFromListAgain(language),
+        );
+      }
+    }
+
+    // A short yes/no at the summary is the confirmation or the refusal.
+    if (
+      session.step === "parking_confirm" &&
+      text.trim().split(/\s+/).length <= 3
+    ) {
+      const intent = understand(text).intent;
+      if (intent === "affirm") return this.createParkingBookingFlow(context);
+      if (intent === "deny") return this.abandonParking(context);
+    }
+
+    const focusSlot = nextMissingParkingSlot(current);
+    const extracted = extractParkingEntities(text, {
+      knownEntryDate: current.entryDate,
+      knownExitDate: current.exitDate,
+      focusSlot,
+    });
+    const merged = mergeParkingSlots(current, extracted) as ParkingFlowState;
+    merged._shownResults = current._shownResults;
+    if (
+      extracted.location !== undefined &&
+      extracted.location !== current.location
+    ) {
+      delete merged.slotTypeId;
+      delete merged.quotedTotal;
+      delete merged._bayOptions;
+      delete merged._locationName;
+      delete merged._locationCity;
+    }
+    session.data = merged as unknown as Record<string, unknown>;
+
+    const missing = nextMissingParkingSlot(merged);
+    if (missing) {
+      const stillSameSlotMissing = missing === focusSlot;
+      const repeated =
+        merged._lastAskedSlot === missing && stillSameSlotMissing;
+      merged._lastAskedSlot = missing;
+      merged._lastAskedRepeat = repeated ? (merged._lastAskedRepeat ?? 0) + 1 : 0;
+      return this.askForParkingSlot(context, missing, repeated);
+    }
+    merged._lastAskedSlot = null;
+    merged._lastAskedRepeat = 0;
+
+    if (merged.locationId) return this.afterParkingLocationChosen(context);
+    return this.runParkingSearch(context);
+  }
+
+  private async askForParkingSlot(
+    context: { correlationId: string; session: WhatsAppSession },
+    slot: RequiredParkingSlot,
+    repeated: boolean,
+  ): Promise<void> {
+    const { session, correlationId } = context;
+    const language = session.language;
+    const prompt = repeated
+      ? parkingCopy.clarifySlot(language, slot)
+      : {
+          location: parkingCopy.askLocation,
+          entryDate: parkingCopy.askEntryDate,
+          entryTime: parkingCopy.askEntryTime,
+          exitDate: parkingCopy.askExitDate,
+          exitTime: parkingCopy.askExitTime,
+          vehicleType: parkingCopy.askVehicleType,
+        }[slot](language);
+    return this.reply.text(session.phone, correlationId, prompt);
+  }
+
+  /** The parking window as `ParkingDiscoveryService`/`ParkingBookingService` expect it. */
+  private parkingWindow(
+    data: ParkingFlowState,
+  ): { entryAt: string; exitAt: string } {
+    return {
+      entryAt: parkingDateTimeToIso(data.entryDate!, data.entryTime!),
+      exitAt: parkingDateTimeToIso(data.exitDate!, data.exitTime!),
+    };
+  }
+
+  private async runParkingSearch(context: {
+    correlationId: string;
+    session: WhatsAppSession;
+  }): Promise<void> {
+    const { session, correlationId } = context;
+    const language = session.language;
+    const data = this.parkingState(session);
+    const { entryAt, exitAt } = this.parkingWindow(data);
+
+    await this.reply.text(
+      session.phone,
+      `${correlationId}:searching`,
+      copy.searching(language),
+    );
+
+    const results = await this.actions.searchParking({
+      place: data.location,
+      entryAt,
+      exitAt,
+      vehicleType: data.vehicleType,
+    });
+
+    if (!results.length)
+      return this.reply.text(
+        session.phone,
+        `${correlationId}:none`,
+        parkingCopy.noParkingFound(language, data.location ?? ""),
+      );
+
+    return this.sendParkingLocationsList(context, results, {
+      place: data.location,
+      entryAt: data.entryDate,
+      entryTime: data.entryTime,
+      exitAt: data.exitDate,
+      exitTime: data.exitTime,
+      vehicleType: data.vehicleType as any,
+    });
+  }
+
+  private async sendParkingLocationsList(
+    context: { correlationId: string; session: WhatsAppSession },
+    results: PagedRows | any[],
+    query: NonNullable<WhatsAppPaging["query"]>,
+  ): Promise<void> {
+    const { session, correlationId } = context;
+    const language = session.language;
+    const page = Number((results as PagedRows).page) || 1;
+    const totalPages = Number((results as PagedRows).totalPages) || 1;
+    this.parkingState(session)._shownResults = results.map((row: any) => ({
+      id: String(row._id),
+      name: String(row.name ?? "Parking"),
+    }));
+    session.paging = { list: "parking_locations", page, query };
+    return this.reply.list(
+      session.phone,
+      `${correlationId}:parkinglocations`,
+      parkingCopy.pickLocation(language),
+      copy.menuButton(language),
+      this.withPageRows(
+        results.map((row: any) => ({
+          id: `parkinglocation:${String(row._id)}`,
+          title: String(row.name ?? "Parking"),
+          description: parkingCopy.locationRowDescription(language, {
+            city: row.address?.city,
+            availableCount: row.availability?.availableCount,
+          }),
+        })),
+        "parking_locations",
+        page,
+        totalPages,
+        language,
+      ),
+    );
+  }
+
+  /**
+   * Runs once a specific parking location is set — either from a tapped
+   * search result or from picking one already shown. Shows the bay list, or
+   * goes straight to whichever step is still missing (vehicle number, then
+   * the summary).
+   */
+  private async afterParkingLocationChosen(context: {
+    correlationId: string;
+    session: WhatsAppSession;
+  }): Promise<void> {
+    const { session } = context;
+    const data = this.parkingState(session);
+    if (!data.slotTypeId) return this.askForParkingBay(context);
+    if (!data.vehicleNumber) return this.askForParkingVehicleNumber(context);
+    return this.presentParkingSummary(context);
+  }
+
+  private async askForParkingBay(
+    context: { correlationId: string; session: WhatsAppSession },
+    page = 1,
+  ): Promise<void> {
+    const { session, correlationId } = context;
+    const language = session.language;
+    const data = this.parkingState(session);
+    const { entryAt, exitAt } = this.parkingWindow(data);
+    const detail = await this.actions.parkingLocationDetail(
+      String(data.locationId),
+      { entryAt, exitAt, vehicleType: data.vehicleType },
+    );
+    if (!detail) {
+      delete data.locationId;
+      return this.reply.text(
+        session.phone,
+        `${correlationId}:gone`,
+        parkingCopy.noParkingFound(language, data.location ?? ""),
+      );
+    }
+    data._locationName = String(detail.name ?? "");
+    data._locationCity = String(detail.address?.city ?? "");
+    const open = (detail.slotTypes ?? []).filter((row: any) => row.isAvailable);
+    if (!open.length)
+      return this.reply.text(
+        session.phone,
+        `${correlationId}:nobays`,
+        parkingCopy.noBaysForWindow(language),
+      );
+    data._bayOptions = open.map((row: any) => ({
+      id: String(row.slotTypeId),
+      name: String(row.name ?? "Bay"),
+      isCovered: Boolean(row.isCovered),
+      availableCount: Number(row.availableCount ?? 0),
+      totalAmount: row.pricing?.totalAmount ? Number(row.pricing.totalAmount) : undefined,
+    }));
+    const totalPages = Math.max(1, Math.ceil(open.length / LIST_PAGE_SIZE));
+    const current = Math.min(Math.max(1, page), totalPages);
+    session.paging = { list: "parking_bays", page: current };
+    return this.reply.list(
+      session.phone,
+      `${correlationId}:parkingbays`,
+      parkingCopy.pickBay(language),
+      copy.menuButton(language),
+      this.withPageRows(
+        (data._bayOptions ?? [])
+          .slice((current - 1) * LIST_PAGE_SIZE, current * LIST_PAGE_SIZE)
+          .map((bay) => ({
+            id: `parkingbay:${bay.id}`,
+            title: bay.name,
+            description: parkingCopy.bayRowDescription(language, bay),
+          })),
+        "parking_bays",
+        current,
+        totalPages,
+        language,
+      ),
+    );
+  }
+
+  private async chooseParkingBay(
+    context: { correlationId: string; session: WhatsAppSession },
+    slotTypeId: string,
+  ): Promise<void> {
+    const data = this.parkingState(context.session);
+    data.slotTypeId = slotTypeId;
+    delete data.quotedTotal;
+    return this.afterParkingLocationChosen(context);
+  }
+
+  private async askForParkingVehicleNumber(context: {
+    correlationId: string;
+    session: WhatsAppSession;
+  }): Promise<void> {
+    const { session, correlationId } = context;
+    return this.reply.text(
+      session.phone,
+      correlationId,
+      parkingCopy.askVehicleNumber(session.language),
+    );
+  }
+
+  /**
+   * Shows the price from the pricing service and asks for a decision. Every
+   * figure here came from `ParkingPricingService`; nothing is computed in
+   * this file. The bay is re-read fresh so a category that went since it was
+   * chosen is caught here, not at booking.
+   */
+  private async presentParkingSummary(context: {
+    correlationId: string;
+    session: WhatsAppSession;
+  }): Promise<void> {
+    const { session, correlationId } = context;
+    const language = session.language;
+    const data = this.parkingState(session);
+    if (!data.slotTypeId) return this.askForParkingBay(context);
+    if (!data.vehicleNumber) return this.askForParkingVehicleNumber(context);
+
+    const { entryAt, exitAt } = this.parkingWindow(data);
+    const result = await this.actions.quoteParking({
+      locationId: String(data.locationId),
+      slotTypeId: String(data.slotTypeId),
+      vehicleType: String(data.vehicleType),
+      entryAt,
+      exitAt,
+    });
+    if (!result.ok) {
+      delete data.slotTypeId;
+      delete data.quotedTotal;
+      await this.reply.text(
+        session.phone,
+        `${correlationId}:refused`,
+        parkingCopy.noBaysForWindow(language),
+      );
+      return this.askForParkingBay(context);
+    }
+
+    const pricing = result.quote;
+    data.quotedTotal = Number(pricing.totalAmount ?? 0);
+    const bay = (data._bayOptions ?? []).find((b) => b.id === data.slotTypeId);
+
+    await this.reply.text(
+      session.phone,
+      `${correlationId}:quote`,
+      parkingCopy.summary(language, {
+        location: data._locationName ?? "Tirvona parking",
+        city: data._locationCity,
+        bay: bay?.name ?? "Bay",
+        entryDate: data.entryDate!,
+        entryTime: data.entryTime!,
+        exitDate: data.exitDate!,
+        exitTime: data.exitTime!,
+        vehicleType: String(data.vehicleType),
+        vehicleNumber: String(data.vehicleNumber),
+        pricing: {
+          baseFee: Number(pricing.baseFee ?? 0),
+          durationAmount: Number(pricing.durationAmount ?? 0),
+          subtotal: Number(pricing.subtotal ?? 0),
+          taxAmount: Number(pricing.taxAmount ?? 0),
+          totalAmount: Number(pricing.totalAmount ?? 0),
+        },
+      }),
+    );
+    session.step = "parking_confirm";
+    return this.reply.buttons(
+      session.phone,
+      `${correlationId}:parkingconfirm`,
+      parkingCopy.summaryPrompt(language),
+      [
+        { id: "parkingconfirm:yes", title: stayCopy.confirmButton(language) },
+        { id: "parkingconfirm:no", title: stayCopy.cancelButton(language) },
+      ],
+    );
+  }
+
+  /** Cancels the parking booking-in-progress (not a booking that exists). */
+  private async abandonParking(context: {
+    correlationId: string;
+    session: WhatsAppSession;
+  }): Promise<void> {
+    const { session } = context;
+    session.flow = null;
+    session.step = null;
+    session.data = {};
+    session.paging = undefined;
+    return this.sendMenu(context, copy.cancelAborted(session.language));
+  }
+
+  /**
+   * Holds the bay and hands back a payment link.
+   *
+   * Nothing the session remembers is trusted here: the bay is priced again
+   * against today's rates, and if that total is not the one the guest just
+   * agreed to, nothing is booked — they are shown the new figure and asked
+   * again. The hold itself is taken by `ParkingBookingService.createFor`,
+   * which re-checks availability atomically; if the bay went in the
+   * meantime, the guest is shown what is open now instead of an apology.
+   */
+  private async createParkingBookingFlow(context: {
+    correlationId: string;
+    customer: WhatsAppResolvedIdentity;
+    session: WhatsAppSession;
+  }): Promise<void> {
+    const { session, customer, correlationId } = context;
+    const language = session.language;
+    const data = this.parkingState(session);
+    if (
+      !data.locationId ||
+      !data.entryDate ||
+      !data.entryTime ||
+      !data.exitDate ||
+      !data.exitTime
+    )
+      return this.reply.text(
+        session.phone,
+        `${correlationId}:stale`,
+        stayCopy.bookingStepExpired(language),
+      );
+    if (!data.slotTypeId) return this.askForParkingBay(context);
+    if (!data.vehicleNumber) return this.askForParkingVehicleNumber(context);
+    if (data.quotedTotal === undefined) return this.presentParkingSummary(context);
+
+    const { entryAt, exitAt } = this.parkingWindow(data);
+    const fresh = await this.actions.quoteParking({
+      locationId: String(data.locationId),
+      slotTypeId: String(data.slotTypeId),
+      vehicleType: String(data.vehicleType),
+      entryAt,
+      exitAt,
+    });
+    if (!fresh.ok) {
+      delete data.slotTypeId;
+      delete data.quotedTotal;
+      return this.askForParkingBay(context);
+    }
+    const freshTotal = Number(fresh.quote?.totalAmount ?? 0);
+    if (freshTotal !== Number(data.quotedTotal)) {
+      data.quotedTotal = freshTotal;
+      await this.reply.text(
+        session.phone,
+        `${correlationId}:repriced`,
+        stayCopy.priceChanged(language, {
+          before: Number(data.quotedTotal),
+          after: freshTotal,
+        }),
+      );
+      return this.presentParkingSummary(context);
+    }
+
+    let result: any;
+    try {
+      result = await this.actions.createParkingBooking(customer, {
+        locationId: String(data.locationId),
+        slotTypeId: String(data.slotTypeId),
+        vehicleType: String(data.vehicleType),
+        vehicleNumber: String(data.vehicleNumber),
+        entryAt,
+        exitAt,
+      });
+    } catch (error) {
+      const status = refusalStatus(error);
+      if (status === null) throw error;
+      const reason = String((error as HttpException).message);
+      this.logStay("whatsapp.parking_booking_refused", context, {
+        locationId: data.locationId,
+        status,
+        reason,
+      });
+      if (status === 409) {
+        await this.reply.text(
+          session.phone,
+          `${correlationId}:gone`,
+          stayCopy.roomsGoneAtBooking(language, reason),
+        );
+        delete data.slotTypeId;
+        delete data.quotedTotal;
+        return this.askForParkingBay(context);
+      }
+      return this.reply.text(
+        session.phone,
+        `${correlationId}:refused`,
+        stayCopy.quoteRefused(language, reason),
+      );
+    }
+
+    const link = await this.actions.createParkingPaymentLink(
+      customer,
+      String(result.booking._id),
+    );
+
+    session.flow = null;
+    session.step = null;
+    session.data = {};
+    session.paging = undefined;
+
+    const minutes = Math.max(
+      1,
+      Math.round((link.expiresAt.getTime() - Date.now()) / 60_000),
+    );
+    return this.reply.text(
+      session.phone,
+      `${correlationId}:pay`,
+      copy.paymentLink(session.language, {
+        reference: link.reference,
+        amount: link.amount,
+        url: link.url,
+        minutes,
+      }),
+      true,
+    );
+  }
+
+  // ---- my parking bookings -------------------------------------------------
+
+  private async listParkingBookings(
+    context: {
+      correlationId: string;
+      customer: WhatsAppResolvedIdentity;
+      session: WhatsAppSession;
+    },
+    page = 1,
+  ): Promise<void> {
+    const { session, customer, correlationId } = context;
+    const language = session.language;
+    const { items: all, total } = await this.actions.myParkingBookings(
+      customer,
+      undefined,
+      page,
+    );
+    if (!total)
+      return this.reply.text(
+        session.phone,
+        correlationId,
+        copy.noBookings(language),
+      );
+    const totalPages = Math.max(1, Math.ceil(total / LIST_PAGE_SIZE));
+    const current = Math.min(Math.max(1, page), totalPages);
+    session.paging = { list: "parking_bookings", page: current };
+
+    const lines = all
+      .map((booking: any) =>
+        [
+          `*${booking.bookingReference}*`,
+          booking.locationId?.name,
+          `${booking.status} · ${booking.paymentStatus}`,
+          formatMoney(Number(booking.pricing?.totalAmount ?? 0)),
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      )
+      .join("\n\n");
+    await this.reply.text(
+      session.phone,
+      correlationId,
+      `${copy.bookingsHeader(language)}\n\n${lines}`,
+    );
+    return this.reply.list(
+      session.phone,
+      `${correlationId}:parkingactions`,
+      stayCopy.openBookingPrompt(language),
+      copy.menuButton(language),
+      this.withPageRows(
+        all.map((booking: any) => ({
+          id: `parkingbooking:view:${String(booking._id)}`,
+          title: String(booking.bookingReference),
+          description: [booking.locationId?.name, `${booking.status} · ${booking.paymentStatus}`]
+            .filter(Boolean)
+            .join(" · "),
+        })),
+        "parking_bookings",
+        current,
+        totalPages,
+        language,
+      ),
+    );
+  }
+
+  private async showParkingBooking(
+    context: {
+      correlationId: string;
+      customer: WhatsAppResolvedIdentity;
+      session: WhatsAppSession;
+    },
+    bookingId: string,
+  ): Promise<void> {
+    const { session, customer, correlationId } = context;
+    const language = session.language;
+    const booking = await this.actions
+      .getParkingBooking(customer, bookingId)
+      .catch(() => null);
+    if (!booking)
+      return this.reply.text(
+        session.phone,
+        correlationId,
+        copy.notYourBooking(language),
+      );
+    await this.reply.text(
+      session.phone,
+      correlationId,
+      parkingCopy.bookingDetail(language, {
+        reference: String(booking.bookingReference),
+        location: String(booking.locationId?.name ?? ""),
+        bay: booking.slotTypeId?.name ? String(booking.slotTypeId.name) : undefined,
+        vehicleNumber: String(booking.vehicleNumber ?? ""),
+        entryAt: String(booking.entryAt),
+        exitAt: String(booking.exitAt),
+        status: String(booking.status),
+        paymentStatus: String(booking.paymentStatus),
+        total: Number(booking.pricing?.totalAmount ?? 0),
+      }),
+    );
+
+    const canPay =
+      booking.status === "pending" &&
+      booking.paymentStatus === "pending" &&
+      (!booking.reservationExpiresAt ||
+        new Date(booking.reservationExpiresAt).getTime() > Date.now());
+    const canCancel = ["pending", "upcoming", "checked_in"].includes(booking.status);
+    const buttons = [
+      canPay
+        ? { id: `parkingbooking:pay:${String(booking._id)}`, title: stayCopy.payNowButton(language) }
+        : null,
+      canCancel
+        ? { id: `parkingbooking:cancel:${String(booking._id)}`, title: stayCopy.cancelBookingButton(language) }
+        : null,
+    ].filter(Boolean) as { id: string; title: string }[];
+    if (!buttons.length) return;
+    return this.reply.buttons(
+      session.phone,
+      `${correlationId}:parkingbookingactions`,
+      stayCopy.bookingActionsPrompt(language),
+      buttons,
+    );
+  }
+
+  private async sendParkingPaymentLink(
+    context: {
+      correlationId: string;
+      customer: WhatsAppResolvedIdentity;
+      session: WhatsAppSession;
+    },
+    bookingId: string,
+  ): Promise<void> {
+    const { session, customer, correlationId } = context;
+    let link: Awaited<ReturnType<WhatsAppActionsService["createParkingPaymentLink"]>>;
+    try {
+      link = await this.actions.createParkingPaymentLink(customer, bookingId);
+    } catch (error) {
+      if (refusalStatus(error) === null) throw error;
+      this.logStay("whatsapp.parking_payment_link_refused", context, {
+        bookingId,
+        status: refusalStatus(error),
+      });
+      return this.reply.text(
+        session.phone,
+        correlationId,
+        stayCopy.actionRefused(session.language, String((error as HttpException).message)),
+      );
+    }
+    return this.reply.text(
+      session.phone,
+      correlationId,
+      copy.paymentLink(session.language, {
+        reference: link.reference,
+        amount: link.amount,
+        url: link.url,
+        minutes: Math.max(
+          1,
+          Math.round((link.expiresAt.getTime() - Date.now()) / 60_000),
+        ),
+      }),
+      true,
+    );
+  }
+
+  // ---- parking cancellation -------------------------------------------------
+
+  private async listParkingBookingsToCancel(
+    context: {
+      correlationId: string;
+      customer: WhatsAppResolvedIdentity;
+      session: WhatsAppSession;
+    },
+    page = 1,
+  ): Promise<void> {
+    const { session, customer, correlationId } = context;
+    const language = session.language;
+    const { items, total } = await this.actions.myParkingBookings(
+      customer,
+      undefined,
+      page,
+    );
+    const cancellable = items.filter((booking: any) =>
+      ["pending", "upcoming", "checked_in"].includes(booking.status),
+    );
+    if (!total || !cancellable.length)
+      return this.reply.text(
+        session.phone,
+        correlationId,
+        copy.noBookings(language),
+      );
+    const totalPages = Math.max(1, Math.ceil(cancellable.length / LIST_PAGE_SIZE));
+    const current = Math.min(Math.max(1, page), totalPages);
+    session.paging = { list: "parking_cancel", page: current };
+    return this.reply.list(
+      session.phone,
+      `${correlationId}:parkingcancellist`,
+      copy.cancelWhich(language),
+      copy.menuButton(language),
+      this.withPageRows(
+        cancellable
+          .slice((current - 1) * LIST_PAGE_SIZE, current * LIST_PAGE_SIZE)
+          .map((booking: any) => ({
+            id: `parkingbooking:cancel:${String(booking._id)}`,
+            title: String(booking.bookingReference),
+            description: String(booking.locationId?.name ?? ""),
+          })),
+        "parking_cancel",
+        current,
+        totalPages,
+        language,
+      ),
+    );
+  }
+
+  private async presentParkingCancellation(
+    context: {
+      correlationId: string;
+      customer: WhatsAppResolvedIdentity;
+      session: WhatsAppSession;
+    },
+    bookingId: string,
+  ): Promise<void> {
+    const { session, customer, correlationId } = context;
+    const language = session.language;
+    const booking = await this.actions
+      .getParkingBooking(customer, bookingId)
+      .catch(() => null);
+    if (!booking) {
+      session.flow = null;
+      session.step = null;
+      return this.reply.text(session.phone, correlationId, copy.notYourBooking(language));
+    }
+    let refund: any;
+    try {
+      refund = await this.actions.previewParkingCancellation(customer, String(booking._id));
+    } catch (error) {
+      if (refusalStatus(error) === null) throw error;
+      session.flow = null;
+      session.step = null;
+      session.data = {};
+      return this.reply.text(
+        session.phone,
+        correlationId,
+        stayCopy.actionRefused(language, String((error as HttpException).message)),
+      );
+    }
+    session.flow = "parking_cancellation";
+    session.data = { bookingId: String(booking._id) };
+    session.step = "confirm";
+    return this.reply.buttons(
+      session.phone,
+      `${correlationId}:parkingcancelconfirm`,
+      copy.cancelConfirm(language, {
+        reference: String(booking.bookingReference),
+        refund: Number(refund?.refundAmount ?? 0),
+      }),
+      [
+        { id: "parkingcancel:yes", title: copy.yes(language) },
+        { id: "parkingcancel:no", title: copy.no(language) },
+      ],
+    );
+  }
+
+  private async continueParkingCancellation(
+    context: {
+      correlationId: string;
+      customer: WhatsAppResolvedIdentity;
+      session: WhatsAppSession;
+    },
+    intent: Intent,
+  ): Promise<void> {
+    const { session, correlationId } = context;
+    if (session.step === "confirm" && intent === "affirm")
+      return this.performParkingCancellation(context);
+    if (session.step === "confirm" && intent === "deny") {
+      session.flow = null;
+      session.step = null;
+      session.data = {};
+      return this.reply.text(session.phone, correlationId, copy.cancelAborted(session.language));
+    }
+    return this.listParkingBookingsToCancel(context);
+  }
+
+  private async performParkingCancellation(context: {
+    correlationId: string;
+    customer: WhatsAppResolvedIdentity;
+    session: WhatsAppSession;
+  }): Promise<void> {
+    const { session, customer, correlationId } = context;
+    const bookingId = String(session.data.bookingId ?? "");
+    if (!bookingId)
+      return this.reply.text(session.phone, correlationId, copy.notYourBooking(session.language));
+
+    let result: { booking: any; refund: any };
+    try {
+      result = await this.actions.cancelParkingBooking(
+        customer,
+        bookingId,
+        "Cancelled by the guest over WhatsApp",
+      );
+    } catch (error) {
+      if (refusalStatus(error) === null) throw error;
+      session.flow = null;
+      session.step = null;
+      session.data = {};
+      this.logStay("whatsapp.parking_cancel_refused", context, {
+        bookingId,
+        status: refusalStatus(error),
+      });
+      return this.reply.text(
+        session.phone,
+        correlationId,
+        stayCopy.actionRefused(session.language, String((error as HttpException).message)),
+      );
+    }
+    session.flow = null;
+    session.step = null;
+    session.data = {};
+    return this.reply.text(
+      session.phone,
+      correlationId,
+      copy.cancelled(session.language, {
+        reference: String(result.booking?.bookingReference ?? ""),
+        refund: Number(result.refund?.refundAmount ?? 0),
+      }),
+    );
+  }
+
 }

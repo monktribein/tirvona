@@ -89,6 +89,7 @@ describe("the ten official manual test scenarios, run as one live conversation",
       !input.place || /vrindavan/i.test(input.place) ? [ASHRAM] : [],
     ),
     roomsFor: jest.fn(async () => [ROOM]),
+    topDestinations: jest.fn(async () => [{ city: "Vrindavan", count: 12 }]),
     propertyDetails: jest.fn(async () => ({
       id: "ashram-1",
       name: "Shanti Ashram",

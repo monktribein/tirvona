@@ -1,5 +1,9 @@
 import { Schema, SchemaTypes } from "mongoose";
 import {
+  requireOneCustomerIdentity,
+  whatsappCustomerRef,
+} from "../../../../common/database/customer-identity";
+import {
   PARKING_BOOKING_STATUSES,
   PARKING_PAYMENT_STATUSES,
   PARKING_VEHICLE_TYPES,
@@ -26,7 +30,13 @@ export const ParkingBookingSchema = new Schema(
       trim: true,
       uppercase: true,
     },
-    customerId: id("User", true),
+    /**
+     * The website account that booked, or null when a WhatsApp guest booked
+     * — they carry `whatsappCustomerId` instead. Exactly one is set; see
+     * `requireOneCustomerIdentity` below.
+     */
+    customerId: id("User"),
+    whatsappCustomerId: whatsappCustomerRef(),
     locationId: id("ParkingLocation", true),
     partnerId: id("ParkingPartner", true),
     slotTypeId: { ...id("ParkingSlotType", true), index: true },
@@ -103,12 +113,24 @@ export const ParkingBookingSchema = new Schema(
       },
     ],
     notes: String,
-    source: { type: String, enum: ["web", "app", "counter"], default: "web" },
+    source: {
+      type: String,
+      enum: ["web", "app", "counter", "whatsapp"],
+      default: "web",
+    },
     expiryAlertSentAt: Date,
+    /** The one payment link currently honoured for this booking (WhatsApp). */
+    paymentLink: { jti: String, issuedAt: Date },
   },
   opts("parking_bookings"),
 );
+requireOneCustomerIdentity(ParkingBookingSchema, { label: "parking booking" });
 ParkingBookingSchema.index({ customerId: 1, createdAt: -1 });
+// Sparse: only WhatsApp bookings carry this, so website rows stay out of it.
+ParkingBookingSchema.index(
+  { whatsappCustomerId: 1, createdAt: -1 },
+  { partialFilterExpression: { whatsappCustomerId: { $type: "objectId" } } },
+);
 ParkingBookingSchema.index({ locationId: 1, status: 1, entryAt: 1 });
 ParkingBookingSchema.index({ partnerId: 1, status: 1, createdAt: -1 });
 ParkingBookingSchema.index({ locationId: 1, vehicleNumber: 1, status: 1 });
@@ -118,7 +140,9 @@ export const ParkingQrCodeSchema = new Schema(
   {
     bookingId: id("ParkingBooking", true),
     locationId: { ...id("ParkingLocation", true), index: true },
-    customerId: { ...id("User", true), index: true },
+    // Copied from the booking: an account id or a WhatsApp guest id.
+    customerId: { ...id("User"), index: true },
+    whatsappCustomerId: whatsappCustomerRef(),
     tokenHash: { type: String, required: true },
     token: { type: String, select: false },
     displayCode: { type: String, required: true, uppercase: true, trim: true },
@@ -216,7 +240,10 @@ ParkingReviewSchema.index({ locationId: 1, status: 1, createdAt: -1 });
 
 export const ParkingNotificationSchema = new Schema(
   {
-    userId: id("User", true),
+    // The account to notify in-app, or null for a WhatsApp guest, who is
+    // reached on `recipientPhone` alone.
+    userId: id("User"),
+    whatsappCustomerId: whatsappCustomerRef(),
     bookingId: id("ParkingBooking"),
     event: {
       type: String,

@@ -83,6 +83,34 @@ const GREETING = [
   "नमस्ते", "नमस्कार", "प्रणाम", "हाय", "हैलो",
 ];
 
+/**
+ * Common shortenings and misspellings of the greetings above. "hai" is
+ * deliberately absent: it is also Hindi for "is", and "theek hai" must stay
+ * an affirmation rather than restart the conversation.
+ */
+const GREETING_VARIANTS = ["helo", "hlo", "hy", "hlw"];
+
+/**
+ * Collapses a run of the same letter to one, so a stretched greeting ("hii",
+ * "heyyy", "hellooo") compares equal to the word it stretches.
+ */
+const squeeze = (word: string): string => word.replace(/(\p{L})\1+/gu, "$1");
+
+const GREETING_TOKENS = new Set(
+  [...GREETING, ...GREETING_VARIANTS].map((term) => squeeze(term.toLowerCase())),
+);
+
+/** True for a word that is a greeting, however it was stretched or shortened. */
+const isGreetingToken = (token: string): boolean =>
+  GREETING_TOKENS.has(squeeze(token.toLowerCase()));
+
+/** Every word of a message, keeping Devanagari vowel signs attached. */
+const wordsOf = (text: string): string[] =>
+  String(text ?? "")
+    .toLowerCase()
+    .split(/[^\p{L}\p{M}\p{N}]+/u)
+    .filter(Boolean);
+
 const STAY = [
   "room", "rooms", "stay", "stays", "kamra", "kamre", "ashram", "asharam",
   "dharamshala", "dharmshala", "homestay", "guesthouse", "accommodation",
@@ -429,6 +457,15 @@ const PLACE_STOPWORDS = new Set([
   "room", "rooms", "kamra", "kamre", "stay", "stays", "hotel", "ashram",
   "ashrams", "dharamshala", "dharmshala", "homestay", "guesthouse",
   "accommodation", "place", "places",
+  // parking nouns — "parking chahiye" must not read "parking" itself as the
+  // place name, the same way "room chahiye" does not read "room" as one.
+  "parking", "park", "vehicle", "vehicles", "bay", "bays", "slot", "slots",
+  "gaadi", "gadi", "vaahan",
+  // vehicle-type words — no real Tirvona destination is literally "Car" or
+  // "Bike", and leaving these in let a combined sentence like "Vrindavan
+  // mein car" leak "Vrindavan car" through as the place.
+  "car", "cars", "bike", "bikes", "scooter", "scooters", "suv", "suvs",
+  "luxury", "tempo", "bus", "buses",
   // prepositions and particles
   "ke", "ki", "ka", "k", "ko", "se", "par", "pe", "liye", "lie", "mein", "me",
   "near", "nearby", "around", "in", "at", "by", "close", "to", "for", "from",
@@ -440,6 +477,23 @@ const PLACE_STOPWORDS = new Set([
   // time words
   "tomorrow", "today", "kal", "aaj", "parso", "parson", "day", "days", "night",
   "nights", "din", "dino", "dinon", "raat", "week", "month",
+  // month and weekday names. The date itself is read by the date parser, but
+  // the month name survives it as a bare word, and a guest answering "what
+  // check-in date?" with "25 September 2026" would otherwise have
+  // "September" read as their destination — which replaces the real one and,
+  // through `mergeStaySlots`, silently drops the property they just chose.
+  // No Tirvona destination is named after a month or a weekday.
+  "january", "february", "march", "april", "may", "june", "july", "august",
+  "september", "october", "november", "december",
+  "jan", "feb", "mar", "apr", "jun", "jul", "aug", "sep", "sept", "oct",
+  "nov", "dec",
+  "monday", "tuesday", "wednesday", "thursday", "friday", "saturday",
+  "sunday", "mon", "tue", "tues", "wed", "thu", "thur", "thurs", "fri",
+  "sat", "sun",
+  "somvar", "mangalvar", "budhvar", "guruvar", "shukravar", "shanivar",
+  "ravivar", "itwar", "weekend",
+  // relative-date words that sit beside a month or weekday name
+  "next", "last", "this", "coming", "upcoming",
   // clock time and check-in/out vocabulary — none of these are place names,
   // and leaving them out let a combined date+time sentence like "kal 4 baje
   // checkin aur agle din 11 baje checkout" leak "baje checkin agle checkout"
@@ -512,12 +566,15 @@ export const extractPlace = (text: string): string | null => {
   const relevant = parts.length > 1 ? parts[parts.length - 1] : raw;
 
   const tokens = relevant
-    .replace(/[^\p{L}\p{N}\s'-]/gu, " ")
+    // \p{M} keeps Devanagari vowel signs: without it "कमरा" became "कमर".
+    .replace(/[^\p{L}\p{M}\p{N}\s'-]/gu, " ")
     .split(/\s+/)
     .filter(Boolean)
     .filter((token) => !/\d/.test(token))
     .filter((token) => token.length > 1)
     .filter((token) => !PLACE_STOPWORDS.has(token.toLowerCase()))
+    // "hiii" or "heyy" is a greeting, never a destination.
+    .filter((token) => !isGreetingToken(token))
     .filter((token) => !(token.toLowerCase() in NUMBER_WORDS));
 
   if (!tokens.length) return null;
@@ -724,6 +781,207 @@ export const extractStayEntities = (
 export const isDiscoveryPhrasing = (text: string): boolean =>
   DISCOVERY_TRIGGER.test(norm(text));
 
+// ---- parking entities ------------------------------------------------------
+
+export interface ParkingEntities {
+  location?: string;
+  entryDate?: string;
+  entryTime?: string;
+  exitDate?: string;
+  exitTime?: string;
+  vehicleType?: string;
+  vehicleNumber?: string;
+}
+
+export interface ParkingEntityContext {
+  now?: Date;
+  knownEntryDate?: string;
+  knownExitDate?: string;
+  focusSlot?: "entryDate" | "entryTime" | "exitDate" | "exitTime" | string | null;
+}
+
+const EXIT_MARKER =
+  /\bexit\b|nikaas|nikalna|nikaloon|nikalunga|निकास|निकलना|nikas|\btak\b|\btill\b|\buntil\b|तक/iu;
+
+/** A time from a segment, explicit first, falling back to a resolved bare hour. */
+const parkingTimeInSegment = (
+  segment: string,
+  slot: "entry" | "exit",
+): string | null => {
+  const explicit = extractTime(segment);
+  if (explicit) return formatTimeToken(explicit);
+  const bare = extractBareHour(segment);
+  // Reuses the hotel-domain default bias: entry leans afternoon/evening,
+  // exit leans morning — the same convention `resolveBareHour` already
+  // encodes for check-in/check-out, and just as reasonable a default for a
+  // vehicle entering versus leaving.
+  return bare === null
+    ? null
+    : formatTimeToken(resolveBareHour(bare, slot === "entry" ? "checkIn" : "checkOut"));
+};
+
+/**
+ * Reads every parking fact one message contains — place, entry/exit date and
+ * time, vehicle type, vehicle number — given what is already known. Mirrors
+ * `extractStayEntities`'s two-segment approach: an explicit exit marker (or a
+ * second absolute date) splits the message into an entry clause and an exit
+ * clause; a single unmarked mention is attributed to whichever slot the
+ * conversation is currently waiting on.
+ */
+export const extractParkingEntities = (
+  rawText: string,
+  context: ParkingEntityContext = {},
+): ParkingEntities => {
+  const text = String(rawText ?? "");
+  const now = context.now ?? new Date();
+  const result: ParkingEntities = {};
+
+  const exitMatch = EXIT_MARKER.exec(text);
+  const nextDayMatch = NEXT_DAY_PHRASE.exec(text);
+  const secondAbsoluteDate = SECOND_DATE_HINT.exec(text);
+  const hasEarlierContent = secondAbsoluteDate && secondAbsoluteDate.index > 0;
+  const splitIndex = earliestIndex(
+    exitMatch,
+    nextDayMatch,
+    hasEarlierContent ? secondAbsoluteDate : null,
+  );
+
+  if (splitIndex !== null) {
+    const entrySegment = text.slice(0, splitIndex);
+    const exitSegment = text.slice(splitIndex);
+
+    const entryDate = extractDate(entrySegment, now);
+    if (entryDate) result.entryDate = toIsoDate(entryDate);
+    const entryTime = parkingTimeInSegment(entrySegment, "entry");
+    if (entryTime) result.entryTime = entryTime;
+
+    const entryBase = result.entryDate ?? context.knownEntryDate;
+    if (NEXT_DAY_PHRASE.test(exitSegment) && entryBase) {
+      result.exitDate = addIsoDays(entryBase, 1);
+    } else {
+      const exitDate = extractDate(exitSegment, now);
+      if (exitDate) result.exitDate = toIsoDate(exitDate);
+    }
+    const exitTime = parkingTimeInSegment(exitSegment, "exit");
+    if (exitTime) result.exitTime = exitTime;
+  } else {
+    // One unmarked mention: attribute it to whichever side of the window
+    // the conversation is currently waiting on.
+    const towardsExit = context.focusSlot === "exitDate" || context.focusSlot === "exitTime";
+    if (towardsExit && NEXT_DAY_PHRASE.test(text)) {
+      const entryBase = context.knownEntryDate;
+      if (entryBase) result.exitDate = addIsoDays(entryBase, 1);
+    } else {
+      const date = extractDate(text, now);
+      if (date) {
+        if (towardsExit) result.exitDate = toIsoDate(date);
+        else result.entryDate = toIsoDate(date);
+      }
+    }
+    const time = parkingTimeInSegment(text, towardsExit ? "exit" : "entry");
+    if (time) {
+      if (towardsExit) result.exitTime = time;
+      else result.entryTime = time;
+    }
+  }
+
+  // A checkout time with no checkout date at all reads naturally as "the
+  // day after entry" — the shortest window that sentence could mean —
+  // rather than being dropped for want of a date.
+  const exitDateAlreadyKnown = !result.exitDate && Boolean(context.knownExitDate);
+  if (result.exitTime && !result.exitDate && !exitDateAlreadyKnown) {
+    const base = result.entryDate ?? context.knownEntryDate;
+    if (base) result.exitDate = addIsoDays(base, 1);
+  }
+
+  const place = extractPlace(text);
+  if (place) result.location = place;
+
+  const vehicleType = extractVehicleType(text);
+  if (vehicleType) result.vehicleType = vehicleType;
+
+  const vehicleNumber = extractVehicleNumber(text);
+  if (vehicleNumber) result.vehicleNumber = vehicleNumber;
+
+  return result;
+};
+;
+
+const VEHICLE_TYPE_WORDS: Record<string, string> = {
+  bike: "bike",
+  motorcycle: "bike",
+  bullet: "bike",
+  मोटरसाइकिल: "bike",
+  बाइक: "bike",
+  scooter: "scooter",
+  activa: "scooter",
+  स्कूटर: "scooter",
+  car: "car",
+  gaadi: "car",
+  gadi: "car",
+  kaar: "car",
+  गाड़ी: "car",
+  कार: "car",
+  suv: "suv",
+  luxury: "luxury_car",
+  "luxury car": "luxury_car",
+  tempo: "tempo",
+  टेम्पो: "tempo",
+  "mini bus": "mini_bus",
+  minibus: "mini_bus",
+  bus: "bus",
+  बस: "bus",
+  ev: "ev",
+  electric: "ev",
+};
+
+/** A vehicle type named in free text, matched against Tirvona's own vehicle-type codes. */
+export const extractVehicleType = (text: string): string | null => {
+  const value = norm(text);
+  // Longer phrases first, so "luxury car" is not swallowed by a bare "car".
+  const words = Object.keys(VEHICLE_TYPE_WORDS).sort((a, b) => b.length - a.length);
+  for (const word of words) {
+    if (bounded(escape(word)).test(value)) return VEHICLE_TYPE_WORDS[word];
+  }
+  return null;
+};
+
+const VEHICLE_NUMBER_LOOSE =
+  /\b[A-Za-z]{2}[\s-]?[0-9]{1,2}[\s-]?[A-Za-z]{0,3}[\s-]?[0-9]{4}\b/;
+const VEHICLE_NUMBER_STRICT = /^[A-Za-z]{2}[0-9]{1,2}[A-Za-z]{0,3}[0-9]{4}$/;
+
+/** An Indian vehicle registration number, however it was spaced or punctuated. */
+export const extractVehicleNumber = (text: string): string | null => {
+  const match = VEHICLE_NUMBER_LOOSE.exec(String(text ?? ""));
+  if (!match) return null;
+  const compact = match[0].replace(/[\s-]/g, "").toUpperCase();
+  return VEHICLE_NUMBER_STRICT.test(compact) ? compact : null;
+};
+
+
+/**
+ * "next" / "aur dikhao" / "previous" typed while a paged list is on screen.
+ *
+ * Read only as a whole, short message: "agle din" or "next day" is a date
+ * and must never turn a page, so the phrase has to be the entire reply
+ * (optionally with "page"/"list"/"please").
+ */
+const NEXT_PAGE =
+  /^(?:next|more|show\s+more|aur|aur\s+dikhao|aur\s+dikhaiye|aur\s+batao|aage|aage\s+dikhao|agla|agla\s+page|और|और\s+दिखाओ|आगे|अगला)(?:\s+(?:page|list|please|pls|wala))?$/iu;
+const PREVIOUS_PAGE =
+  /^(?:prev|previous|pichla|pichhla|peeche|pichhe|pichla\s+page|पिछला|पीछे)(?:\s+(?:page|list|please|pls|wala))?$/iu;
+
+export const pageRequest = (text: string): "next" | "previous" | null => {
+  const value = String(text ?? "")
+    .trim()
+    .replace(/[.!?।]+$/u, "")
+    .replace(/\s+/g, " ");
+  if (!value || value.split(" ").length > 4) return null;
+  if (NEXT_PAGE.test(value)) return "next";
+  if (PREVIOUS_PAGE.test(value)) return "previous";
+  return null;
+};
+
 /** Classifies one message and pulls out whatever it can. */
 export const understand = (text: string, from = new Date()): Understanding => {
   const raw = String(text ?? "");
@@ -753,7 +1011,8 @@ export const understand = (text: string, from = new Date()): Understanding => {
     if (has(value, ...STAY)) return "search_stay";
     if (has(value, ...HELP)) return "help";
     if (has(value, "menu", "options", "vikalp", "मेनू", "विकल्प")) return "menu";
-    if (has(value, ...GREETING)) return "greeting";
+    if (has(value, ...GREETING) || wordsOf(value).some(isGreetingToken))
+      return "greeting";
     if (has(value, ...DENY)) return "deny";
     if (has(value, ...AFFIRM)) return "affirm";
     return "unknown";

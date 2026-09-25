@@ -1,4 +1,5 @@
 import { Schema, SchemaTypes } from "mongoose";
+import { whatsappCustomerRef } from "../../../../common/database/customer-identity";
 import { PARKING_PAYMENT_STATUSES } from "../../domain/parking.constants";
 
 const id = (ref: string, required = false) => ({
@@ -16,7 +17,10 @@ const opts = (collection: string) => ({
 export const ParkingPaymentSchema = new Schema(
   {
     bookingId: id("ParkingBooking", true),
-    userId: { ...id("User", true), index: true },
+    // The booking's owner: an account, or a WhatsApp guest. The webhook
+    // rebuilds who is paying from exactly these two fields.
+    userId: { ...id("User"), index: true },
+    whatsappCustomerId: whatsappCustomerRef(),
     partnerId: id("ParkingPartner"),
     amount: { type: Number, required: true, min: 0 },
     currency: { type: String, default: "INR" },
