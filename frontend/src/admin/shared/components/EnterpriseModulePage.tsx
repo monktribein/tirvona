@@ -4,6 +4,7 @@ import EnterpriseDataTable, { type TableColumn } from "./EnterpriseDataTable";
 import ImageGalleryManager from "./ImageGalleryManager";
 import { RecordFieldList } from "./RecordValue";
 import LocalHubEnterpriseDrawer from "./LocalHubEnterpriseDrawer";
+import DayStayManagerModal from "../../ashrams/components/DayStayManagerModal";
 import { EnterprisePageHeader } from "./EnterprisePageHeader";
 import { useNotifications } from "../../../contexts/NotificationContext";
 import api, { getErrorMessage } from "../../../lib/api";
@@ -37,6 +38,7 @@ import {
   Plus,
   BarChart3,
   BookOpen,
+  Clock,
 } from "lucide-react";
 
 interface CmsRequest {
@@ -84,6 +86,7 @@ export const EnterpriseModulePage: React.FC<{
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [managingItem, setManagingItem] = useState<any | null>(null);
+  const [dayStayAshram, setDayStayAshram] = useState<any | null>(null);
 
   const formatTitle = (str: string) =>
     str
@@ -589,6 +592,26 @@ export const EnterpriseModulePage: React.FC<{
                     : "Unverified",
             },
             { key: "status", label: "Status" },
+            {
+              key: "dayStayConfig",
+              label: "Short Stay",
+              render: (val: any, item: any) => (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDayStayAshram(item);
+                  }}
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold whitespace-nowrap transition-colors ${
+                    val?.enabled
+                      ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400"
+                      : "border border-[#F28C28]/30 text-[#F28C28] hover:bg-[#F28C28] hover:text-white"
+                  }`}
+                >
+                  <Clock size={11} /> {val?.enabled ? "On · Manage" : "Enable"}
+                </button>
+              ),
+            },
           ],
           fields: [
             {
@@ -3177,6 +3200,21 @@ export const EnterpriseModulePage: React.FC<{
             : undefined
         }
       />
+
+      {dayStayAshram && (
+        <DayStayManagerModal
+          ashram={dayStayAshram}
+          onClose={() => setDayStayAshram(null)}
+          onSaved={(enabled) => {
+            addNotification(
+              "Short Stay Updated",
+              `${dayStayAshram.name || "Property"}: Short Stay ${enabled ? "enabled" : "disabled"}.`,
+              "success",
+            );
+            fetchModuleData();
+          }}
+        />
+      )}
 
       <LocalHubEnterpriseDrawer
         isOpen={isDrawerOpen}

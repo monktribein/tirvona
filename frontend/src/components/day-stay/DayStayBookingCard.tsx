@@ -27,6 +27,7 @@ import {
   clearBookingDraft,
 } from "../../utils/bookingDraft";
 import { setGuestPendingIntent } from "../../utils/guestGate";
+import { istTodayString } from "../../utils/format";
 
 interface DayStayBookingCardProps {
   ashram: any;
@@ -59,7 +60,7 @@ export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
   const [products, setProducts] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<string>("DAY_REST_4H");
   const [internalRoomId, setInternalRoomId] = useState<string>("");
-  const [date, setDate] = useState<string>(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState<string>(istTodayString());
   const [slots, setSlots] = useState<any[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<any | null>(null);
   const [guestsCount, setGuestsCount] = useState<number>(2);
@@ -241,7 +242,8 @@ export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
       const paymentResult = await openRazorpayCheckout(
         {
           orderId: holdData.razorpayOrderId,
-          amount: Math.round(totalAmount * 100),
+          // Charge exactly what the server priced into the order.
+          amount: Math.round((holdData.pricing?.totalAmount ?? totalAmount) * 100),
           currency: "INR",
           keyId: holdData.razorpayKeyId || holdData.keyId,
         },
@@ -469,7 +471,7 @@ export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
             <input
               type="date"
               value={date}
-              min={new Date().toISOString().split("T")[0]}
+              min={istTodayString()}
               onChange={(e) => setDate(e.target.value)}
               className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none"
             />

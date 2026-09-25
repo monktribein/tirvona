@@ -20,6 +20,7 @@ import {
 } from "../../bookings/domain/booking.utils";
 import type { DayStayHoldDto, DayStayConfirmPaymentDto } from "../presentation/dtos/day-stay.dto";
 import { DayStayInventoryService } from "./day-stay-inventory.service";
+import { hhmmToMinutes, istDateString, istInstant, istTimeString } from "../domain/day-stay-time";
 
 @Injectable()
 export class DayStayBookingService {
@@ -39,6 +40,17 @@ export class DayStayBookingService {
     const keyId = this.config.get<string>("razorpayKeyId");
     const keySecret = this.config.get<string>("razorpayKeySecret");
     this.razorpay = keyId && keySecret ? new Razorpay({ key_id: keyId, key_secret: keySecret }) : null;
+  }
+
+  /**
+   * Demo (mock) payments are only allowed when no Razorpay secret is
+   * configured and we are not running in production. With live keys, a
+   * client can never opt into the mock path.
+   */
+  private demoPaymentsAllowed(): boolean {
+    const keySecret = this.config.get<string>("razorpayKeySecret");
+    const nodeEnv = this.config.get<string>("nodeEnv") ?? process.env.NODE_ENV;
+    return !keySecret && nodeEnv !== "production";
   }
 
   /**
@@ -100,24 +112,18 @@ export class DayStayBookingService {
     room: any,
     ashram: any,
   ): Promise<any> {
-
-    const product = room.dayStayConfig.products?.find(
-      (p: any) => p.productCode === dto.productCode.toUpperCase() && p.enabled,
-    );
+    // Same product resolution as availability, so every slot shown is bookable.
+    const products = await this.inventoryService.resolveRoomProducts(room);
+    const product = products.find((p: any) => p.productCode === dto.productCode.toUpperCase());
     if (!product) {
       throw new BadRequestException(`Product ${dto.productCode} is not offered for this room`);
     }
 
     const duration = product.durationMinutes;
-    const [startH, startM] = dto.startTime.split(":").map(Number);
-    const startMins = startH * 60 + startM;
-    const endMins = startMins + duration;
-    const endH = Math.floor(endMins / 60).toString().padStart(2, "0");
-    const endM = (endMins % 60).toString().padStart(2, "0");
-    const endTimeStr = `${endH}:${endM}`;
-
-    const slotStartUtc = new Date(`${dto.date}T${dto.startTime}:00.000Z`);
-    const slotEndUtc = new Date(`${dto.date}T${endTimeStr}:00.000Z`);
+    const startMins = hhmmToMinutes(dto.startTime);
+    // Slot times are IST wall-clock at the property.
+    const slotStartUtc = istInstant(dto.date, startMins);
+    const slotEndUtc = istInstant(dto.date, startMins + duration);
 
     const graceMinutes = ashram.dayStayConfig.defaultGraceMinutes ?? 15;
     const bufferMinutes = ashram.dayStayConfig.defaultHousekeepingBufferMinutes ?? 45;
@@ -136,13 +142,13 @@ export class DayStayBookingService {
 
     // Re-check availability now that the per-room lock is held, so this
     // read-then-write is no longer racing any other hold for this room.
+    // This also rejects past slots, blackout dates and quick blocks.
     const slots = await this.inventoryService.getRoomSlots(dto.ashramId, dto.roomId, dto.date, dto.productCode);
     const selectedSlot = slots.find((s) => s.startTime === dto.startTime);
     if (!selectedSlot || selectedSlot.availableUnits <= 0) {
-      throw new ConflictException("Sorry, this time slot was just selected by another pilgrim. Please choose another time.");
+      throw new ConflictException("Sorry, this time slot is not available. Please choose another time.");
     }
 
-    // Create Razorpay Order if key exists
     let isDemo = false;
     let rzpOrderId = `mock_order_${Date.now()}`;
     const keyId = this.config.get<string>("razorpayKeyId") || process.env.RAZORPAY_KEY_ID || "";
@@ -160,11 +166,15 @@ export class DayStayBookingService {
         });
         rzpOrderId = order.id;
       } catch (err: any) {
-        this.logger.warn(`Razorpay order creation failed: ${err.message}. Enabling demo fallback.`);
-        isDemo = true;
+        // Never fall back to a mock order when live keys exist: that
+        // would let the booking be confirmed without a real payment.
+        this.logger.error(`Razorpay order creation failed: ${err.message}`);
+        throw new ServiceUnavailableException("Payment gateway is unavailable. Please try again shortly.");
       }
-    } else {
+    } else if (this.demoPaymentsAllowed()) {
       isDemo = true;
+    } else {
+      throw new ServiceUnavailableException("Online payments are not configured");
     }
     // A simulated order can never be paid for real, so in production it would
     // only lock a slot for nothing. Refuse before anything is written.
@@ -220,6 +230,7 @@ export class DayStayBookingService {
       },
       paymentSummary: {
         razorpayOrderId: rzpOrderId,
+        demo: isDemo,
       },
       specialRequests: dto.specialRequests,
       checkInCode: cCode,
@@ -341,62 +352,51 @@ export class DayStayBookingService {
     booking: any,
     dto: DayStayConfirmPaymentDto,
     customerId?: string,
+    capturedAmountPaise?: number,
   ): Promise<any> {
     if (booking.status === "confirmed" || booking.paymentStatus === "fully_paid")
       return this.confirmedResponse(booking);
 
-    // 3. Hold Expiry Race Handling:
+    const expectedPaise = Math.round(Number(booking.pricing?.totalAmount ?? 0) * 100);
+    if (capturedAmountPaise !== undefined && Math.round(Number(capturedAmountPaise)) !== expectedPaise) {
+      this.logger.error(
+        `Day Stay ${booking.bookingId}: captured ${capturedAmountPaise} paise but expected ${expectedPaise}`,
+      );
+      booking.paymentSummary = {
+        ...(booking.paymentSummary || {}),
+        razorpayPaymentId: dto.razorpayPaymentId,
+        reconciliationNote: "AMOUNT_MISMATCH_MANUAL_REVIEW",
+        capturedAmountPaise,
+      };
+      booking.markModified("paymentSummary");
+      await booking.save();
+      throw new BadRequestException("Captured amount does not match booking total");
+    }
+
+    // 4. Hold Expiry Race Handling:
     // If hold expired but customer successfully paid on Razorpay:
     // Check if slot was taken by someone else during the window.
     const now = new Date();
-    const isHoldExpired = booking.reservationExpiresAt && new Date(booking.reservationExpiresAt) < now;
+    const isHoldExpired =
+      booking.status === "expired" ||
+      (booking.reservationExpiresAt && new Date(booking.reservationExpiresAt) < now);
     if (isHoldExpired) {
       // Exclude this booking itself from the availability recount —
-      // otherwise a booking that's still "pending" (we haven't confirmed
-      // it yet) counts as its own competing occupant, reads 0 available,
-      // and wrongly auto-cancels + refunds a payment that just succeeded.
-      const slots = await this.inventoryService.getRoomSlots(
-        String(booking.ashramId),
-        String(booking.rooms?.[0]?.roomId),
-        new Date(booking.dayStayDetails.slotStartTime).toISOString().split("T")[0],
-        booking.dayStayDetails.productCode,
-        String(booking._id),
-      );
-      const startStr = new Date(booking.dayStayDetails.slotStartTime).toISOString().substring(11, 16);
-      const matchedSlot = slots.find((s) => s.startTime === startStr);
+      // otherwise its own row counts as a competing occupant.
+      const slotStart = new Date(booking.dayStayDetails.slotStartTime);
+      const occupied = await this.isSlotTakenByOthers(booking, slotStart);
 
-      if (!matchedSlot || matchedSlot.availableUnits <= 0) {
-        // Slot is occupied by a competing booking. Move to controlled manual recovery / refund required
-        booking.status = "cancelled";
-        booking.paymentStatus = "refunded";
-        booking.gatewayStatus = "success";
-        booking.cancellation = {
-          reason: "Payment succeeded after hold expired and slot was acquired by another booking. Automated refund queued.",
-          date: new Date(),
-          refundAmount: booking.pricing.totalAmount,
-        };
-        booking.paymentSummary = {
-          ...(booking.paymentSummary || {}),
-          razorpayPaymentId: dto.razorpayPaymentId,
-          razorpaySignature: dto.razorpaySignature,
-          reconciliationNote: "OVERBOOK_PREVENTED_AUTO_REFUND",
-        };
-        await booking.save();
-
-        await this.historyModel.create({
-          bookingId: booking._id,
-          fromStatus: "pending",
-          toStatus: "cancelled",
-          note: `Hold expired before payment capture. Slot occupied; marked for refund.`,
-          actorId: customerId || booking.customerId,
-          actorRole: "system",
-        });
-
-        throw new ConflictException("Your hold expired before payment was completed and the slot is no longer available. A full refund has been initiated.");
+      if (occupied) {
+        await this.cancelAndRefund(booking, dto, customerId);
+        throw new ConflictException(
+          "Your hold expired before payment was completed and the slot is no longer available. A full refund has been initiated.",
+        );
       }
     }
 
-    // 4. Update booking state to CONFIRMED
+    const fromStatus = booking.status;
+
+    // 5. Update booking state to CONFIRMED
     booking.status = "confirmed";
     booking.paymentStatus = "fully_paid";
     booking.gatewayStatus = "success";
@@ -411,17 +411,17 @@ export class DayStayBookingService {
 
     await booking.save();
 
-    // 5. Audit History Record
+    // 6. Audit History Record
     await this.historyModel.create({
       bookingId: booking._id,
-      fromStatus: "pending",
+      fromStatus,
       toStatus: "confirmed",
       note: `Day Stay payment verified (${dto.razorpayPaymentId}) via ${customerId ? "client" : "webhook"}`,
       actorId: customerId || booking.customerId,
       actorRole: customerId ? "customer" : "system",
     });
 
-    // 6. Notification Outbox Record (Idempotent per booking + event)
+    // 7. Notification Outbox Record (Idempotent per booking + event)
     const existingNotification = await this.notificationModel.findOne({
       bookingId: booking._id,
       event: "day_stay_confirmed",
@@ -439,27 +439,91 @@ export class DayStayBookingService {
       });
     }
 
-    return {
-      success: true,
-      bookingId: booking.bookingId,
-      reservationNumber: booking.reservationNumber,
-      status: "confirmed",
-      checkInCode: booking.checkInCode,
-      pricing: booking.pricing,
-      slotStartTime: booking.dayStayDetails?.slotStartTime,
-      slotEndTime: booking.dayStayDetails?.slotEndTime,
-      durationMinutes: booking.dayStayDetails?.durationMinutes,
-      bookingType: booking.bookingType,
-      dayStayDetails: booking.dayStayDetails,
-      rooms: booking.rooms,
+    return this.confirmedResponse(booking);
+  }
+
+  private async isSlotTakenByOthers(booking: any, slotStart: Date): Promise<boolean> {
+    const slots = await this.inventoryService.getRoomSlots(
+      String(booking.ashramId),
+      String(booking.rooms?.[0]?.roomId),
+      istDateString(slotStart),
+      booking.dayStayDetails.productCode,
+      String(booking._id),
+    );
+    const matchedSlot = slots.find((s) => s.startTime === istTimeString(slotStart));
+    // A slot that has since started reads 0 units; that is not "taken by
+    // someone else" as long as there is still room for this guest.
+    if (!matchedSlot) return true;
+    if (matchedSlot.availableUnits > 0) return false;
+    return slotStart > new Date();
+  }
+
+  /**
+   * Cancels a paid booking whose slot was lost and issues a real Razorpay
+   * refund. If the gateway refund fails the booking is flagged for manual
+   * action instead of claiming the money was returned.
+   */
+  private async cancelAndRefund(booking: any, dto: DayStayConfirmPaymentDto, customerId?: string) {
+    const fromStatus = booking.status;
+    const amount = Number(booking.pricing?.totalAmount ?? 0);
+    let refundId: string | undefined;
+    let refundError: string | undefined;
+
+    if (this.razorpay && dto.razorpayPaymentId && !String(dto.razorpayPaymentId).startsWith("mock_")) {
+      try {
+        const result: any = await this.razorpay.payments.refund(dto.razorpayPaymentId, {
+          amount: Math.round(amount * 100),
+          speed: "normal",
+          notes: { bookingId: booking.bookingId, reason: "day_stay_slot_lost" },
+        });
+        refundId = result?.id;
+      } catch (err: any) {
+        refundError = String(err?.error?.description ?? err?.message ?? "Gateway rejected the refund");
+        this.logger.error(`Day Stay refund failed for ${booking.bookingId}: ${refundError}`);
+      }
+    } else if (!this.demoPaymentsAllowed()) {
+      refundError = "Payment gateway not configured";
+    }
+
+    booking.status = "cancelled";
+    booking.paymentStatus = refundError ? "fully_paid" : "refunded";
+    booking.gatewayStatus = "success";
+    booking.cancellation = {
+      reason: "Payment succeeded after hold expired and slot was acquired by another booking.",
+      date: new Date(),
+      refundAmount: amount,
+      refundTransactionId: refundId,
     };
+    booking.paymentSummary = {
+      ...(booking.paymentSummary || {}),
+      razorpayPaymentId: dto.razorpayPaymentId,
+      razorpaySignature: dto.razorpaySignature,
+      reconciliationNote: refundError ? "REFUND_FAILED_MANUAL_ACTION_REQUIRED" : "OVERBOOK_PREVENTED_AUTO_REFUND",
+      refundError,
+    };
+    await booking.save();
+
+    await this.historyModel.create({
+      bookingId: booking._id,
+      fromStatus,
+      toStatus: "cancelled",
+      note: refundError
+        ? `Hold expired before payment capture. Slot occupied; REFUND FAILED (${refundError}) - manual refund required.`
+        : `Hold expired before payment capture. Slot occupied; refund ${refundId ?? "(demo)"} issued.`,
+      actorId: customerId || booking.customerId,
+      actorRole: "system",
+    });
   }
 
   /**
    * Server-to-server webhook reconciliation entry point.
    * Invoked by PaymentsWebhookService when Razorpay sends `payment.captured` or `order.paid`.
    */
-  async confirmPaymentFromWebhook(razorpayOrderId: string, razorpayPaymentId: string): Promise<boolean> {
+  async confirmPaymentFromWebhook(
+    razorpayOrderId: string,
+    razorpayPaymentId: string,
+    captured?: { amountPaise?: number; currency?: string },
+  ): Promise<boolean> {
     const booking = await this.bookingModel.findOne({
       "paymentSummary.razorpayOrderId": razorpayOrderId,
       bookingType: { $in: ["day_rest", "freshen_up"] },
@@ -472,16 +536,26 @@ export class DayStayBookingService {
     try {
       // The webhook body was HMAC-verified before dispatch, and the booking
       // was found by the order id Razorpay itself reported.
-      await this.settle(booking, {
-        bookingId: booking.bookingId,
-        razorpayOrderId,
-        razorpayPaymentId,
-      });
+      await this.settle(
+        booking,
+        {
+          bookingId: booking.bookingId,
+          razorpayOrderId,
+          razorpayPaymentId,
+        },
+        undefined,
+        captured?.amountPaise,
+      );
       return true;
     } catch (err: any) {
       this.logger.error(`Webhook reconciliation error for order ${razorpayOrderId}: ${err.message}`);
-      // If already confirmed or gracefully refunded, return true so webhook marks event as processed
-      if (err instanceof ConflictException || booking.status === "confirmed" || booking.status === "cancelled") {
+      // Handled terminal outcomes (refunded, flagged mismatch, already final): mark event processed.
+      if (
+        err instanceof ConflictException ||
+        err instanceof BadRequestException ||
+        booking.status === "confirmed" ||
+        booking.status === "cancelled"
+      ) {
         return true;
       }
       throw err;
