@@ -1,3 +1,4 @@
+require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") });
 /**
  * Clean dummy data and set actual inventory:
  * Total Rooms: 320
@@ -10,7 +11,7 @@ setServers(['1.1.1.1', '8.8.8.8']);
 const path = require('path');
 const mongoose = require(path.join(__dirname, '..', 'node_modules', 'mongoose'));
 
-const uri = "mongodb+srv://nktechipl_db_user:6xb6D9ZbvZ9KkUzY@cluster0.0zchdel.mongodb.net/test?retryWrites=true&w=majority";
+const uri = process.env.MONGODB_URI || (() => { throw new Error("Set MONGODB_URI in Newbackend/.env"); })();
 
 const ACTUAL_STAYS = [
   { name: "Hotel Sharda Palace", slug: "hotel-sharda-palace", rooms: 14 },

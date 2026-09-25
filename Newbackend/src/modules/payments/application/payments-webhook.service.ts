@@ -123,7 +123,7 @@ export class PaymentsWebhookService {
     paymentId: string,
     captured?: { amountPaise?: number; currency?: string },
   ): Promise<string | null> {
-    if (await this.dayStay.confirmPaymentFromWebhook(orderId, paymentId))
+    if (await this.dayStay.confirmPaymentFromWebhook(orderId, paymentId, captured))
       return "day_stay";
     if (
       await this.bookings.confirmPaymentFromWebhook(

@@ -2,10 +2,18 @@ import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
 import { DayStayProductsService } from "./day-stay-products.service";
+import {
+  addDays,
+  hhmmToMinutes,
+  istDateString,
+  istDayBounds,
+  istInstant,
+  minutesToHhmm,
+} from "../domain/day-stay-time";
 
 export interface TimeSlotAvailability {
-  startTime: string; // HH:mm
-  endTime: string;   // HH:mm
+  startTime: string; // HH:mm (IST)
+  endTime: string;   // HH:mm (IST)
   startUtc: Date;
   endUtc: Date;
   availableUnits: number;
@@ -14,6 +22,24 @@ export interface TimeSlotAvailability {
   durationMinutes: number;
   price: number;
   discountPrice: number;
+}
+
+const FALLBACK_PRICES: Record<string, number> = {
+  FRESHEN_UP: 499,
+  DAY_REST_3H: 599,
+  DAY_REST_4H: 699,
+  DAY_REST_6H: 1199,
+};
+
+/** True when Day Stay is closed for this IST date (blackouts / quick blocks). */
+export function isDayStayBlocked(dayStayConfig: any, dateStr: string, now = new Date()): boolean {
+  if (dayStayConfig?.blackoutDates?.some((d: Date) => new Date(d).toISOString().slice(0, 10) === dateStr)) {
+    return true;
+  }
+  const today = istDateString(now);
+  if (dayStayConfig?.isBlockedToday && dateStr === today) return true;
+  if (dayStayConfig?.isBlockedTomorrow && dateStr === addDays(today, 1)) return true;
+  return false;
 }
 
 @Injectable()
@@ -29,6 +55,7 @@ export class DayStayInventoryService {
 
   /**
    * Evaluates available time slots for a given room on a date.
+   * `dateStr` and slot times are IST wall-clock; startUtc/endUtc are real instants.
    */
   async getRoomSlots(
     ashramId: string,
@@ -44,8 +71,7 @@ export class DayStayInventoryService {
       return [];
     }
 
-    // Check blackout / quick blocks
-    if (ashram.dayStayConfig.blackoutDates?.some((d: Date) => new Date(d).toISOString().split("T")[0] === dateStr)) {
+    if (isDayStayBlocked(ashram.dayStayConfig, dateStr)) {
       return [];
     }
 
@@ -68,39 +94,10 @@ export class DayStayInventoryService {
     // Operating window
     const opStart = ashram.dayStayConfig.operatingHours?.start || ashram.dayStayConfig.operatingHours?.open || "06:00";
     const opEnd = ashram.dayStayConfig.operatingHours?.end || ashram.dayStayConfig.operatingHours?.close || "20:00";
+    const opStartMins = hhmmToMinutes(opStart);
+    const opEndMins = hhmmToMinutes(opEnd);
 
-    const [startHour, startMin] = opStart.split(":").map(Number);
-    const [endHour, endMin] = opEnd.split(":").map(Number);
-
-    const opStartMins = startHour * 60 + startMin;
-    const opEndMins = endHour * 60 + endMin;
-
-    // Fetch products to compute slots
-    let targetProducts = room.dayStayConfig?.products?.filter((p: any) => p.enabled) || [];
-    if (!targetProducts.length) {
-      const catalogProducts = await this.productsService.getActiveProducts();
-      const multiplier = room.dayStayConfig?.priceMultiplier || 1.0;
-      targetProducts = catalogProducts.map((p) => {
-        const pricingMap = room.dayStayConfig?.pricingByProduct;
-        let basePrice = 499;
-        if (pricingMap) {
-          if (typeof pricingMap.get === "function") {
-            basePrice = pricingMap.get(p.productCode) || basePrice;
-          } else if (pricingMap[p.productCode]) {
-            basePrice = pricingMap[p.productCode];
-          }
-        } else {
-          basePrice = p.productCode === "DAY_REST_4H" ? 699 : p.productCode === "DAY_REST_6H" ? 1199 : 699;
-        }
-        return {
-          productCode: p.productCode,
-          durationMinutes: p.durationMinutes,
-          price: Math.round(basePrice * multiplier),
-          discountPrice: Math.round(basePrice * multiplier),
-          enabled: true,
-        };
-      });
-    }
+    let targetProducts = await this.resolveRoomProducts(room);
 
     if (productCode) {
       targetProducts = targetProducts.filter((p: any) => p.productCode === productCode.toUpperCase());
@@ -110,25 +107,33 @@ export class DayStayInventoryService {
       return [];
     }
 
-    // Fetch existing active bookings for this room on this date
-    // An active booking is status in ['confirmed', 'checked_in', 'pending'] (where pending represents active hold)
-    const dayStartUtc = new Date(`${dateStr}T00:00:00.000Z`);
-    const dayEndUtc = new Date(`${dateStr}T23:59:59.999Z`);
+    // Active occupants of this room on this IST date. A pending booking only
+    // counts while its payment hold is still live.
+    const { start: dayStartUtc, end: dayEndUtc } = istDayBounds(dateStr);
+    const now = new Date();
 
     const existingBookings = await this.bookingModel.find({
       "rooms.roomId": roomId,
-      status: { $in: ["confirmed", "checked_in", "pending"] },
       ...(excludeBookingId ? { _id: { $ne: excludeBookingId } } : {}),
-      $or: [
+      $and: [
         {
-          bookingType: { $in: ["day_rest", "freshen_up"] },
-          "dayStayDetails.slotStartTime": { $gte: dayStartUtc, $lte: dayEndUtc },
+          $or: [
+            { status: { $in: ["confirmed", "checked_in"] } },
+            { status: "pending", reservationExpiresAt: { $gt: now } },
+          ],
         },
         {
-          // Also check whole-day overnight check-in conflicts if applicable
-          bookingType: "overnight",
-          checkInDate: { $lte: dayEndUtc },
-          checkOutDate: { $gte: dayStartUtc },
+          $or: [
+            {
+              bookingType: { $in: ["day_rest", "freshen_up"] },
+              "dayStayDetails.slotStartTime": { $gte: dayStartUtc, $lte: dayEndUtc },
+            },
+            {
+              bookingType: "overnight",
+              checkInDate: { $lte: dayEndUtc },
+              checkOutDate: { $gt: dayStartUtc },
+            },
+          ],
         },
       ],
     }).lean();
@@ -140,17 +145,8 @@ export class DayStayInventoryService {
       const duration = prod.durationMinutes;
 
       for (let curMins = opStartMins; curMins + duration <= opEndMins; curMins += 30) {
-        const slotStartH = Math.floor(curMins / 60).toString().padStart(2, "0");
-        const slotStartM = (curMins % 60).toString().padStart(2, "0");
-        const slotEndMins = curMins + duration;
-        const slotEndH = Math.floor(slotEndMins / 60).toString().padStart(2, "0");
-        const slotEndM = (slotEndMins % 60).toString().padStart(2, "0");
-
-        const slotStartTimeStr = `${slotStartH}:${slotStartM}`;
-        const slotEndTimeStr = `${slotEndH}:${slotEndM}`;
-
-        const slotStartUtc = new Date(`${dateStr}T${slotStartTimeStr}:00.000Z`);
-        const slotEndUtc = new Date(`${dateStr}T${slotEndTimeStr}:00.000Z`);
+        const slotStartUtc = istInstant(dateStr, curMins);
+        const slotEndUtc = istInstant(dateStr, curMins + duration);
 
         // Time window including turnaround requirement: [slotStartUtc, slotEndUtc + grace + buffer]
         const turnaroundEndUtc = new Date(slotEndUtc.getTime() + (graceMinutes + bufferMinutes) * 60000);
@@ -159,8 +155,10 @@ export class DayStayInventoryService {
         let overlappingUnits = 0;
         for (const bk of existingBookings) {
           if (bk.bookingType === "overnight") {
-            // If overnight booking exists and uses standard capacity, reduce available pool
-            overlappingUnits += (bk.roomsBookedCount || 1);
+            // Overnight guests hold the room from check-in to check-out.
+            if (slotStartUtc < new Date(bk.checkOutDate) && turnaroundEndUtc > new Date(bk.checkInDate)) {
+              overlappingUnits += (bk.roomsBookedCount || 1);
+            }
           } else if (bk.dayStayDetails?.slotStartTime && bk.dayStayDetails?.slotEndTime) {
             const bkStart = new Date(bk.dayStayDetails.slotStartTime);
             const bkTurnaroundEnd = new Date(
@@ -175,11 +173,13 @@ export class DayStayInventoryService {
           }
         }
 
-        const availableUnits = Math.max(0, totalAllocated - overlappingUnits);
+        // Slots that have already started can't be booked.
+        const availableUnits =
+          slotStartUtc <= now ? 0 : Math.max(0, totalAllocated - overlappingUnits);
 
         slots.push({
-          startTime: slotStartTimeStr,
-          endTime: slotEndTimeStr,
+          startTime: minutesToHhmm(curMins),
+          endTime: minutesToHhmm(curMins + duration),
           startUtc: slotStartUtc,
           endUtc: slotEndUtc,
           availableUnits,
@@ -193,5 +193,34 @@ export class DayStayInventoryService {
     }
 
     return slots;
+  }
+
+  /**
+   * Products a room sells: its own enabled products, or the global catalog
+   * priced for the room. Used by both availability and hold so they agree.
+   */
+  async resolveRoomProducts(room: any): Promise<any[]> {
+    const own = room.dayStayConfig?.products?.filter((p: any) => p.enabled) || [];
+    if (own.length) return own;
+    const catalogProducts = await this.productsService.getActiveProducts();
+    const multiplier = room.dayStayConfig?.priceMultiplier || 1.0;
+    const pricingMap = room.dayStayConfig?.pricingByProduct;
+    return catalogProducts.map((p) => {
+      let basePrice = FALLBACK_PRICES[p.productCode] ?? 699;
+      if (pricingMap) {
+        const mapped = typeof pricingMap.get === "function" ? pricingMap.get(p.productCode) : pricingMap[p.productCode];
+        if (mapped) basePrice = mapped;
+      }
+      const price = Math.round(basePrice * multiplier);
+      return {
+        productCode: p.productCode,
+        productType: p.productType,
+        displayName: p.displayName,
+        durationMinutes: p.durationMinutes,
+        price,
+        discountPrice: price,
+        enabled: true,
+      };
+    });
   }
 }

@@ -8,6 +8,10 @@ import {
   IsBoolean,
   Min,
   Matches,
+  IsObject,
+  IsInt,
+  Max,
+  IsArray,
 } from "class-validator";
 
 // Plain calendar date only (no time-of-day / timezone component). The
@@ -126,4 +130,45 @@ export class DayStayVendorBlockDto {
 
   @IsOptional()
   dates?: string[];
+}
+
+export class DayStayConfigUpdateDto {
+  @IsOptional()
+  @IsBoolean()
+  enabled?: boolean;
+
+  // { start: "HH:mm", end: "HH:mm" } — validated in DayStayVendorService.
+  @IsOptional()
+  @IsObject()
+  operatingHours?: { start: string; end: string };
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(120)
+  defaultGraceMinutes?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(180)
+  defaultHousekeepingBufferMinutes?: number;
+
+  // Per-room settings: { roomId, enabled?, allocatedInventory?, products? } —
+  // validated in DayStayVendorService.
+  @IsOptional()
+  @IsArray()
+  rooms?: Array<{
+    roomId: string;
+    enabled?: boolean;
+    allocatedInventory?: number;
+    products?: Array<{
+      productCode: string;
+      productType: "freshen_up" | "day_rest";
+      durationMinutes: number;
+      price: number;
+      discountPrice?: number;
+      enabled?: boolean;
+    }>;
+  }>;
 }

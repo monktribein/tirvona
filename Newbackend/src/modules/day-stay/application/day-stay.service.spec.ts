@@ -8,6 +8,9 @@ import { DayStayBookingService } from "../application/day-stay-booking.service";
 import { DayStayProductsService } from "../application/day-stay-products.service";
 import { DayStayVendorService } from "../application/day-stay-vendor.service";
 import { TransactionService } from "../../../common/database/transaction.service";
+import { ConflictException } from "@nestjs/common";
+import { isDayStayBlocked } from "../application/day-stay-inventory.service";
+import { istDateString } from "../domain/day-stay-time";
 
 // Mirrors DayStayBookingService's own signature computation so tests can
 // simulate a real, valid Razorpay checkout callback instead of relying on
@@ -120,7 +123,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
         }),
       });
 
-      // Existing booking from 08:00 to 11:00 UTC
+      // Existing booking from 08:00 to 11:00 IST
       // Turnaround window: 08:00 to 11:00 + 15m grace + 45m buffer = 12:00 UTC
       mockBookingModel.find.mockReturnValue({
         lean: jest.fn().mockResolvedValue([
@@ -129,8 +132,8 @@ describe("DayStay Engine Unit & Integration Tests", () => {
             status: "confirmed",
             roomsBookedCount: 1,
             dayStayDetails: {
-              slotStartTime: new Date("2026-10-01T08:00:00.000Z"),
-              slotEndTime: new Date("2026-10-01T11:00:00.000Z"),
+              slotStartTime: new Date("2030-10-01T08:00:00.000+05:30"),
+              slotEndTime: new Date("2030-10-01T11:00:00.000+05:30"),
               graceMinutes: 15,
               housekeepingBufferMinutes: 45,
             },
@@ -138,7 +141,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
         ]),
       });
 
-      const slots = await inventoryService.getRoomSlots("ashram_01", "room_01", "2026-10-01", "DAY_REST_3H");
+      const slots = await inventoryService.getRoomSlots("ashram_01", "room_01", "2030-10-01", "DAY_REST_3H");
 
       expect(slots.length).toBeGreaterThan(0);
 
@@ -188,7 +191,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
 
       mockBookingModel.find.mockReturnValue({ lean: jest.fn().mockResolvedValue([]) });
 
-      const slots = await inventoryService.getRoomSlots("ashram_01", "room_01", "2026-10-01", "DAY_REST_3H");
+      const slots = await inventoryService.getRoomSlots("ashram_01", "room_01", "2030-10-01", "DAY_REST_3H");
 
       expect(slots.length).toBeGreaterThan(0);
       expect(slots.every((s) => s.availableUnits === 0 && !s.isAvailable)).toBe(true);
@@ -239,13 +242,16 @@ describe("DayStay Engine Unit & Integration Tests", () => {
         bookingId: "BK-12345",
         reservationNumber: "RES-12345",
       });
+      (bookingService as any).razorpay = {
+        orders: { create: jest.fn().mockResolvedValue({ id: "order_live_1" }) },
+      };
 
       const res = await bookingService.holdSlot(
         {
           ashramId: "ashram_01",
           roomId: "room_01",
           productCode: "DAY_REST_4H",
-          date: "2026-10-01",
+          date: "2030-10-01",
           startTime: "09:00",
           guestsCount: 2,
         },
@@ -255,6 +261,8 @@ describe("DayStay Engine Unit & Integration Tests", () => {
       expect(res.bookingId).toBeDefined();
       expect(res.durationMinutes).toBe(240);
       expect(res.pricing.basePrice).toBe(650);
+      expect(res.razorpayOrderId).toBe("order_live_1");
+      expect(res.demo).toBe(false);
       expect(mockBookingModel.create).toHaveBeenCalled();
       expect(mockHistoryModel.create).toHaveBeenCalled();
     });
@@ -297,8 +305,8 @@ describe("DayStay Engine Unit & Integration Tests", () => {
             status: "pending",
             roomsBookedCount: 1,
             dayStayDetails: {
-              slotStartTime: new Date("2026-10-01T09:00:00.000Z"),
-              slotEndTime: new Date("2026-10-01T13:00:00.000Z"),
+              slotStartTime: new Date("2030-10-01T09:00:00.000+05:30"),
+              slotEndTime: new Date("2030-10-01T13:00:00.000+05:30"),
             },
           },
         ]),
@@ -310,13 +318,13 @@ describe("DayStay Engine Unit & Integration Tests", () => {
             ashramId: "ashram_01",
             roomId: "room_01",
             productCode: "DAY_REST_4H",
-            date: "2026-10-01",
+            date: "2030-10-01",
             startTime: "09:00",
             guestsCount: 1,
           },
           "customer_02",
         ),
-      ).rejects.toThrow(/ConflictException|just selected by another pilgrim/);
+      ).rejects.toThrow(/not available/);
     });
 
     it("rejects hold when the per-room lock is already held by another in-flight request", async () => {
@@ -345,7 +353,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
             ashramId: "ashram_01",
             roomId: "room_01",
             productCode: "DAY_REST_4H",
-            date: "2026-10-01",
+            date: "2030-10-01",
             startTime: "09:00",
             guestsCount: 1,
           },
@@ -356,23 +364,51 @@ describe("DayStay Engine Unit & Integration Tests", () => {
   });
 
   describe("3. Vendor Blocking Controls", () => {
-    it("allows vendor to instantly block Day Stay for today and tomorrow", async () => {
-      const ashramDoc: any = {
-        _id: "ashram_01",
-        ownerId: "owner_01",
-        dayStayConfig: { enabled: true, isBlockedToday: false },
-        save: jest.fn().mockResolvedValue(true),
-      };
+    const ASHRAM_ID = "64b000000000000000000001";
+    const makeAshramDoc = (): any => ({
+      _id: ASHRAM_ID,
+      ownerId: "owner_01",
+      dayStayConfig: { enabled: true, blackoutDates: [] },
+      save: jest.fn().mockResolvedValue(true),
+      markModified: jest.fn(),
+    });
+    const owner: any = { id: "owner_01", role: "ashram_owner", scopedAshramIds: [] };
 
-      mockAshramModel.findOne.mockResolvedValue(ashramDoc);
+    it("allows vendor to instantly block Day Stay for today (as a concrete date)", async () => {
+      const ashramDoc = makeAshramDoc();
+      mockAshramModel.findById.mockReturnValue(ashramDoc);
 
-      await vendorService.blockDayStay(
-        { ashramId: "ashram_01", action: "today" },
-        "owner_01",
-      );
+      await vendorService.blockDayStay({ ashramId: ASHRAM_ID, action: "today" }, owner);
 
-      expect(ashramDoc.dayStayConfig.isBlockedToday).toBe(true);
+      const today = istDateString(new Date());
+      expect(ashramDoc.dayStayConfig.blackoutDates.map((d: Date) => d.toISOString().slice(0, 10))).toEqual([today]);
+      expect(isDayStayBlocked(ashramDoc.dayStayConfig, today)).toBe(true);
       expect(ashramDoc.save).toHaveBeenCalled();
+
+      await vendorService.blockDayStay({ ashramId: ASHRAM_ID, action: "unblock_today" }, owner);
+      expect(isDayStayBlocked(ashramDoc.dayStayConfig, today)).toBe(false);
+    });
+
+    it("lets a super admin manage any property but rejects other owners", async () => {
+      mockAshramModel.findById.mockReturnValue(makeAshramDoc());
+      await expect(
+        vendorService.blockDayStay({ ashramId: ASHRAM_ID, action: "today" }, { id: "x", role: "super_admin" } as any),
+      ).resolves.toMatchObject({ success: true });
+
+      mockAshramModel.findById.mockReturnValue(makeAshramDoc());
+      await expect(
+        vendorService.blockDayStay(
+          { ashramId: ASHRAM_ID, action: "today" },
+          { id: "other_owner", role: "ashram_owner", scopedAshramIds: [] } as any,
+        ),
+      ).rejects.toThrow(/permission/);
+    });
+
+    it("isBlockedToday flag blocks today only, not every future day", () => {
+      const today = istDateString(new Date());
+      const cfg = { isBlockedToday: true };
+      expect(isDayStayBlocked(cfg, today)).toBe(true);
+      expect(isDayStayBlocked(cfg, "2099-01-01")).toBe(false);
     });
   });
 
@@ -505,6 +541,8 @@ describe("DayStay Engine Unit & Integration Tests", () => {
         reservationExpiresAt: new Date(Date.now() - 60000), // Expired 1 min ago
       });
       mockBookingModel.findOne.mockResolvedValue(expiredDoc);
+      const refund = jest.fn().mockResolvedValue({ id: "rfnd_001" });
+      (bookingService as any).razorpay = { payments: { refund } };
 
       // Mock inventory indicating 0 available units for that slot now
       mockAshramModel.findById.mockReturnValue({
@@ -547,6 +585,150 @@ describe("DayStay Engine Unit & Integration Tests", () => {
 
       expect(expiredDoc.status).toBe("cancelled");
       expect(expiredDoc.paymentStatus).toBe("refunded");
+      expect(refund).toHaveBeenCalledWith("pay_rzp_001", expect.objectContaining({ amount: 82600 }));
+      expect((expiredDoc as any).cancellation.refundTransactionId).toBe("rfnd_001");
+    });
+
+    it("H3. If the gateway refund fails the booking is flagged for manual refund, not marked refunded", async () => {
+      const expiredDoc = createPendingBookingDoc({ reservationExpiresAt: new Date(Date.now() - 60000) });
+      mockBookingModel.findOne.mockResolvedValue(expiredDoc);
+      (bookingService as any).razorpay = {
+        payments: { refund: jest.fn().mockRejectedValue(new Error("gateway down")) },
+      };
+      mockAshramModel.findById.mockReturnValue({
+        lean: jest.fn().mockResolvedValue({ _id: "ashram_01", dayStayConfig: { enabled: true } }),
+      });
+      mockRoomModel.findOne.mockReturnValue({
+        lean: jest.fn().mockResolvedValue({
+          _id: "room_01",
+          dayStayConfig: { enabled: true, allocatedInventory: 1, products: [{ productCode: "DAY_REST_3H", enabled: true, durationMinutes: 180 }] },
+        }),
+      });
+      mockBookingModel.find.mockReturnValue({ lean: jest.fn().mockResolvedValue([]) });
+
+      await expect(
+        bookingService.confirmPayment(
+          {
+            bookingId: "BK-DAY-001",
+            razorpayOrderId: "order_rzp_001",
+            razorpayPaymentId: "pay_rzp_001",
+            razorpaySignature: validSignature("order_rzp_001", "pay_rzp_001"),
+          },
+          "cust_01",
+        ),
+      ).rejects.toThrow(ConflictException);
+      expect(expiredDoc.status).toBe("cancelled");
+      expect(expiredDoc.paymentStatus).toBe("fully_paid");
+      expect((expiredDoc as any).paymentSummary.reconciliationNote).toBe("REFUND_FAILED_MANUAL_ACTION_REQUIRED");
+    });
+
+    it("S1. Demo/mock markers cannot bypass the signature when live keys are configured", async () => {
+      const doc = createPendingBookingDoc();
+      mockBookingModel.findOne.mockResolvedValue(doc);
+
+      await expect(
+        bookingService.confirmPayment(
+          {
+            bookingId: "BK-DAY-001",
+            razorpayOrderId: "order_rzp_001",
+            razorpayPaymentId: "pay_sim_123",
+            razorpaySignature: "demo_simulated_sig",
+          },
+          "cust_01",
+        ),
+      ).rejects.toThrow(/signature/i);
+      expect(doc.status).toBe("pending");
+    });
+
+    it("S2. A payment for a different order cannot confirm this booking", async () => {
+      const doc = createPendingBookingDoc();
+      mockBookingModel.findOne.mockResolvedValue(doc);
+
+      await expect(
+        bookingService.confirmPayment(
+          {
+            bookingId: "BK-DAY-001",
+            razorpayOrderId: "order_cheap_999",
+            razorpayPaymentId: "pay_rzp_001",
+            razorpaySignature: validSignature("order_cheap_999", "pay_rzp_001"),
+          },
+          "cust_01",
+        ),
+      ).rejects.toThrow(/does not belong/);
+      expect(doc.status).toBe("pending");
+    });
+
+    it("S3. Webhook with a wrong captured amount is flagged, not confirmed", async () => {
+      const doc: any = createPendingBookingDoc({ markModified: jest.fn() });
+      mockBookingModel.findOne.mockResolvedValue(doc);
+
+      const handled = await bookingService.confirmPaymentFromWebhook("order_rzp_001", "pay_rzp_001", {
+        amountPaise: 100,
+      });
+      expect(handled).toBe(true);
+      expect(doc.status).toBe("pending");
+      expect(doc.paymentSummary.reconciliationNote).toBe("AMOUNT_MISMATCH_MANUAL_REVIEW");
+    });
+
+    it("S4. Hold fails instead of issuing a mock order when Razorpay is down", async () => {
+      mockAshramModel.findById.mockReturnValue({
+        lean: jest.fn().mockResolvedValue({ _id: "ashram_01", dayStayConfig: { enabled: true } }),
+      });
+      mockRoomModel.findOne.mockReturnValue({
+        lean: jest.fn().mockResolvedValue({
+          _id: "room_01",
+          dayStayConfig: {
+            enabled: true,
+            allocatedInventory: 1,
+            products: [{ productCode: "DAY_REST_4H", productType: "day_rest", durationMinutes: 240, price: 700, enabled: true }],
+          },
+        }),
+      });
+      mockBookingModel.find.mockReturnValue({ lean: jest.fn().mockResolvedValue([]) });
+      mockBookingModel.create.mockClear();
+      (bookingService as any).razorpay = { orders: { create: jest.fn().mockRejectedValue(new Error("down")) } };
+
+      await expect(
+        bookingService.holdSlot(
+          { ashramId: "ashram_01", roomId: "room_01", productCode: "DAY_REST_4H", date: "2030-10-01", startTime: "09:00", guestsCount: 1 },
+          "customer_01",
+        ),
+      ).rejects.toThrow(/gateway is unavailable/);
+      expect(mockBookingModel.create).not.toHaveBeenCalled();
+    });
+
+    it("S5. Past slots are never bookable", async () => {
+      mockAshramModel.findById.mockReturnValue({
+        lean: jest.fn().mockResolvedValue({ _id: "ashram_01", dayStayConfig: { enabled: true } }),
+      });
+      mockRoomModel.findOne.mockReturnValue({
+        lean: jest.fn().mockResolvedValue({
+          _id: "room_01",
+          dayStayConfig: { enabled: true, allocatedInventory: 3, products: [{ productCode: "DAY_REST_4H", durationMinutes: 240, price: 700, enabled: true }] },
+        }),
+      });
+      mockBookingModel.find.mockReturnValue({ lean: jest.fn().mockResolvedValue([]) });
+
+      const slots = await inventoryService.getRoomSlots("ashram_01", "room_01", "2020-01-01", "DAY_REST_4H");
+      expect(slots.length).toBeGreaterThan(0);
+      expect(slots.every((s) => !s.isAvailable)).toBe(true);
+    });
+
+    it("S6. Slot times are IST wall-clock", async () => {
+      mockAshramModel.findById.mockReturnValue({
+        lean: jest.fn().mockResolvedValue({ _id: "ashram_01", dayStayConfig: { enabled: true, operatingHours: { start: "06:00", end: "20:00" } } }),
+      });
+      mockRoomModel.findOne.mockReturnValue({
+        lean: jest.fn().mockResolvedValue({
+          _id: "room_01",
+          dayStayConfig: { enabled: true, allocatedInventory: 1, products: [{ productCode: "DAY_REST_4H", durationMinutes: 240, price: 700, enabled: true }] },
+        }),
+      });
+      mockBookingModel.find.mockReturnValue({ lean: jest.fn().mockResolvedValue([]) });
+
+      const slots = await inventoryService.getRoomSlots("ashram_01", "room_01", "2030-10-01", "DAY_REST_4H");
+      expect(slots[0].startTime).toBe("06:00");
+      expect(slots[0].startUtc.toISOString()).toBe("2030-10-01T00:30:00.000Z");
     });
 
     it("H2. Payment succeeds after hold expiry but the booking's own pending row must not count as a competing occupant", async () => {
@@ -557,8 +739,8 @@ describe("DayStay Engine Unit & Integration Tests", () => {
         reservationExpiresAt: new Date(Date.now() - 60000), // Expired 1 min ago
         dayStayDetails: {
           productCode: "DAY_REST_3H",
-          slotStartTime: new Date("2026-10-01T09:00:00.000Z"),
-          slotEndTime: new Date("2026-10-01T12:00:00.000Z"),
+          slotStartTime: new Date("2030-10-01T09:00:00.000+05:30"),
+          slotEndTime: new Date("2030-10-01T12:00:00.000+05:30"),
           durationMinutes: 180,
         },
       });

@@ -25,6 +25,7 @@ import { useNotifications } from "../contexts/NotificationContext";
 import { ashramService, dayStayService } from "../services";
 import { getErrorMessage } from "../lib/api";
 import { FileUploader } from "../components/FileUploader";
+import DayStayManagerModal from "../admin/ashrams/components/DayStayManagerModal";
 
 export const ManageAshramsPage: React.FC = () => {
   const { addNotification } = useNotifications();
@@ -42,6 +43,7 @@ export const ManageAshramsPage: React.FC = () => {
   const [fireSafetyUrl, setFireSafetyUrl] = useState("");
   const [landOwnershipUrl, setLandOwnershipUrl] = useState("");
   const [submittingDocs, setSubmittingDocs] = useState(false);
+  const [dayStayAshram, setDayStayAshram] = useState<any | null>(null);
 
   const fetchMyAshrams = useCallback(async () => {
     setLoading(true);
@@ -226,6 +228,18 @@ export const ManageAshramsPage: React.FC = () => {
                     className="px-4 py-2.5 rounded-full bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 border border-indigo-500/20 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer"
                   >
                     <CalendarIcon size={14} /> Rate Calendar
+                  </button>
+
+                  <button
+                    onClick={() => setDayStayAshram(ashram)}
+                    className={`px-4 py-2.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer border ${
+                      ashram.dayStayConfig?.enabled
+                        ? "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 border-emerald-500/20"
+                        : "bg-teal-500/10 hover:bg-teal-500/20 text-teal-600 border-teal-500/20"
+                    }`}
+                  >
+                    <Clock size={14} />
+                    {ashram.dayStayConfig?.enabled ? "Short Stay: On" : "Enable Short Stay"}
                   </button>
 
                   <Link
@@ -418,6 +432,21 @@ export const ManageAshramsPage: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {dayStayAshram && (
+        <DayStayManagerModal
+          ashram={dayStayAshram}
+          onClose={() => setDayStayAshram(null)}
+          onSaved={(enabled) => {
+            addNotification(
+              "Short Stay Updated",
+              `${dayStayAshram.name || "Your stay"}: Short Stay ${enabled ? "is now live" : "turned off"}.`,
+              "success",
+            );
+            fetchMyAshrams();
+          }}
+        />
       )}
     </div>
   );

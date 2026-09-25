@@ -476,6 +476,29 @@ export const dayStayService = {
   }) => api.post("/day-stay/vendor/block", data),
   getVendorRadar: (ashramId: string) =>
     api.get("/day-stay/vendor/radar", { params: { ashramId } }),
+  getConfig: (ashramId: string) => api.get(`/day-stay/vendor/config/${ashramId}`),
+  updateConfig: (
+    ashramId: string,
+    data: {
+      enabled?: boolean;
+      operatingHours?: { start: string; end: string };
+      defaultGraceMinutes?: number;
+      defaultHousekeepingBufferMinutes?: number;
+      rooms?: Array<{
+        roomId: string;
+        enabled?: boolean;
+        allocatedInventory?: number;
+        products?: Array<{
+          productCode: string;
+          productType: "freshen_up" | "day_rest";
+          durationMinutes: number;
+          price: number;
+          discountPrice?: number;
+          enabled?: boolean;
+        }>;
+      }>;
+    },
+  ) => api.put(`/day-stay/vendor/config/${ashramId}`, data),
 };
 
 export const platformSettingsService = {

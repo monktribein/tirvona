@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Put,
+  Param,
   Body,
   Query,
 } from "@nestjs/common";
@@ -18,6 +20,7 @@ import {
   DayStayHoldDto,
   DayStayConfirmPaymentDto,
   DayStayVendorBlockDto,
+  DayStayConfigUpdateDto,
 } from "./dtos/day-stay.dto";
 
 @Controller("day-stay")
@@ -66,21 +69,40 @@ export class DayStayController {
     return this.bookingService.confirmPayment(dto, user.id);
   }
 
-  @Roles("ashram_owner", "ashram_staff", "admin", "super_admin")
+  @Roles("owner", "stay_admin", "ashram_staff", "admin", "super_admin")
   @Post("vendor/block")
   async blockDayStay(
     @Body() dto: DayStayVendorBlockDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.vendorService.blockDayStay(dto, user.id);
+    return this.vendorService.blockDayStay(dto, user);
   }
 
-  @Roles("ashram_owner", "ashram_staff", "admin", "super_admin")
+  @Roles("owner", "stay_admin", "ashram_staff", "admin", "super_admin")
   @Get("vendor/radar")
   async getLiveRadar(
     @Query("ashramId") ashramId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.vendorService.getLiveRadar(ashramId, user.id);
+    return this.vendorService.getLiveRadar(ashramId, user);
+  }
+
+  @Roles("owner", "stay_admin", "ashram_staff", "admin", "super_admin")
+  @Get("vendor/config/:ashramId")
+  async getConfig(
+    @Param("ashramId") ashramId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.vendorService.getConfig(ashramId, user);
+  }
+
+  @Roles("owner", "stay_admin", "admin", "super_admin")
+  @Put("vendor/config/:ashramId")
+  async updateConfig(
+    @Param("ashramId") ashramId: string,
+    @Body() dto: DayStayConfigUpdateDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.vendorService.updateConfig(ashramId, dto, user);
   }
 }

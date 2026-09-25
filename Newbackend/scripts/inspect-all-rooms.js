@@ -1,9 +1,10 @@
+require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") });
 const { setServers } = require('node:dns');
 setServers(['1.1.1.1', '8.8.8.8']);
 const path = require('path');
 const mongoose = require(path.join(__dirname, '..', 'node_modules', 'mongoose'));
 
-const uri = "mongodb+srv://nktechipl_db_user:6xb6D9ZbvZ9KkUzY@cluster0.0zchdel.mongodb.net/test?retryWrites=true&w=majority";
+const uri = process.env.MONGODB_URI || (() => { throw new Error("Set MONGODB_URI in Newbackend/.env"); })();
 
 async function inspect() {
   await mongoose.connect(uri, { serverSelectionTimeoutMS: 15000 });
