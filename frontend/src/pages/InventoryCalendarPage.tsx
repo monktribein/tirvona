@@ -26,15 +26,31 @@ const formatLocalDate = (d: Date) => {
   return `${year}-${month}-${day}`;
 };
 
+const DEFAULT_RANGE_DAYS = 30;
+const MAX_RANGE_DAYS = 90;
+
+const shiftDate = (dateStr: string, days: number) => {
+  const d = new Date(`${dateStr}T00:00:00`);
+  d.setDate(d.getDate() + days);
+  return formatLocalDate(d);
+};
+
+const daysBetween = (from: string, to: string) =>
+  Math.round(
+    (new Date(`${to}T00:00:00`).getTime() - new Date(`${from}T00:00:00`).getTime()) / 86_400_000,
+  );
+
 export const InventoryCalendarPage: React.FC = () => {
   const { addNotification } = useNotifications();
 
   const getTodayDateStr = () => formatLocalDate(new Date());
   const todayStr = useMemo(() => getTodayDateStr(), []);
 
-  // 7-day rolling window centered around centerDate
-  const [centerDate, setCenterDate] = useState<string>(getTodayDateStr());
-  const [searchDateInput, setSearchDateInput] = useState<string>("");
+  // Searchable date range; defaults to today plus the next 29 days.
+  const [rangeStart, setRangeStart] = useState<string>(() => getTodayDateStr());
+  const [rangeEnd, setRangeEnd] = useState<string>(() => shiftDate(getTodayDateStr(), DEFAULT_RANGE_DAYS - 1));
+  const [fromInput, setFromInput] = useState<string>(rangeStart);
+  const [toInput, setToInput] = useState<string>(rangeEnd);
 
   const [myRooms, setMyRooms] = useState<any[]>([]);
   const [selectedRoomId, setSelectedRoomId] = useState("");
@@ -69,24 +85,12 @@ export const InventoryCalendarPage: React.FC = () => {
       ),
   });
 
-  // Max 90-day booking window boundary calculation
-  const maxSearchDate = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 90);
-    return formatLocalDate(d);
-  }, []);
-
-  const minSearchDate = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 30);
-    return formatLocalDate(d);
-  }, []);
-
-  // 7-Day Rolling Window
-  const sevenDays = useMemo(() => {
-    const base = new Date(`${centerDate}T00:00:00`);
+  // Every day in the searched range
+  const rangeDays = useMemo(() => {
+    const base = new Date(`${rangeStart}T00:00:00`);
     const list = [];
-    for (let i = -3; i <= 3; i++) {
+    const total = Math.max(0, daysBetween(rangeStart, rangeEnd));
+    for (let i = 0; i <= total; i++) {
       const d = new Date(base);
       d.setDate(base.getDate() + i);
       const dateStr = formatLocalDate(d);
@@ -118,23 +122,23 @@ export const InventoryCalendarPage: React.FC = () => {
       });
     }
     return list;
-  }, [centerDate, todayStr, calendar]);
+  }, [rangeStart, rangeEnd, todayStr, calendar]);
 
   const windowBookedCount = useMemo(
-    () => sevenDays.reduce((sum, item) => sum + item.booked, 0),
-    [sevenDays],
+    () => rangeDays.reduce((sum, item) => sum + item.booked, 0),
+    [rangeDays],
   );
 
   const windowFreeRooms = useMemo(
-    () => sevenDays.reduce((sum, item) => sum + item.available, 0),
-    [sevenDays],
+    () => rangeDays.reduce((sum, item) => sum + item.available, 0),
+    [rangeDays],
   );
 
   const avgNightPrice = useMemo(() => {
-    const valid = sevenDays.filter((i) => i.price > 0);
+    const valid = rangeDays.filter((i) => i.price > 0);
     if (!valid.length) return 0;
     return Math.round(valid.reduce((sum, i) => sum + i.price, 0) / valid.length);
-  }, [sevenDays]);
+  }, [rangeDays]);
 
   // Load Room Categories whenever targetAshrams updates
   const fetchRooms = useCallback(async (targets = targetAshrams) => {
@@ -209,7 +213,7 @@ export const InventoryCalendarPage: React.FC = () => {
     fetchRooms(targetAshrams);
   }, [selectedAshramId, targetAshrams, loadingAshrams, fetchRooms]);
 
-  // Load 7-Day calendar for selectedRoomId
+  // Load the searched date range for selectedRoomId
   const fetchCalendar = useCallback(async () => {
     const roomIdToUse = selectedRoomId || myRooms[0]?._id;
     if (!roomIdToUse) {
@@ -219,15 +223,7 @@ export const InventoryCalendarPage: React.FC = () => {
     }
     setLoading(true);
     try {
-      const base = new Date(`${centerDate}T00:00:00`);
-      const startObj = new Date(base);
-      startObj.setDate(base.getDate() - 7);
-      const endObj = new Date(base);
-      endObj.setDate(base.getDate() + 7);
-
-      const start = formatLocalDate(startObj);
-      const end = formatLocalDate(endObj);
-      const res = await roomService.calendar(roomIdToUse, start, end);
+      const res = await roomService.calendar(roomIdToUse, rangeStart, rangeEnd);
       if (res.data?.success) {
         setCalendar(res.data.data || []);
       }
@@ -242,7 +238,7 @@ export const InventoryCalendarPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedRoomId, myRooms, centerDate]);
+  }, [selectedRoomId, myRooms, rangeStart, rangeEnd]);
 
   useEffect(() => {
     if (selectedRoomId) {
@@ -258,29 +254,39 @@ export const InventoryCalendarPage: React.FC = () => {
     }
   }, [selectedRoomId, myRooms, fetchCalendar]);
 
-  // Handle Date Navigation (Prev 7 Days, Today, Next 7 Days)
-  const handlePrev7Days = () => {
-    const curr = new Date(`${centerDate}T00:00:00`);
-    curr.setDate(curr.getDate() - 7);
-    setCenterDate(formatLocalDate(curr));
+  const rangeLength = daysBetween(rangeStart, rangeEnd) + 1;
+
+  const applyRange = (from: string, to: string) => {
+    setRangeStart(from);
+    setRangeEnd(to);
+    setFromInput(from);
+    setToInput(to);
   };
 
-  const handleNext7Days = () => {
-    const curr = new Date(`${centerDate}T00:00:00`);
-    curr.setDate(curr.getDate() + 7);
-    setCenterDate(formatLocalDate(curr));
-  };
+  // Step the whole range backwards / forwards by its own length
+  const handlePrevRange = () =>
+    applyRange(shiftDate(rangeStart, -rangeLength), shiftDate(rangeEnd, -rangeLength));
 
-  const handleResetToday = () => {
+  const handleNextRange = () =>
+    applyRange(shiftDate(rangeStart, rangeLength), shiftDate(rangeEnd, rangeLength));
+
+  const handlePreset = (days: number) => {
     const t = getTodayDateStr();
-    setCenterDate(t);
-    setSearchDateInput("");
+    applyRange(t, shiftDate(t, days - 1));
   };
 
-  const handleSearchDateSubmit = (e: React.FormEvent) => {
+  const handleSearchRangeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchDateInput) return;
-    setCenterDate(searchDateInput);
+    if (!fromInput || !toInput) return;
+    if (toInput < fromInput) {
+      notifyRef.current("Invalid Range", "The 'To' date must be on or after the 'From' date.", "error");
+      return;
+    }
+    if (daysBetween(fromInput, toInput) + 1 > MAX_RANGE_DAYS) {
+      notifyRef.current("Range Too Long", `Please search up to ${MAX_RANGE_DAYS} days at a time.`, "error");
+      return;
+    }
+    applyRange(fromInput, toInput);
   };
 
   const selectedRoom = myRooms.find((r) => r._id === selectedRoomId) || myRooms[0];
@@ -373,7 +379,7 @@ export const InventoryCalendarPage: React.FC = () => {
               Daily Inventory & Pricing Calendar
             </h2>
             <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-blue-100 text-[#F28C28] dark:bg-blue-950 dark:text-amber-300">
-              7-Day Live View
+              {rangeLength}-Day Live View
             </span>
             <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 flex items-center gap-1">
               <ShieldCheck size={12} /> Instant Rate Updates
@@ -434,27 +440,6 @@ export const InventoryCalendarPage: React.FC = () => {
               ))}
             </select>
           </div>
-
-          {/* Specific Date Search (Max 90 Days Window) */}
-          <form onSubmit={handleSearchDateSubmit} className="flex items-center gap-1.5">
-            <input
-              type="date"
-              min={minSearchDate}
-              max={maxSearchDate}
-              value={searchDateInput}
-              onChange={(e) => setSearchDateInput(e.target.value)}
-              className="p-2 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-[#F28C28]"
-              title="Search any booking date up to 90 days ahead"
-            />
-            <button
-              type="submit"
-              disabled={!searchDateInput}
-              className="p-2 bg-[#F28C28] text-white rounded-xl hover:bg-[#B45309] transition disabled:opacity-40 cursor-pointer shadow-xs"
-              title="Jump to date and view rates"
-            >
-              <Search size={14} />
-            </button>
-          </form>
         </div>
       </div>
 
@@ -463,11 +448,11 @@ export const InventoryCalendarPage: React.FC = () => {
         <div className="p-4.5 rounded-[22px] bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#F28C28]/10 text-[#F28C28] flex items-center justify-center font-black text-xs">
-              7D
+              {rangeLength}D
             </div>
             <div>
               <h3 className="text-sm font-black text-[#0B192C] dark:text-white">
-                7-Day Pricing Window: {selectedRoom.name}
+                {rangeLength}-Day Pricing Window: {selectedRoom.name}
               </h3>
               <p className="text-xs text-gray-400 font-semibold mt-0.5">
                 {selectedRoom.ashramName ? `${selectedRoom.ashramName} · ` : ""}
@@ -486,31 +471,69 @@ export const InventoryCalendarPage: React.FC = () => {
 
       {/* DATE RANGE NAVIGATION & SUMMARY BAR */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-[22px] shadow-xs">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Date range search */}
+          <form onSubmit={handleSearchRangeSubmit} className="flex flex-wrap items-center gap-1.5">
+            <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">From</label>
+            <input
+              type="date"
+              value={fromInput}
+              onChange={(e) => setFromInput(e.target.value)}
+              className="p-2 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-[#F28C28]"
+            />
+            <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">To</label>
+            <input
+              type="date"
+              min={fromInput || undefined}
+              value={toInput}
+              onChange={(e) => setToInput(e.target.value)}
+              className="p-2 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-[#F28C28]"
+            />
+            <button
+              type="submit"
+              disabled={!fromInput || !toInput}
+              className="inline-flex items-center gap-1 px-3 py-2 bg-[#F28C28] text-white rounded-xl hover:bg-[#B45309] transition disabled:opacity-40 cursor-pointer shadow-xs text-xs font-bold"
+              title={`Search inventory for up to ${MAX_RANGE_DAYS} days`}
+            >
+              <Search size={13} /> Search
+            </button>
+          </form>
+
+          <span className="text-slate-300 dark:text-slate-700">|</span>
+
           <button
             type="button"
-            onClick={handlePrev7Days}
-            className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[#F28C28] hover:text-[#F28C28] transition cursor-pointer shadow-2xs"
+            onClick={handlePrevRange}
+            title={`Previous ${rangeLength} days`}
+            className="inline-flex items-center px-2.5 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[#F28C28] hover:text-[#F28C28] transition cursor-pointer shadow-2xs"
           >
-            <ChevronLeft size={14} /> 7 Days Back
+            <ChevronLeft size={14} />
           </button>
+          {[7, 30, 90].map((days) => {
+            const active = rangeStart === todayStr && rangeLength === days;
+            return (
+              <button
+                key={days}
+                type="button"
+                onClick={() => handlePreset(days)}
+                className={`inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-extrabold transition cursor-pointer shadow-2xs ${
+                  active
+                    ? "bg-[#F28C28] text-white"
+                    : "bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-[#F28C28]"
+                }`}
+              >
+                {days === DEFAULT_RANGE_DAYS && <CalendarCheck size={13} />}
+                Next {days} Days
+              </button>
+            );
+          })}
           <button
             type="button"
-            onClick={handleResetToday}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold transition cursor-pointer shadow-2xs ${
-              centerDate === todayStr
-                ? "bg-[#F28C28] text-white"
-                : "bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-[#F28C28]"
-            }`}
+            onClick={handleNextRange}
+            title={`Next ${rangeLength} days`}
+            className="inline-flex items-center px-2.5 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[#F28C28] hover:text-[#F28C28] transition cursor-pointer shadow-2xs"
           >
-            <CalendarCheck size={13} /> Reset to Today
-          </button>
-          <button
-            type="button"
-            onClick={handleNext7Days}
-            className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[#F28C28] hover:text-[#F28C28] transition cursor-pointer shadow-2xs"
-          >
-            Next 7 Days <ChevronRight size={14} />
+            <ChevronRight size={14} />
           </button>
         </div>
 
@@ -538,7 +561,7 @@ export const InventoryCalendarPage: React.FC = () => {
         <div className="h-44 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[24px] animate-pulse" />
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3.5">
-          {sevenDays.map((day) => {
+          {rangeDays.map((day) => {
             const isToday = day.isToday;
             const isSelected = targetDate === day.date && showOverride;
             const hasCustomRate = day.price > 0;

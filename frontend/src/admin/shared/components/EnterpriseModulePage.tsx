@@ -10,6 +10,7 @@ import { useNotifications } from "../../../contexts/NotificationContext";
 import api, { getErrorMessage } from "../../../lib/api";
 import {
   ashramService,
+  bookingService,
   marketplaceService,
   offerService,
   roomService,
@@ -2113,6 +2114,34 @@ export const EnterpriseModulePage: React.FC<{
     window.dispatchEvent(new Event("tirvona:rooms-updated"));
   };
 
+  const [cancellingBooking, setCancellingBooking] = useState(false);
+  const canCancelEditingBooking =
+    activeModule === "bookings" &&
+    activeSubKey !== "refunds" &&
+    !!editingItem?._id &&
+    !["cancelled", "checked_out", "completed", "refunded", "expired", "no_show"].includes(
+      String(editingItem?.status || ""),
+    );
+
+  const handleCancelBooking = async () => {
+    if (!editingItem?._id) return;
+    const ref = editingItem.bookingId || editingItem.reservationNumber || "this booking";
+    const reason = window.prompt(`Cancel ${ref}? Enter a cancellation reason:`, "");
+    if (reason === null) return;
+    setCancellingBooking(true);
+    try {
+      await bookingService.cancel(editingItem._id, reason.trim() || "Cancelled by Super Admin");
+      addNotification("Booking Cancelled", `${ref} has been cancelled.`, "success");
+      setIsModalOpen(false);
+      setEditingItem(null);
+      fetchModuleData();
+    } catch (err) {
+      addNotification("Cancellation Failed", getErrorMessage(err, "Could not cancel booking."), "error");
+    } finally {
+      setCancellingBooking(false);
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -3735,8 +3764,18 @@ export const EnterpriseModulePage: React.FC<{
                 onClick={() => setIsModalOpen(false)}
                 className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-full font-bold text-xs cursor-pointer"
               >
-                Cancel
+                Close
               </button>
+              {canCancelEditingBooking && (
+                <button
+                  type="button"
+                  onClick={handleCancelBooking}
+                  disabled={cancellingBooking}
+                  className="flex-1 py-2.5 bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 rounded-full font-black text-xs cursor-pointer disabled:opacity-50"
+                >
+                  {cancellingBooking ? "Cancelling..." : "Cancel Booking"}
+                </button>
+              )}
               <button
                 type="submit"
                 className="flex-1 py-2.5 bg-[#F28C28] text-white rounded-full font-black text-xs shadow cursor-pointer"

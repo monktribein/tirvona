@@ -75,7 +75,26 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
   // Tab state derived from URL or initialTab prop
   const currentTab = searchParams.get('tab') || initialTab || 'overview';
   const setTab = (tab: string) => {
-    setSearchParams({ tab });
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', tab);
+    setSearchParams(next);
+  };
+
+  // Property scope: '' means every property the user can manage.
+  const [properties, setProperties] = useState<any[]>([]);
+  const [propertiesLoaded, setPropertiesLoaded] = useState(false);
+  const urlPropertyId = searchParams.get('property') || '';
+  const selectedPropertyId =
+    properties.length === 1
+      ? String(properties[0]._id)
+      : properties.some(p => String(p._id) === urlPropertyId)
+      ? urlPropertyId
+      : '';
+  const setSelectedPropertyId = (id: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (id) next.set('property', id);
+    else next.delete('property');
+    setSearchParams(next);
   };
 
   // State
@@ -84,7 +103,11 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
   const [error, setError] = useState<string | null>(null);
 
   // Property & summary
-  const [assignedAshram, setAssignedAshram] = useState<any>(null);
+  const assignedAshram = useMemo(
+    () => properties.find(p => String(p._id) === selectedPropertyId) || null,
+    [properties, selectedPropertyId]
+  );
+  const propertyLabel = (p: any) => (p ? `${p.name}${p.address?.city ? ` (${p.address.city})` : ''}` : '');
   const [summary, setSummary] = useState<FrontdeskSummary>({
     arrivalsToday: 0,
     departuresToday: 0,
@@ -104,6 +127,8 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
   const [rooms, setRooms] = useState<Room[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('');
+  const [sourceFilter, setSourceFilter] = useState('all');
 
   // Modals / Action States
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
@@ -143,6 +168,8 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   const [newBookingSubmitting, setNewBookingSubmitting] = useState(false);
+  const [newBookingPropertyId, setNewBookingPropertyId] = useState('');
+  const [newBookingRooms, setNewBookingRooms] = useState<Room[]>([]);
 
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
   const tomorrowStr = useMemo(() => {
@@ -301,19 +328,8 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
       else setLoading(true);
       setError(null);
 
-      // 1. Fetch Property Details for reception
-      const propertyId = String(user?.employerAshramId || (user?.scopedAshramIds && user.scopedAshramIds[0]) || '');
-      let ashramData: any = user?.employerAshram;
-
-      if (!ashramData && propertyId) {
-        try {
-          const res = await ashramService.getById(propertyId);
-          ashramData = res?.data?.data || res?.data;
-        } catch {
-          // If public/manage fetch fails, proceed with available info
-        }
-      }
-      setAssignedAshram(ashramData || { _id: propertyId, name: 'Hotel Krishna Anandam' });
+      // 1. Scope to the selected property, or to every property in the user's scope.
+      const propertyId = selectedPropertyId;
 
       // 2. Fetch Frontdesk Summary Metrics
       try {
@@ -342,21 +358,30 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
       const queryParams: Record<string, string> = { limit: '100' };
       if (propertyId) queryParams.ashramId = propertyId;
       if (statusFilter !== 'all') queryParams.status = statusFilter;
+      if (sourceFilter !== 'all') queryParams.source = sourceFilter;
+      if (dateFilter) queryParams.date = dateFilter;
       if (searchQuery.trim()) queryParams.search = searchQuery.trim();
 
       const bookingsRes = await bookingService.dashboard(queryParams);
       const list = bookingsRes?.data?.data || bookingsRes?.data || [];
-      setBookings(Array.isArray(list) ? list : []);
+      // Newest bookings first, so a fresh walk-in shows at the top.
+      const sorted = (Array.isArray(list) ? [...list] : []).sort(
+        (a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+      );
+      setBookings(sorted);
 
-      // 4. Fetch Rooms for room inventory & check-in assignment
+      // 4. Fetch Rooms for room inventory & check-in assignment (single property only)
       if (propertyId) {
         try {
           const managedRes = await ashramService.getManagedById(propertyId);
           const roomsList = managedRes?.data?.data?.rooms || managedRes?.data?.rooms || [];
           setRooms(roomsList);
         } catch (roomErr) {
+          setRooms([]);
           console.warn('Could not load rooms:', roomErr);
         }
+      } else {
+        setRooms([]);
       }
     } catch (err: any) {
       console.error('Failed to load front desk data:', err);
@@ -391,22 +416,49 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
     );
   };
 
+  // Load the properties this user may operate. Owners and super admins can
+  // have several; a single-property user is pinned to that property.
   useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      let list: any[] = [];
+      try {
+        const res = await selfBookingService.ashrams();
+        const data = res?.data?.data || res?.data || [];
+        list = Array.isArray(data) ? data : [];
+      } catch (err) {
+        console.warn('Could not load properties:', err);
+      }
+      if (cancelled) return;
+      setProperties(list);
+      setPropertiesLoaded(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!propertiesLoaded) return;
     loadData();
-  }, [user?.employerAshramId, statusFilter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [propertiesLoaded, selectedPropertyId, statusFilter, sourceFilter, dateFilter]);
 
   // Debounced search trigger
   useEffect(() => {
+    if (!propertiesLoaded) return;
     const timer = setTimeout(() => {
       loadData(true);
     }, 400);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
   // Operational lists derived from bookings
   const availableRoomNumbersList = useMemo(() => {
-    return rooms.filter(r => r.status === 'available' || !r.status);
-  }, [rooms]);
+    return newBookingRooms.filter(r => r.status === 'available' || !r.status);
+  }, [newBookingRooms]);
 
   const arrivalsList = useMemo(() => {
     return bookings.filter(b => {
@@ -455,9 +507,11 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
   }, [notices]);
 
   // Handlers for New Walk-In Booking
-  const fetchAvailableCategories = async (checkIn: string, checkOut: string) => {
-    const propertyId = String(user?.employerAshramId || (user?.scopedAshramIds && user.scopedAshramIds[0]) || '');
-    if (!propertyId || !checkIn || !checkOut) return;
+  const fetchAvailableCategories = async (checkIn: string, checkOut: string, propertyId: string = newBookingPropertyId) => {
+    if (!propertyId || !checkIn || !checkOut) {
+      setAvailableCategories([]);
+      return;
+    }
     try {
       setLoadingCategories(true);
       const res = await selfBookingService.availability({
@@ -509,15 +563,35 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
       paymentReference: '',
       specialRequests: '',
     });
-    fetchAvailableCategories(todayStr, tomorrowStr);
+    const defaultProperty = selectedPropertyId || (properties.length === 1 ? String(properties[0]._id) : '');
+    setAvailableCategories([]);
+    changeNewBookingProperty(defaultProperty, todayStr, tomorrowStr);
     setShowNewBookingModal(true);
+  };
+
+  const changeNewBookingProperty = async (propertyId: string, checkIn: string, checkOut: string) => {
+    setNewBookingPropertyId(propertyId);
+    setNewBookingForm(prev => ({ ...prev, roomId: '', selectedRoomNumber: '', amountCollected: 0 }));
+    setNewBookingRooms([]);
+    fetchAvailableCategories(checkIn, checkOut, propertyId);
+    if (!propertyId) return;
+    if (propertyId === selectedPropertyId) {
+      setNewBookingRooms(rooms);
+      return;
+    }
+    try {
+      const managedRes = await ashramService.getManagedById(propertyId);
+      setNewBookingRooms(managedRes?.data?.data?.rooms || managedRes?.data?.rooms || []);
+    } catch (roomErr) {
+      console.warn('Could not load rooms for property:', roomErr);
+    }
   };
 
   const handleNewBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const propertyId = String(user?.employerAshramId || (user?.scopedAshramIds && user.scopedAshramIds[0]) || '');
+    const propertyId = newBookingPropertyId;
     if (!propertyId) {
-      alert('No property assigned to your reception user account.');
+      alert('Please select the property for this booking.');
       return;
     }
     if (!newBookingForm.guestName.trim()) {
@@ -766,15 +840,31 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
                 Active Duty
               </span>
             </div>
-            <p className="text-sm text-slate-500 flex items-center gap-2 mt-0.5">
-              <span>Assigned Property:</span>
-              <strong className="text-slate-800 font-semibold">
-                {assignedAshram?.name || 'Hotel Krishna Anandam'}
-              </strong>
-              {assignedAshram?.city && (
-                <span className="text-slate-400">({assignedAshram.city})</span>
+            <div className="text-sm text-slate-500 flex flex-wrap items-center gap-2 mt-1">
+              <span>Property:</span>
+              {properties.length > 1 ? (
+                <select
+                  value={selectedPropertyId}
+                  onChange={e => setSelectedPropertyId(e.target.value)}
+                  className="px-3 py-1.5 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 max-w-xs"
+                >
+                  <option value="">All properties ({properties.length})</option>
+                  {properties.map(p => (
+                    <option key={p._id} value={String(p._id)}>
+                      {propertyLabel(p)}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <strong className="text-slate-800 font-semibold">
+                  {assignedAshram
+                    ? propertyLabel(assignedAshram)
+                    : propertiesLoaded
+                    ? 'No property assigned'
+                    : 'Loading...'}
+                </strong>
               )}
-            </p>
+            </div>
           </div>
         </div>
 
@@ -794,7 +884,7 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white text-sm font-bold shadow-md shadow-indigo-500/25 transition active:scale-95"
           >
             <Plus className="w-4 h-4" />
-            <span>+ New Booking</span>
+            <span>New Booking</span>
           </button>
         </div>
       </div>
@@ -1004,6 +1094,39 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
                 <option value="payment_pending">Payment Pending</option>
                 <option value="cancelled">Cancelled</option>
               </select>
+            )}
+
+            {currentTab !== 'rooms' && currentTab !== 'notifications' && (
+              <>
+                <input
+                  type="date"
+                  value={dateFilter}
+                  onChange={e => setDateFilter(e.target.value)}
+                  title="Show bookings staying on this date"
+                  className="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                />
+                <select
+                  value={sourceFilter}
+                  onChange={e => setSourceFilter(e.target.value)}
+                  className="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                >
+                  <option value="all">All Sources</option>
+                  <option value="tirvona">Online (Tirvona)</option>
+                  <option value="self">Walk-in / Desk</option>
+                </select>
+                {(dateFilter || sourceFilter !== 'all' || statusFilter !== 'all') && (
+                  <button
+                    onClick={() => {
+                      setDateFilter('');
+                      setSourceFilter('all');
+                      setStatusFilter('all');
+                    }}
+                    className="px-3 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800"
+                  >
+                    Clear filters
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -1241,7 +1364,9 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
                 <div>
                   <h3 className="text-base font-black text-slate-800">Stay Room Categories & Live Inventory</h3>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Physical rooms and category breakdown configured for {assignedAshram?.name || 'Hotel Krishna Anandam'}
+                    {assignedAshram
+                      ? `Physical rooms and category breakdown configured for ${assignedAshram.name}`
+                      : 'Select a property above to view its room inventory'}
                   </p>
                 </div>
                 <div className="flex items-center gap-3 text-xs">
@@ -1257,8 +1382,12 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
               {rooms.length === 0 ? (
                 <div className="text-center py-16 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
                   <BedDouble className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                  <p className="text-slate-600 font-semibold">No room inventory registered for this stay</p>
-                  <p className="text-xs text-slate-400 mt-1">Contact Stay Owner to configure rooms.</p>
+                  <p className="text-slate-600 font-semibold">
+                    {assignedAshram ? 'No room inventory registered for this stay' : 'No property selected'}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    {assignedAshram ? 'Contact Stay Owner to configure rooms.' : 'Room status is shown one property at a time.'}
+                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -1398,6 +1527,11 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
                               <span className="text-[11px] text-slate-400">
                                 {new Date(booking.createdAt || Date.now()).toLocaleDateString()}
                               </span>
+                              {!selectedPropertyId && booking.ashramId?.name && (
+                                <span className="text-[11px] text-slate-500 font-medium block truncate max-w-[160px]">
+                                  {booking.ashramId.name}
+                                </span>
+                              )}
                             </td>
 
                             {/* Guest Details */}
@@ -2064,7 +2198,14 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
                 <div>
                   <h3 className="text-lg font-bold">New Walk-In Booking</h3>
                   <p className="text-xs text-indigo-100">
-                    Front desk reservation for <strong>{assignedAshram?.name || 'Hotel Krishna Anandam'}</strong>
+                    {newBookingPropertyId ? (
+                      <>
+                        Front desk reservation for{' '}
+                        <strong>{properties.find(p => String(p._id) === newBookingPropertyId)?.name || 'selected property'}</strong>
+                      </>
+                    ) : (
+                      'Choose a property to start the reservation'
+                    )}
                   </p>
                 </div>
               </div>
@@ -2077,6 +2218,28 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
             </div>
 
             <form onSubmit={handleNewBookingSubmit} className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+              {/* Property */}
+              {properties.length > 1 && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Property *
+                  </label>
+                  <select
+                    required
+                    value={newBookingPropertyId}
+                    onChange={e => changeNewBookingProperty(e.target.value, newBookingForm.checkInDate, newBookingForm.checkOutDate)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  >
+                    <option value="">-- Select property --</option>
+                    {properties.map(p => (
+                      <option key={p._id} value={String(p._id)}>
+                        {propertyLabel(p)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               {/* Step 1: Dates & Occupancy */}
               <div className="space-y-3">
                 <h4 className="text-xs font-black uppercase tracking-wider text-indigo-600 flex items-center gap-1.5">
@@ -2095,7 +2258,7 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
                       onChange={e => {
                         const val = e.target.value;
                         setNewBookingForm(prev => ({ ...prev, checkInDate: val }));
-                        fetchAvailableCategories(val, newBookingForm.checkOutDate);
+                        fetchAvailableCategories(val, newBookingForm.checkOutDate, newBookingPropertyId);
                       }}
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                     />
@@ -2112,7 +2275,7 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
                       onChange={e => {
                         const val = e.target.value;
                         setNewBookingForm(prev => ({ ...prev, checkOutDate: val }));
-                        fetchAvailableCategories(newBookingForm.checkInDate, val);
+                        fetchAvailableCategories(newBookingForm.checkInDate, val, newBookingPropertyId);
                       }}
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                     />
@@ -2171,7 +2334,11 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
 
                 {availableCategories.length === 0 ? (
                   <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center">
-                    <p className="text-xs text-slate-500">No room categories found for selected stay dates.</p>
+                    <p className="text-xs text-slate-500">
+                      {newBookingPropertyId
+                        ? 'No room categories found for selected stay dates.'
+                        : 'Select a property to see live room availability.'}
+                    </p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
