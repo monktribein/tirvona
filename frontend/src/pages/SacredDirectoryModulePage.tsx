@@ -65,7 +65,7 @@ const moduleConfigs: Record<string, ModuleConfig> = {
     eyebrow: "Pure Vegetarian Dining",
     futureTitle: "Online Satvik Thali & Prasad Delivery",
     futureDesc:
-      "Order fresh satvik thalis delivered directly to your ashram room or train seat.",
+      "Order fresh satvik thalis delivered directly to your stay room or train seat.",
     icon: Utensils,
   },
   shops: {
@@ -224,7 +224,7 @@ export const SacredDirectoryModulePage: React.FC = () => {
               onClick={() => navigate("/search")}
               className="px-6 py-3 rounded-full bg-[#E58C28] hover:bg-amber-600 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 shadow-lg transition-all cursor-pointer"
             >
-              <span>Explore Verified Ashrams</span>
+              <span>Explore Verified Stays</span>
               <ArrowRight size={16} />
             </button>
           </div>

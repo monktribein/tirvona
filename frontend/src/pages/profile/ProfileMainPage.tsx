@@ -146,7 +146,7 @@ export const ProfileMainPage: React.FC = () => {
   const [wishlistItems, setWishlistItems] = useState([
     {
       id: "ashram-1",
-      name: "Swarg Ashram Divine Residency",
+      name: "Swarg Stay Divine Residency",
       city: "Rishikesh, Uttarakhand",
       image:
         "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E",
@@ -155,7 +155,7 @@ export const ProfileMainPage: React.FC = () => {
     },
     {
       id: "ashram-2",
-      name: "Parmarth Niketan Ashram",
+      name: "Parmarth Niketan Stay",
       city: "Rishikesh, Uttarakhand",
       image:
         "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E",
@@ -177,7 +177,7 @@ export const ProfileMainPage: React.FC = () => {
     {
       id: "TXN-902181",
       date: "Jul 26, 2026",
-      title: "Swarg Ashram Booking",
+      title: "Swarg Stay Booking",
       amount: 4800,
       method: "UPI / GPay",
       status: "Paid",
@@ -339,7 +339,7 @@ export const ProfileMainPage: React.FC = () => {
     setWishlistItems((prev) => prev.filter((item) => item.id !== id));
     addNotification(
       "Removed from Wishlist",
-      "Ashram removed from saved list.",
+      "Stay removed from saved list.",
       "info",
     );
   };
@@ -358,7 +358,7 @@ export const ProfileMainPage: React.FC = () => {
       color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
     },
     {
-      label: "Ashram Stays",
+      label: "Stays",
       count: bookingsLoading ? "—" : String(counts.stays),
       to: "/profile/bookings",
       color: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
@@ -464,7 +464,7 @@ export const ProfileMainPage: React.FC = () => {
       key: "wishlist",
       path: "/profile/wishlist",
       label: "Wishlist & Saved",
-      desc: "Favorite ashrams & stays",
+      desc: "Favorite stays & stays",
       icon: <Heart size={18} />,
       iconBg: "bg-rose-50 dark:bg-rose-950/40 text-rose-600",
     },
@@ -697,7 +697,7 @@ export const ProfileMainPage: React.FC = () => {
                     </h2>
                     <p className="text-xs text-gray-400 font-medium">
                       {" "}
-                      Ashram stays and parking reservations tied to your
+                      Stays and parking reservations tied to your
                       account.
                     </p>
                   </div>
@@ -776,14 +776,14 @@ export const ProfileMainPage: React.FC = () => {
                     </h3>
                     <p className="text-xs text-gray-400 max-w-sm mx-auto font-medium">
                       {bookingCategoryTab === "upcoming"
-                        ? "Book an ashram stay or reserve parking for your next spiritual yatra."
+                        ? "Book a stay or reserve parking for your next spiritual yatra."
                         : `No ${bookingCategoryTab} reservations on record.`}
                     </p>
                     <Link
                       to="/search"
                       className="inline-block px-5 py-2.5 bg-[#F28C28] hover:bg-[#D97706] text-white rounded-full text-xs font-black transition-all shadow-md mt-2"
                     >
-                      Explore Ashrams & Stays
+                      Explore Stays & Stays
                     </Link>
                   </div>
                 ) : (
@@ -812,7 +812,7 @@ export const ProfileMainPage: React.FC = () => {
                                 <span className="px-2 py-0.5 bg-blue-50 text-[#F28C28] dark:bg-blue-950/40 dark:text-amber-300 rounded-md text-[10px] font-black">
                                   {b.kind === "parking"
                                     ? "Parking"
-                                    : "Ashram Stay"}
+                                    : "Stay"}
                                 </span>
                                 <span className="text-[10px] font-mono text-gray-400 font-bold">
                                   {b.reference}
@@ -891,7 +891,7 @@ export const ProfileMainPage: React.FC = () => {
               <div className="space-y-5">
                 <div>
                   <h2 className="text-xl font-black text-[#0B192C] dark:text-white">
-                    Wishlist & Saved Ashrams
+                    Wishlist & Saved Stays
                   </h2>
                   <p className="text-xs text-gray-400 font-medium">
                     Favorite spiritual stays saved for your future yatras.
@@ -908,14 +908,14 @@ export const ProfileMainPage: React.FC = () => {
                       Your wishlist is empty
                     </h3>
                     <p className="text-xs text-gray-400 max-w-sm mx-auto font-medium">
-                      Save ashrams and sacred retreats while searching to keep
+                      Save stays and sacred retreats while searching to keep
                       them handy here.
                     </p>
                     <Link
                       to="/search"
                       className="inline-block px-5 py-2.5 bg-[#F28C28] hover:bg-[#D97706] text-white rounded-full text-xs font-black transition-all shadow-md mt-2"
                     >
-                      Browse Ashrams
+                      Browse Stays
                     </Link>
                   </div>
                 ) : (
@@ -973,7 +973,7 @@ export const ProfileMainPage: React.FC = () => {
                             to="/search"
                             className="px-3.5 py-1.5 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold rounded-full transition-all"
                           >
-                            View Ashram
+                            View Stay
                           </Link>
                         </div>
                       </div>

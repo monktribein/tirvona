@@ -56,10 +56,10 @@ export const SearchPage: React.FC = () => {
   useCanonicalUrl({
     canonicalPath: cityParam ? `/ashrams/${cityParam.toLowerCase()}` : null,
     title: cityParam
-      ? `Ashrams in ${cityFromPath.replace(/\b\w/g, (c) => c.toUpperCase())} · Tirvona`
+      ? `Stays in ${cityFromPath.replace(/\b\w/g, (c) => c.toUpperCase())} · Tirvona`
       : undefined,
     description: cityParam
-      ? `Book verified ashram stays in ${cityFromPath}. Compare rooms, tariffs and availability on Tirvona.`
+      ? `Book verified stays in ${cityFromPath}. Compare rooms, tariffs and availability on Tirvona.`
       : undefined,
     replaceUrl: false,
   });
@@ -661,7 +661,7 @@ export const SearchPage: React.FC = () => {
                 <p className="text-xs font-extrabold text-[#0B192C] dark:text-white">
                   {locationStatus === "requesting"
                     ? "Detecting your area…"
-                    : "Find Ashrams near your current area"}
+                    : "Find Stays near your current area"}
                 </p>
                 <span className="hidden sm:inline text-gray-300 dark:text-slate-700 text-xs">•</span>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
@@ -717,7 +717,7 @@ export const SearchPage: React.FC = () => {
                     className="rounded border-gray-200 dark:border-slate-700 text-[#F28C28] focus:ring-[#F28C28]/20 cursor-pointer w-4 h-4"
                   />
                   <span className="flex items-center gap-1.5 text-[#0B192C] dark:text-gray-200">
-                    <Building2 size={14} className="text-gray-400" /> Ashram
+                    <Building2 size={14} className="text-gray-400" /> Stay
                   </span>
                 </label>
 
@@ -808,7 +808,7 @@ export const SearchPage: React.FC = () => {
               <Navigation size={14} className="text-[#F28C28]" /> Near Temple Finder
             </h4>
             <p className="text-[11px] text-gray-500 leading-relaxed font-medium">
-              Find ashrams walking distance from major ghats & temples.
+              Find stays walking distance from major ghats & temples.
             </p>
             <button
               onClick={() => {
@@ -938,7 +938,7 @@ export const SearchPage: React.FC = () => {
                   {coordinates && ashram.discovery?.isNearby && index === 0 && (
                     <div className="flex items-center gap-2 px-1 pt-1 text-sm font-extrabold text-[#0B192C] dark:text-white">
                       <Navigation size={17} className="text-[#F28C28]" />
-                      Nearby Ashrams, ranked by distance
+                      Nearby Stays, ranked by distance
                     </div>
                   )}
                   {coordinates &&
@@ -947,7 +947,7 @@ export const SearchPage: React.FC = () => {
                     results[index - 1]?.discovery?.isNearby && (
                       <div className="flex items-center gap-2 border-t border-slate-200 px-1 pt-5 text-sm font-extrabold text-[#0B192C] dark:border-slate-700 dark:text-white">
                         <Compass size={17} className="text-[#F28C28]" />
-                        More verified Ashrams
+                        More verified Stays
                       </div>
                     )}
                 <div
@@ -1255,11 +1255,11 @@ export const SearchPage: React.FC = () => {
                       </div>
                       <div className="flex items-center gap-1.5">
                         <span className="h-2 w-2 rounded-full bg-blue-500 inline-block" />{" "}
-                        Ashram Stay
+                        Stay
                       </div>
                       <div className="flex items-center gap-1.5">
                         <span className="h-2 w-2 rounded-full bg-emerald-400 inline-block" />{" "}
-                        Selected Ashram
+                        Selected Stay
                       </div>
                     </div>
                   </div>
@@ -1376,7 +1376,7 @@ export const SearchPage: React.FC = () => {
                       className="rounded border-gray-200 dark:border-slate-700 text-[#F28C28] focus:ring-[#F28C28]/20 cursor-pointer w-4 h-4"
                     />
                     <span className="flex items-center gap-1.5 text-[#0B192C] dark:text-gray-200">
-                      <Building2 size={14} className="text-gray-400" /> Ashram
+                      <Building2 size={14} className="text-gray-400" /> Stay
                     </span>
                   </label>
                   <label className="flex items-center gap-3 text-xs font-semibold cursor-pointer select-none">

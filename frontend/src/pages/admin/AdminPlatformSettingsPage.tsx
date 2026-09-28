@@ -391,7 +391,7 @@ export const AdminPlatformSettingsPage: React.FC = () => {
                 <p className="text-[10px] font-semibold text-gray-400 pt-1">
                   {!platformFee.enabled
                     ? "Fee engine is disabled — no fee is charged on any booking."
-                    : "Ashram Bookings is not selected — no fee is charged on stays."}
+                    : "Stay Bookings is not selected — no fee is charged on stays."}
                 </p>
               )}
 

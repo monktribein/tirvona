@@ -109,7 +109,7 @@ const PRESET_TEMPLATES = [
       unitLabel: "Day",
       maxQuantity: 2,
       enabled: true,
-      description: "Secure dedicated parking space inside ashram premises.",
+      description: "Secure dedicated parking space inside stay premises.",
     },
   },
   {
@@ -165,7 +165,7 @@ export const OwnerAddOnsPage: React.FC = () => {
     storageKey: "tirvona:addons-ashram-filter",
     allowAll: true,
     onError: () =>
-      notifyRef.current("Unable to load your ashrams.", "error"),
+      notifyRef.current("Unable to load your stays.", "error"),
   });
 
   const targetsRef = useRef<any[]>([]);
@@ -197,7 +197,7 @@ export const OwnerAddOnsPage: React.FC = () => {
       setAddOns(merged);
       if (failures > 0)
         notifyRef.current(
-          `Could not load add-on services for ${failures} ashram(s).`,
+          `Could not load add-on services for ${failures} stay(s).`,
           "error",
         );
     } catch (err) {
@@ -632,7 +632,7 @@ export const OwnerAddOnsPage: React.FC = () => {
                   htmlFor="addon-ashram"
                   className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider"
                 >
-                  Stay / Ashram *
+                  Stay *
                 </label>
                 <select
                   id="addon-ashram"

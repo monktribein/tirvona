@@ -32,7 +32,7 @@ export const LocalServicesHubPage: React.FC = () => {
     { id: "medical", label: "Emergency & Medical", icon: Ambulance },
     { id: "shops", label: "Puja Shops & Stores", icon: ShoppingBag },
     { id: "photography", label: "Photography", icon: Camera },
-    { id: "stays", label: "Nearby Ashrams", icon: Bed },
+    { id: "stays", label: "Nearby Stays", icon: Bed },
     { id: "events", label: "Aartis & Events", icon: Sparkles },
   ];
 

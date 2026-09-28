@@ -149,7 +149,7 @@ export const RegisterPage: React.FC = () => {
             </h1>
             <p className="text-sm text-slate-300 max-w-lg leading-relaxed font-medium">
               Create a free account in seconds to book verified stays as a
-              pilgrim — or list your ashram and welcome guests from across
+              pilgrim — or list your stay and welcome guests from across
               India.
             </p>
           </div>
@@ -259,7 +259,7 @@ export const RegisterPage: React.FC = () => {
                     }`}
                   >
                     <Building2 size={16} />
-                    <span className="text-[11px] font-bold">Individual Ashram Owner</span>
+                    <span className="text-[11px] font-bold">Individual Stay Owner</span>
                   </button>
                 </div>
 

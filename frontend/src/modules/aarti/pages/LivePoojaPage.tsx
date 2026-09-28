@@ -212,7 +212,7 @@ export const LivePoojaPage: React.FC = () => {
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
           </div>
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            Watch the aarti as it happens, streamed by the ashrams themselves.
+            Watch the aarti as it happens, streamed by the stays themselves.
             Every stream here is verified by Tirvona before it appears.
           </p>
         </div>
@@ -323,7 +323,7 @@ export const LivePoojaPage: React.FC = () => {
               No live poojas published yet
             </h4>
             <p className="text-xs text-gray-400 font-medium max-w-md mx-auto leading-relaxed">
-              Ashrams are onboarding their streams. Check back soon, or try a
+              Stays are onboarding their streams. Check back soon, or try a
               different city.
             </p>
           </div>

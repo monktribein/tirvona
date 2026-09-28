@@ -65,7 +65,7 @@ export const OwnerGuestsPage: React.FC = () => {
         setBookings([]);
         addNotification(
           "Guests Unavailable",
-          getErrorMessage(error, "Could not load your ashram guests."),
+          getErrorMessage(error, "Could not load your stay guests."),
           "error",
         );
       } finally {
@@ -80,7 +80,7 @@ export const OwnerGuestsPage: React.FC = () => {
     const options = new Map<string, string>();
     bookings.forEach((booking) => {
       if (typeof booking.ashramId === "object" && booking.ashramId?._id) {
-        options.set(booking.ashramId._id, booking.ashramId.name || "Ashram");
+        options.set(booking.ashramId._id, booking.ashramId.name || "Stay");
       }
     });
     return [...options.entries()];
@@ -113,7 +113,7 @@ export const OwnerGuestsPage: React.FC = () => {
       current.guestCount += Number(
         booking.guestsCount ?? booking.numberOfGuests ?? 1,
       );
-      if (ashram?._id) current.ashrams.set(ashram._id, ashram.name || "Ashram");
+      if (ashram?._id) current.ashrams.set(ashram._id, ashram.name || "Stay");
 
       const stayDate = booking.checkInDate || booking.checkOutDate;
       if (
@@ -144,7 +144,7 @@ export const OwnerGuestsPage: React.FC = () => {
             <Users size={18} className="text-[#F28C28]" /> Users &amp; Guests
           </h2>
           <p className="text-xs text-gray-400 font-semibold mt-1">
-            Guests with bookings at your assigned ashrams only.
+            Guests with bookings at your assigned stays only.
           </p>
         </div>
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
@@ -178,14 +178,14 @@ export const OwnerGuestsPage: React.FC = () => {
         <div className="text-center py-20 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px]">
           <Users className="mx-auto text-gray-300" size={32} />
           <h4 className="font-extrabold text-base text-[#0B192C] dark:text-white mt-3">No matching guests</h4>
-          <p className="text-xs text-gray-400 mt-1">Guests appear here after they book one of your ashrams.</p>
+          <p className="text-xs text-gray-400 mt-1">Guests appear here after they book one of your stays.</p>
         </div>
       ) : (
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead className="bg-gray-50 dark:bg-slate-900 text-gray-400 text-[10px] tracking-wider">
-                <tr><th className="py-4 px-6">Guest</th><th className="py-4 px-6">Contact</th><th className="py-4 px-6">Ashram</th><th className="py-4 px-6">Reservations</th><th className="py-4 px-6">Latest Stay</th><th className="py-4 px-6">Status</th></tr>
+                <tr><th className="py-4 px-6">Guest</th><th className="py-4 px-6">Contact</th><th className="py-4 px-6">Stay</th><th className="py-4 px-6">Reservations</th><th className="py-4 px-6">Latest Stay</th><th className="py-4 px-6">Status</th></tr>
               </thead>
               <tbody>
                 {guests.map((guest) => (

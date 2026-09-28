@@ -183,7 +183,7 @@ const BASIC_STEPS = [
   { id: 2, label: "Trust & Reg.", icon: ShieldCheck, value: 1 },
   { id: 3, label: "Address & GPS", icon: MapPin, value: 2 },
   { id: 4, label: "Contact", icon: Phone, value: 3 },
-  { id: 5, label: "Ashram Photos", icon: Image, value: 4 },
+  { id: 5, label: "Stay Photos", icon: Image, value: 4 },
   { id: 6, label: "Documents", icon: FileCheck, value: 16 },
   { id: 7, label: "Preview", icon: Eye, value: 18 },
   { id: 8, label: "Submit", icon: Send, value: 19 },
@@ -229,7 +229,7 @@ const RULE_PRESETS = [
 ];
 
 const ASHRAM_TYPES = [
-  { value: "ashram", label: "Ashram" },
+  { value: "ashram", label: "Stay" },
   { value: "dharamshala", label: "Dharamshala" },
   { value: "homestay", label: "Homestay" },
 ];
@@ -534,7 +534,7 @@ const AddAshramWizardPage: React.FC = () => {
             }));
           }
         } catch (err) {
-          console.error("Error fetching ashram details:", err);
+          console.error("Error fetching stay details:", err);
         }
       };
       fetchAshram();
@@ -562,8 +562,8 @@ const AddAshramWizardPage: React.FC = () => {
     const e: Record<string, string> = {};
     const stepValue = STEPS[step].value;
     if (stepValue === 0) {
-      if (!formData.name.trim()) e.name = "Ashram name is required";
-      if (!formData.ashramType) e.ashramType = "Please select ashram type";
+      if (!formData.name.trim()) e.name = "Stay name is required";
+      if (!formData.ashramType) e.ashramType = "Please select stay type";
     }
     if (stepValue === 1) {
       if (!formData.trustName.trim()) e.trustName = "Trust name is required";
@@ -603,8 +603,8 @@ const AddAshramWizardPage: React.FC = () => {
     setSubmitError("");
 
     const e: Record<string, string> = {};
-    if (!formData.name.trim()) e.name = "Ashram name is required";
-    if (!formData.ashramType) e.ashramType = "Please select ashram type";
+    if (!formData.name.trim()) e.name = "Stay name is required";
+    if (!formData.ashramType) e.ashramType = "Please select stay type";
     if (!formData.trustName.trim()) e.trustName = "Trust name is required";
     if (!formData.street.trim()) e.street = "Street address is required";
     if (!formData.city.trim()) e.city = "City is required";
@@ -897,12 +897,12 @@ const AddAshramWizardPage: React.FC = () => {
             <SectionHeader
               icon={<Building2 size={22} />}
               title="Basic Information"
-              subtitle="Core identity of the Ashram — name, type, and overview."
+              subtitle="Core identity of the Stay — name, type, and overview."
             />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <Field label="Ashram / Retreat Name" required>
+              <Field label="Stay / Retreat Name" required>
                 <Input
-                  placeholder="e.g. Swami Dayanand Ashram"
+                  placeholder="e.g. Swami Dayanand Stay"
                   value={formData.name}
                   onChange={(e) => set("name", e.target.value)}
                 />
@@ -920,7 +920,7 @@ const AddAshramWizardPage: React.FC = () => {
               </Field>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              <Field label="Ashram Type" required>
+              <Field label="Stay Type" required>
                 <Select
                   value={formData.ashramType}
                   onChange={(e) => set("ashramType", e.target.value)}
@@ -1108,7 +1108,7 @@ const AddAshramWizardPage: React.FC = () => {
             <SectionHeader
               icon={<Phone size={22} />}
               title="Contact Information"
-              subtitle="All ways pilgrims and guests can reach the ashram trust."
+              subtitle="All ways pilgrims and guests can reach the stay trust."
             />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <Field label="Primary Phone" required>
@@ -1283,17 +1283,17 @@ const AddAshramWizardPage: React.FC = () => {
           <div className="space-y-5">
             <SectionHeader
               icon={<BookOpen size={22} />}
-              title="About the Ashram"
+              title="About the Stay"
               subtitle="The main description shown on the public page. Be detailed and inviting."
             />
             <Field
-              label="Ashram Description"
+              label="Stay Description"
               required
               hint="Write at least 100 words describing the retreat, atmosphere, purpose, and guest experience."
             >
               <Textarea
                 rows={12}
-                placeholder="Nestled on the banks of the sacred Ganges in Rishikesh, this ashram offers a serene sanctuary for spiritual seekers and pilgrims from across India. Founded in 1975 by revered saint Swami Dayanand Saraswati, the ashram maintains traditional Vedantic teachings while providing comfortable accommodation for pilgrims of all walks of life..."
+                placeholder="Nestled on the banks of the sacred Ganges in Rishikesh, this stay offers a serene sanctuary for spiritual seekers and pilgrims from across India. Founded in 1975 by revered saint Swami Dayanand Saraswati, the stay maintains traditional Vedantic teachings while providing comfortable accommodation for pilgrims of all walks of life..."
                 value={formData.description}
                 onChange={(e) => set("description", e.target.value)}
               />
@@ -1313,7 +1313,7 @@ const AddAshramWizardPage: React.FC = () => {
             <SectionHeader
               icon={<Sparkles size={22} />}
               title="Historical Significance"
-              subtitle="The spiritual heritage, founding story, and historical context of the ashram."
+              subtitle="The spiritual heritage, founding story, and historical context of the stay."
             />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <Field
@@ -1341,7 +1341,7 @@ const AddAshramWizardPage: React.FC = () => {
             >
               <Textarea
                 rows={10}
-                placeholder="This sacred site holds immense historical importance, dating back to the early Vedantic movement of the 20th century. The ashram was established as a center for classical Sanskrit education and Vedantic philosophy. Over the decades, it has hosted thousands of seekers and continues to be a beacon of authentic spiritual learning..."
+                placeholder="This sacred site holds immense historical importance, dating back to the early Vedantic movement of the 20th century. The stay was established as a center for classical Sanskrit education and Vedantic philosophy. Over the decades, it has hosted thousands of seekers and continues to be a beacon of authentic spiritual learning..."
                 value={formData.history}
                 onChange={(e) => set("history", e.target.value)}
               />
@@ -1358,7 +1358,7 @@ const AddAshramWizardPage: React.FC = () => {
             <SectionHeader
               icon={<Zap size={22} />}
               title="Spiritual Activities"
-              subtitle="Programs, rituals, and activities conducted at the ashram for guests."
+              subtitle="Programs, rituals, and activities conducted at the stay for guests."
             />
             <div className="space-y-3">
               <label className="text-xs font-bold text-gray-500 dark:text-gray-400 tracking-wider">
@@ -1462,7 +1462,7 @@ const AddAshramWizardPage: React.FC = () => {
             <SectionHeader
               icon={<Layers size={22} />}
               title="Facilities & Amenities"
-              subtitle="Select all amenities available at this ashram. These appear as tags on the listing page."
+              subtitle="Select all amenities available at this stay. These appear as tags on the listing page."
             />
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {AMENITY_PRESETS.map((am) => (
@@ -1687,7 +1687,7 @@ const AddAshramWizardPage: React.FC = () => {
             <SectionHeader
               icon={<DollarSign size={22} />}
               title="Pricing & Capacity"
-              subtitle="Total ashram capacity, pricing range, and donation information."
+              subtitle="Total stay capacity, pricing range, and donation information."
             />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <Field
@@ -1727,11 +1727,11 @@ const AddAshramWizardPage: React.FC = () => {
             </div>
             <Field
               label="Donation Information"
-              hint="Describe how guests can make donations to the ashram trust (optional but recommended)"
+              hint="Describe how guests can make donations to the stay trust (optional but recommended)"
             >
               <Textarea
                 rows={4}
-                placeholder="Guests are encouraged to make a voluntary donation to support the ashram's free meal (Bhandara) program for pilgrims. Donations can be made via UPI (ashram@upi) or by cheque in favor of 'Sri Ram Mandir Trust'."
+                placeholder="Guests are encouraged to make a voluntary donation to support the stay's free meal (Bhandara) program for pilgrims. Donations can be made via UPI (stay@upi) or by cheque in favor of 'Sri Ram Mandir Trust'."
                 value={formData.donationInfo}
                 onChange={(e) => set("donationInfo", e.target.value)}
               />
@@ -1928,7 +1928,7 @@ const AddAshramWizardPage: React.FC = () => {
             <SectionHeader
               icon={<Compass size={22} />}
               title="Nearby Attractions & Temples"
-              subtitle="Points of interest near the ashram that guests can visit during their stay."
+              subtitle="Points of interest near the stay that guests can visit during their stay."
             />
             <div className="space-y-4">
               {formData.nearbyAttractions.map((attr, idx) => (
@@ -2049,7 +2049,7 @@ const AddAshramWizardPage: React.FC = () => {
             <SectionHeader
               icon={<Bus size={22} />}
               title="Transport Information"
-              subtitle="How guests reach the ashram — essential for travel planning."
+              subtitle="How guests reach the stay — essential for travel planning."
             />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <Field label="Nearest Railway Station">
@@ -2184,7 +2184,7 @@ const AddAshramWizardPage: React.FC = () => {
                     : [22.5937, 78.9629] // Centre of India, until a pin is placed
                 }
                 draggableMarker
-                ariaLabel="Pick the ashram location on the map"
+                ariaLabel="Pick the stay location on the map"
                 markers={
                   formData.lat && formData.lng
                     ? [
@@ -2192,7 +2192,7 @@ const AddAshramWizardPage: React.FC = () => {
                           id: "ashram-pin",
                           latitude: parseFloat(formData.lat),
                           longitude: parseFloat(formData.lng),
-                          title: formData.name || "Ashram location",
+                          title: formData.name || "Stay location",
                           subtitle: "Drag to adjust",
                         },
                       ]
@@ -2251,7 +2251,7 @@ const AddAshramWizardPage: React.FC = () => {
             <SectionHeader
               icon={<Eye size={22} />}
               title="Final Preview"
-              subtitle="This is exactly how the public Ashram Details page will appear after approval."
+              subtitle="This is exactly how the public Stay Details page will appear after approval."
             />
             <div className="p-3 bg-[#F28C28]/5 border border-[#F28C28]/20 rounded-xl">
               <p className="text-xs text-[#F28C28] font-semibold flex items-center gap-2">
@@ -2272,7 +2272,7 @@ const AddAshramWizardPage: React.FC = () => {
                   </span>
                 </div>
                 <h2 className="text-3xl font-extrabold text-[#0B192C] dark:text-white leading-tight">
-                  {formData.name || "Ashram Name"}
+                  {formData.name || "Stay Name"}
                 </h2>
                 {formData.tagline && (
                   <p className="text-sm text-gray-500 italic">
@@ -2461,7 +2461,7 @@ const AddAshramWizardPage: React.FC = () => {
 
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm space-y-4">
               <h4 className="font-extrabold text-xs text-[#0B192C] dark:text-white tracking-wider">
-                Contact Ashram Trust
+                Contact Stay Trust
               </h4>
               <div className="space-y-3 text-[11px] text-gray-500">
                 {formData.phone && (
@@ -2491,13 +2491,13 @@ const AddAshramWizardPage: React.FC = () => {
                 zoom={15}
                 interactive={false}
                 center={[parseFloat(formData.lat), parseFloat(formData.lng)]}
-                ariaLabel="Preview of the ashram location"
+                ariaLabel="Preview of the stay location"
                 markers={[
                   {
                     id: "preview-pin",
                     latitude: parseFloat(formData.lat),
                     longitude: parseFloat(formData.lng),
-                    title: formData.name || "Ashram location",
+                    title: formData.name || "Stay location",
                     subtitle: [formData.city, formData.state]
                       .filter(Boolean)
                       .join(", "),
@@ -2520,7 +2520,7 @@ const AddAshramWizardPage: React.FC = () => {
                   Submitted for Approval!
                 </h2>
                 <p className="text-sm text-gray-500 max-w-md">
-                  The Ashram listing for <strong>{formData.name}</strong> has
+                  The Stay listing for <strong>{formData.name}</strong> has
                   been submitted to the Tirvona verification queue. A District
                   Officer will review and conduct a physical inspection within
                   7–10 working days.
@@ -2531,7 +2531,7 @@ const AddAshramWizardPage: React.FC = () => {
                   onClick={() => navigate(backPath)}
                   className="px-6 py-3 bg-[#F28C28] text-white rounded-full font-bold text-sm hover:bg-[#F28C28]/90 transition-colors"
                 >
-                  Back to My Ashrams
+                  Back to My Stays
                 </button>
               </div>
             </div>
@@ -2580,7 +2580,7 @@ const AddAshramWizardPage: React.FC = () => {
             <SectionHeader
               icon={<Send size={22} />}
               title="Submit for Approval"
-              subtitle="Final check before submitting this ashram to the Tirvona District Officer verification queue."
+              subtitle="Final check before submitting this stay to the Tirvona District Officer verification queue."
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -2671,7 +2671,7 @@ const AddAshramWizardPage: React.FC = () => {
                   onClick={() => navigate(backPath)}
                   className="px-6 py-3 bg-[#F28C28] text-white rounded-full font-bold text-sm hover:bg-[#F28C28]/90 transition-colors"
                 >
-                  Back to My Ashrams
+                  Back to My Stays
                 </button>
               </div>
             </div>
@@ -2683,7 +2683,7 @@ const AddAshramWizardPage: React.FC = () => {
             <SectionHeader
               icon={<Save size={22} />}
               title="Save Details"
-              subtitle="Verify and save the configuration of your Ashram."
+              subtitle="Verify and save the configuration of your Stay."
             />
 
             <p className="text-xs text-gray-500 font-medium leading-relaxed">
@@ -2747,7 +2747,7 @@ const AddAshramWizardPage: React.FC = () => {
             </button>
             <div className="min-w-0">
               <h1 className="text-xl font-black text-[#0B192C] dark:text-white tracking-tight truncate">
-                {formData.name || "New Ashram Listing"}
+                {formData.name || "New Stay Listing"}
               </h1>
               <p className="text-xs text-gray-400 font-semibold mt-0.5">
                 Step {step + 1} of {STEPS.length} — {STEPS[step].label}

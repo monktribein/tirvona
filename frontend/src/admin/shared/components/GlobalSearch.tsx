@@ -41,7 +41,7 @@ interface Row {
 
 const SECTION: Record<Row["kind"], { label: string; icon: React.ReactNode }> = {
   page: { label: "Pages", icon: <LayoutDashboard size={13} /> },
-  ashram: { label: "Ashrams", icon: <Building size={13} /> },
+  ashram: { label: "Stays", icon: <Building size={13} /> },
   user: { label: "Users", icon: <Users size={13} /> },
   booking: { label: "Bookings", icon: <ClipboardList size={13} /> },
   parking: { label: "Parking", icon: <Car size={13} /> },

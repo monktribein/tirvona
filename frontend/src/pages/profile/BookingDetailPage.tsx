@@ -169,7 +169,7 @@ export const BookingDetailPage: React.FC = () => {
     if (!booking || cancelling) return;
     const confirmCancel = await confirmAction({
       title: "Cancel this stay?",
-      message: `Booking ${booking.bookingId} will be cancelled and its inventory released back to the ashram.`,
+      message: `Booking ${booking.bookingId} will be cancelled and its inventory released back to the stay.`,
       confirmLabel: "Cancel Stay",
       tone: "danger",
     });
@@ -294,7 +294,7 @@ export const BookingDetailPage: React.FC = () => {
       );
       ctx.restore();
 
-      const ashramName = booking.ashramId?.name || "Ashram Stay";
+      const ashramName = booking.ashramId?.name || "Stay";
       const roomName = booking.roomId?.name || booking.roomId?.type || "Standard Room";
 
       ctx.textAlign = "left";
@@ -646,7 +646,7 @@ export const BookingDetailPage: React.FC = () => {
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-md flex flex-col md:flex-row gap-6 items-start">
           <img
             src={ashramImage}
-            alt={ashram?.name || "Ashram"}
+            alt={ashram?.name || "Stay"}
             className="w-full md:w-56 h-44 rounded-2xl object-cover shrink-0 border border-gray-100 dark:border-slate-800 shadow-sm"
           />
 
@@ -658,7 +658,7 @@ export const BookingDetailPage: React.FC = () => {
                 </span>
               ) : (
                 <span className="text-[10px] tracking-wider font-extrabold px-3 py-1 bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 rounded-full">
-                  Ashram Reservation
+                  Stay Reservation
                 </span>
               )}
               <span className="text-xs font-bold text-gray-400">
@@ -670,7 +670,7 @@ export const BookingDetailPage: React.FC = () => {
             </div>
 
             <h2 className="text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white leading-tight">
-              {ashram?.name || "Ashram Stay"}
+              {ashram?.name || "Stay"}
             </h2>
 
             {ashram?.address && (
@@ -808,7 +808,7 @@ export const BookingDetailPage: React.FC = () => {
               <div className="flex justify-between py-1 border-b border-gray-50 dark:border-slate-850">
                 <span className="text-gray-400 font-medium">Payment Mode:</span>
                 <span className="font-extrabold text-[#0B192C] dark:text-white">
-                  {booking.paymentMode || "Pay at Ashram"}
+                  {booking.paymentMode || "Pay at Stay"}
                 </span>
               </div>
 
@@ -874,7 +874,7 @@ export const BookingDetailPage: React.FC = () => {
                 {Boolean(pricing?.donationAmount) && (
                   <div className="flex justify-between">
                     <span className="text-gray-400">
-                      Seva / Ashram Donation:
+                      Seva / Stay Donation:
                     </span>
                     <span className="text-[#0B192C] dark:text-white">
                       {formatCurrency(pricing?.donationAmount || 0)}
@@ -911,7 +911,7 @@ export const BookingDetailPage: React.FC = () => {
 
             <div className="bg-blue-50/60 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 p-4 rounded-2xl space-y-2 text-xs">
               <h4 className="font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5">
-                <ShieldCheck size={15} className="text-[#F28C28]" /> Ashram
+                <ShieldCheck size={15} className="text-[#F28C28]" /> Stay
                 Support & Emergency Contact
               </h4>
               <p className="text-gray-500 dark:text-gray-400 font-medium">
@@ -1012,7 +1012,7 @@ export const BookingDetailPage: React.FC = () => {
               <div className="border border-gray-100 dark:border-slate-800 p-4 rounded-2xl space-y-3 bg-gray-50/50 dark:bg-slate-900/50">
                 <div>
                   <h4 className="font-black text-base text-[#0B192C] dark:text-white">
-                    {ashram?.name || "Omkarananda Ashram Himalayas"}
+                    {ashram?.name || "Omkarananda Stay Himalayas"}
                   </h4>
                   {ashram?.address && (
                     <p className="text-xs text-gray-400 font-medium">
@@ -1135,7 +1135,7 @@ export const BookingDetailPage: React.FC = () => {
 
               <div className="text-[10px] text-gray-400 leading-relaxed space-y-0.5 pt-1">
                 <p>📞 <strong>24x7 Pilgrim Helpline:</strong> 1800-11-1363 / 112 | <strong>Support:</strong> +91 98765 43210</p>
-                <p className="italic text-gray-400">Digital India compliant stay voucher. Present check-in code at ashram desk.</p>
+                <p className="italic text-gray-400">Digital India compliant stay voucher. Present check-in code at stay desk.</p>
               </div>
             </div>
 

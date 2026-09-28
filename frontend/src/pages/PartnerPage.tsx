@@ -14,9 +14,9 @@ const plans = [
     name: "Basic Listing",
     price: null,
     priceLabel: "Free",
-    desc: "Perfect for small ashrams and dharamshalas just getting started.",
+    desc: "Perfect for small stays and dharamshalas just getting started.",
     features: [
-      "1 Ashram listing",
+      "1 Stay listing",
       "Up to 5 room types",
       "Basic analytics dashboard",
       "Email support",
@@ -29,7 +29,7 @@ const plans = [
     name: "Professional",
     price: 999,
     priceLabel: null,
-    desc: "For established ashrams seeking premium visibility and bookings.",
+    desc: "For established stays seeking premium visibility and bookings.",
     features: [
       "Unlimited room types",
       "Priority search placement",
@@ -104,7 +104,7 @@ const PartnerPage: React.FC = () => {
         <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#D4AF37]/5 rounded-full blur-[80px] pointer-events-none" />
         <div className="max-w-4xl mx-auto text-center relative z-10 space-y-4">
           <span className="inline-block text-[10px] font-extrabold tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
-            For Ashram Owners
+            For Stay Owners
           </span>
           <h1
             className="font-extrabold leading-tight text-white"
@@ -258,9 +258,9 @@ const PartnerPage: React.FC = () => {
                   type: "text",
                 },
                 {
-                  label: "Ashram / Retreat Name",
+                  label: "Stay / Retreat Name",
                   key: "ashramName",
-                  placeholder: "Swami Dayanand Ashram Trust",
+                  placeholder: "Swami Dayanand Stay Trust",
                   type: "text",
                 },
                 {
@@ -304,7 +304,7 @@ const PartnerPage: React.FC = () => {
                 </label>
                 <textarea
                   rows={3}
-                  placeholder="Tell us about your ashram — capacity, facilities, daily schedule..."
+                  placeholder="Tell us about your stay — capacity, facilities, daily schedule..."
                   value={form.message}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, message: e.target.value }))

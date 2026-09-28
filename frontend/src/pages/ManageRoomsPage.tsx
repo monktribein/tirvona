@@ -71,7 +71,7 @@ export const ManageRoomsPage: React.FC = () => {
     onError: (err) =>
       notifyRef.current(
         "Load Failed",
-        getErrorMessage(err, "Unable to load your ashrams."),
+        getErrorMessage(err, "Unable to load your stays."),
         "error",
       ),
   });
@@ -117,7 +117,7 @@ export const ManageRoomsPage: React.FC = () => {
       if (failures > 0)
         notifyRef.current(
           "Load Failed",
-          `Could not load room categories for ${failures} ashram(s).`,
+          `Could not load room categories for ${failures} stay(s).`,
           "error",
         );
     } catch (err) {
@@ -461,13 +461,13 @@ export const ManageRoomsPage: React.FC = () => {
               </h2>
               <p className="text-xs text-gray-400 font-semibold mt-1">
                 Guest guidelines and check-in / check-out timings shown to
-                pilgrims on your ashram page.
+                pilgrims on your stay page.
               </p>
             </div>
             {selectedAshramId === ALL_ASHRAMS && myAshrams.length > 1 && (
               <select
                 id="timings-ashram"
-                aria-label="Ashram for rules and policies"
+                aria-label="Stay for rules and policies"
                 value={timesTargetId}
                 onChange={(e) => setTimesAshramId(e.target.value)}
                 className="px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-full text-xs font-bold focus:outline-none cursor-pointer"
@@ -694,7 +694,7 @@ export const ManageRoomsPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-xs font-bold text-gray-400">
-                  Select Ashram
+                  Select Stay
                 </label>
                 <select
                   value={formAshramId}
@@ -710,7 +710,7 @@ export const ManageRoomsPage: React.FC = () => {
                 </select>
                 {editRoomId && (
                   <p className="text-[10px] text-gray-400 font-semibold pt-0.5">
-                    A room category stays with the ashram it was created under.
+                    A room category stays with the stay it was created under.
                   </p>
                 )}
               </div>

@@ -988,7 +988,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                               />
                               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-3">
                                 <span className="text-white text-xs font-extrabold">
-                                  {detailItem.name || "Ashram Listing"} · Cover Photo
+                                  {detailItem.name || "Stay Listing"} · Cover Photo
                                 </span>
                               </div>
                             </div>
@@ -1086,7 +1086,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                           <div className="font-semibold text-[#0B192C] dark:text-white">
                             {k === "ownerId" && v && typeof v === "object" ? (
                               <div className="space-y-0.5">
-                                <p>{(v as any).name || "Ashram owner"}</p>
+                                <p>{(v as any).name || "Stay owner"}</p>
                                 <p className="font-medium text-[#F28C28]">{(v as any).email || "No email available"}</p>
                                 {(v as any).phone && <p className="font-medium text-gray-500">{(v as any).phone}</p>}
                               </div>
@@ -1145,7 +1145,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                   {showPasswordChange && onResetOwnerPassword && detailOwnerId && (
                     <div className="w-full rounded-2xl border border-purple-200 bg-purple-50/70 p-4 dark:border-purple-900/60 dark:bg-purple-950/20">
                       <div className="mb-3 flex items-center gap-2 text-xs font-black text-purple-700 dark:text-purple-300">
-                        <KeyRound size={15} /> Change ashram owner password
+                        <KeyRound size={15} /> Change stay owner password
                       </div>
                       <p className="mb-3 text-[10px] text-gray-500 dark:text-gray-400">
                         Account: {detailItem.ownerId?.email || "Owner account"}. The existing password is encrypted and cannot be displayed.

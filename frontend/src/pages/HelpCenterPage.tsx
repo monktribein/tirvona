@@ -7,20 +7,20 @@ const getCategories = () => [
     title: "Bookings & Reservations",
     items: [
       {
-        q: "How do I book an ashram stay on Tirvona?",
-        a: 'Browse destinations or use the search bar on the home page. Select your dates, number of guests, and preferred room type. Click "Book Stay" on the ashram page and complete payment. You\'ll receive a confirmed booking via email and SMS instantly.',
+        q: "How do I book a stay on Tirvona?",
+        a: 'Browse destinations or use the search bar on the home page. Select your dates, number of guests, and preferred room type. Click "Book Stay" on the stay page and complete payment. You\'ll receive a confirmed booking via email and SMS instantly.',
       },
       {
         q: "Can I book for a group or family?",
-        a: 'Yes. Select the number of guests during search. For groups larger than 10, contact the ashram directly via their listed number or use the "Contact Ashram" button on their page. Some ashrams offer group discounts for 5+ guests.',
+        a: 'Yes. Select the number of guests during search. For groups larger than 10, contact the stay directly via their listed number or use the "Contact Stay" button on their page. Some stays offer group discounts for 5+ guests.',
       },
       {
         q: "Is my booking confirmed immediately?",
-        a: "Most bookings are instant-confirmed. A few ashrams operate on a request-basis — in that case, you'll hear back within 24 hours. Your booking status is always visible in your dashboard.",
+        a: "Most bookings are instant-confirmed. A few stays operate on a request-basis — in that case, you'll hear back within 24 hours. Your booking status is always visible in your dashboard.",
       },
       {
         q: "Can I modify my booking dates?",
-        a: 'Yes, from your dashboard go to "My Bookings" → select the booking → "Modify Dates". Date changes are subject to availability and the ashram\'s modification policy. Changes made more than 48 hours before check-in are usually free.',
+        a: 'Yes, from your dashboard go to "My Bookings" → select the booking → "Modify Dates". Date changes are subject to availability and the stay\'s modification policy. Changes made more than 48 hours before check-in are usually free.',
       },
     ],
   },
@@ -42,23 +42,23 @@ const getCategories = () => [
     ],
   },
   {
-    title: "Ashram & Stay",
+    title: "Stay & Stay",
     items: [
       {
-        q: "How does Tirvona verify ashrams?",
-        a: 'Every ashram goes through a 5-step Tirvona verification: document check, on-site visit by our field executive, facility audit, safety inspection, and community reference check. Approved ashrams receive the blue "Tirvona Verified" badge.',
+        q: "How does Tirvona verify stays?",
+        a: 'Every stay goes through a 5-step Tirvona verification: document check, on-site visit by our field executive, facility audit, safety inspection, and community reference check. Approved stays receive the blue "Tirvona Verified" badge.',
       },
       {
         q: "What facilities can I expect?",
-        a: "Each ashram listing clearly mentions available facilities. Most include pure vegetarian meals (satvik food), meditation hall, hot water, basic bedding, and daily prayer schedules. Luxury amenities vary by ashram.",
+        a: "Each stay listing clearly mentions available facilities. Most include pure vegetarian meals (satvik food), meditation hall, hot water, basic bedding, and daily prayer schedules. Luxury amenities vary by stay.",
       },
       {
-        q: "Is vegetarian food mandatory at all ashrams?",
-        a: "Most ashrams on Tirvona serve only pure vegetarian and satvik food in keeping with spiritual tradition. Some allow outside food. This is clearly mentioned on each ashram's page.",
+        q: "Is vegetarian food mandatory at all stays?",
+        a: "Most stays on Tirvona serve only pure vegetarian and satvik food in keeping with spiritual tradition. Some allow outside food. This is clearly mentioned on each stay's page.",
       },
       {
         q: "What are the general check-in and check-out times?",
-        a: "Standard check-in is 12:00 PM and check-out is 10:00 AM, though this varies by ashram. You can request early/late check-in through the booking form — availability is subject to ashram capacity.",
+        a: "Standard check-in is 12:00 PM and check-out is 10:00 AM, though this varies by stay. You can request early/late check-in through the booking form — availability is subject to stay capacity.",
       },
     ],
   },

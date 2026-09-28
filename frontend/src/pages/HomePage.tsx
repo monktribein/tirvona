@@ -1314,7 +1314,7 @@ export const HomePage: React.FC = () => {
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
             {publishedCms.destinations_banner?.subtitle ||
               publishedCms.destinations_banner?.description ||
-              "Discover sacred holy destinations across India with verified ashrams, dharamshalas, secure parking, and divine temples."}
+              "Discover sacred holy destinations across India with verified stays, dharamshalas, secure parking, and divine temples."}
           </p>
           <button
             type="button"

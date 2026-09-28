@@ -52,7 +52,7 @@ export const OwnerVolunteerPage: React.FC = () => {
   const [loadingAshrams, setLoadingAshrams] = useState(false);
   const [openingsCount, setOpeningsCount] = useState(5);
   const [duration, setDuration] = useState("1 Month");
-  const [stipend, setStipend] = useState("Free Ashram Stay + Satvik Meals");
+  const [stipend, setStipend] = useState("Free Stay + Satvik Meals");
   const [accommodation, setAccommodation] = useState<
     "free_ashram_stay" | "paid" | "none"
   >("free_ashram_stay");
@@ -190,7 +190,7 @@ export const OwnerVolunteerPage: React.FC = () => {
     setCityAshrams([]);
     setOpeningsCount(5);
     setDuration("1 Month");
-    setStipend("Free Ashram Stay + Satvik Meals");
+    setStipend("Free Stay + Satvik Meals");
     setAccommodation("free_ashram_stay");
     setFood("satvik_free_3_meals");
     setResponsibilities("");
@@ -233,7 +233,7 @@ export const OwnerVolunteerPage: React.FC = () => {
     if (!ashram) {
       addNotification(
         "Validation Error",
-        "Choose the city and the ashram this opening belongs to.",
+        "Choose the city and the stay this opening belongs to.",
         "error",
       );
       return;
@@ -338,7 +338,7 @@ export const OwnerVolunteerPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <span className="px-3 py-1 bg-[#E58C28]/15 text-[#E58C28] border border-[#E58C28]/30 rounded-full text-[10px] font-black tracking-wider flex items-center gap-1.5">
-              <Heart size={12} /> Ashram Recruitment Module
+              <Heart size={12} /> Stay Recruitment Module
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-[#0B192C] dark:text-white tracking-tight mt-1">
@@ -346,7 +346,7 @@ export const OwnerVolunteerPage: React.FC = () => {
           </h1>
           <p className="text-xs font-semibold text-gray-400">
             Publish openings, manage applications, and hire devoted volunteers
-            for your ashram.
+            for your stay.
           </p>
         </div>
 
@@ -410,7 +410,7 @@ export const OwnerVolunteerPage: React.FC = () => {
       {activeTab === "openings" ? (
         loading ? (
           <div className="py-20 text-center text-xs font-black text-gray-400">
-            Loading ashram openings...
+            Loading stay openings...
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -418,7 +418,7 @@ export const OwnerVolunteerPage: React.FC = () => {
               <div className="md:col-span-2 lg:col-span-3 rounded-3xl border border-dashed border-gray-300 bg-white px-6 py-14 text-center dark:border-slate-700 dark:bg-[#0B192C]">
                 <Heart size={28} className="mx-auto text-[#E58C28]" />
                 <h3 className="mt-3 text-base font-black text-[#0B192C] dark:text-white">No opportunities published yet</h3>
-                <p className="mt-1 text-xs font-semibold text-gray-400">Create the first volunteer or career opportunity for an ashram you manage.</p>
+                <p className="mt-1 text-xs font-semibold text-gray-400">Create the first volunteer or career opportunity for a stay you manage.</p>
                 <EnterpriseButton className="mt-5" icon={<Plus size={14} />} onClick={openCreateForm}>
                   Create Opportunity
                 </EnterpriseButton>
@@ -452,7 +452,7 @@ export const OwnerVolunteerPage: React.FC = () => {
                     <p className="flex items-center gap-1.5">
                       <HomeIcon size={13} className="text-emerald-500" />{" "}
                       {job.accommodation === "free_ashram_stay"
-                        ? "Free Ashram Stay"
+                        ? "Free Stay"
                         : "Paid Stay"}
                     </p>
                     <p className="flex items-center gap-1.5">
@@ -684,7 +684,7 @@ export const OwnerVolunteerPage: React.FC = () => {
                 >
                   <option value="">
                     {destinations.length === 0
-                      ? "No published ashrams yet"
+                      ? "No published stays yet"
                       : "Select a city"}
                   </option>
                   {destinations.map((d) => (
@@ -697,7 +697,7 @@ export const OwnerVolunteerPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 mb-1">
-                  Ashram <span className="text-rose-500">*</span>
+                  Stay <span className="text-rose-500">*</span>
                 </label>
                 <select
                   required
@@ -710,10 +710,10 @@ export const OwnerVolunteerPage: React.FC = () => {
                     {!city
                       ? "Select a city first"
                       : loadingAshrams
-                        ? "Loading ashrams..."
+                        ? "Loading stays..."
                         : cityAshrams.length === 0
-                          ? "No ashrams in this city"
-                          : "Select an ashram"}
+                          ? "No stays in this city"
+                          : "Select a stay"}
                   </option>
                   {cityAshrams.map((a) => (
                     <option key={a._id} value={a._id}>
@@ -788,7 +788,7 @@ export const OwnerVolunteerPage: React.FC = () => {
               <div>
                 <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 mb-1">Accommodation</label>
                 <select value={accommodation} onChange={(e) => setAccommodation(e.target.value as typeof accommodation)} className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold">
-                  <option value="free_ashram_stay">Free Ashram Stay</option><option value="paid">Paid Stay</option><option value="none">Not Provided</option>
+                  <option value="free_ashram_stay">Free Stay</option><option value="paid">Paid Stay</option><option value="none">Not Provided</option>
                 </select>
               </div>
 

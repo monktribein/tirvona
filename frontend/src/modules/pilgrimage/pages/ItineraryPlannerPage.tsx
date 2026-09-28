@@ -162,7 +162,7 @@ export const ItineraryPlannerPage: React.FC = () => {
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
           </div>
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            Pick a circuit published by an ashram, set your dates and pace, and
+            Pick a circuit published by a stay, set your dates and pace, and
             get a day-by-day plan you can save.
           </p>
         </div>
@@ -410,7 +410,7 @@ export const ItineraryPlannerPage: React.FC = () => {
                       This circuit is published as{" "}
                       {formatDuration(itinerary.circuit.durationDays)}. We have
                       compressed it into your {itinerary.durationDays} days, so
-                      some stops sit closer together than the ashram intended.
+                      some stops sit closer together than the stay intended.
                     </p>
                   ) : (
                     <p className="mt-3 flex items-center gap-2 text-[11px] font-bold text-emerald-700 dark:text-emerald-400">

@@ -101,7 +101,7 @@ const fromStay = (b: any): UnifiedBooking => {
     paymentMode: b.paymentMode || "online",
     specialRequests: b.specialRequests,
     addOnsList: b.services?.selectedAddOns || [],
-    title: ashram?.name || "Ashram stay",
+    title: ashram?.name || "Stay",
     location: joinAddress(ashram?.address),
     image: ashram?.images?.[0],
     start: b.checkInDate,

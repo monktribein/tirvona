@@ -350,21 +350,21 @@ export const OwnerParkingSetupPage: React.FC = () => {
       {showLocation && partner && <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center"><form onSubmit={saveLocation} className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-4">
         <div className="flex justify-between"><div><h2 className="font-black text-lg text-[#0B192C] dark:text-white">{editingLocationId ? 'Edit Parking Facility' : 'Add Parking Facility'}</h2><p className="text-xs text-gray-400">Maintain complete and accurate facility details.</p></div><button type="button" onClick={() => setShowLocation(false)} className="text-gray-400"><X size={19} /></button></div>
         <label className="block space-y-1">
-          <span className="text-[11px] font-extrabold text-[#0B192C] dark:text-white">Ashram *</span>
+          <span className="text-[11px] font-extrabold text-[#0B192C] dark:text-white">Stay *</span>
           <select
             required
             value={location.ashramId}
             onChange={(event) => setLocation((current) => ({ ...current, ashramId: event.target.value }))}
             className="w-full px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-[#F28C28]"
           >
-            <option value="">Select the ashram this parking belongs to</option>
+            <option value="">Select the stay this parking belongs to</option>
             {ashrams.map((item) => (
               <option key={getId(item)} value={getId(item)}>
                 {item.name}{item.address?.city ? ` — ${item.address.city}` : ''}
               </option>
             ))}
           </select>
-          <span className="block text-[10px] text-gray-400">This parking will belong to the selected ashram and stay visible only to its owner and Super Admin.</span>
+          <span className="block text-[10px] text-gray-400">This parking will belong to the selected stay and stay visible only to its owner and Super Admin.</span>
         </label>
         <div className="grid sm:grid-cols-2 gap-3">{([['name','Parking name'],['contactPhone','Contact phone'],['city','City'],['district','District'],['state','State'],['pincode','Pincode'],['totalCapacity','Total parking capacity']] as const).map(([key, placeholder]) => <input key={key} required={['name','city','state','totalCapacity'].includes(key)} type={key === 'totalCapacity' ? 'number' : 'text'} value={location[key]} onChange={(event) => setLocation((current) => ({ ...current, [key]: event.target.value }))} placeholder={placeholder} className="px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />)}</div>
         <textarea value={location.description} onChange={(event) => setLocation((current) => ({ ...current, description: event.target.value }))} placeholder="Parking description, landmark and entry instructions" rows={3} className="w-full px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />

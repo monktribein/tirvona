@@ -1085,7 +1085,7 @@ export const AdminOffersPage: React.FC = () => {
                     <div className="sm:col-span-2 p-3 bg-blue-50/70 dark:bg-slate-900 border border-blue-100 dark:border-slate-800 rounded-2xl flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 block uppercase">
-                          {targetRoom ? `Selected: ${targetRoom.name}` : "All Ashram Room Categories"}
+                          {targetRoom ? `Selected: ${targetRoom.name}` : "All Stay Room Categories"}
                         </span>
                         {originalPrice != null ? (
                           <div className="flex items-center gap-2 mt-0.5">

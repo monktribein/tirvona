@@ -332,13 +332,13 @@ export const VideoDetailPage: React.FC = () => {
                 <Sparkles size={24} className="text-amber-400 mx-auto" />
                 <h5 className="font-black text-sm">Experience Sacred Stays</h5>
                 <p className="text-xs text-indigo-200 font-medium">
-                  Book verified ashram rooms near holy ghats & temples.
+                  Book verified stay rooms near holy ghats & temples.
                 </p>
                 <button
                   onClick={() => navigate("/search")}
                   className="w-full py-2.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white font-black text-xs shadow-md transition-colors cursor-pointer"
                 >
-                  Book Ashram Stay →
+                  Book Stay →
                 </button>
               </div>
             </div>
@@ -351,11 +351,11 @@ export const VideoDetailPage: React.FC = () => {
               Continue Your Sacred Journey
             </span>
             <h3 className="text-2xl sm:text-3xl font-black">
-              Explore Verified Ashrams & Sacred Videos
+              Explore Verified Stays & Sacred Videos
             </h3>
             <p className="text-xs sm:text-sm text-blue-100 font-medium">
               Watch live temple documentaries, Ganga Aarti, and book 500+
-              verified ashrams across India.
+              verified stays across India.
             </p>
           </div>
 
@@ -364,7 +364,7 @@ export const VideoDetailPage: React.FC = () => {
               onClick={() => navigate("/search")}
               className="px-6 py-3 rounded-full bg-[#E58C28] hover:bg-amber-600 text-white font-black text-xs shadow-xl transition-all"
             >
-              Book Ashram Stay
+              Book Stay
             </button>
             <button
               onClick={() => navigate("/blog")}

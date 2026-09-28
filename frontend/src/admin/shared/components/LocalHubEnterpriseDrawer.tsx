@@ -266,7 +266,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
                     <option value="emergency">Emergency</option>
                     <option value="shops">Puja Shops &amp; Stores</option>
                     <option value="photography">Photography</option>
-                    <option value="stays">Nearby Ashrams</option>
+                    <option value="stays">Nearby Stays</option>
                     <option value="events">Aartis &amp; Events</option>
                   </select>
                 </div>

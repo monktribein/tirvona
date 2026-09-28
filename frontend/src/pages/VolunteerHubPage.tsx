@@ -393,7 +393,7 @@ export const VolunteerHubPage: React.FC = () => {
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search Ganga Aarti, Yoga Trainer, Kitchen Seva, Graphic Designer, Ashram Manager..."
+                placeholder="Search Ganga Aarti, Yoga Trainer, Kitchen Seva, Graphic Designer, Stay Manager..."
                 className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full text-xs font-bold focus:outline-none focus:border-[#F28C28]"
               />
             </div>
@@ -451,7 +451,7 @@ export const VolunteerHubPage: React.FC = () => {
                   className="accent-[#F28C28] w-4 h-4 rounded"
                 />
                 <span className="flex items-center gap-1">
-                  <HomeIcon size={12} className="text-[#F28C28]" /> Free Ashram
+                  <HomeIcon size={12} className="text-[#F28C28]" /> Free Stay
                   Stay Included
                 </span>
               </label>
@@ -484,7 +484,7 @@ export const VolunteerHubPage: React.FC = () => {
           <div className="py-20 text-center space-y-3">
             <div className="w-10 h-10 border-4 border-[#F28C28] border-t-transparent rounded-full animate-spin mx-auto" />
             <p className="text-xs font-black text-gray-500">
-              Loading verified ashram openings...
+              Loading verified stay openings...
             </p>
           </div>
         ) : jobs.length === 0 ? (
@@ -555,7 +555,7 @@ export const VolunteerHubPage: React.FC = () => {
                       />
                       <span className="truncate">
                         {job.accommodation === "free_ashram_stay"
-                          ? "Free Ashram Stay"
+                          ? "Free Stay"
                           : "Stay Option"}
                       </span>
                     </div>

@@ -429,7 +429,7 @@ export const RefundRequestDetailPage: React.FC = () => {
               {refEmail(request.customerId) && (
                 <Row label="Email" value={refEmail(request.customerId)} />
               )}
-              <Row label="Ashram" value={refName(request.ashramId)} />
+              <Row label="Stay" value={refName(request.ashramId)} />
               <Row label="Module" value={humanizeLabel(request.module)} />
               <Row label="Source" value={request.sourceReference || "—"} />
               <Row label="Reason" value={request.reason} />

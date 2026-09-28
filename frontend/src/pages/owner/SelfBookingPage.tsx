@@ -227,8 +227,8 @@ export const SelfBookingPage: React.FC = () => {
         if (list.length === 1) set("ashramId", String(list[0]._id));
       } catch (error) {
         addNotification(
-          "Ashrams Unavailable",
-          getErrorMessage(error, "Could not load your ashrams."),
+          "Stays Unavailable",
+          getErrorMessage(error, "Could not load your stays."),
           "error",
         );
       }
@@ -587,7 +587,7 @@ export const SelfBookingPage: React.FC = () => {
               }}
               className={field}
             >
-              <option value="">Select ashram</option>
+              <option value="">Select stay</option>
               {ashrams.map((ashram) => (
                 <option key={ashram._id} value={ashram._id}>
                   {ashram.name}
@@ -621,7 +621,7 @@ export const SelfBookingPage: React.FC = () => {
             )}
           </div>
           {!form.ashramId ? (
-            <p className="text-xs text-gray-400">Select an ashram first.</p>
+            <p className="text-xs text-gray-400">Select a stay first.</p>
           ) : rooms.length === 0 && !loadingRooms ? (
             <p className="text-xs text-gray-400 inline-flex items-center gap-1.5">
               <Search size={13} /> No rooms configured for these dates.

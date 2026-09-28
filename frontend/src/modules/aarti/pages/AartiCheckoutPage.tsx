@@ -130,7 +130,7 @@ export const AartiCheckoutPage: React.FC = () => {
       const bookingId = created.data?.data?.booking?._id;
       if (!bookingId)
         throw new Error(
-          "The ashram held your seats but did not return a booking reference. Check My Aarti Bookings before paying again.",
+          "The stay held your seats but did not return a booking reference. Check My Aarti Bookings before paying again.",
         );
 
       const order = await aartiBookingService.createPaymentOrder(bookingId);
@@ -186,7 +186,7 @@ export const AartiCheckoutPage: React.FC = () => {
             <StepHeading
               step={1}
               title="Contact for this booking"
-              hint="Where the ashram reaches you about this aarti."
+              hint="Where the stay reaches you about this aarti."
             />
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <div>
@@ -231,7 +231,7 @@ export const AartiCheckoutPage: React.FC = () => {
               <StepHeading
                 step={2}
                 title="Devotees attending"
-                hint="Optional — some ashrams call out names during the sankalp."
+                hint="Optional — some stays call out names during the sankalp."
               />
               <span className="inline-flex items-center gap-1.5 shrink-0 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-full px-2.5 py-1 text-[10px] font-bold text-gray-500 dark:text-gray-400">
                 <Users size={11} className="stroke-[2.5]" />

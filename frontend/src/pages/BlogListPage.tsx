@@ -105,7 +105,7 @@ export const BlogListPage: React.FC = () => {
           </div>
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
             Explore authentic temple history, travel guides, live video
-            documentaries, ashram experiences, and mahaprasad stories.
+            documentaries, stay experiences, and mahaprasad stories.
           </p>
           <form
             onSubmit={handleSearch}

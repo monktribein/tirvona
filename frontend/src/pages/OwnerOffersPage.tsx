@@ -107,7 +107,7 @@ export const OwnerOffersPage: React.FC = () => {
     "Seasonal Offer",
     "Summer Offer",
     "Winter Offer",
-    "New Ashram Launch",
+    "New Stay Launch",
     "Donation Campaign",
     "Room Upgrade",
     "Food Offer",
@@ -352,7 +352,7 @@ export const OwnerOffersPage: React.FC = () => {
           </h1>
           <p className="text-xs sm:text-sm text-gray-200 max-w-2xl font-medium">
             Create, schedule, and manage promotional offers, rate upgrades, and
-            festival discounts across all your ashrams.
+            festival discounts across all your stays.
           </p>
         </div>
 
@@ -586,7 +586,7 @@ export const OwnerOffersPage: React.FC = () => {
             <div className="flex items-center justify-between gap-1 overflow-x-auto pb-2 border-b border-gray-100 dark:border-slate-800">
               {[
                 "1. Basic Info",
-                "2. Ashram",
+                "2. Stay",
                 "3. Details",
                 "4. Discount",
                 "5. Images",
@@ -677,7 +677,7 @@ export const OwnerOffersPage: React.FC = () => {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-[10px] font-black text-gray-400 mb-1">
-                      Select Primary Ashram
+                      Select Primary Stay
                     </label>
                     <select
                       value={formData.ashramId}
@@ -686,7 +686,7 @@ export const OwnerOffersPage: React.FC = () => {
                       }
                       className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                     >
-                      <option value="">All My Owned Ashrams</option>
+                      <option value="">All My Owned Stays</option>
                       {ashrams.map((a) => (
                         <option key={a._id} value={a._id}>
                           {a.name} ({a.address?.city})

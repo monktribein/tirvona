@@ -267,7 +267,7 @@ export const SupportTicketsPage: React.FC = () => {
                   <option value="booking_issue">Booking Issue</option>
                   <option value="payment_failed">Payment Failed</option>
                   <option value="refund_request">Refund Request</option>
-                  <option value="ashram_complaint">Ashram Complaint</option>
+                  <option value="ashram_complaint">Stay Complaint</option>
                   <option value="other">Other Query</option>
                 </select>
               </div>
@@ -280,7 +280,7 @@ export const SupportTicketsPage: React.FC = () => {
               <textarea
                 required
                 rows={3}
-                placeholder="Details of transaction date, Ashram name, reference ID..."
+                placeholder="Details of transaction date, Stay name, reference ID..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none"

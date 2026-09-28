@@ -207,7 +207,7 @@ export const AartiControlCenterPage: React.FC = () => {
             <thead className="border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 text-left text-[10px] tracking-wider font-bold text-gray-400 uppercase">
               <tr>
                 <th className="px-4 py-3">Aarti</th>
-                <th className="px-4 py-3">Ashram</th>
+                <th className="px-4 py-3">Stay</th>
                 <th className="px-4 py-3">Schedule</th>
                 <th className="px-4 py-3">Bookings</th>
                 <th className="px-4 py-3">Status</th>
@@ -304,7 +304,7 @@ export const AartiControlCenterPage: React.FC = () => {
             <thead className="border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 text-left text-[10px] tracking-wider font-bold text-gray-400 uppercase">
               <tr>
                 <th className="px-4 py-3">Stream</th>
-                <th className="px-4 py-3">Ashram</th>
+                <th className="px-4 py-3">Stay</th>
                 <th className="px-4 py-3">Platform</th>
                 <th className="px-4 py-3">Views</th>
                 <th className="px-4 py-3">Status</th>

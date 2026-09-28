@@ -11,7 +11,7 @@ export const ProfileCouponsPage: React.FC = () => {
     {
       code: "YATRA20",
       discount: "20% OFF",
-      description: "Applicable on all Rishikesh & Haridwar Ashram stays.",
+      description: "Applicable on all Rishikesh & Haridwar Stays.",
       expiry: "Valid till Aug 31, 2026",
     },
     {

@@ -242,7 +242,7 @@ export const ProfileBookingsPage: React.FC = () => {
             </h3>
             <p className="text-xs text-gray-400 font-medium max-w-md mx-auto leading-relaxed">
               {activeTab === "upcoming"
-                ? "When you book an ashram stay or reserve parking, it will appear here."
+                ? "When you book a stay or reserve parking, it will appear here."
                 : `You have no ${activeTab} bookings yet.`}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
@@ -391,7 +391,7 @@ export const ProfileBookingsPage: React.FC = () => {
                 <div className="flex md:flex-col justify-between items-end gap-3 w-full md:w-auto pt-3 md:pt-0 shrink-0">
                   <div className="text-right">
                     <span className="text-[10px] text-gray-400 block font-bold">
-                      {b.amountPaid > 0 ? "Paid" : "Payable at Ashram"}
+                      {b.amountPaid > 0 ? "Paid" : "Payable at Stay"}
                     </span>
                     <span className="text-lg font-black text-[#F28C28] dark:text-white">
                       {formatCurrency(
@@ -502,7 +502,7 @@ export const ProfileBookingsPage: React.FC = () => {
                   Reservation Summary & Receipt
                 </h3>
                 <p className="text-[10px] text-gray-400 font-bold">
-                  Payable upon arrival at Ashram
+                  Payable upon arrival at Stay
                 </p>
               </div>
 
@@ -526,7 +526,7 @@ export const ProfileBookingsPage: React.FC = () => {
                 )}
 
                 <div className="flex justify-between">
-                  <span className="text-gray-400 font-bold">Ashram:</span>
+                  <span className="text-gray-400 font-bold">Stay:</span>
                   <span className="font-extrabold text-[#0B192C] dark:text-white">
                     {selectedReceipt.title}
                   </span>

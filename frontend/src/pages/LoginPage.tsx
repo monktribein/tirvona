@@ -267,7 +267,7 @@ export const LoginPage: React.FC = () => {
               <br />&amp; Sacred Retreats
             </h1>
             <p className="text-sm text-slate-300 max-w-lg leading-relaxed font-medium">
-              Sign in to manage verified ashram bookings, view digital check-in
+              Sign in to manage verified stay bookings, view digital check-in
               passes, and experience seamless spiritual stays across Rishikesh,
               Haridwar &amp; Varanasi.
             </p>
@@ -291,7 +291,7 @@ export const LoginPage: React.FC = () => {
 
           <div className="bg-gradient-to-r from-white/5 to-white/10 backdrop-blur-md border border-white/10 p-4 rounded-2xl flex items-center justify-around shadow-xl">
             {[
-              { n: "1,200+", l: "Verified Ashrams" },
+              { n: "1,200+", l: "Verified Stays" },
               { n: "50+", l: "Sacred Cities" },
               { n: "25k+", l: "Happy Pilgrims" },
             ].map((s, i) => (

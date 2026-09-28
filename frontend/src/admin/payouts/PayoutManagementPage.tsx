@@ -154,7 +154,7 @@ export const PayoutManagementPage: React.FC = () => {
   }, [ashramId, page, status]);
 
   useEffect(() => {
-    void loadAshrams().catch((reason) => setError(getErrorMessage(reason, "Could not load ashrams.")));
+    void loadAshrams().catch((reason) => setError(getErrorMessage(reason, "Could not load stays.")));
   }, [loadAshrams]);
   useEffect(() => {
     void load();
@@ -169,7 +169,7 @@ export const PayoutManagementPage: React.FC = () => {
 
   const saveBank = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!ashramId) return setError("Select an ashram first.");
+    if (!ashramId) return setError("Select a stay first.");
     setWorking("bank");
     setError("");
     try {
@@ -303,7 +303,7 @@ export const PayoutManagementPage: React.FC = () => {
       <section className="rounded-3xl border border-orange-200 bg-white p-6 mb-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="rounded-2xl bg-blue-50 p-3 text-[#D97706]"><IndianRupee /></div>
-          <div><h1 className="text-2xl font-black">Tirvona Account</h1><p className="text-sm text-slate-500">Secure ashram earnings, bank accounts and RazorpayX reconciliation.</p></div>
+          <div><h1 className="text-2xl font-black">Tirvona Account</h1><p className="text-sm text-slate-500">Secure stay earnings, bank accounts and RazorpayX reconciliation.</p></div>
         </div>
         <div className="flex gap-2">
           <select value={ashramId} onChange={(event) => { setAshramId(event.target.value); setPage(1); }} className="rounded-xl border border-orange-200 bg-white px-4 py-2 text-sm font-bold">
@@ -372,7 +372,7 @@ export const PayoutManagementPage: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1180px] text-sm">
             <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
-              <tr>{["Reference", "Ashram", "Owner", "Beneficiary", "Amount", "Mode", "Status", "Provider", "Created", "Action"].map((head) => <th key={head} className="px-4 py-3">{head}</th>)}</tr>
+              <tr>{["Reference", "Stay", "Owner", "Beneficiary", "Amount", "Mode", "Status", "Provider", "Created", "Action"].map((head) => <th key={head} className="px-4 py-3">{head}</th>)}</tr>
             </thead>
             <tbody>
               {loading ? <tr><td colSpan={10} className="p-12 text-center text-slate-400">Loading payouts…</td></tr> : rows.length === 0 ? <tr><td colSpan={10} className="p-12 text-center text-slate-400">No payout records found.</td></tr> : rows.map((row) => (

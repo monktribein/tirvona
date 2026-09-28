@@ -175,7 +175,7 @@ export const EventControlCenterPage: React.FC = () => {
             <thead className="border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 text-left text-[10px] tracking-wider font-bold text-gray-400 uppercase">
               <tr>
                 <th className="px-4 py-3">Event</th>
-                <th className="px-4 py-3">Ashram</th>
+                <th className="px-4 py-3">Stay</th>
                 <th className="px-4 py-3">Dates</th>
                 <th className="px-4 py-3">Registrations</th>
                 <th className="px-4 py-3">Status</th>

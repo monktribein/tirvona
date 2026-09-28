@@ -155,7 +155,7 @@ export const EventGatePage: React.FC = () => {
         <div className="flex items-start gap-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-300 rounded-2xl px-4 py-3">
           <ShieldAlert size={15} className="shrink-0 mt-0.5 stroke-[2.5]" />
           <p className="text-xs font-semibold">
-            Your account does not have event gate access. Ask the ashram owner to
+            Your account does not have event gate access. Ask the stay owner to
             add you as gate staff.
           </p>
         </div>

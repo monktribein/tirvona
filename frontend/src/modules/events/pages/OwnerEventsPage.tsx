@@ -396,7 +396,7 @@ export const OwnerEventsPage: React.FC = () => {
               {!editing ? (
                 <div className="sm:col-span-2">
                   <label htmlFor="event-ashram" className={LABEL}>
-                    Ashram
+                    Stay
                   </label>
                   <select
                     id="event-ashram"
@@ -406,7 +406,7 @@ export const OwnerEventsPage: React.FC = () => {
                     }
                     className={INPUT}
                   >
-                    <option value="">Select an ashram</option>
+                    <option value="">Select a stay</option>
                     {ashrams.map((ashram) => (
                       <option key={ashram._id} value={ashram._id}>
                         {ashram.name}

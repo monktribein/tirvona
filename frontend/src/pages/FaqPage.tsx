@@ -13,19 +13,19 @@ export const FaqPage: React.FC = () => {
       category: "General",
       icon: <HelpCircle className="text-[#F28C28]" size={20} />,
       q: "What is the Tirvona Portal?",
-      a: "Tirvona is an official, centralized digital platform initiated by the Government of India. It aims to register, inspect, verify, and digitize all approved Ashrams, Dharamshalas, spiritual retreats, and religious accommodations across the country, making booking safe, accessible, and transparent for pilgrims.",
+      a: "Tirvona is an official, centralized digital platform initiated by the Government of India. It aims to register, inspect, verify, and digitize all approved Stays, Dharamshalas, spiritual retreats, and religious accommodations across the country, making booking safe, accessible, and transparent for pilgrims.",
     },
     {
       category: "For Pilgrims",
       icon: <Calendar className="text-[#F28C28]" size={20} />,
-      q: "How do I check into an Ashram after booking online?",
-      a: "Once your payment is successful, you will receive a Booking Confirmation SMS and Email containing a unique 6-digit Check-in Code. Simply present this code at the Ashram reception counter upon arrival along with a government-approved Photo ID (Aadhaar/Voter ID) to complete your check-in.",
+      q: "How do I check into a Stay after booking online?",
+      a: "Once your payment is successful, you will receive a Booking Confirmation SMS and Email containing a unique 6-digit Check-in Code. Simply present this code at the Stay reception counter upon arrival along with a government-approved Photo ID (Aadhaar/Voter ID) to complete your check-in.",
     },
     {
       category: "For Owners",
       icon: <UserCheck className="text-[#F28C28]" size={20} />,
-      q: "How long does the Ashram registration and approval process take?",
-      a: "After an Ashram owner uploads their Trust Deeds, Land Ownership papers, and Fire Safety Certificates, the system triggers a task in the District Officer queue. Physical/video inspections are scheduled within 5-7 working days. Once verified, the listing is instantly activated.",
+      q: "How long does the Stay registration and approval process take?",
+      a: "After a Stay owner uploads their Trust Deeds, Land Ownership papers, and Fire Safety Certificates, the system triggers a task in the District Officer queue. Physical/video inspections are scheduled within 5-7 working days. Once verified, the listing is instantly activated.",
     },
     {
       category: "Payments & Refunds",
@@ -36,8 +36,8 @@ export const FaqPage: React.FC = () => {
     {
       category: "Security & Quality",
       icon: <ShieldCheck className="text-[#F28C28]" size={20} />,
-      q: 'What makes an Ashram "Tirvona Verified"?',
-      a: 'Ashrams showing the "Tirvona Verified" badge have undergone Tirvona document screening (trust deeds and legal records) and physical site inspection to confirm cleanliness, essential amenities, and safety protocols.',
+      q: 'What makes a Stay "Tirvona Verified"?',
+      a: 'Stays showing the "Tirvona Verified" badge have undergone Tirvona document screening (trust deeds and legal records) and physical site inspection to confirm cleanliness, essential amenities, and safety protocols.',
     },
   ];
 

@@ -145,7 +145,7 @@ export default function TempleSearchPage() {
               fontFamily: "Satoshi, 'General Sans', Manrope, Inter, sans-serif",
             }}
           >
-            Discover sacred temples, their historical significance, live daily aartis, darshan timings and nearby ashrams across India.
+            Discover sacred temples, their historical significance, live daily aartis, darshan timings and nearby stays across India.
           </p>
 
           <form onSubmit={handleManualSearch} className="w-full max-w-3xl flex flex-col sm:flex-row gap-3 bg-white/10 dark:bg-black/30 p-2 rounded-3xl border border-white/20 backdrop-blur-md shadow-2xl">

@@ -266,7 +266,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
     <div className="space-y-6 text-left w-full">
       <EnterprisePageHeader
         title="Visitor Articles & Stories"
-        subtitle="Review and manage experience articles submitted by verified ashram visitors."
+        subtitle="Review and manage experience articles submitted by verified stay visitors."
         icon={<FileText size={22} />}
         badgeText="Community Content"
       />
@@ -320,7 +320,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
             No articles in {activeTab}
           </h3>
           <p className="text-xs text-gray-400 max-w-sm mx-auto font-medium">
-            Visitor experience articles submitted for your Ashram will appear
+            Visitor experience articles submitted for your Stay will appear
             here for review.
           </p>
         </div>

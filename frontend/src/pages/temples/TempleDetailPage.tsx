@@ -534,7 +534,7 @@ export default function TempleDetailPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-8 sm:gap-x-8 sm:gap-y-10">
             {[
               { key: "temples", label: "Other Temples", color: "text-indigo-600", to: (r: any) => `/temples/${r.slug}`, img: (r: any) => r.media?.coverImage },
-              { key: "ashrams", label: "Ashrams / Stays", color: "text-[#E58C28]", to: (r: any) => `/ashram/${r.slug || r._id}`, img: (r: any) => r.images?.[0] },
+              { key: "ashrams", label: "Stays", color: "text-[#E58C28]", to: (r: any) => `/ashram/${r.slug || r._id}`, img: (r: any) => r.images?.[0] },
               { key: "homestays", label: "Homestays", color: "text-emerald-600", to: (r: any) => `/stay/${r.slug || r._id}`, img: (r: any) => r.images?.[0] },
               { key: "parking", label: "Parking", color: "text-blue-600", to: (r: any) => `/parking/${r.slug}`, img: (r: any) => r.coverImage || r.images?.[0] },
               { key: "prasad", label: "Prasad & Local Services", color: "text-rose-600", to: (r: any) => (r.slug ? `/services/${r.slug}` : "#"), img: (r: any) => r.image || r.coverImage },

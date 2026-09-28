@@ -31,7 +31,7 @@ const pressReleases = [
   },
   {
     date: "Nov 2024",
-    title: "Tirvona Launches Emergency Medical Desk Feature for Ashram Guests",
+    title: "Tirvona Launches Emergency Medical Desk Feature for Stay Guests",
     tag: "Product",
   },
 ];

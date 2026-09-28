@@ -938,7 +938,7 @@ export const AdminDashboard: React.FC = () => {
               <QuickPill
                 icon={<Building2 size={18} />}
                 tone="bg-blue-100 text-blue-600"
-                label="Tirvona Verified ashrams"
+                label="Tirvona Verified stays"
                 value={`${formatIndianNumber(system?.ashrams?.approved ?? 0)} active`}
               />
               <QuickPill
@@ -1070,7 +1070,7 @@ export const AdminDashboard: React.FC = () => {
 
           <StatTile label="Verified ashrams" value={formatIndianNumber(system?.ashrams?.approved ?? 0)} caption={<span className="text-gray-400">{formatIndianNumber(system?.ashrams?.pending ?? 0)} awaiting verification</span>} />
           <StatTile label="Pilgrims booked" value={formatIndianNumber(system?.users?.pilgrims ?? 0)} caption={<span className="text-gray-400">Distinct pilgrims with bookings</span>} />
-          <StatTile label="Registered Owners to Register Stays" value={formatIndianNumber(system?.users?.owners ?? 0)} caption={<span className="text-gray-400">Across authorized ashrams</span>} />
+          <StatTile label="Registered Owners to Register Stays" value={formatIndianNumber(system?.users?.owners ?? 0)} caption={<span className="text-gray-400">Across authorized stays</span>} />
           {(overview?.modules ?? []).map((module) => {
             // Event registration is free, so a revenue tile would report a
             // meaningless zero. That stream reports attendance instead.
@@ -1161,7 +1161,7 @@ export const AdminDashboard: React.FC = () => {
                     <tr>
                       <th className="py-3 px-4">Booking</th>
                       <th className="py-3 px-4">Pilgrim</th>
-                      <th className="py-3 px-4">Ashram</th>
+                      <th className="py-3 px-4">Stay</th>
                       <th className="py-3 px-4 text-right">Paid</th>
                       <th className="py-3 px-4">Status</th>
                     </tr>
@@ -1210,7 +1210,7 @@ export const AdminDashboard: React.FC = () => {
           <div className="lg:col-span-5 bg-white dark:bg-[#0B192C] rounded-2xl border border-gray-200 dark:border-slate-800 p-6 shadow-sm space-y-4">
             <div>
               <h3 className="text-base font-bold text-[#0B192C] dark:text-white tracking-tight">
-                Top ashrams by booked value
+                Top stays by booked value
               </h3>
               <span className="text-xs text-gray-500 font-medium">
                 All time, across your jurisdiction
@@ -1235,7 +1235,7 @@ export const AdminDashboard: React.FC = () => {
                 { label: "Verification queue", path: "/admin/verifications", icon: <ClipboardCheck size={17} />, tone: "bg-amber-50 text-amber-700" },
                 { label: "Tirvona Account", path: "/admin/payouts", icon: <Plus size={17} />, tone: "bg-emerald-50 text-emerald-700" },
                 { label: "Audit logs", path: "/admin/audit-logs", icon: <Lock size={17} />, tone: "bg-rose-50 text-rose-700" },
-                { label: "Ashram management", path: "/admin/manage/ashrams/all", icon: <Building2 size={17} />, tone: "bg-cyan-50 text-cyan-700" },
+                { label: "Stay management", path: "/admin/manage/ashrams/all", icon: <Building2 size={17} />, tone: "bg-cyan-50 text-cyan-700" },
               ].map((action) => (
                 <button key={action.path} type="button" onClick={() => navigate(action.path)} className="flex min-h-20 items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50/60 p-3 text-left transition hover:-translate-y-0.5 hover:border-[#F28C28]">
                   <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${action.tone}`}>{action.icon}</span>

@@ -427,7 +427,7 @@ export const EventDetailPage: React.FC = () => {
                           {disabled ? (
                             <p className="mt-1 text-[10px] font-bold text-rose-600">
                               {day.isClosed
-                                ? "Closed by the ashram"
+                                ? "Closed by the stay"
                                 : "Registration has closed"}
                             </p>
                           ) : null}

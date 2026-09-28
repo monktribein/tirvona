@@ -66,7 +66,7 @@ type InventoryTab = "ashrams" | "stays" | "parking" | "prasad";
 type StayFilter = "all" | "ashram" | "dharamshala" | "homestay";
 
 const tabConfig: { key: InventoryTab; label: string; icon: React.ElementType }[] = [
-  { key: "ashrams", label: "Ashrams", icon: Home },
+  { key: "ashrams", label: "Stays", icon: Home },
   { key: "stays", label: "Stays & Rooms", icon: Bed },
   { key: "parking", label: "Parking", icon: CircleParking },
   { key: "prasad", label: "Prasad & Puja", icon: ShoppingBag },
@@ -104,7 +104,7 @@ const StayCard: React.FC<{ ashram: any }> = ({ ashram }) => {
       ? "Dharamshala"
       : ashram.ashramType === "homestay"
         ? "Guest House"
-        : "Ashram";
+        : "Stay";
 
   const isAvailable = checkAshramBookingAvailable(ashram);
 
@@ -667,7 +667,7 @@ const DestinationOverviewPage: React.FC = () => {
               {(
                 [
                   { key: "all", label: "All Stays" },
-                  { key: "ashram", label: "Ashrams" },
+                  { key: "ashram", label: "Stays" },
                   { key: "dharamshala", label: "Dharamshalas" },
                   { key: "homestay", label: "Guest Houses" },
                 ] as const
@@ -821,7 +821,7 @@ const DestinationOverviewPage: React.FC = () => {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-10">
         <motion.div className="dest-stats-strip" {...fadeUp}>
           {[
-            { label: "Ashrams", value: liveStats.ashrams, icon: Home },
+            { label: "Stays", value: liveStats.ashrams, icon: Home },
             { label: "Stays", value: liveStats.stays, icon: Bed },
             { label: "Parking", value: liveStats.parking, icon: CircleParking },
             { label: "Prasad", value: liveStats.prasad, icon: ShoppingBag },
@@ -978,7 +978,7 @@ const DestinationOverviewPage: React.FC = () => {
             {
               icon: Bed,
               title: "Stay",
-              sub: `Find an Ashram or Dharamshala in ${destName}`,
+              sub: `Find a Stay or Dharamshala in ${destName}`,
               action: () =>
                 navigate(
                   `/search?destination=${encodeURIComponent(destName)}`,

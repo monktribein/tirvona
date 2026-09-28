@@ -157,7 +157,7 @@ export const EventsHubPage: React.FC = () => {
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
           </div>
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            Snan schedules, mahotsavs and jayantis published by the ashrams
+            Snan schedules, mahotsavs and jayantis published by the stays
             themselves. Registration is free and your entry pass is a QR code.
           </p>
         </div>
@@ -414,7 +414,7 @@ export const EventsHubPage: React.FC = () => {
                   No events found
                 </h4>
                 <p className="text-xs text-gray-400 font-medium max-w-md mx-auto leading-relaxed">
-                  Try another city or date. Ashrams publish their festival
+                  Try another city or date. Stays publish their festival
                   calendars through the season.
                 </p>
                 <button

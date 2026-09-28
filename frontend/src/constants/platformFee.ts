@@ -14,8 +14,8 @@ export interface PlatformFeeScopeOption {
 export const PLATFORM_FEE_SCOPE_OPTIONS: PlatformFeeScopeOption[] = [
   {
     value: "ashram_booking",
-    label: "Ashram Bookings",
-    description: "Stay checkouts across every ashram, dharamshala and homestay",
+    label: "Stay Bookings",
+    description: "Stay checkouts across every stay, dharamshala and homestay",
     levied: true,
   },
   {
