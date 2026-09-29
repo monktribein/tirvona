@@ -233,7 +233,7 @@ export const LeadCollectionPage: React.FC = () => {
 
   const save = async () => {
     if (!form.name.trim()) {
-      toast.error("Ashram / stay name is required");
+      toast.error("Stay / stay name is required");
       return;
     }
     setSaving(true);
@@ -296,7 +296,7 @@ export const LeadCollectionPage: React.FC = () => {
   const formBody = (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="ASHRAM / STAY NAME *">
+        <Field label="STAY / STAY NAME *">
           <input
             className={inputClass}
             value={form.name}
@@ -455,7 +455,7 @@ export const LeadCollectionPage: React.FC = () => {
     <div className="space-y-5">
       <EnterprisePageHeader
         title="Lead Collection"
-        subtitle="Ashram onboarding leads captured in the field by Tirvona agents."
+        subtitle="Stay onboarding leads captured in the field by Tirvona agents."
         icon={<ClipboardList size={22} />}
         badgeText="FIELD VERIFICATION"
         actions={
@@ -576,7 +576,7 @@ export const LeadCollectionPage: React.FC = () => {
             <table className="w-full text-left">
               <thead className="bg-gray-50 dark:bg-slate-900/60 border-b border-gray-100 dark:border-slate-800">
                 <tr className="text-[10px] font-black text-gray-500 tracking-wider">
-                  <th className="px-5 py-3">ASHRAM</th>
+                  <th className="px-5 py-3">STAY</th>
                   <th className="px-5 py-3">LOCATION</th>
                   <th className="px-5 py-3">OWNER</th>
                   <th className="px-5 py-3">INTEREST</th>

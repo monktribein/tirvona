@@ -166,7 +166,7 @@ export const StaffManagementPage: React.FC = () => {
           </h4>
           <p className="text-xs text-gray-400 max-w-sm mx-auto">
             Add reception or housekeeping staff so they can run the front desk
-            and room board for your ashram.
+            and room board for your stay.
           </p>
         </div>
       ) : (
@@ -178,7 +178,7 @@ export const StaffManagementPage: React.FC = () => {
                   <th className="py-4 px-6">Name</th>
                   <th className="py-4 px-6">Contact</th>
                   <th className="py-4 px-6">Role</th>
-                  <th className="py-4 px-6">Ashram</th>
+                  <th className="py-4 px-6">Stay</th>
                   <th className="py-4 px-6">Status</th>
                   <th className="py-4 px-6 text-right">Action</th>
                 </tr>

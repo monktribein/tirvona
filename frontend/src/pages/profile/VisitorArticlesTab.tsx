@@ -304,7 +304,7 @@ export const VisitorArticlesTab: React.FC = () => {
             <span>My Articles & Blogs</span>
           </h2>
           <p className="text-xs text-gray-400 font-medium">
-            Share your verified ashram stay experience with the spiritual yatri
+            Share your verified stay experience with the spiritual yatri
             community.
           </p>
         </div>
@@ -364,7 +364,7 @@ export const VisitorArticlesTab: React.FC = () => {
             No articles found in {activeSubTab}
           </h3>
           <p className="text-xs text-gray-400 max-w-sm mx-auto font-medium">
-            After completing an Ashram stay, write an article to share your
+            After completing a Stay, write an article to share your
             experience with fellow yatris!
           </p>
           <button
@@ -436,7 +436,7 @@ export const VisitorArticlesTab: React.FC = () => {
                   <p className="text-[10px] text-gray-400 font-semibold flex items-center gap-3 pt-1">
                     <span className="flex items-center gap-1">
                       <MapPin size={11} className="text-[#E58C28]" />{" "}
-                      {art.ashramId?.name || "Ashram Stay"}
+                      {art.ashramId?.name || "Stay"}
                     </span>
                     <span>
                       •{" "}
@@ -500,7 +500,7 @@ export const VisitorArticlesTab: React.FC = () => {
         onClose={() => setIsWizardOpen(false)}
         title={
           step === 1
-            ? "Step 1: Select Verified Ashram Stay"
+            ? "Step 1: Select Verified Stay"
             : editingId
               ? "Edit Your Experience Article"
               : "Step 2: Write Experience Article"
@@ -531,7 +531,7 @@ export const VisitorArticlesTab: React.FC = () => {
                   No Completed Stays Found
                 </h4>
                 <p className="text-xs font-medium">
-                  Articles can only be written for completed ashram stays. Once
+                  Articles can only be written for completed stays. Once
                   your stay booking status becomes completed, you can write an
                   article here!
                 </p>
@@ -622,7 +622,7 @@ export const VisitorArticlesTab: React.FC = () => {
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Essential Guide To Planning Your First Sacred Ashram Stay in Rishikesh"
+                placeholder="e.g. Essential Guide To Planning Your First Sacred Stay in Rishikesh"
                 className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-extrabold focus:outline-none focus:border-[#F28C28]"
               />
             </div>

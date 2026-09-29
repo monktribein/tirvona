@@ -95,7 +95,7 @@ export const ParkingStaffRolesPage: React.FC = () => {
       const id = refId(location.ashramId);
       if (id) unique.set(id, location.ashramId);
     });
-    return [...unique.entries()].map(([id, value]) => ({ id, name: value?.name ?? "Ashram" }));
+    return [...unique.entries()].map(([id, value]) => ({ id, name: value?.name ?? "Stay" }));
   }, [locations]);
 
   const ashramLocations = locations.filter((location) => refId(location.ashramId) === form.ashramId);
@@ -112,7 +112,7 @@ export const ParkingStaffRolesPage: React.FC = () => {
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!form.ashramId || !form.locationId) {
-      addNotification("Parking Required", "Select an ashram and one of its parking facilities.", "error");
+      addNotification("Parking Required", "Select a stay and one of its parking facilities.", "error");
       return;
     }
     if (form.password.length < 8) {
@@ -141,7 +141,7 @@ export const ParkingStaffRolesPage: React.FC = () => {
           ? "Approval Required"
           : "Parking Staff Created",
         response.data?.data?.approvalRequired
-          ? "Security guard account created and sent to the Ashram Owner/Admin for approval."
+          ? "Security guard account created and sent to the Stay Owner/Admin for approval."
           : response.data?.message || "The parking staff account is ready.",
         "success",
       );
@@ -194,7 +194,7 @@ export const ParkingStaffRolesPage: React.FC = () => {
     <div className="w-full space-y-6 text-left">
       <EnterprisePageHeader
         title="Parking Staff"
-        subtitle="Create dedicated staff accounts scoped to one ashram and its parking facility."
+        subtitle="Create dedicated staff accounts scoped to one stay and its parking facility."
         icon={<ShieldCheck size={22} />}
         actions={<div className="flex gap-2">
           <button type="button" onClick={openCreate} className="flex items-center gap-2 rounded-full bg-[#F28C28] px-5 py-2.5 text-xs text-white"><UserPlus size={15} /> Create Parking Staff</button>
@@ -249,7 +249,7 @@ export const ParkingStaffRolesPage: React.FC = () => {
               <label><span className={labelClass}>Email</span><input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={inputClass} /></label>
               <label><span className={labelClass}>Phone</span><input required inputMode="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={inputClass} /></label>
               <label><span className={labelClass}>Parking role</span><select value={form.parkingRole} onChange={(e) => setForm({ ...form, parkingRole: e.target.value as StaffForm["parkingRole"] })} className={inputClass}><option value="security_guard">Parking Security Guard</option>{!isParkingManagerOnly && <option value="parking_manager">Parking Manager</option>}</select></label>
-              <label><span className={labelClass}>Ashram</span><select required value={form.ashramId} onChange={(e) => setForm({ ...form, ashramId: e.target.value, locationId: "" })} className={inputClass}><option value="">Select ashram</option>{ashrams.map((ashram) => <option key={ashram.id} value={ashram.id}>{ashram.name}</option>)}</select></label>
+              <label><span className={labelClass}>Stay</span><select required value={form.ashramId} onChange={(e) => setForm({ ...form, ashramId: e.target.value, locationId: "" })} className={inputClass}><option value="">Select stay</option>{ashrams.map((ashram) => <option key={ashram.id} value={ashram.id}>{ashram.name}</option>)}</select></label>
               <label><span className={labelClass}>Parking facility</span><select required disabled={!form.ashramId} value={form.locationId} onChange={(e) => setForm({ ...form, locationId: e.target.value })} className={inputClass}><option value="">Select parking</option>{ashramLocations.map((location) => <option key={location._id} value={location._id}>{location.name}</option>)}</select></label>
               <label className="sm:col-span-2"><span className={labelClass}>Shift</span><select value={form.shift} onChange={(e) => setForm({ ...form, shift: e.target.value })} className={inputClass}><option value="general">General</option><option value="morning">Morning</option><option value="evening">Evening</option><option value="night">Night</option></select></label>
               <label><span className={labelClass}>Password</span><input required type="password" minLength={8} autoComplete="new-password" placeholder="Minimum 8 characters" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className={inputClass} /></label>

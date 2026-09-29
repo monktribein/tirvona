@@ -379,7 +379,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
                 </span>
                 <span className="font-extrabold">
                   {job.accommodation === "free_ashram_stay"
-                    ? "Free Ashram Stay"
+                    ? "Free Stay"
                     : "Paid Stay Option"}
                 </span>
               </div>
@@ -434,9 +434,9 @@ export const VolunteerJobDetailPage: React.FC = () => {
               <p className="text-xs font-medium text-gray-600 dark:text-gray-300 leading-relaxed">
                 Join {job.ashramName} in {job.city} for dedicated service as a{" "}
                 <strong>{job.title}</strong>. This opportunity allows pilgrims
-                and spiritual seekers to contribute to ashram operations, event
+                and spiritual seekers to contribute to stay operations, event
                 management, and guest welfare while experiencing authentic
-                spiritual ashram living with full accommodation and Satvik
+                spiritual stay living with full accommodation and Satvik
                 meals.
               </p>
             </div>
@@ -506,7 +506,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
               </h3>
               <p className="text-xs text-gray-500 font-medium">
                 Submit your application directly to {job.ashramName}. Your
-                profile will be reviewed by the Ashram administrator.
+                profile will be reviewed by the Stay administrator.
               </p>
 
               <button
@@ -542,7 +542,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
 
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm space-y-4">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2">
-                <Building2 size={16} className="text-[#F28C28]" /> Ashram
+                <Building2 size={16} className="text-[#F28C28]" /> Stay
                 Contact Office
               </h3>
 
@@ -550,7 +550,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
                 <div className="flex items-center gap-2.5">
                   <User size={14} className="text-[#F28C28] shrink-0" />
                   <span>
-                    {job.contactPerson?.name || "Ashram Seva Administrator"}
+                    {job.contactPerson?.name || "Stay Seva Administrator"}
                   </span>
                 </div>
                 <div className="flex items-center gap-2.5">
@@ -575,7 +575,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
                 to={ashramUrl({ _id: job.ashramId })}
                 className="inline-block w-full py-2.5 text-center bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-[#F28C28] text-xs font-black rounded-full hover:bg-gray-100 dark:hover:bg-slate-850 transition-colors"
               >
-                View Ashram Profile →
+                View Stay Profile →
               </Link>
             </div>
           </div>

@@ -203,9 +203,25 @@ const RoomCategoryApprovalsPage = lazy(
 const CentralApprovalCenterPage = lazy(
   () => import("./admin/approvals/pages/CentralApprovalCenterPage"),
 );
-const AdminMarketplaceProductsPage = lazy(
-  () => import("./admin/marketplace/pages/AdminMarketplaceProductsPage"),
-);
+const MarketplaceOverviewPage = lazy(() => import("./admin/marketplace/pages/MarketplaceOverviewPage"));
+const MarketplaceVendorsPage = lazy(() => import("./admin/marketplace/pages/MarketplaceVendorsPage"));
+const MarketplaceProductApprovalsPage = lazy(() => import("./admin/marketplace/pages/MarketplaceProductApprovalsPage"));
+const MarketplaceCategoriesAdminPage = lazy(() => import("./admin/marketplace/pages/MarketplaceCategoriesAdminPage"));
+const MarketplaceOrdersAdminPage = lazy(() => import("./admin/marketplace/pages/MarketplaceOrdersAdminPage"));
+const MarketplacePayoutsAdminPage = lazy(() => import("./admin/marketplace/pages/MarketplacePayoutsAdminPage"));
+const MarketplaceReviewsAdminPage = lazy(() => import("./admin/marketplace/pages/MarketplaceReviewsAdminPage"));
+const MarketplaceSettingsAdminPage = lazy(() => import("./admin/marketplace/pages/MarketplaceSettingsAdminPage"));
+const MarketplaceStorePage = lazy(() => import("./pages/MarketplaceStorePage"));
+const VendorOnboardingPage = lazy(() => import("./modules/marketplace/vendor/VendorOnboardingPage"));
+const VendorDashboardPage = lazy(() => import("./modules/marketplace/vendor/VendorDashboardPage"));
+const VendorStoreSettingsPage = lazy(() => import("./modules/marketplace/vendor/VendorStoreSettingsPage"));
+const VendorProductsPage = lazy(() => import("./modules/marketplace/vendor/VendorProductsPage"));
+const VendorProductFormPage = lazy(() => import("./modules/marketplace/vendor/VendorProductFormPage"));
+const VendorInventoryPage = lazy(() => import("./modules/marketplace/vendor/VendorInventoryPage"));
+const VendorOrdersPage = lazy(() => import("./modules/marketplace/vendor/VendorOrdersPage"));
+const VendorEarningsPage = lazy(() => import("./modules/marketplace/vendor/VendorEarningsPage"));
+const VendorPayoutsPage = lazy(() => import("./modules/marketplace/vendor/VendorPayoutsPage"));
+const VendorReviewsPage = lazy(() => import("./modules/marketplace/vendor/VendorReviewsPage"));
 const ParkingControlCenterPage = lazy(
   () => import("./admin/parking/pages/ParkingControlCenterPage"),
 );
@@ -538,6 +554,10 @@ const AppContent: React.FC = () => {
             <Route
               path="/marketplace/product/:idOrSlug"
               element={<MarketplaceProductDetailPage />}
+            />
+            <Route
+              path="/marketplace/store/:slug"
+              element={<MarketplaceStorePage />}
             />
             <Route
               path="/marketplace/category/:slug"
@@ -1189,6 +1209,28 @@ const AppContent: React.FC = () => {
             />
           </Route>
 
+          {/* Seller console: any signed-in user; the backend scopes every call to the caller's own store. */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/vendor" element={<Navigate to="/vendor/dashboard" replace />} />
+            <Route path="/vendor/onboarding" element={<VendorOnboardingPage />} />
+            <Route path="/vendor/dashboard" element={<VendorDashboardPage />} />
+            <Route path="/vendor/store" element={<VendorStoreSettingsPage />} />
+            <Route path="/vendor/products" element={<VendorProductsPage />} />
+            <Route path="/vendor/products/new" element={<VendorProductFormPage />} />
+            <Route path="/vendor/products/:id" element={<VendorProductFormPage />} />
+            <Route path="/vendor/inventory" element={<VendorInventoryPage />} />
+            <Route path="/vendor/orders" element={<VendorOrdersPage />} />
+            <Route path="/vendor/earnings" element={<VendorEarningsPage />} />
+            <Route path="/vendor/payouts" element={<VendorPayoutsPage />} />
+            <Route path="/vendor/reviews" element={<VendorReviewsPage />} />
+          </Route>
+
           <Route
             element={
               <ProtectedRoute
@@ -1200,7 +1242,50 @@ const AppContent: React.FC = () => {
           >
             <Route
               path="/admin/manage/marketplace/products"
-              element={<AdminMarketplaceProductsPage />}
+              element={<Navigate to="/admin/manage/marketplace/approvals" replace />}
+            />
+            <Route
+              path="/admin/manage/marketplace"
+              element={<MarketplaceOverviewPage />}
+            />
+            <Route
+              path="/admin/manage/marketplace/vendors"
+              element={<MarketplaceVendorsPage />}
+            />
+            <Route
+              path="/admin/manage/marketplace/approvals"
+              element={<MarketplaceProductApprovalsPage />}
+            />
+            <Route
+              path="/admin/manage/marketplace/categories"
+              element={<MarketplaceCategoriesAdminPage />}
+            />
+            <Route
+              path="/admin/manage/marketplace/orders"
+              element={<MarketplaceOrdersAdminPage />}
+            />
+            <Route
+              path="/admin/manage/marketplace/reviews"
+              element={<MarketplaceReviewsAdminPage />}
+            />
+            <Route
+              path="/admin/manage/marketplace/settings"
+              element={<MarketplaceSettingsAdminPage />}
+            />
+          </Route>
+
+          <Route
+            element={
+              <ProtectedRoute
+                allowedRoles={["marketplace_manager", "finance_manager", "super_admin"]}
+              >
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route
+              path="/admin/manage/marketplace/payouts"
+              element={<MarketplacePayoutsAdminPage />}
             />
           </Route>
 

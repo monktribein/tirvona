@@ -1,6 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { marketplaceService } from "../services/marketplace.service";
+import {
+  checkoutApi,
+  marketplaceService,
+  storeApi,
+} from "../services/marketplace.service";
 import { useCart } from "../contexts/CartContext";
 import { useAuth } from "../contexts/AuthContext";
 import { setGuestPendingIntent } from "../utils/guestGate";
@@ -15,6 +19,7 @@ import {
   MapPin,
   Plus,
   ShieldCheck,
+  Store,
   Trash2,
 } from "lucide-react";
 
@@ -33,22 +38,33 @@ interface Address {
   isDefault?: boolean;
 }
 
+/** Server quote from /marketplace/store/cart/quote, split per store. */
 interface Quote {
-  items: {
-    productId: string;
-    name: string;
-    unitPrice: number;
-    quantity: number;
-    lineTotal: number;
+  vendorOrders: {
+    vendorId: string;
+    storeName: string;
+    subtotal: number;
+    gstAmount: number;
+    shippingFee: number;
+    total: number;
+    items: {
+      productId: string;
+      name: string;
+      unitPrice: number;
+      quantity: number;
+      lineTotal: number;
+    }[];
   }[];
   pricing: {
-    itemsTotal: number;
+    itemsSubtotal: number;
     shippingFee: number;
     gstAmount: number;
-    gstPercent: number;
     totalAmount: number;
   };
 }
+
+const newIdempotencyKey = () =>
+  `mp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 
 const EMPTY_FORM = {
   label: "Home",
@@ -78,7 +94,13 @@ export const MarketplaceCheckoutPage: React.FC = () => {
   const [quoteError, setQuoteError] = useState("");
   const [loadingQuote, setLoadingQuote] = useState(true);
   const [placing, setPlacing] = useState(false);
-  const [placed, setPlaced] = useState<{ orderNumber: string } | null>(null);
+  const [placed, setPlaced] = useState<{
+    orderNumber: string;
+    stores: number;
+  } | null>(null);
+  // One key per cart: retrying after a dismissed payment reuses the same
+  // held order instead of reserving the stock twice.
+  const [idempotencyKey, setIdempotencyKey] = useState(newIdempotencyKey);
 
   const cartPayload = lines.map((l) => ({
     productId: l.productId,
@@ -96,7 +118,8 @@ export const MarketplaceCheckoutPage: React.FC = () => {
     let cancelled = false;
     setLoadingQuote(true);
     setQuoteError("");
-    marketplaceService
+    setIdempotencyKey(newIdempotencyKey());
+    storeApi
       .quote(cartPayload)
       .then((res) => {
         if (!cancelled) setQuote(res.data?.data ?? null);
@@ -176,36 +199,58 @@ export const MarketplaceCheckoutPage: React.FC = () => {
     if (!canPlace) return;
     setPlacing(true);
     try {
-      const orderRes = await marketplaceService.createOrder({
+      let addressId = showForm ? undefined : selectedAddressId;
+      if (showForm && saveAddress) {
+        // Saved to the existing address book, then used by id.
+        const saved = await marketplaceService.addAddress({ ...form });
+        addressId = saved.data?.data?._id;
+      }
+      const { label: _label, ...address } = form;
+      const res = await checkoutApi.placeOrder({
         items: cartPayload,
-        ...(showForm
-          ? { address: { ...form }, saveAddress }
-          : { addressId: selectedAddressId }),
-        paymentMode: "online",
+        ...(addressId ? { addressId } : { address }),
+        idempotencyKey,
       });
-      const order = orderRes.data?.data;
-      if (!order?._id) throw new Error("Order could not be created");
+      const order = res.data?.data?.order;
+      const payment = res.data?.data?.payment;
+      if (!order?._id || !payment?.razorpayOrderId)
+        throw new Error("Order could not be created");
 
-      const payRes = await marketplaceService.paymentOrder(order._id);
-
-      if (payRes.data?.demo) {
-        throw new Error("Razorpay is not configured. Real payment is required.");
+      let confirmation: Record<string, string>;
+      if (payment.demo) {
+        // Only for local development without Razorpay keys; the backend
+        // rejects demo confirmations in production.
+        if (!import.meta.env.DEV)
+          throw new Error("Online payments are not configured yet.");
+        confirmation = {
+          razorpay_order_id: payment.razorpayOrderId,
+          razorpay_payment_id: `demo_${order._id}`,
+        };
+      } else {
+        const result = await openRazorpayCheckout(
+          {
+            orderId: payment.razorpayOrderId,
+            amount: payment.amount,
+            currency: payment.currency,
+            keyId: payment.keyId,
+          },
+          {
+            name: user?.name ?? "",
+            email: user?.email ?? "",
+            contact: user?.phone ?? "",
+          },
+          { description: `Marketplace order ${order.orderNumber}` },
+        );
+        confirmation = { ...result };
       }
 
-      const result = await openRazorpayCheckout(payRes.data.data, {
-        name: user?.name ?? "",
-        email: user?.email ?? "",
-        contact: user?.phone ?? "",
-      });
-
-      await marketplaceService.confirmPayment(order._id, {
-        razorpay_order_id: result.razorpay_order_id,
-        razorpay_payment_id: result.razorpay_payment_id,
-        razorpay_signature: result.razorpay_signature,
-      });
+      await checkoutApi.confirmPayment(order._id, confirmation);
 
       clear();
-      setPlaced({ orderNumber: order.orderNumber });
+      setPlaced({
+        orderNumber: order.orderNumber,
+        stores: order.vendorOrderIds?.length ?? 1,
+      });
     } catch (err) {
       addNotification(
         "Order not completed",
@@ -230,8 +275,10 @@ export const MarketplaceCheckoutPage: React.FC = () => {
             <strong className="text-[#0B192C] dark:text-white font-mono">
               {placed.orderNumber}
             </strong>{" "}
-            has been placed. You will receive updates as it is packed and
-            dispatched.
+            has been placed
+            {placed.stores > 1
+              ? ` with ${placed.stores} stores. Each store packs and ships its part separately.`
+              : ". You will receive updates as it is packed and dispatched."}
           </p>
           <div className="flex flex-wrap justify-center gap-3 pt-1">
             <button
@@ -435,21 +482,35 @@ export const MarketplaceCheckoutPage: React.FC = () => {
               </p>
             ) : quote ? (
               <>
-                <div className="space-y-3 text-xs">
-                  {quote.items.map((item) => (
-                    <div
-                      key={item.productId}
-                      className="flex justify-between gap-3 pb-2 border-b border-gray-50 dark:border-slate-800/50"
-                    >
-                      <span className="text-gray-700 dark:text-gray-300 min-w-0 font-medium">
-                        <span className="block truncate font-bold text-[#0B192C] dark:text-white">{item.name}</span>
-                        <span className="text-gray-400 font-semibold">
-                          {formatCurrency(item.unitPrice)} × {item.quantity}
+                <div className="space-y-4 text-xs">
+                  {quote.vendorOrders.map((vo) => (
+                    <div key={vo.vendorId} className="space-y-2">
+                      <p className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                        <Store size={12} className="text-[#F28C28]" />
+                        {vo.storeName}
+                      </p>
+                      {vo.items.map((item) => (
+                        <div
+                          key={item.productId}
+                          className="flex justify-between gap-3 pb-2 border-b border-gray-50 dark:border-slate-800/50"
+                        >
+                          <span className="text-gray-700 dark:text-gray-300 min-w-0 font-medium">
+                            <span className="block truncate font-bold text-[#0B192C] dark:text-white">{item.name}</span>
+                            <span className="text-gray-400 font-semibold">
+                              {formatCurrency(item.unitPrice)} × {item.quantity}
+                            </span>
+                          </span>
+                          <span className="font-extrabold text-[#0B192C] dark:text-white tabular-nums shrink-0">
+                            {formatCurrency(item.lineTotal)}
+                          </span>
+                        </div>
+                      ))}
+                      <p className="flex justify-between text-[11px] text-gray-500">
+                        <span>Shipping from this store</span>
+                        <span className="tabular-nums font-bold">
+                          {vo.shippingFee === 0 ? "Free" : formatCurrency(vo.shippingFee)}
                         </span>
-                      </span>
-                      <span className="font-extrabold text-[#0B192C] dark:text-white tabular-nums shrink-0">
-                        {formatCurrency(item.lineTotal)}
-                      </span>
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -458,7 +519,7 @@ export const MarketplaceCheckoutPage: React.FC = () => {
                   <div className="flex justify-between">
                     <dt className="text-gray-500 dark:text-gray-400 font-medium">Items</dt>
                     <dd className="font-bold text-[#0B192C] dark:text-white tabular-nums">
-                      {formatCurrency(quote.pricing.itemsTotal)}
+                      {formatCurrency(quote.pricing.itemsSubtotal)}
                     </dd>
                   </div>
                   <div className="flex justify-between">
@@ -471,7 +532,7 @@ export const MarketplaceCheckoutPage: React.FC = () => {
                   </div>
                   <div className="flex justify-between">
                     <dt className="text-gray-500 dark:text-gray-400 font-medium">
-                      GST ({quote.pricing.gstPercent}%)
+                      GST
                     </dt>
                     <dd className="font-bold text-[#0B192C] dark:text-white tabular-nums">
                       {formatCurrency(quote.pricing.gstAmount)}

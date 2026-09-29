@@ -125,7 +125,7 @@ export const OffersPage: React.FC = () => {
           </div>
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
             Unlock instant room rate discounts, complimentary Satvik meals, and
-            festival packages across verified ashrams.
+            festival packages across verified stays.
           </p>
           <div className="w-full max-w-xl mx-auto pt-3 relative z-10">
             <div className="bg-white dark:bg-[#0B192C] rounded-full p-2 shadow-lg border border-gray-200 dark:border-slate-800 flex items-center">

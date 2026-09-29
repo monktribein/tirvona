@@ -86,7 +86,7 @@ export const NotFoundPage: React.FC = () => {
             to="/search"
             className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full border border-gray-200 dark:border-slate-700 text-xs font-extrabold"
           >
-            <Search size={14} /> Search ashrams
+            <Search size={14} /> Search stays
           </Link>
           <Link
             to="/destinations"

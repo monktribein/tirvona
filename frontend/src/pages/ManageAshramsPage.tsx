@@ -56,7 +56,7 @@ export const ManageAshramsPage: React.FC = () => {
       console.error("Fetch listings error:", err);
       addNotification(
         "Load Failed",
-        getErrorMessage(err, "Unable to load ashram listings."),
+        getErrorMessage(err, "Unable to load stay listings."),
         "error",
       );
       setAshrams([]);
@@ -101,7 +101,7 @@ export const ManageAshramsPage: React.FC = () => {
         resetDocState();
         addNotification(
           "KYC Documents Submitted",
-          "Your Ashram documents are queued for physical inspection.",
+          "Your Stay documents are queued for physical inspection.",
           "success",
         );
         fetchMyAshrams();
@@ -261,7 +261,7 @@ export const ManageAshramsPage: React.FC = () => {
                     </h3>
                     <p className="text-xs leading-relaxed font-semibold text-slate-700 dark:text-slate-300">
                       {ashram.description ||
-                        "Spiritual Ashram lodging providing quiet sadhana rooms, vegetarian prasad meals, and daily Ganga aarti."}
+                        "Spiritual Stay lodging providing quiet sadhana rooms, vegetarian prasad meals, and daily Ganga aarti."}
                     </p>
                   </div>
 

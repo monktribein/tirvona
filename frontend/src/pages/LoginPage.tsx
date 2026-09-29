@@ -24,6 +24,7 @@ import {
 import { authService } from "../services";
 import { getErrorMessage } from "../lib/api";
 import { getPostLoginRedirect } from "../utils/roleRedirect";
+import { vendorApi } from "../services/marketplace.service";
 
 const GoogleIcon: React.FC = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
@@ -72,7 +73,7 @@ export const LoginPage: React.FC = () => {
   );
   const verifiedLoginUser = useRef<any>(null);
 
-  const goAfterAuthentication = (
+  const goAfterAuthentication = async (
     role?: string,
     parkingRoles?: string[],
     userEmail?: string,
@@ -83,6 +84,15 @@ export const LoginPage: React.FC = () => {
       parkingRoles,
       userEmail,
     );
+    // Sellers are normal accounts with a marketplace store: with nowhere else
+    // to go, send them to their shop dashboard instead of the profile page.
+    if (target.url === "/profile" && !target.hasPendingIntent && !redirect) {
+      const store = await vendorApi.profile().catch(() => null);
+      if (store?.data?.data?._id) {
+        navigate("/vendor/dashboard", { replace: true });
+        return;
+      }
+    }
     navigate(target.url, { replace: true });
   };
 
@@ -267,7 +277,7 @@ export const LoginPage: React.FC = () => {
               <br />&amp; Sacred Retreats
             </h1>
             <p className="text-sm text-slate-300 max-w-lg leading-relaxed font-medium">
-              Sign in to manage verified ashram bookings, view digital check-in
+              Sign in to manage verified stay bookings, view digital check-in
               passes, and experience seamless spiritual stays across Rishikesh,
               Haridwar &amp; Varanasi.
             </p>
@@ -291,7 +301,7 @@ export const LoginPage: React.FC = () => {
 
           <div className="bg-gradient-to-r from-white/5 to-white/10 backdrop-blur-md border border-white/10 p-4 rounded-2xl flex items-center justify-around shadow-xl">
             {[
-              { n: "1,200+", l: "Verified Ashrams" },
+              { n: "1,200+", l: "Verified Stays" },
               { n: "50+", l: "Sacred Cities" },
               { n: "25k+", l: "Happy Pilgrims" },
             ].map((s, i) => (

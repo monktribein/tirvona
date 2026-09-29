@@ -107,7 +107,7 @@ export const CompleteProfileModal: React.FC<Props> = ({
               />
             </div>
             <p className="text-[10px] text-gray-400 font-semibold">
-              Used for booking confirmations and check-in at the ashram.
+              Used for booking confirmations and check-in at the stay.
             </p>
           </div>
 

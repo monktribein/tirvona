@@ -83,7 +83,7 @@ export const HomeAartiSections: React.FC = () => {
         >
           <SectionHeading
             title="Aarti Booking"
-            subtitle="Reserve a verified pass for Ganga Aarti, Bhasma Aarti, Mangala Aarti and more — issued by the ashram, scanned at the gate."
+            subtitle="Reserve a verified pass for Ganga Aarti, Bhasma Aarti, Mangala Aarti and more — issued by the stay, scanned at the gate."
             ctaLabel="Browse All Aartis"
             ctaTo="/aarti"
           />
@@ -109,7 +109,7 @@ export const HomeAartiSections: React.FC = () => {
         >
           <SectionHeading
             title="Live Pooja"
-            subtitle="Watch the aarti as it happens, streamed by the ashrams themselves and verified by Tirvona."
+            subtitle="Watch the aarti as it happens, streamed by the stays themselves and verified by Tirvona."
             ctaLabel="Watch Live Pooja"
             ctaTo="/live-pooja"
           />

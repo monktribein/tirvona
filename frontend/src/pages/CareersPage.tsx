@@ -11,11 +11,11 @@ import {
 
 const openings = [
   {
-    title: "Field Executive – Ashram Verification",
+    title: "Field Executive – Stay Verification",
     location: "Rishikesh / Varanasi / Haridwar",
     type: "Full Time",
     dept: "Operations",
-    desc: "Physically visit and onboard ashrams, collect data using our tablet-based wizard, and ensure quality standards are met.",
+    desc: "Physically visit and onboard stays, collect data using our tablet-based wizard, and ensure quality standards are met.",
   },
   {
     title: "Full Stack Engineer (React + Node)",
@@ -43,7 +43,7 @@ const openings = [
     location: "Pan India",
     type: "Full Time",
     dept: "Growth",
-    desc: "Build relationships with ashram trusts, temple boards, and state tourism boards to expand Tirvona's verified network.",
+    desc: "Build relationships with stay trusts, temple boards, and state tourism boards to expand Tirvona's verified network.",
   },
   {
     title: "UI/UX Designer",
@@ -56,7 +56,7 @@ const openings = [
 
 const getPerks = () => [
   "🏥 Health insurance for self & family",
-  "🌿 Work from ashram — remote work supported",
+  "🌿 Work from stay — remote work supported",
   `📚 ${formatCurrency(20000)} annual learning budget`,
   "✈️ Spiritual travel expense reimbursement",
   "🎯 Performance bonuses every quarter",

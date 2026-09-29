@@ -301,7 +301,7 @@ export const CustomerDashboard: React.FC = () => {
             className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 shadow-2xl"
           >
             <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white border-b border-gray-100 dark:border-slate-800 pb-2">
-              Review your Ashram stay
+              Review your Stay
             </h3>
 
             {reviewError && (

@@ -81,7 +81,7 @@ export const CancellationPolicyPage: React.FC = () => (
       <StaticSection title="Standard Cancellation Policy">
         <p>
           Tirvona offers a flexible cancellation framework designed to be fair
-          to both pilgrims and ashram owners. The refund amount depends on how
+          to both pilgrims and stay owners. The refund amount depends on how
           far in advance you cancel relative to your check-in date.
         </p>
         <p>
@@ -111,9 +111,9 @@ export const CancellationPolicyPage: React.FC = () => (
           <strong className="text-[#0B192C] dark:text-white">
             Festival & Peak Season Bookings:
           </strong>{" "}
-          Some ashrams apply stricter non-refundable policies during peak
+          Some stays apply stricter non-refundable policies during peak
           pilgrim seasons (Navratri, Kumbh, Char Dham season). This is clearly
-          marked on the ashram listing.
+          marked on the stay listing.
         </p>
       </StaticSection>
 
@@ -140,7 +140,7 @@ export const CancellationPolicyPage: React.FC = () => (
 
       <StaticSection title="Ashram-Initiated Cancellations">
         <p>
-          If an ashram cancels your confirmed booking for any reason, you are
+          If a stay cancels your confirmed booking for any reason, you are
           entitled to a full 100% refund regardless of when the cancellation
           occurs. We will also help you find alternative accommodation at no
           extra charge.
@@ -203,7 +203,7 @@ export const GovtGuidelinesPage: React.FC = () => (
       </StaticSection>
 
       <StaticSection title="2. Pilgrim Safety Standards">
-        <p>All registered ashrams must comply with:</p>
+        <p>All registered stays must comply with:</p>
         <ul className="list-disc pl-5 space-y-1.5">
           <li>
             Fire safety standards as per NBC 2016 (National Building Code)
@@ -220,7 +220,7 @@ export const GovtGuidelinesPage: React.FC = () => (
       <StaticSection title="3. Guest Registration (Form C)">
         <p>
           As per the Foreigners Act 1946 and Hotel and Lodge Registration Rules,
-          all ashrams are required to maintain a record of guests. Foreign
+          all stays are required to maintain a record of guests. Foreign
           nationals must submit Form C within 24 hours of check-in.
         </p>
         <p>
@@ -232,7 +232,7 @@ export const GovtGuidelinesPage: React.FC = () => (
       <StaticSection title="4. Pricing Regulation">
         <p>
           Tirvona complies with state government guidelines on price caps during
-          peak pilgrimage seasons. Ashrams are notified of applicable caps and
+          peak pilgrimage seasons. Stays are notified of applicable caps and
           are contractually obligated to honour them.
         </p>
         <p>
@@ -243,7 +243,7 @@ export const GovtGuidelinesPage: React.FC = () => (
 
       <StaticSection title="5. Accessibility (Divyang-Friendly)">
         <p>
-          Under the RPwD Act 2016, ashrams with more than 20 rooms are
+          Under the RPwD Act 2016, stays with more than 20 rooms are
           encouraged to provide at least one accessible room. Tirvona maintains
           a dedicated filter for accessibility-compliant stays.
         </p>
@@ -280,7 +280,7 @@ export const OwnerGuidePage: React.FC = () => (
           Owner Registration Guide
         </h1>
         <p className="text-sm text-gray-400">
-          Step-by-step guide to listing your ashram on Tirvona
+          Step-by-step guide to listing your stay on Tirvona
         </p>
       </div>
     </section>
@@ -289,7 +289,7 @@ export const OwnerGuidePage: React.FC = () => (
         {
           step: "01",
           title: "Create an Owner Account",
-          desc: 'Register at tirvona.in/register. Select "I\'m an Ashram Owner" during sign-up. Verify your mobile number and email address.',
+          desc: 'Register at tirvona.in/register. Select "I\'m a Stay Owner" during sign-up. Verify your mobile number and email address.',
         },
         {
           step: "02",
@@ -299,22 +299,22 @@ export const OwnerGuidePage: React.FC = () => (
         {
           step: "03",
           title: "Complete the 20-Step Wizard",
-          desc: "Our field executive will visit your ashram and use the Tirvona Owner Wizard to fill in all details — basic info, address, GPS, photos, room types, pricing, facilities, food services, nearby attractions, and more.",
+          desc: "Our field executive will visit your stay and use the Tirvona Owner Wizard to fill in all details — basic info, address, GPS, photos, room types, pricing, facilities, food services, nearby attractions, and more.",
         },
         {
           step: "04",
           title: "Field Verification Visit",
-          desc: "A Tirvona-trained field executive will physically visit your ashram within 5–7 business days of KYC submission. They will verify facilities, photograph the premises, and conduct a safety audit.",
+          desc: "A Tirvona-trained field executive will physically visit your stay within 5–7 business days of KYC submission. They will verify facilities, photograph the premises, and conduct a safety audit.",
         },
         {
           step: "05",
           title: "Government Review",
-          desc: "For ashrams near major pilgrimage circuits (Char Dham, Kashi, Tirupati), the district tourism officer may co-verify the listing. This typically takes 3–5 additional days.",
+          desc: "For stays near major pilgrimage circuits (Char Dham, Kashi, Tirupati), the district tourism officer may co-verify the listing. This typically takes 3–5 additional days.",
         },
         {
           step: "06",
           title: "Go Live",
-          desc: 'Once approved, your ashram receives the blue "Tirvona Verified" badge and becomes discoverable by millions of pilgrims. You\'ll receive login credentials for the Owner Dashboard to manage bookings, calendar, and pricing.',
+          desc: 'Once approved, your stay receives the blue "Tirvona Verified" badge and becomes discoverable by millions of pilgrims. You\'ll receive login credentials for the Owner Dashboard to manage bookings, calendar, and pricing.',
         },
       ].map((s, i) => (
         <div
@@ -384,7 +384,7 @@ export const StayPoliciesPage: React.FC = () => (
           Terms of Stay & Policies
         </h1>
         <p className="text-sm text-gray-400">
-          Standard guidelines applicable to all Tirvona ashram stays
+          Standard guidelines applicable to all Tirvona stays
         </p>
       </div>
     </section>
@@ -393,7 +393,7 @@ export const StayPoliciesPage: React.FC = () => (
         <ul className="list-disc pl-5 space-y-2">
           <li>
             Guests are expected to respect the spiritual environment and daily
-            routines of the ashram.
+            routines of the stay.
           </li>
           <li>
             Maintain silence in meditation halls, during prayer hours, and after
@@ -402,7 +402,7 @@ export const StayPoliciesPage: React.FC = () => (
           <li>Dress modestly — traditional Indian attire is recommended.</li>
           <li>
             Non-vegetarian food, alcohol, and tobacco are strictly prohibited
-            inside all Tirvona-listed ashrams.
+            inside all Tirvona-listed stays.
           </li>
           <li>
             Photography of religious ceremonies requires express permission from
@@ -426,9 +426,9 @@ export const StayPoliciesPage: React.FC = () => (
 
       <StaticSection title="Food & Prasad">
         <p>
-          All Tirvona ashrams serve only satvik, pure vegetarian food. Meals are
+          All Tirvona stays serve only satvik, pure vegetarian food. Meals are
           typically included in accommodation packages or available for a
-          nominal charge. Timings for meals are fixed by each ashram and are
+          nominal charge. Timings for meals are fixed by each stay and are
           displayed on their listing page.
         </p>
         <p>
@@ -439,7 +439,7 @@ export const StayPoliciesPage: React.FC = () => (
 
       <StaticSection title="Security Deposit">
         <p>
-          Some ashrams may collect a refundable security deposit at check-in
+          Some stays may collect a refundable security deposit at check-in
           (typically {formatCurrency(500)}–{formatCurrency(2000)} depending on
           room category). This is returned
           in full at check-out if no damage is found.
@@ -450,14 +450,14 @@ export const StayPoliciesPage: React.FC = () => (
         <p>
           Children below 5 years of age are generally accommodated free of
           charge when sharing with parents. Children aged 5–12 may be charged at
-          50% of the adult rate. Individual ashram policies may vary.
+          50% of the adult rate. Individual stay policies may vary.
         </p>
       </StaticSection>
 
       <StaticSection title="Pets">
         <p>
           Pets are not permitted in any Tirvona-listed accommodation in keeping
-          with the sacred environment of ashrams and dharamshalas.
+          with the sacred environment of stays and dharamshalas.
         </p>
       </StaticSection>
 
@@ -469,8 +469,8 @@ export const StayPoliciesPage: React.FC = () => (
 
       <StaticSection title="Damage & Liability">
         <p>
-          Guests are responsible for any damage caused to ashram property during
-          their stay. Tirvona mediates disputes between guests and ashrams but
+          Guests are responsible for any damage caused to stay property during
+          their stay. Tirvona mediates disputes between guests and stays but
           cannot be held liable for damages, theft, or personal injury during an
           ashram stay.
         </p>
@@ -551,7 +551,7 @@ export const TermsPage: React.FC = () => (
         </p>
         <p>
           Prices are inclusive of applicable taxes unless otherwise stated. GST
-          is charged at the applicable slab based on per-night room tariff. If a booking is cancelled from the ashram or host management side, a 100% full refund is guaranteed to the customer without any platform deductions.
+          is charged at the applicable slab based on per-night room tariff. If a booking is cancelled from the stay or host management side, a 100% full refund is guaranteed to the customer without any platform deductions.
         </p>
       </StaticSection>
       <StaticSection title="5. Limitation of Liability">
@@ -613,8 +613,8 @@ export const RefundPolicyPage: React.FC = () => (
             Cancellation within the cancellation policy window (see Cancellation
             Policy)
           </li>
-          <li>Ashram cancels your confirmed booking</li>
-          <li>Ashram fails to provide booked accommodation upon arrival</li>
+          <li>Stay cancels your confirmed booking</li>
+          <li>Stay fails to provide booked accommodation upon arrival</li>
           <li>Technical error resulting in double payment</li>
           <li>
             Force majeure (natural disaster, road closure, government-ordered
@@ -656,7 +656,7 @@ export const RefundPolicyPage: React.FC = () => (
           <li>Cancellation within 24 hours of check-in</li>
           <li>No-show without prior notification</li>
           <li>Early check-out (partially used stay)</li>
-          <li>Violations of ashram conduct rules resulting in eviction</li>
+          <li>Violations of stay conduct rules resulting in eviction</li>
           <li>
             Bookings explicitly marked "Non-Refundable" at time of purchase
           </li>

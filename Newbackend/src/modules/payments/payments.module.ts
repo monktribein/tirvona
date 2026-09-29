@@ -5,6 +5,7 @@ import { ParkingModule } from "../parking/parking.module";
 import { CommerceModule } from "../commerce/commerce.module";
 import { AartiModule } from "../aarti/aarti.module";
 import { DayStayModule } from "../day-stay/day-stay.module";
+import { MarketplaceModule } from "../marketplace/marketplace.module";
 import { PaymentWebhookEventSchema } from "./infrastructure/persistence/payment-webhook-event.schema";
 import { PaymentsWebhookService } from "./application/payments-webhook.service";
 import { PaymentsWebhookController } from "./presentation/payments-webhook.controller";
@@ -25,6 +26,7 @@ import { PaymentsWebhookController } from "./presentation/payments-webhook.contr
     CommerceModule,
     AartiModule,
     DayStayModule,
+    MarketplaceModule,
   ],
   controllers: [PaymentsWebhookController],
   providers: [PaymentsWebhookService],

@@ -54,7 +54,7 @@ export function useAshramSelection({
         return allowAll && list.length > 1 ? ALL_ASHRAMS : list[0]._id;
       });
     } catch (error) {
-      console.error("Fetch ashrams error:", error);
+      console.error("Fetch stays error:", error);
       setAshrams([]);
       setSelectedAshramId("");
       onErrorRef.current?.(error);

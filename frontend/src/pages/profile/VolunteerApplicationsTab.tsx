@@ -61,7 +61,7 @@ export function VolunteerApplicationsTab() {
             No volunteer applications yet
           </h3>
           <p className="mt-1 text-xs text-gray-400">
-            Explore meaningful seva opportunities across Tirvona ashrams.
+            Explore meaningful seva opportunities across Tirvona stays.
           </p>
           <Link
             to="/volunteer"

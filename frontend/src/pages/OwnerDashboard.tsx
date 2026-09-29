@@ -548,11 +548,11 @@ export const OwnerDashboard: React.FC = () => {
     try {
       await bookingService.cancel(
         cancellingBooking._id,
-        cancelReason.trim() || "Cancelled by Ashram / Stay Management",
+        cancelReason.trim() || "Cancelled by Stay / Stay Management",
       );
       notifyRef.current(
         "Booking Cancelled",
-        "Booking cancelled. 100% full refund has been credited to the guest per Ashram policy.",
+        "Booking cancelled. 100% full refund has been credited to the guest per Stay policy.",
         "success",
       );
       setCancellingBooking(null);
@@ -633,7 +633,7 @@ export const OwnerDashboard: React.FC = () => {
     { label: "30-Day Total Bookings", value: formatIndianNumber(thirtyDayBookings), detail: "Bookings in 30-day window", icon: <CalendarDays size={18} /> },
     { label: "Check-ins today", value: formatIndianNumber(analytics?.checkInsToday ?? 0), detail: `${analytics?.checkoutSoon ?? 0} check-outs today`, icon: <Users size={18} /> },
     { label: "Booked value", value: formatCurrency(analytics?.grossBookingValue ?? 0), detail: `${collectionRate}% collected`, icon: <WalletCards size={18} /> },
-    { label: "Monthly revenue", value: formatCurrency(analytics?.monthlyRevenue ?? 0), detail: `${analytics?.totalAshrams ?? 0} ashram(s) managed`, icon: <Building2 size={18} /> },
+    { label: "Monthly revenue", value: formatCurrency(analytics?.monthlyRevenue ?? 0), detail: `${analytics?.totalAshrams ?? 0} stay(s) managed`, icon: <Building2 size={18} /> },
   ];
 
   const canManage = ["ashram_owner", "ashram_admin", "owner", "stay_admin"].includes(String(user?.role || ""));
@@ -715,7 +715,7 @@ export const OwnerDashboard: React.FC = () => {
                 Today ± 7 Days
               </span>
               <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 flex items-center gap-1">
-                <ShieldCheck size={12} /> 100% Refund on Ashram Cancel
+                <ShieldCheck size={12} /> 100% Refund on Stay Cancel
               </span>
             </div>
             <p className="text-xs text-slate-400 font-semibold mt-0.5">
@@ -983,7 +983,7 @@ export const OwnerDashboard: React.FC = () => {
             <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center gap-2.5 text-xs text-emerald-800 dark:text-emerald-300 font-bold shrink-0">
               <ShieldCheck size={18} className="text-emerald-600 shrink-0" />
               <span>
-                <strong>Ashram Policy Guarantee:</strong> If a room is cancelled from the Ashram management side, a <strong>100% full refund</strong> is automatically credited back to the customer.
+                <strong>Stay Policy Guarantee:</strong> If a room is cancelled from the Stay management side, a <strong>100% full refund</strong> is automatically credited back to the customer.
               </span>
             </div>
 
@@ -1312,7 +1312,7 @@ export const OwnerDashboard: React.FC = () => {
                   <ShieldCheck size={16} /> 100% Full Refund Policy
                 </span>
                 <p className="text-[11px] text-emerald-700 dark:text-emerald-400">
-                  Because this cancellation is initiated from the Ashram side, the guest will receive a <strong>100% full refund of {formatCurrency(cancellingBooking.pricing?.amountPaid || cancellingBooking.pricing?.totalPrice || cancellingBooking.totalAmount || 0)}</strong> directly to their original payment mode.
+                  Because this cancellation is initiated from the Stay side, the guest will receive a <strong>100% full refund of {formatCurrency(cancellingBooking.pricing?.amountPaid || cancellingBooking.pricing?.totalPrice || cancellingBooking.totalAmount || 0)}</strong> directly to their original payment mode.
                 </p>
               </div>
 
@@ -1399,7 +1399,7 @@ export const OwnerDashboard: React.FC = () => {
               Active Deals & Promotional Offers ({activeDealsList.length})
             </h2>
             <p className="text-xs text-slate-400 font-semibold mt-0.5">
-              Live discount coupons, Last Minute Deals, and special packages configured for your ashrams.
+              Live discount coupons, Last Minute Deals, and special packages configured for your stays.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -1443,7 +1443,7 @@ export const OwnerDashboard: React.FC = () => {
                 const ashramName =
                   offer.ashramId?.name ||
                   (offer.applicableAshrams && offer.applicableAshrams[0]?.name) ||
-                  "All Managed Ashrams";
+                  "All Managed Stays";
 
                 return (
                   <div

@@ -72,7 +72,7 @@ const AboutPage: React.FC = () => {
     updateOrCreateMeta(
       "name",
       "description",
-      "Tirvona connects pilgrims with verified ashram stays, local services, and sacred marketplaces across India's holy destinations."
+      "Tirvona connects pilgrims with verified stays, local services, and sacred marketplaces across India's holy destinations."
     );
     updateOrCreateMeta(
       "property",
@@ -101,7 +101,7 @@ const AboutPage: React.FC = () => {
     {
       title: "Stay Booking",
       description:
-        "Reservations at verified ashrams and dharamshalas, confirmed with a 6-digit check-in code at the counter.",
+        "Reservations at verified stays and dharamshalas, confirmed with a 6-digit check-in code at the counter.",
       icon: Building2,
     },
     {
@@ -152,7 +152,7 @@ const AboutPage: React.FC = () => {
     {
       title: "Verified institutions",
       description:
-        "Every trust, ashram, and dharamshala is checked before it goes live on the platform.",
+        "Every trust, stay, and dharamshala is checked before it goes live on the platform.",
     },
     {
       title: "Built for pilgrims",
@@ -246,7 +246,7 @@ const AboutPage: React.FC = () => {
 
           <p className="text-sm sm:text-base text-gray-200 leading-relaxed max-w-xl mx-auto drop-shadow-md">
             {heroBanner.description ||
-              "Tirvona is a digital platform for sacred travel, stay management, and local commerce across India's holy destinations, connecting pilgrims, ashrams, and the communities around them."}
+              "Tirvona is a digital platform for sacred travel, stay management, and local commerce across India's holy destinations, connecting pilgrims, stays, and the communities around them."}
           </p>
 
           <div className="pt-3 flex flex-wrap justify-center items-center gap-3">
@@ -423,7 +423,7 @@ const AboutPage: React.FC = () => {
           </h2>
 
           <p className="text-sm text-[#0B192C]/70 dark:text-gray-300 leading-relaxed">
-            Ashram trust, dharamshala, local service provider, or tourism body:
+            Stay trust, dharamshala, local service provider, or tourism body:
             if you serve pilgrims, there is a place for you here.
           </p>
 

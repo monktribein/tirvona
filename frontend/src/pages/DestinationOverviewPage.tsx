@@ -66,10 +66,10 @@ type InventoryTab = "ashrams" | "stays" | "parking" | "prasad";
 type StayFilter = "all" | "ashram" | "dharamshala" | "homestay";
 
 const tabConfig: { key: InventoryTab; label: string; icon: React.ElementType }[] = [
-  { key: "ashrams", label: "Ashrams", icon: Home },
+  { key: "ashrams", label: "Stays", icon: Home },
   { key: "stays", label: "Stays & Rooms", icon: Bed },
   { key: "parking", label: "Parking", icon: CircleParking },
-  { key: "prasad", label: "Prasad & Puja", icon: ShoppingBag },
+  { key: "prasad", label: "Marketplace", icon: ShoppingBag },
 ];
 
 // ─── Stay / Ashram Card ──────────────────────────────────────────────────────
@@ -104,7 +104,7 @@ const StayCard: React.FC<{ ashram: any }> = ({ ashram }) => {
       ? "Dharamshala"
       : ashram.ashramType === "homestay"
         ? "Guest House"
-        : "Ashram";
+        : "Stay";
 
   const isAvailable = checkAshramBookingAvailable(ashram);
 
@@ -252,7 +252,7 @@ const ParkingCard: React.FC<{ lot: any }> = ({ lot }) => {
   );
 };
 
-// ─── Prasad Card ─────────────────────────────────────────────────────────────
+// ─── Marketplace product card ─────────────────────────────────────────────────────────────
 const PrasadCard: React.FC<{ product: any }> = ({ product }) => {
   const navigate = useNavigate();
   const img =
@@ -260,7 +260,7 @@ const PrasadCard: React.FC<{ product: any }> = ({ product }) => {
     product.coverImage ||
     "";
   const slug = product.slug || product._id || "";
-  const price = product.salePrice || product.price || 0;
+  const price = product.sellingPrice ?? product.salePrice ?? product.price ?? 0;
   const ratingVal =
     typeof product.rating === "number"
       ? product.rating
@@ -288,7 +288,7 @@ const PrasadCard: React.FC<{ product: any }> = ({ product }) => {
           </div>
         )}
         <span className="dest-badge dest-badge--tirvona absolute top-3 left-3 shadow-xs">
-          <ShieldCheck size={10} /> Certified Prasad
+          <ShieldCheck size={10} /> Verified seller
         </span>
         {ratingCount > 0 && (
           <span className="absolute top-3 right-3 bg-white/95 dark:bg-[#0B192C]/90 text-[#0B192C] dark:text-white text-[10px] font-extrabold px-2 py-1 rounded-full shadow-sm flex items-center gap-1 backdrop-blur-sm">
@@ -309,9 +309,9 @@ const PrasadCard: React.FC<{ product: any }> = ({ product }) => {
         <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#F28C28] transition-colors">
           {product.name}
         </h4>
-        {product.templeSource && (
+        {(product.vendor?.name || product.templeSource) && (
           <p className="text-[11px] text-gray-400 font-bold mt-1 text-center line-clamp-1">
-            {product.templeSource}
+            {product.vendor?.name || product.templeSource}
           </p>
         )}
         {ratingCount > 0 ? (
@@ -667,7 +667,7 @@ const DestinationOverviewPage: React.FC = () => {
               {(
                 [
                   { key: "all", label: "All Stays" },
-                  { key: "ashram", label: "Ashrams" },
+                  { key: "ashram", label: "Stays" },
                   { key: "dharamshala", label: "Dharamshalas" },
                   { key: "homestay", label: "Guest Houses" },
                 ] as const
@@ -763,13 +763,13 @@ const DestinationOverviewPage: React.FC = () => {
                   to="/marketplace"
                   className="inline-flex items-center gap-2 text-xs font-extrabold text-[#F28C28] hover:underline"
                 >
-                  View all certified Prasad <ArrowRight size={13} />
+                  View the marketplace <ArrowRight size={13} />
                 </Link>
               </div>
             )}
           </>
         ) : (
-          <EmptyCategory category="Prasad" destinationName={destName} />
+          <EmptyCategory category="Marketplace products" destinationName={destName} />
         );
 
       default:
@@ -821,10 +821,10 @@ const DestinationOverviewPage: React.FC = () => {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-10">
         <motion.div className="dest-stats-strip" {...fadeUp}>
           {[
-            { label: "Ashrams", value: liveStats.ashrams, icon: Home },
+            { label: "Stays", value: liveStats.ashrams, icon: Home },
             { label: "Stays", value: liveStats.stays, icon: Bed },
             { label: "Parking", value: liveStats.parking, icon: CircleParking },
-            { label: "Prasad", value: liveStats.prasad, icon: ShoppingBag },
+            { label: "Products", value: liveStats.prasad, icon: ShoppingBag },
             { label: "Places", value: liveStats.places, icon: Compass },
           ].map((stat) => (
             <div key={stat.label} className="dest-stat-pill">
@@ -978,7 +978,7 @@ const DestinationOverviewPage: React.FC = () => {
             {
               icon: Bed,
               title: "Stay",
-              sub: `Find an Ashram or Dharamshala in ${destName}`,
+              sub: `Find a Stay or Dharamshala in ${destName}`,
               action: () =>
                 navigate(
                   `/search?destination=${encodeURIComponent(destName)}`,
@@ -995,8 +995,8 @@ const DestinationOverviewPage: React.FC = () => {
             },
             {
               icon: ShoppingBag,
-              title: "Prasad",
-              sub: "Order certified holy prasad",
+              title: "Marketplace",
+              sub: "Shop from verified Tirvona sellers",
               action: () => navigate("/marketplace"),
             },
             {

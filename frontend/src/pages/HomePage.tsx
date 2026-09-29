@@ -4,7 +4,8 @@ import { checkAshramBookingAvailable } from "../utils/ashramAvailabilityHelper";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../lib/api";
-import { ashramService, reviewService, marketplaceService } from "../services";
+import { ashramService, reviewService } from "../services";
+import { storeApi, toStoreProduct, type StoreProduct } from "../services/marketplace.service";
 import { visitorArticleService } from "../services/visitorArticleService";
 import { formatCurrency } from "../utils/format";
 import { toTitleCase } from "../utils/textCase";
@@ -41,7 +42,6 @@ import {
   Compass,
   ArrowRight,
   Sparkles,
-  Clock,
   BookOpen,
   Play,
   ChevronLeft,
@@ -74,8 +74,7 @@ export const HomePage: React.FC = () => {
   const [feedbacks, setFeedbacks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [homePosts, setHomePosts] = useState<any[]>([]);
-  const [marketplaceCategories, setMarketplaceCategories] = useState<any[]>([]);
-  const [marketplaceProducts, setMarketplaceProducts] = useState<any[]>([]);
+  const [marketplaceProducts, setMarketplaceProducts] = useState<StoreProduct[]>([]);
   const [activeTab, setActiveTab] = useState<
     "top_rated" | "most_booked" | "recent" | "govt_recom"
   >("top_rated");
@@ -470,19 +469,14 @@ export const HomePage: React.FC = () => {
     );
   }
 
-  const prasadItems =
-    marketplaceProducts.length > 0 ? marketplaceProducts : marketplaceCategories;
-
   useEffect(() => {
     fetchStays();
     fetchOffers();
-    fetchMarketplaceCategories();
     fetchMarketplaceProducts();
     fetchHomePosts();
 
     const handleMarketplaceSync = () => {
       fetchMarketplaceProducts();
-      fetchMarketplaceCategories();
     };
 
     window.addEventListener("marketplace_updated", handleMarketplaceSync);
@@ -493,9 +487,10 @@ export const HomePage: React.FC = () => {
 
   const fetchMarketplaceProducts = async () => {
     try {
-      const res = await marketplaceService.getProducts({ limit: 10 });
+      // Vendor marketplace only: approved products of active stores.
+      const res = await storeApi.products({ limit: 10 });
       if (res.data?.success && Array.isArray(res.data.data)) {
-        setMarketplaceProducts(res.data.data);
+        setMarketplaceProducts(res.data.data.map(toStoreProduct));
       }
     } catch (err) {
       console.error("Fetch marketplace products error:", err);
@@ -554,16 +549,6 @@ export const HomePage: React.FC = () => {
       }
     } catch (err) {
       console.error("Error fetching home posts:", err);
-    }
-  };
-
-  const fetchMarketplaceCategories = async () => {
-    try {
-      const res = await api.get("/marketplace/categories").catch(() => null);
-      if (res?.data?.success) {
-        setMarketplaceCategories(res.data.data);
-      }
-    } catch {
     }
   };
 
@@ -894,11 +879,11 @@ export const HomePage: React.FC = () => {
       isHighlight: false,
     },
     {
-      id: "prasad",
-      label: "Sacred Prasad",
+      id: "marketplace",
+      label: "Marketplace",
       icon: Activity,
-      category: "prasad",
-      target: "#prashad",
+      category: "marketplace",
+      target: "/marketplace",
       isHighlight: false,
     },
     {
@@ -1061,11 +1046,6 @@ export const HomePage: React.FC = () => {
                 label: "Destinations",
               },
               { id: "stay", icon: <Bed size={14} />, label: "Stay" },
-              {
-                id: "day-stay",
-                icon: <Clock size={14} />,
-                label: "Day Rest (Freshen-Up)",
-              },
               {
                 id: "experiences",
                 icon: <Sparkles size={14} />,
@@ -1314,7 +1294,7 @@ export const HomePage: React.FC = () => {
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
             {publishedCms.destinations_banner?.subtitle ||
               publishedCms.destinations_banner?.description ||
-              "Discover sacred holy destinations across India with verified ashrams, dharamshalas, secure parking, and divine temples."}
+              "Discover sacred holy destinations across India with verified stays, dharamshalas, secure parking, and divine temples."}
           </p>
           <button
             type="button"
@@ -1464,13 +1444,14 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
+      {marketplaceProducts.length > 0 && (
       <section
-        id="prashad"
+        id="marketplace"
         className="order-2 w-full max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20"
       >
         <div className="text-center space-y-2 max-w-3xl mx-auto py-2">
           <p className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
-            Sacred Prasad
+            Tirvona Marketplace
           </p>
           <div className="flex items-center justify-center gap-2.5 my-1.5">
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
@@ -1481,93 +1462,31 @@ export const HomePage: React.FC = () => {
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
           </div>
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            Authentic Mahaprasad delivered directly from famous holy temples.
+            Puja essentials and sacred goods from verified Tirvona sellers.
           </p>
           <button
             type="button"
             onClick={() => navigate("/marketplace")}
             className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#B45309] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
           >
-            Explore Sacred Prasad <ArrowRight size={14} />
+            Explore the marketplace <ArrowRight size={14} />
           </button>
         </div>
 
         <div className="pt-2 pb-6">
           <MarqueeSlider
-            items={
-              marketplaceProducts.length > 0
-                ? marketplaceProducts
-                : marketplaceCategories.length > 0
-                  ? marketplaceCategories
-                  : [
-                    {
-                      _id: "prasad-1",
-                      name: "neelkanth mahadev prasad",
-                      templeSource: "Heritage Brass Guild",
-                      price: 799,
-                      rating: 4.8,
-                      images: [
-                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E",
-                      ],
-                    },
-                    {
-                      _id: "prasad-2",
-                      name: "ganga arti prasad",
-                      templeSource: "Haridwar Ganga Sabha Trust",
-                      price: 899,
-                      rating: 5.0,
-                      images: [
-                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E",
-                      ],
-                    },
-                    {
-                      _id: "prasad-3",
-                      name: "Nitya Puja prasad",
-                      templeSource: "Tirvona Spiritual Foundation",
-                      price: 499,
-                      rating: 4.9,
-                      images: [
-                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E",
-                      ],
-                    },
-                    {
-                      _id: "prasad-4",
-                      name: "Vrindavan prasad",
-                      templeSource: "ISKCON Vrindavan Artisans",
-                      price: 199,
-                      rating: 4.9,
-                      images: [
-                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E",
-                      ],
-                    },
-                  ]
-            }
+            items={marketplaceProducts}
             speed={30}
-            renderItem={(item: any, idx: number) => {
-              const isProduct =
-                !!item.price || Array.isArray(item.images) || item.salePrice;
+            renderItem={(item: StoreProduct, idx: number) => {
               const fallbackImg =
                 "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
-              const imgUrl = isProduct
-                ? item.images?.[0] || item.img || fallbackImg
-                : item.coverImage ||
-                item.thumbnail ||
-                item.img ||
-                fallbackImg;
-              const name = item.name || item.title || "Sacred Prasad";
-              const subtitle =
-                item.templeSource ||
-                item.subtitle ||
-                (item.originCity
-                  ? `${item.originCity}, ${item.originState}`
-                  : "Sanctified Prasad");
-              const rawPrice = item.price || item.salePrice || 199;
-              const isItemOutOfStock =
-                item.status === "out_of_stock" ||
-                (item.stock !== undefined && Number(item.stock) <= 0) ||
-                (item.stockCount !== undefined && Number(item.stockCount) <= 0);
+              const imgUrl = item.images[0] || fallbackImg;
+              const name = item.name;
+              const subtitle = item.vendor?.name ?? item.templeSource ?? "";
+              const rawPrice = item.sellingPrice;
+              const isItemOutOfStock = !item.inStock;
               const discountPct =
-                isProduct && item.price && item.salePrice && item.salePrice < item.price
+                item.price && item.salePrice && item.salePrice < item.price
                   ? Math.round(((item.price - item.salePrice) / item.price) * 100)
                   : 0;
 
@@ -1575,16 +1494,7 @@ export const HomePage: React.FC = () => {
                 <div
                   key={idx}
                   onClick={() => {
-                    const targetId = item.slug || item._id;
-                    if (targetId) {
-                      if (isProduct) {
-                        navigate(`/marketplace/products/${targetId}`);
-                      } else {
-                        navigate(`/marketplace/category/${targetId}`);
-                      }
-                    } else {
-                      navigate("/marketplace");
-                    }
+                    navigate(`/marketplace/products/${item.slug || item._id}`);
                   }}
                   className="flex-shrink-0 relative group cursor-pointer"
                   style={{ width: "clamp(210px, 48vw, 230px)" }}
@@ -1613,10 +1523,10 @@ export const HomePage: React.FC = () => {
                         </span>
                       ) : null}
 
-                      {(item.rating || isProduct) && (
+                      {Number(item.rating) > 0 && (
                         <span className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-amber-400 text-[10px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
                           <Star size={10} className="fill-amber-400" />{" "}
-                          {item.rating || 4.9}
+                          {item.rating}
                         </span>
                       )}
                     </div>
@@ -1646,6 +1556,7 @@ export const HomePage: React.FC = () => {
           />
         </div>
       </section>
+      )}
 
       <section className="order-1 w-full max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20">
         <div className="text-center space-y-2 max-w-4xl mx-auto py-2">

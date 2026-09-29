@@ -568,7 +568,7 @@ export const OfflineInventoryPage: React.FC = () => {
                 <tr className="text-[10px] uppercase font-black text-gray-400">
                   <th className="py-3 px-4 whitespace-nowrap">Offline room</th>
                   <th className="py-3 px-4 whitespace-nowrap">Room type</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Ashram</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Stay</th>
                   <th className="py-3 px-4 whitespace-nowrap">Offline total</th>
                   <th className="py-3 px-4 whitespace-nowrap">Available offline</th>
                   <th className="py-3 px-4 whitespace-nowrap">Moved to Tirvona online</th>
@@ -898,7 +898,7 @@ export const OfflineInventoryPage: React.FC = () => {
                 }
                 className={`${field} disabled:opacity-60`}
               >
-                <option value="">Select ashram</option>
+                <option value="">Select stay</option>
                 {ashrams.map((a) => (
                   <option key={getId(a)} value={getId(a)}>
                     {a.name}

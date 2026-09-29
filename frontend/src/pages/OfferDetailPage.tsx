@@ -304,7 +304,7 @@ export const OfferDetailPage: React.FC = () => {
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 sm:p-8 space-y-4 shadow-sm">
               <h2 className="text-xl font-black text-[#0B192C] dark:text-white flex items-center gap-2">
                 <Building size={20} className="text-[#F28C28]" /> Applicable
-                Ashram Accommodation
+                Stay Accommodation
               </h2>
 
               <div className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -325,7 +325,7 @@ export const OfferDetailPage: React.FC = () => {
                   onClick={handleBookNow}
                   className="px-6 py-3 bg-[#F28C28] hover:bg-[#B45309] text-white font-extrabold text-xs rounded-full cursor-pointer shadow-md shadow-[#F28C28]/20 transition-all shrink-0"
                 >
-                  Book This Ashram
+                  Book This Stay
                 </button>
               </div>
             </div>

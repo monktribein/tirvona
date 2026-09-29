@@ -353,7 +353,7 @@ export const LeadAgentsPage: React.FC = () => {
     <div className="space-y-5">
       <EnterprisePageHeader
         title="Field Executives"
-        subtitle="Accounts that sign in to the Tirvona lead app to capture ashram leads."
+        subtitle="Accounts that sign in to the Tirvona lead app to capture stay leads."
         icon={<Users size={22} />}
         badgeText="LEAD COLLECTION"
         actions={

@@ -46,7 +46,6 @@ import {
 } from "../contexts/BookingSearchContext";
 import TirvonaMap from "../components/TirvonaMap";
 import { DateRangePicker } from "../components/DateRangePicker";
-import { RoomAvailabilityCalendar } from "../components/RoomAvailabilityCalendar";
 import { DayStayBookingCard } from "../components/day-stay/DayStayBookingCard";
 import { hasValidCoordinates } from "../utils/geo";
 import { useAutoScroll } from "../hooks/useAutoScroll";
@@ -378,8 +377,8 @@ export const AshramDetailPage: React.FC = () => {
   const [specialRequests, setSpecialRequests] = useState("");
   const [restoredNotice, setRestoredNotice] = useState(false);
 
-  const [availabilityCalendar, setAvailabilityCalendar] = useState<any[]>([]);
-  const [loadingCalendar, setLoadingCalendar] = useState(false);
+  const [, setAvailabilityCalendar] = useState<any[]>([]);
+  const [, setLoadingCalendar] = useState(false);
 
   const [reviews, setReviews] = useState<any[]>([]);
 
@@ -1360,7 +1359,7 @@ export const AshramDetailPage: React.FC = () => {
           !detailError.includes("format") &&
           !detailError.includes("Cast to ObjectId")
             ? detailError
-            : "This stay is temporarily not accepting online bookings or is not available. Please explore our other verified ashrams and accommodations."}
+            : "This stay is temporarily not accepting online bookings or is not available. Please explore our other verified stays and accommodations."}
         </p>
         <div className="pt-2 flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <Link
@@ -1557,7 +1556,7 @@ export const AshramDetailPage: React.FC = () => {
             <motion.img
               key={activeImageIndex}
               src={galleryImages[activeImageIndex] || galleryImages[0]}
-              alt="Ashram view"
+              alt="Stay view"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -1661,7 +1660,7 @@ export const AshramDetailPage: React.FC = () => {
             <motion.img
               key={activeImageIndex}
               src={galleryImages[activeImageIndex]}
-              alt="Ashram full view"
+              alt="Stay full view"
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
@@ -2252,20 +2251,6 @@ export const AshramDetailPage: React.FC = () => {
                     }}
                   />
                 </div>
-
-                <RoomAvailabilityCalendar
-                  days={availabilityCalendar}
-                  loading={loadingCalendar}
-                  roomName={firstSelectedRoom?.name}
-                  selectedDate={checkIn}
-                  onSelect={(date) => {
-                    const nextOut = getTomorrowYMD(date);
-                    setCheckIn(date);
-                    setCheckOut(nextOut);
-                    updateBookingSearch({ checkIn: date, checkOut: nextOut });
-                    setBookingError("");
-                  }}
-                />
 
                 <div className="p-3.5 bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-800 rounded-[20px] space-y-1 select-none">
                   <span className="text-[9px] text-gray-400 font-bold tracking-wider">

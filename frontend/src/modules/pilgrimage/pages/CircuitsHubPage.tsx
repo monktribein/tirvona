@@ -140,7 +140,7 @@ export const CircuitsHubPage: React.FC = () => {
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
           </div>
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            Day-by-day sacred routes mapped by the ashrams that walk them. Follow
+            Day-by-day sacred routes mapped by the stays that walk them. Follow
             one as published, or turn it into your own itinerary.
           </p>
           <Link
@@ -388,7 +388,7 @@ export const CircuitsHubPage: React.FC = () => {
                   No circuits found
                 </h4>
                 <p className="text-xs text-gray-400 font-medium max-w-md mx-auto leading-relaxed">
-                  Try a different type or trip length. Ashrams publish new routes
+                  Try a different type or trip length. Stays publish new routes
                   through the year.
                 </p>
                 <button

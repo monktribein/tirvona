@@ -209,7 +209,7 @@ export const OwnerUsersPage: React.FC = () => {
       case "owner":
         return (
           <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20 flex items-center gap-1 w-fit">
-            <Shield size={12} /> Ashram Owner
+            <Shield size={12} /> Stay Owner
           </span>
         );
       case "manager":
@@ -247,10 +247,10 @@ export const OwnerUsersPage: React.FC = () => {
             <Users size={14} /> User & Staff Administration
           </div>
           <h1 className="text-2xl sm:text-3xl font-black">
-            Ashram Users & Admin Credentials
+            Stay Users & Admin Credentials
           </h1>
           <p className="text-xs sm:text-sm text-gray-200 max-w-2xl font-medium">
-            Create, manage, and assign login IDs and passwords for your Ashram
+            Create, manage, and assign login IDs and passwords for your Stay
             Managers, Receptionists, Housekeeping staff, and Co-Admins.
           </p>
         </div>
@@ -275,7 +275,7 @@ export const OwnerUsersPage: React.FC = () => {
         </div>
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-2xl shadow-sm space-y-2">
           <span className="text-xs font-extrabold tracking-wider text-gray-400">
-            Ashram Admins
+            Stay Admins
           </span>
           <div className="text-2xl font-black text-amber-600">
             {staff.filter((s) => ["ashram_owner", "owner"].includes(s.role)).length}
@@ -317,7 +317,7 @@ export const OwnerUsersPage: React.FC = () => {
         <div className="flex items-center gap-1 overflow-x-auto w-full sm:w-auto">
           {[
             { id: "all", label: "All Users" },
-            { id: "ashram_owner", label: "Ashram Owners" },
+            { id: "ashram_owner", label: "Stay Owners" },
             { id: "manager", label: "Managers" },
             { id: "reception", label: "Reception" },
             { id: "housekeeping", label: "Housekeeping" },
@@ -501,7 +501,7 @@ export const OwnerUsersPage: React.FC = () => {
                       Create Staff Account / Admin
                     </h3>
                     <p className="text-xs text-gray-400">
-                      Assign login ID and password for ashram staff.
+                      Assign login ID and password for stay staff.
                     </p>
                   </div>
                 </div>
@@ -555,7 +555,7 @@ export const OwnerUsersPage: React.FC = () => {
                     <input
                       type="email"
                       required
-                      placeholder="e.g. manager@ashram.com"
+                      placeholder="e.g. manager@stay.com"
                       value={formData.email}
                       onChange={(e) =>
                         setFormData({ ...formData, email: e.target.value })
@@ -636,12 +636,12 @@ export const OwnerUsersPage: React.FC = () => {
                     }
                     className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#F28C28] cursor-pointer"
                   >
-                    <option value="manager">👔 Ashram Manager</option>
+                    <option value="manager">👔 Stay Manager</option>
                     <option value="reception">
                       🛎️ Front Desk / Receptionist
                     </option>
                     <option value="housekeeping">🧹 Housekeeping Staff</option>
-                    <option value="ashram_owner">🛡️ Ashram Owner / Co-Owner</option>
+                    <option value="ashram_owner">🛡️ Stay Owner / Co-Owner</option>
                   </select>
                 </div>
 

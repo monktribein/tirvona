@@ -24,7 +24,7 @@ const titleCase = (value: string) =>
 export const STOP_TYPE_LABELS: Record<StopType, string> = {
   temple: "Temple",
   ghat: "Ghat",
-  ashram: "Ashram",
+  ashram: "Stay",
   math: "Math",
   gurudwara: "Gurudwara",
   monastery: "Monastery",

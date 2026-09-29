@@ -7,6 +7,7 @@ import NotificationDropdown from "../components/shared/NotificationDropdown";
 import CartDrawer, { CartButton } from "../components/shared/CartDrawer";
 import { setGuestPendingIntent } from "../utils/guestGate";
 import { getRoleDefaultDashboard, isParkingRole } from "../utils/roleRedirect";
+import { vendorApi } from "../services/marketplace.service";
 import { useCurrency } from "../contexts/CurrencyContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import { getFormattingLocale } from "../utils/format";
@@ -237,6 +238,24 @@ export const PublicLayout: React.FC = () => {
       return "Parking Dashboard";
     return "My Dashboard";
   };
+
+  // Sellers are normal accounts with a marketplace store; give them the same
+  // way back to their console that staff get with the dashboard button.
+  const [hasStore, setHasStore] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    setHasStore(false);
+    if (!user) return;
+    vendorApi
+      .profile()
+      .then((res) => {
+        if (!cancelled && res.data?.data?._id) setHasStore(true);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   const hasOperationalDashboard = () => {
     if (!user) return false;
@@ -473,6 +492,17 @@ export const PublicLayout: React.FC = () => {
                     </Link>
                   )}
 
+                  {!hasOperationalDashboard() && hasStore && (
+                    <Link
+                      to="/vendor/dashboard"
+                      aria-label="Seller Dashboard"
+                      className="hidden sm:flex text-xs font-extrabold px-3 py-1.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white shadow-sm transition-all items-center gap-1.5 shrink-0"
+                    >
+                      <LayoutDashboard size={13} />
+                      <span className="hidden md:inline">Seller Dashboard</span>
+                    </Link>
+                  )}
+
                   <div className="relative" ref={profileRef}>
                     <button
                       onClick={() => setProfileDropdownOpen((prev) => !prev)}
@@ -558,6 +588,19 @@ export const PublicLayout: React.FC = () => {
                                 </div>
                                 <span className="text-xs font-bold">
                                   My Orders
+                                </span>
+                              </Link>
+
+                              <Link
+                                to="/vendor/dashboard"
+                                onClick={() => setProfileDropdownOpen(false)}
+                                className="px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                              >
+                                <div className="w-6 h-6 rounded-md bg-orange-100/60 dark:bg-orange-950/60 text-[#F28C28] flex items-center justify-center shrink-0">
+                                  <Package size={13} />
+                                </div>
+                                <span className="text-xs font-bold">
+                                  {hasStore ? "Seller Dashboard" : "Sell on Tirvona"}
                                 </span>
                               </Link>
 
@@ -704,6 +747,19 @@ export const PublicLayout: React.FC = () => {
                 </Link>
               );
             })}
+
+            {user && hasStore && !hasOperationalDashboard() && (
+              <Link
+                to="/vendor/dashboard"
+                onClick={() => setDrawerOpen(false)}
+                className="flex items-center justify-between py-3.5 px-3 rounded-xl text-sm font-bold text-primary hover:bg-primary/5 transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  <LayoutDashboard size={15} /> Seller Dashboard
+                </span>
+                <ChevronRight size={14} className="text-primary/50" />
+              </Link>
+            )}
 
             {user && (
               <Link

@@ -11,11 +11,11 @@ import api, { getErrorMessage } from "../../../lib/api";
 import {
   ashramService,
   bookingService,
-  marketplaceService,
   offerService,
   roomService,
   userService,
 } from "../../../services";
+import { storeApi } from "../../../services/marketplace.service";
 import { parkingAdminService } from "../../../modules/parking/services/parking.service";
 import { humanizeLabel } from "../../../utils/labels";
 import { formatCurrency, getFormattingLocale } from "../../../utils/format";
@@ -101,7 +101,7 @@ export const EnterpriseModulePage: React.FC<{
 
   const pageTitles: Record<string, string> = {
     "users:pilgrims": "Pilgrim Accounts",
-    "users:owners": "Ashram Owner Accounts",
+    "users:owners": "Stay Owner Accounts",
     "users:content-managers": "Content Managers",
     "users:staff": "Staff Members",
     "users:roles": "Roles & Permissions",
@@ -194,7 +194,7 @@ export const EnterpriseModulePage: React.FC<{
     if (activeModule !== "featured_banner") return;
     void Promise.allSettled([
       ashramService.search({ limit: "100" }),
-      marketplaceService.getProducts({ limit: 100 }),
+      storeApi.products({ limit: 100 }),
       offerService.getPublicOffers({ limit: "100" }),
       api.get("/services/events"),
       ashramService.destinations(),
@@ -552,7 +552,7 @@ export const EnterpriseModulePage: React.FC<{
         return {
           icon: <Building size={20} className="text-[#F28C28]" />,
           columns: [
-            { key: "name", label: "Ashram Name" },
+            { key: "name", label: "Stay Name" },
             {
               key: "city",
               label: "Location City",
@@ -617,7 +617,7 @@ export const EnterpriseModulePage: React.FC<{
           fields: [
             {
               name: "name",
-              label: "Ashram Name",
+              label: "Stay Name",
               type: "text",
               required: true,
             },
@@ -1294,7 +1294,7 @@ export const EnterpriseModulePage: React.FC<{
               },
               {
                 key: "ashramId",
-                label: "Ashram",
+                label: "Stay",
                 render: (value: any) => value?.name || "—",
               },
               {
@@ -1353,7 +1353,7 @@ export const EnterpriseModulePage: React.FC<{
             },
             {
               key: "ashramId",
-              label: "Ashram",
+              label: "Stay",
               render: (value: any) => value?.name || "—",
             },
             {
@@ -1439,8 +1439,8 @@ export const EnterpriseModulePage: React.FC<{
             },
             {
               key: "ashramId",
-              label: "Ashram",
-              render: (value: any) => value?.name || "Ashram unavailable",
+              label: "Stay",
+              render: (value: any) => value?.name || "Stay unavailable",
             },
             {
               key: "roomId",
@@ -1489,7 +1489,7 @@ export const EnterpriseModulePage: React.FC<{
             columns: [
               {
                 key: "ashramId",
-                label: "Ashram",
+                label: "Stay",
                 render: (value: any) => value?.name || "—",
               },
               {
@@ -1552,7 +1552,7 @@ export const EnterpriseModulePage: React.FC<{
             columns: [
               {
                 key: "ashramId",
-                label: "Ashram",
+                label: "Stay",
                 render: (value: any) => value?.name || "—",
               },
               {
@@ -1611,8 +1611,8 @@ export const EnterpriseModulePage: React.FC<{
           columns: [
             {
               key: "ashramId",
-              label: "Ashram",
-              render: (value: any) => value?.name || "Ashram unavailable",
+              label: "Stay",
+              render: (value: any) => value?.name || "Stay unavailable",
             },
             { key: "name", label: "Room Category" },
             { key: "type", label: "Stay Type" },
@@ -1658,7 +1658,7 @@ export const EnterpriseModulePage: React.FC<{
           columns: [
             { key: "title", label: "Featured Banner Title" },
             { key: "eventName", label: "Event / Festival" },
-            { key: "relatedAshramName", label: "Linked Ashram" },
+            { key: "relatedAshramName", label: "Linked Stay" },
             { key: "location", label: "Location" },
             { key: "startDate", label: "Start Date" },
             { key: "status", label: "Status" },
@@ -1770,7 +1770,7 @@ export const EnterpriseModulePage: React.FC<{
           icon: <Users size={20} className="text-[#F28C28]" />,
           columns: [
             { key: "userId", label: "Staff Member", render: (value: any) => value?.name || value?.email || "—" },
-            { key: "ashramId", label: "Ashram", render: (value: any) => value?.name || "—" },
+            { key: "ashramId", label: "Stay", render: (value: any) => value?.name || "—" },
             { key: "aartiRole", label: "Aarti Role", render: (value: any) => humanizeLabel(value || "") },
             { key: "employeeCode", label: "Employee Code" },
             { key: "shift", label: "Shift" },
@@ -1790,7 +1790,7 @@ export const EnterpriseModulePage: React.FC<{
           icon: <ShieldCheck size={20} className="text-[#F28C28]" />,
           columns: [
             { key: "scope", label: "Scope" },
-            { key: "ashramId", label: "Ashram", render: (value: any) => value?.name || "Platform-wide" },
+            { key: "ashramId", label: "Stay", render: (value: any) => value?.name || "Platform-wide" },
             { key: "sessionId", label: "Aarti", render: (value: any) => value?.name || "All Aartis" },
             { key: "reservationHoldMinutes", label: "Hold Minutes" },
             { key: "maxPassesPerBooking", label: "Max Passes" },
@@ -2164,8 +2164,8 @@ export const EnterpriseModulePage: React.FC<{
       if (isRoomCategoryView) {
         if (!formData.ashramId) {
           addNotification(
-            "Ashram Required",
-            "Pick the ashram this room category belongs to.",
+            "Stay Required",
+            "Pick the stay this room category belongs to.",
             "error",
           );
           return;
@@ -2215,7 +2215,7 @@ export const EnterpriseModulePage: React.FC<{
         if (!formData.ashramId || !formData.state || !formData.city) {
           addNotification(
             "Aarti Location Required",
-            "Select an ashram, state, and city before saving.",
+            "Select a stay, state, and city before saving.",
             "error",
           );
           return;
@@ -2277,7 +2277,7 @@ export const EnterpriseModulePage: React.FC<{
         ) {
           addNotification(
             "Required Selection Missing",
-            "Select the required Aarti, pass, ashram, or staff member before saving.",
+            "Select the required Aarti, pass, stay, or staff member before saving.",
             "error",
           );
           return;
@@ -2959,7 +2959,7 @@ export const EnterpriseModulePage: React.FC<{
         });
         addNotification(
           nextStatus === "approved" ? "Ashram Reactivated" : "Ashram Suspended",
-          `${item.name || "Ashram"} is now ${nextStatus}.`,
+          `${item.name || "Stay"} is now ${nextStatus}.`,
           nextStatus === "approved" ? "success" : "warning",
         );
         fetchModuleData();
@@ -3322,13 +3322,13 @@ export const EnterpriseModulePage: React.FC<{
                 <div className="space-y-4 rounded-2xl border border-blue-100 bg-blue-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/60">
                   <div>
                     <label className="mb-1.5 block font-bold text-gray-700 dark:text-gray-300">
-                      Search Ashrams
+                      Search Stays
                     </label>
                     <input
                       type="search"
                       value={featuredAshramSearch}
                       onChange={(event) => setFeaturedAshramSearch(event.target.value)}
-                      placeholder="Search by Ashram name, code, district or state..."
+                      placeholder="Search by Stay name, code, district or state..."
                       className="w-full rounded-xl border border-blue-200 bg-white p-3 font-semibold text-gray-800 outline-none focus:border-[#F28C28] dark:border-slate-700 dark:bg-[#0B192C] dark:text-white"
                     />
                   </div>
@@ -3392,7 +3392,7 @@ export const EnterpriseModulePage: React.FC<{
 
                     <div>
                       <label className="mb-1.5 block font-bold text-gray-700 dark:text-gray-300">
-                        Ashram <span className="text-rose-500">*</span>
+                        Stay <span className="text-rose-500">*</span>
                       </label>
                       <select
                         required
@@ -3413,7 +3413,7 @@ export const EnterpriseModulePage: React.FC<{
                         }}
                         className="w-full rounded-xl border border-blue-200 bg-white p-3 font-bold text-[#F28C28] outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-[#0B192C]"
                       >
-                        <option value="">Select Ashram</option>
+                        <option value="">Select Stay</option>
                         {filteredFeaturedAshrams.map((item: any) => {
                           const value = String(item._id || item.id);
                           return <option key={value} value={value}>{item.name || item.ashramCode || value}</option>;
@@ -3423,7 +3423,7 @@ export const EnterpriseModulePage: React.FC<{
                   </div>
 
                   <p className="text-[10px] font-semibold text-gray-500">
-                    The selected State, District and Ashram control the destination route and which Ashram offers appear on the Featured Banner detail page.
+                    The selected State, District and Stay control the destination route and which Stay offers appear on the Featured Banner detail page.
                   </p>
 
                   <div className="border-t border-blue-100 pt-4 dark:border-slate-700">
@@ -3477,7 +3477,7 @@ export const EnterpriseModulePage: React.FC<{
               {(isRoomCategoryView || isAartiSessionView) && (
                 <div className="space-y-1">
                   <label className="font-bold text-gray-700 dark:text-gray-300">
-                    Ashram <span className="text-rose-500">*</span>
+                    Stay <span className="text-rose-500">*</span>
                   </label>
                   <select
                     required
@@ -3514,7 +3514,7 @@ export const EnterpriseModulePage: React.FC<{
                     }}
                     className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#F28C28] disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    <option value="">Select an ashram</option>
+                    <option value="">Select a stay</option>
                     {roomAshramOptions.map((a: any) => (
                       <option key={String(a._id)} value={String(a._id)}>
                         {a.name}
@@ -3655,7 +3655,7 @@ export const EnterpriseModulePage: React.FC<{
               {showAartiAshram && (
                 <div className="space-y-1">
                   <label className="font-bold text-gray-700 dark:text-gray-300">
-                    Ashram <span className="text-rose-500">*</span>
+                    Stay <span className="text-rose-500">*</span>
                   </label>
                   <select
                     required
@@ -3666,7 +3666,7 @@ export const EnterpriseModulePage: React.FC<{
                     }
                     className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-bold text-[#F28C28] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900"
                   >
-                    <option value="">Select an ashram</option>
+                    <option value="">Select a stay</option>
                     {roomAshramOptions.map((ashram) => (
                       <option key={String(ashram._id)} value={String(ashram._id)}>
                         {ashram.name}

@@ -12,7 +12,7 @@ export const ProfilePaymentsPage: React.FC = () => {
     {
       id: "TXN-902181",
       date: "Jul 26, 2026",
-      title: "Swarg Ashram Booking",
+      title: "Swarg Stay Booking",
       amount: 4800,
       method: "UPI / GPay",
       status: "Paid",

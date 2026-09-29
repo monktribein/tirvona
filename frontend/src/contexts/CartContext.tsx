@@ -15,6 +15,10 @@ export interface CartLine {
   displayPrice: number;
   quantity: number;
   maxQuantity?: number;
+  /** Selling store, so the cart can group lines per vendor. */
+  vendorId?: string;
+  vendorName?: string;
+  vendorSlug?: string;
 }
 
 interface CartContextValue {

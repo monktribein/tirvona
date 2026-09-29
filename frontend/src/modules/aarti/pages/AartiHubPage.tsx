@@ -161,7 +161,7 @@ export const AartiHubPage: React.FC = () => {
           </div>
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
             Ganga Aarti, Bhasma Aarti, Mangala Aarti and more. Reserve a verified
-            pass issued by the ashram and walk in with a single QR scan.
+            pass issued by the stay and walk in with a single QR scan.
           </p>
         </div>
       </div>
@@ -232,7 +232,7 @@ export const AartiHubPage: React.FC = () => {
                   No aartis found
                 </h4>
                 <p className="text-xs text-gray-400 font-medium max-w-md mx-auto leading-relaxed">
-                  Try a different city or date, or widen your filters. Ashrams
+                  Try a different city or date, or widen your filters. Stays
                   publish new aartis regularly.
                 </p>
                 {(facilities.length > 0 || sort !== "recommended") && (

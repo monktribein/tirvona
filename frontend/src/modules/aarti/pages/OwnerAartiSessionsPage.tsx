@@ -534,7 +534,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <label className="flex flex-col gap-1 sm:col-span-2">
                   <span className="text-[10px] tracking-wider font-bold text-gray-400 px-1">
-                    Ashram
+                    Stay
                   </span>
                   <select
                     disabled={!!editing}
@@ -562,7 +562,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                     }}
                     className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all disabled:opacity-60"
                   >
-                    <option value="">Select an ashram</option>
+                    <option value="">Select a stay</option>
                     {ashrams.map((ashram) => (
                       <option key={ashram._id} value={ashram._id}>
                         {ashram.name}

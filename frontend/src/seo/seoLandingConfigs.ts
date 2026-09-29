@@ -126,7 +126,7 @@ export const SEO_LANDING_CONFIGS: Record<string, SeoLandingConfig> = {
         to: "/Stays-near-prem-mandir-vrindavan",
         tag: "Evening Illumination",
         description:
-          "Verified hotels, ashrams and dharamshalas near Prem Mandir on Raman Reti Road.",
+          "Verified hotels, stays and dharamshalas near Prem Mandir on Raman Reti Road.",
         image: "/images/destinations/vrindavan/prem_mandir_night_hero.jpg",
       },
       {
@@ -160,7 +160,7 @@ export const SEO_LANDING_CONFIGS: Record<string, SeoLandingConfig> = {
     faqs: [
       {
         q: "What types of stays are available in Vrindavan?",
-        a: "Vrindavan offers verified hotels, pilgrim dharamshalas, spiritual ashrams, and private guest houses. Tirvona lists verified options with transparent pricing and real availability.",
+        a: "Vrindavan offers verified hotels, pilgrim dharamshalas, spiritual stays, and private guest houses. Tirvona lists verified options with transparent pricing and real availability.",
       },
       {
         q: "How early should I book stays in Vrindavan?",
@@ -168,7 +168,7 @@ export const SEO_LANDING_CONFIGS: Record<string, SeoLandingConfig> = {
       },
       {
         q: "Are parking facilities available at Vrindavan hotels?",
-        a: "Yes, many hotels and ashrams located on Raman Reti and Chhatikara roads provide on-site private car parking. You can filter stays with parking directly on Tirvona.",
+        a: "Yes, many hotels and stays located on Raman Reti and Chhatikara roads provide on-site private car parking. You can filter stays with parking directly on Tirvona.",
       },
       {
         q: "Can I find stays under ₹1000 in Vrindavan?",
@@ -249,7 +249,7 @@ export const SEO_LANDING_CONFIGS: Record<string, SeoLandingConfig> = {
         to: "/ashrams/vrindavan",
         tag: "City Overview",
         description:
-          "Explore the complete verified collection of hotels, ashrams, and guesthouses across Vrindavan.",
+          "Explore the complete verified collection of hotels, stays, and guesthouses across Vrindavan.",
         image:
           "https://images.unsplash.com/photo-1627894483216-2138af692e32?w=600&q=80",
       },
@@ -283,7 +283,7 @@ export const SEO_LANDING_CONFIGS: Record<string, SeoLandingConfig> = {
     faqs: [
       {
         q: "How close can I stay to Banke Bihari Temple?",
-        a: "Several ashrams and guest houses are located within 500 meters to 1.5 km of Banke Bihari Temple. Because inner temple lanes are pedestrianized, e-rickshaws operate from nearby drop points.",
+        a: "Several stays and guest houses are located within 500 meters to 1.5 km of Banke Bihari Temple. Because inner temple lanes are pedestrianized, e-rickshaws operate from nearby drop points.",
       },
       {
         q: "Is vehicle parking available near Banke Bihari Temple?",
@@ -411,7 +411,7 @@ export const SEO_LANDING_CONFIGS: Record<string, SeoLandingConfig> = {
       },
       {
         q: "Is parking available at stays near Prem Mandir?",
-        a: "Yes, major ashrams and stays on Raman Reti and Chhatikara Road provide dedicated car parking on-site. You can filter by 'Parking Available' on Tirvona.",
+        a: "Yes, major stays and stays on Raman Reti and Chhatikara Road provide dedicated car parking on-site. You can filter by 'Parking Available' on Tirvona.",
       },
     ],
   },
@@ -481,7 +481,7 @@ export const SEO_LANDING_CONFIGS: Record<string, SeoLandingConfig> = {
         to: "/ashrams/vrindavan",
         tag: "All Accommodations",
         description:
-          "Browse all verified hotels, ashrams, and guesthouses in Vrindavan.",
+          "Browse all verified hotels, stays, and guesthouses in Vrindavan.",
         image:
           "https://images.unsplash.com/photo-1627894483216-2138af692e32?w=600&q=80",
       },
@@ -591,7 +591,7 @@ export const SEO_LANDING_CONFIGS: Record<string, SeoLandingConfig> = {
         to: "/ashrams/vrindavan",
         tag: "Complete Directory",
         description:
-          "View full inventory across hotels, guest houses, and ashrams in Vrindavan.",
+          "View full inventory across hotels, guest houses, and stays in Vrindavan.",
         image:
           "https://images.unsplash.com/photo-1627894483216-2138af692e32?w=600&q=80",
       },
@@ -701,7 +701,7 @@ export const SEO_LANDING_CONFIGS: Record<string, SeoLandingConfig> = {
         to: "/ashrams/vrindavan",
         tag: "Browse All",
         description:
-          "Explore all hotels, spiritual ashrams, and guesthouses in Vrindavan.",
+          "Explore all hotels, spiritual stays, and guesthouses in Vrindavan.",
         image:
           "https://images.unsplash.com/photo-1627894483216-2138af692e32?w=600&q=80",
       },

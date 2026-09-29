@@ -8,7 +8,6 @@ import { MARKETPLACE_ORDER_MODELS } from "./infrastructure/persistence/marketpla
 import { MongooseCommerceRepository } from "./infrastructure/persistence/mongoose-commerce.repository";
 import {
   EnterpriseServicesController,
-  MarketplaceController,
   MarketplaceHubController,
 } from "./presentation/commerce.controllers";
 import { MarketplaceOrderController } from "./presentation/marketplace-order.controller";
@@ -22,7 +21,6 @@ import { MarketplaceOrderController } from "./presentation/marketplace-order.con
   ],
   controllers: [
     MarketplaceOrderController,
-    MarketplaceController,
     MarketplaceHubController,
     EnterpriseServicesController,
   ],

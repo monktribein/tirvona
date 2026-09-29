@@ -386,12 +386,12 @@ export const CentralApprovalCenterPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="py-3.5 px-4 font-bold text-[#0B192C] dark:text-white">
-                      {req.ashramId?.name || "Ashram Retreat"}
+                      {req.ashramId?.name || "Stay Retreat"}
                     </td>
                     <td className="py-3.5 px-4">
                       <div className="flex flex-col">
                         <span className="font-bold">
-                          {req.stayAdminId?.name || "Ashram Owner"}
+                          {req.stayAdminId?.name || "Stay Owner"}
                         </span>
                         <span className="text-[10px] text-gray-400">
                           {req.stayAdminId?.email}

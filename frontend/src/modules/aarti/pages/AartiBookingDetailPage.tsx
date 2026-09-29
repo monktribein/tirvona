@@ -321,7 +321,7 @@ export const AartiBookingDetailPage: React.FC = () => {
             </span>{" "}
             ({refund.percent}% of the pass fee).
             {refund.donationRetained
-              ? ` The ${formatCurrency(refund.donationRetained)} sankalp donation stays with the ashram.`
+              ? ` The ${formatCurrency(refund.donationRetained)} sankalp donation stays with the stay.`
               : ""}
           </p>
           <button

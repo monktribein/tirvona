@@ -80,7 +80,7 @@ export const InventoryCalendarPage: React.FC = () => {
     onError: (err) =>
       notifyRef.current(
         "Load Failed",
-        getErrorMessage(err, "Unable to load your ashrams."),
+        getErrorMessage(err, "Unable to load your stays."),
         "error",
       ),
   });
@@ -185,14 +185,14 @@ export const InventoryCalendarPage: React.FC = () => {
       if (failures > 0)
         notifyRef.current(
           "Load Failed",
-          `Could not load room categories for ${failures} ashram(s).`,
+          `Could not load room categories for ${failures} stay(s).`,
           "error",
         );
     } catch (err) {
       console.error("Fetch rooms error:", err);
       notifyRef.current(
         "Load Failed",
-        getErrorMessage(err, "Unable to load rooms for this ashram."),
+        getErrorMessage(err, "Unable to load rooms for this stay."),
         "error",
       );
       setMyRooms([]);
@@ -395,7 +395,7 @@ export const InventoryCalendarPage: React.FC = () => {
           {myAshrams.length > 0 && (
             <div className="flex items-center gap-1.5">
               <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
-                Ashram
+                Stay
               </label>
               <select
                 value={selectedAshramId}

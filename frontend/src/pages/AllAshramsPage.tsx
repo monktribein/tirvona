@@ -73,7 +73,7 @@ export const AllAshramsPage: React.FC = () => {
         );
       }
     } catch (err) {
-      console.error("Fetch all ashrams error:", err);
+      console.error("Fetch all stays error:", err);
     } finally {
       setLoading(false);
     }
@@ -156,16 +156,16 @@ export const AllAshramsPage: React.FC = () => {
 
       if (res.data.success) {
         addNotification(
-          "Ashram Saved Successfully!",
-          "Ashram details and assigned owner updated live.",
+          "Stay Saved Successfully!",
+          "Stay details and assigned owner updated live.",
           "success",
         );
         setSelectedAshram(null);
         fetchData();
       }
     } catch (err) {
-      console.error("Update ashram error:", err);
-      addNotification("Error", "Failed to update ashram details.", "error");
+      console.error("Update stay error:", err);
+      addNotification("Error", "Failed to update stay details.", "error");
     } finally {
       setSubmitLoading(false);
     }
@@ -654,7 +654,7 @@ export const AllAshramsPage: React.FC = () => {
                       >
                         <img
                           src={imgUrl}
-                          alt={`Ashram photo ${idx + 1}`}
+                          alt={`Stay photo ${idx + 1}`}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                         />
                         <button

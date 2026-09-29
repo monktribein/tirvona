@@ -291,7 +291,7 @@ export const OwnerBookingCenterPage: React.FC<OwnerBookingCenterPageProps> = ({
               <CalendarDays size={20} className="text-[#F28C28]" /> Booking &amp; Payment Center
             </h1>
             <p className="text-xs text-gray-400 font-semibold mt-1">
-              Every reservation and financial record for your owned ashrams.
+              Every reservation and financial record for your owned stays.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -356,7 +356,7 @@ export const OwnerBookingCenterPage: React.FC<OwnerBookingCenterPageProps> = ({
         {activeView === "bookings" && (
           <div>
             <div className="flex flex-wrap gap-2 p-4">
-              <label className="relative flex-1 min-w-56"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Booking, guest, phone, room or ashram" className="w-full pl-9 pr-3 py-2.5 bg-gray-50 dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-800 text-xs focus:outline-none" /></label>
+              <label className="relative flex-1 min-w-56"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Booking, guest, phone, room or stay" className="w-full pl-9 pr-3 py-2.5 bg-gray-50 dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-800 text-xs focus:outline-none" /></label>
               <select value={status} onChange={(event) => setStatus(event.target.value)} className="px-3 py-2.5 bg-gray-50 dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-800 text-xs font-bold"><option value="">All statuses</option>{["pending","confirmed","checked_in","checked_out","completed","cancelled","refunded","no_show","expired"].map((item) => <option key={item} value={item}>{label(item)}</option>)}</select>
             </div>
             <DataTable loading={loading} headers={["Booking", "Guest", "Ashram / Room", "Stay", "Guests", "Payment", "Total", "Status", "Details"]} rows={filteredBookings.map((booking) => [booking.bookingId || booking.reservationNumber || "—", <Contact key="guest" item={booking.customerId} />, <div key="place"><b>{booking.ashramId?.name || "—"}</b><small>{booking.roomId?.name || "—"}</small></div>, <div key="stay"><span>{dateTime(booking.checkInDate)}</span><small>to {dateTime(booking.checkOutDate)}</small></div>, `${booking.guestsCount || 1} / ${booking.roomsBookedCount || 1} room(s)`, label(booking.paymentStatus), money(booking.pricing?.totalAmount), <Status key="status" value={booking.status} />, <button key="details" onClick={() => setSelectedBooking(booking)} className="text-[#F28C28] font-extrabold hover:underline">View full record</button>])} />
@@ -371,14 +371,14 @@ export const OwnerBookingCenterPage: React.FC<OwnerBookingCenterPageProps> = ({
                 <input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Transaction, booking, booked by, paid by or ashram"
+                  placeholder="Transaction, booking, booked by, paid by or stay"
                   className="w-full pl-9 pr-3 py-2.5 bg-gray-50 dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-800 text-xs focus:outline-none"
                 />
               </label>
             </div>
             <DataTable
               loading={loading}
-              headers={["Transaction", "Booking", "Booked By", "Paid By", "Ashram", "Method", "Gateway", "Payment Date", "Paid", "Outstanding", "Status"]}
+              headers={["Transaction", "Booking", "Booked By", "Paid By", "Stay", "Method", "Gateway", "Payment Date", "Paid", "Outstanding", "Status"]}
               rows={filteredPayments.map((payment) => [
                 payment.transactionId || payment._id,
                 payment.bookingId?.bookingId || payment.bookingId?.reservationNumber || "—",
@@ -438,7 +438,7 @@ export const OwnerBookingCenterPage: React.FC<OwnerBookingCenterPageProps> = ({
               {[
                 ["Guest", selectedBooking.customerId?.name],
                 ["Contact", selectedBooking.customerId?.phone || selectedBooking.customerId?.email],
-                ["Ashram", selectedBooking.ashramId?.name],
+                ["Stay", selectedBooking.ashramId?.name],
                 ["Room", selectedBooking.roomId?.name],
                 ["Check in", dateTime(selectedBooking.checkInDate)],
                 ["Check out", dateTime(selectedBooking.checkOutDate)],
@@ -465,7 +465,7 @@ const DataTable = ({ loading, headers, rows }: { loading: boolean; headers: stri
   <div className="overflow-x-auto">
     <table className="w-full text-left text-xs min-w-[1000px]">
       <thead className="bg-gray-50 dark:bg-slate-900 text-[10px] text-gray-400 uppercase"><tr>{headers.map((header) => <th key={header} className="px-4 py-3">{header}</th>)}</tr></thead>
-      <tbody>{loading ? <tr><td colSpan={headers.length} className="p-12 text-center text-gray-400">Loading records…</td></tr> : rows.length === 0 ? <tr><td colSpan={headers.length} className="p-12 text-center text-gray-400">No records found for this ashram.</td></tr> : rows.map((row, index) => <tr key={index} className="border-t border-gray-50 dark:border-slate-800">{row.map((cell, cellIndex) => <td key={cellIndex} className="px-4 py-3 text-gray-600 dark:text-gray-300 [&_b]:block [&_b]:text-[#0B192C] dark:[&_b]:text-white [&_small]:block [&_small]:text-[10px] [&_small]:text-gray-400">{cell}</td>)}</tr>)}</tbody>
+      <tbody>{loading ? <tr><td colSpan={headers.length} className="p-12 text-center text-gray-400">Loading records…</td></tr> : rows.length === 0 ? <tr><td colSpan={headers.length} className="p-12 text-center text-gray-400">No records found for this stay.</td></tr> : rows.map((row, index) => <tr key={index} className="border-t border-gray-50 dark:border-slate-800">{row.map((cell, cellIndex) => <td key={cellIndex} className="px-4 py-3 text-gray-600 dark:text-gray-300 [&_b]:block [&_b]:text-[#0B192C] dark:[&_b]:text-white [&_small]:block [&_small]:text-[10px] [&_small]:text-gray-400">{cell}</td>)}</tr>)}</tbody>
     </table>
   </div>
 );

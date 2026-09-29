@@ -449,7 +449,7 @@ export const RefundPoliciesPage: React.FC = () => {
                 <input
                   value={draft.name}
                   onChange={(e) => set({ name: e.target.value })}
-                  placeholder="Ashram standard cancellation"
+                  placeholder="Stay standard cancellation"
                   className={inputClass}
                 />
               </Field>

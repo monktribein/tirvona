@@ -179,7 +179,7 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
           Reviews (0)
         </h3>
         <p className="text-xs text-gray-400 italic">
-          No reviews posted yet for this ashram stay. Be the first to share your
+          No reviews posted yet for this stay. Be the first to share your
           spiritual experience!
         </p>
       </div>
@@ -207,7 +207,7 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
           </div>
           <p className="text-xs text-gray-400 font-semibold mt-0.5">
             Authentic experiences shared by devotees and pilgrims who stayed at{" "}
-            {ashramName || "this Ashram"}.
+            {ashramName || "this Stay"}.
           </p>
         </div>
 
@@ -393,7 +393,7 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
                 </h3>
                 <p className="text-xs text-gray-400 font-semibold mt-0.5">
                   Verified guest ratings and authentic feedback for{" "}
-                  {ashramName || "this Ashram"}.
+                  {ashramName || "this Stay"}.
                 </p>
               </div>
 

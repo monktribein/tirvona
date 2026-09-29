@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowRight, CalendarDays, Clock, MapPin } from "lucide-react";
 import api from "../lib/api";
-import { ashramService, marketplaceService, offerService } from "../services";
+import { ashramService, offerService } from "../services";
+import { storeApi, toStoreProduct } from "../services/marketplace.service";
 import { getFormattingLocale } from "../utils/format";
 
 const imagesOf = (value: any) => Array.from(new Set([
@@ -51,7 +52,7 @@ const BannerDetailPage: React.FC = () => {
       let offerRows: any[] = [];
       try {
         if (type === "ashram" && id) linked = (await ashramService.getById(id)).data?.data;
-        if (type === "marketplace" && slug) linked = (await marketplaceService.getBySlug(slug)).data?.data;
+        if (type === "marketplace" && slug) linked = toStoreProduct((await storeApi.product(slug)).data?.data);
         if (type === "offer" && id) linked = (await offerService.getById(id)).data?.data;
         if (type === "event" && slug) linked = (await api.get(`/services/events/${slug}`)).data?.data;
         if (type === "destination") linked = { name: record.linkedEntityName, city: record.linkedEntityName };
@@ -116,8 +117,8 @@ const BannerDetailPage: React.FC = () => {
           const city = linked?.address?.city || linked?.city || linked?.location || record.location;
           if (["event", "destination"].includes(type) && city) {
             relatedRows = (await ashramService.search({ city: String(city), limit: "8" })).data?.data || [];
-          } else if (type === "marketplace" && linked?.category) {
-            relatedRows = (await marketplaceService.getProducts({ category: linked.category, limit: 8 })).data?.data || [];
+          } else if (type === "marketplace" && linked?.categoryId) {
+            relatedRows = ((await storeApi.products({ categoryId: linked.categoryId, limit: 8 })).data?.data || []).map(toStoreProduct);
             relatedRows = relatedRows.filter((row: any) => row._id !== linked._id);
           } else if (type === "offer") {
             const ids = linked?.applicableAshrams || linked?.ashramIds || (linked?.ashramId ? [linked.ashramId] : []);
@@ -207,24 +208,24 @@ const BannerDetailPage: React.FC = () => {
 
     {related.length > 0 && <section className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-12">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-orange-100 pb-5 dark:border-slate-800">
-        <div><p className="text-xs font-black uppercase tracking-[.16em] text-[#E58C28]">Ashrams in the selected area</p><h2 className="mt-2 text-2xl font-black sm:text-3xl">Explore related Ashrams{areaLabel ? ` in ${areaLabel}` : ""}</h2></div>
+        <div><p className="text-xs font-black uppercase tracking-[.16em] text-[#E58C28]">Stays in the selected area</p><h2 className="mt-2 text-2xl font-black sm:text-3xl">Explore related Ashrams{areaLabel ? ` in ${areaLabel}` : ""}</h2></div>
         <span className="rounded-full bg-blue-50 px-4 py-2 text-xs font-black text-[#F28C28] dark:bg-slate-800">{related.length} Ashram{related.length === 1 ? "" : "s"}</span>
       </div>
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{related.slice(0, 12).map((item: any, index) => {
         const image = imagesOf(item)[0];
-        const name = item.name || item.title || `Ashram ${index + 1}`;
+        const name = item.name || item.title || `Stay ${index + 1}`;
         const path = `/ashram/${item._id}`;
         const itemArea = [item.address?.city || item.city, item.address?.state || item.state].filter(Boolean).join(", ");
         return <button key={item._id || index} onClick={() => navigate(path)} className="group flex min-h-full flex-col overflow-hidden rounded-[24px] border border-orange-200 bg-white text-left shadow-sm transition hover:-translate-y-1 hover:border-orange-300 hover:shadow-xl dark:border-slate-800 dark:bg-[#0B192C]">
           {image ? <img src={image} alt={name} className="h-48 w-full object-cover transition duration-500 group-hover:scale-105"/> : <div className="grid h-48 w-full place-items-center bg-gradient-to-br from-[#F28C28] to-[#0B192C] text-3xl font-black text-white">{name.slice(0, 1).toUpperCase()}</div>}
-          <div className="flex flex-1 flex-col p-5"><h3 className="text-base font-black text-[#0B192C] dark:text-white">{name}</h3>{itemArea && <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500"><MapPin size={13}/>{itemArea}</p>}<p className="mt-3 line-clamp-2 text-xs leading-5 text-gray-500">{item.description || item.about || "Explore rooms, facilities and booking availability."}</p><span className="mt-auto inline-flex items-center gap-1 pt-5 text-xs font-black text-[#F28C28]">View Ashram <ArrowRight size={13} className="transition group-hover:translate-x-1"/></span></div>
+          <div className="flex flex-1 flex-col p-5"><h3 className="text-base font-black text-[#0B192C] dark:text-white">{name}</h3>{itemArea && <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500"><MapPin size={13}/>{itemArea}</p>}<p className="mt-3 line-clamp-2 text-xs leading-5 text-gray-500">{item.description || item.about || "Explore rooms, facilities and booking availability."}</p><span className="mt-auto inline-flex items-center gap-1 pt-5 text-xs font-black text-[#F28C28]">View Stay <ArrowRight size={13} className="transition group-hover:translate-x-1"/></span></div>
         </button>;
       })}</div>
     </section>}
 
     {relatedOffers.length > 0 && <section className="mx-auto mt-12 max-w-7xl px-5 sm:px-8 lg:px-12">
       <div className="rounded-[30px] border border-orange-200 bg-white p-6 shadow-sm sm:p-8 dark:border-slate-800 dark:bg-[#0B192C]">
-        <div className="mb-6"><p className="text-xs font-black uppercase tracking-[.16em] text-[#E58C28]">Available for the selected Ashram and area</p><h2 className="mt-2 text-2xl font-black">Related offers</h2></div>
+        <div className="mb-6"><p className="text-xs font-black uppercase tracking-[.16em] text-[#E58C28]">Available for the selected Stay and area</p><h2 className="mt-2 text-2xl font-black">Related offers</h2></div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{relatedOffers.slice(0, 6).map((offer: any, index) => <button key={offer._id || index} onClick={() => navigate(`/offers/${offer._id}`)} className="group rounded-2xl border border-orange-100 bg-orange-50/40 p-5 text-left transition hover:border-orange-300 hover:bg-orange-50 dark:border-slate-700 dark:bg-slate-900/50">
           <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-wider text-[#E58C28]">Special offer</p><h3 className="mt-1 font-black text-[#0B192C] dark:text-white">{offer.title || offer.name || offer.promoCode || "Tirvona Offer"}</h3></div>{offer.promoCode && <span className="rounded-full bg-[#F28C28] px-3 py-1 text-[10px] font-black text-white">{offer.promoCode}</span>}</div>
           <p className="mt-3 line-clamp-2 text-xs leading-5 text-gray-500">{offer.description || offer.subtitle || "View offer eligibility and booking details."}</p><span className="mt-4 inline-flex items-center gap-1 text-xs font-black text-[#F28C28]">View Offer <ArrowRight size={13} className="transition group-hover:translate-x-1"/></span>

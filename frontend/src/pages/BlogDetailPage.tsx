@@ -77,7 +77,7 @@ export const BlogDetailPage: React.FC = () => {
                   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E",
                 verified: true,
                 designation: "Verified Stay Traveler",
-                bio: `Completed stay at ${va.ashramId?.name || "Ashram"}. Shared authentic pilgrim experience.`,
+                bio: `Completed stay at ${va.ashramId?.name || "Stay"}. Shared authentic pilgrim experience.`,
               },
             },
             comments: vRes.data.data.comments || [],
@@ -716,14 +716,14 @@ export const BlogDetailPage: React.FC = () => {
                 <Sparkles size={24} className="text-amber-400 mx-auto" />
                 <h5 className="font-black text-sm">Planning a Pilgrimage?</h5>
                 <p className="text-xs text-blue-100 font-medium">
-                  Book verified ashram stays, satvik rooms & temple darshan
+                  Book verified stays, satvik rooms & temple darshan
                   online.
                 </p>
                 <button
                   onClick={() => navigate("/search")}
                   className="w-full py-2.5 rounded-full bg-[#E58C28] hover:bg-amber-600 text-white font-black text-xs shadow-md transition-colors cursor-pointer"
                 >
-                  Explore Ashram Stays →
+                  Explore Stays →
                 </button>
               </div>
             </div>

@@ -104,7 +104,7 @@ const destinations: Destination[] = [
     state: "Uttar Pradesh",
     country: "India",
     description:
-      "The sacred land of Lord Krishna's childhood Leelas. Vrindavan is dotted with thousands of temples and ashrams, each resonating with devotion, kirtan, and the eternal love of Radha-Krishna.",
+      "The sacred land of Lord Krishna's childhood Leelas. Vrindavan is dotted with thousands of temples and stays, each resonating with devotion, kirtan, and the eternal love of Radha-Krishna.",
     heroImage:
       "https://images.unsplash.com/photo-1627894483216-2138af692e32?w=1400&q=80",
     coordinates: { lat: 27.5839, lng: 77.6979 },
@@ -133,7 +133,7 @@ const destinations: Destination[] = [
       {
         id: "iskcon-vrindavan",
         name: "ISKCON Vrindavan (Krishna Balaram Mandir)",
-        category: "Temple / Ashram",
+        category: "Temple / Stay",
         description:
           "The Sri Sri Krishna-Balaram Mandir, established by Srila Prabhupada. A world-renowned centre of Gaudiya Vaishnavism.",
         coordinates: { lat: 27.5693, lng: 77.6894 },
@@ -254,7 +254,7 @@ const destinations: Destination[] = [
         name: "Ram Jhula",
         category: "Landmark / Bridge",
         description:
-          "A sacred suspension bridge connecting Sivananda Ashram to Swargashram, offering stunning views of the Ganges.",
+          "A sacred suspension bridge connecting Sivananda Stay to Swargashram, offering stunning views of the Ganges.",
         coordinates: { lat: 30.1101, lng: 78.3095 },
         image: "/images/destinations/rishikesh/ram_jhula.jpg",
         availableOnTirvona: false,
@@ -262,9 +262,9 @@ const destinations: Destination[] = [
       {
         id: "parmarth-niketan",
         name: "Parmarth Niketan",
-        category: "Ashram",
+        category: "Stay",
         description:
-          "One of the largest ashrams in Rishikesh, famous for its evening Ganga Aarti and iconic meditative Shiva statue on the river.",
+          "One of the largest stays in Rishikesh, famous for its evening Ganga Aarti and iconic meditative Shiva statue on the river.",
         coordinates: { lat: 30.1195, lng: 78.3165 },
         image: "/images/destinations/rishikesh/parmarth_niketan.jpg",
         availableOnTirvona: false,
@@ -335,7 +335,7 @@ export const createDynamicDestination = (
   country: "India",
   description:
     description ||
-    `Explore sacred ashrams, stays, secure parking, authentic prasad, and holy temples across ${cityName}, ${stateName} on Tirvona.`,
+    `Explore sacred stays, stays, secure parking, authentic prasad, and holy temples across ${cityName}, ${stateName} on Tirvona.`,
   heroImage:
     heroImage ||
     "https://images.unsplash.com/photo-1728060428780-9f89ed391b71?w=1400&q=80&auto=format&fit=crop",

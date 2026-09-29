@@ -8,7 +8,7 @@ import {
 } from "../data/destinationData";
 import { ashramService } from "../services";
 import { parkingDiscoveryService } from "../modules/parking";
-import { marketplaceService } from "../services/marketplace.service";
+import { storeApi, toStoreProduct } from "../services/marketplace.service";
 import api from "../lib/api";
 import { extractCoordinates } from "../utils/geo";
 import { toTitleCase } from "../utils/textCase";
@@ -95,8 +95,9 @@ export function useDestinationData(slug: string): DestinationInventory {
           parkingDiscoveryService.search({ destination: initialCityName, limit: 20 }),
           api.get("/services/temples"),
           api.get("/services/directory", { params: { city: initialCityName } }),
-          marketplaceService.getProducts({ category: "prasad", limit: 50 }),
-          marketplaceService.getProducts({ search: initialCityName, limit: 50 }),
+          // Vendor marketplace only (approved products of active stores).
+          storeApi.products({ search: initialCityName, limit: 50 }),
+          storeApi.products({ limit: 50 }),
           ashramService.destinations(),
         ]);
 
@@ -381,7 +382,7 @@ export function useDestinationData(slug: string): DestinationInventory {
             const id = prod._id || prod.id;
             if (id && !seenPrasadIds.has(String(id))) {
               seenPrasadIds.add(String(id));
-              dynamicPrasad.push(prod);
+              dynamicPrasad.push(toStoreProduct(prod));
             }
           });
         };

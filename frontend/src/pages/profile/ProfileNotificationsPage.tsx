@@ -6,7 +6,7 @@ export const ProfileNotificationsPage: React.FC = () => {
   const notificationsList = [
     {
       title: "Booking Confirmed!",
-      desc: "Swarg Ashram Divine Residency booking TVN-BK-88219 confirmed for Aug 10.",
+      desc: "Swarg Stay Divine Residency booking TVN-BK-88219 confirmed for Aug 10.",
       time: "2 hours ago",
       icon: <Calendar className="text-blue-500" size={16} />,
     },

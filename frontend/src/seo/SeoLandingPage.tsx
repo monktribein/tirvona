@@ -690,7 +690,7 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
           {[
             { id: "all", label: "All Stays" },
             { id: "hotel", label: "Hotels" },
-            { id: "dharamshala", label: "Dharamshalas & Ashrams" },
+            { id: "dharamshala", label: "Dharamshalas & Stays" },
             { id: "homestay", label: "Guest Houses" },
             { id: "parking", label: "With Parking" },
           ].map((tab) => (
