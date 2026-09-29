@@ -1,11 +1,9 @@
 import {
   ConflictException,
-  GoneException,
   Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { Types } from "mongoose";
 import { escapeRegex } from "../../../common/utils/escape-regex";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import {
@@ -13,11 +11,8 @@ import {
   type CommerceRepository,
 } from "../domain/commerce.repository";
 import type {
-  MarketplaceOrderDto,
-  ProductDto,
   ServiceBookingDto,
   ServiceProviderDto,
-  UpdateProductDto,
   UpdateServiceProviderDto,
   WaitlistDto,
 } from "../presentation/dtos/commerce.dto";
@@ -28,133 +23,6 @@ export class CommerceService {
     @Inject(COMMERCE_REPOSITORY)
     private readonly repository: CommerceRepository,
   ) {}
-  async categories(): Promise<any> {
-    const data = await this.repository.list(
-      "categories",
-      { status: "active" },
-      { displayOrder: 1 },
-      0,
-      500,
-    );
-    return { success: true, count: data.length, data };
-  }
-  async category(slug: string): Promise<any> {
-    const clauses: Record<string, unknown>[] = [{ slug }];
-    if (Types.ObjectId.isValid(slug)) clauses.push({ _id: slug });
-
-    const category = await this.repository.one("categories", {
-      $or: clauses,
-      status: "active",
-    });
-    if (!category)
-      throw new NotFoundException("Marketplace category not found.");
-
-    const categoryValues = [category._id, category.slug, category.name].filter(
-      Boolean,
-    );
-    const [products, relatedCategories] = await Promise.all([
-      this.repository.list(
-        "products",
-        {
-          status: "active",
-          $or: [
-            { category: { $in: categoryValues } },
-            { categoryId: category._id },
-            { categorySlug: category.slug },
-          ],
-        },
-        { isFeatured: -1, updatedAt: -1 },
-        0,
-        100,
-      ),
-      this.repository.list(
-        "categories",
-        { status: "active", _id: { $ne: category._id } },
-        { displayOrder: 1 },
-        0,
-        4,
-      ),
-    ]);
-
-    return {
-      success: true,
-      data: {
-        category,
-        products,
-        trustedSellers: category.trustedSellers ?? [],
-        reviews: category.reviews ?? [],
-        faqs: category.faqs ?? [],
-        relatedCategories,
-      },
-    };
-  }
-  async products(query: Record<string, string>): Promise<any> {
-    const filter = this.filter(query, [
-      "name",
-      "description",
-      "templeSource",
-      "category",
-    ]);
-    if (!query.status) filter.status = { $ne: "suspended" };
-    if (query.status === "all") delete filter.status;
-    if (query.templeSource)
-      filter.templeSource = {
-        $regex: escapeRegex(query.templeSource),
-        $options: "i",
-      };
-    if (query.featured === "true") filter.isFeatured = true;
-    const { page, limit, skip } = this.pagination(query);
-    const sort: Record<string, 1 | -1> =
-      query.sortBy === "price_low"
-        ? { price: 1 as const }
-        : query.sortBy === "price_high"
-          ? { price: -1 as const }
-          : { isFeatured: -1 as const, updatedAt: -1 as const };
-    const [data, total] = await Promise.all([
-      this.repository.list("products", filter, sort, skip, limit),
-      this.repository.count("products", filter),
-    ]);
-    return { success: true, page, count: data.length, total, data };
-  }
-  async product(idOrSlug: string): Promise<any> {
-    const clauses: Record<string, unknown>[] = [{ slug: idOrSlug }];
-    if (Types.ObjectId.isValid(idOrSlug)) clauses.push({ _id: idOrSlug });
-    const data = await this.repository.one("products", { $or: clauses });
-    if (!data) throw new NotFoundException("Spiritual product not found.");
-    return { success: true, data };
-  }
-  /**
-   * Retired. This wrote the caller's own `items` and `totalAmount` straight
-   * into an order marked `processing`, trusting a client-supplied price. No
-   * frontend calls it; checkout goes through `POST /marketplace/orders`, where
-   * `MarketplaceOrderService` prices the cart from the product records.
-   */
-  async order(_user: AuthenticatedUser, _dto: MarketplaceOrderDto): Promise<never> {
-    throw new GoneException(
-      "This checkout endpoint has been retired. Use POST /marketplace/orders.",
-    );
-  }
-  async createProduct(dto: ProductDto): Promise<any> {
-    const data = await this.repository.create("products", {
-      ...dto,
-      slug: dto.slug || this.slug(dto.name),
-      status: dto.status ?? "active",
-    });
-    return { success: true, data };
-  }
-  async updateProduct(id: string, dto: UpdateProductDto): Promise<any> {
-    const data = await this.repository.update("products", id, {
-      ...dto,
-      ...(dto.name && !dto.slug ? { slug: this.slug(dto.name) } : {}),
-    });
-    if (!data) throw new NotFoundException("Product not found");
-    return { success: true, data };
-  }
-  async deleteProduct(id: string): Promise<any> {
-    if (!(await this.repository.remove("products", id)))
-      throw new NotFoundException("Product not found");
-    return { success: true, message: "Product deleted." };
-  }
   async waitlist(dto: WaitlistDto): Promise<any> {
     const email = dto.email.toLowerCase();
     const existing = await this.repository.one("waitlist", { email });

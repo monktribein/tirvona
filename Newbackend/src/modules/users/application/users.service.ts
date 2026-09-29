@@ -563,6 +563,10 @@ export class UsersService {
       throw new BadRequestException(
         "Only soft-deleted accounts can be permanently deleted",
       );
+    if (row.role === "super_admin")
+      throw new BadRequestException(
+        "A Super Admin account cannot be permanently deleted",
+      );
     await this.users.deleteOne({ _id: id, isDeleted: true });
     await this.audit(actor, "USER_PERMANENTLY_DELETED", {
       targetUserId: id,

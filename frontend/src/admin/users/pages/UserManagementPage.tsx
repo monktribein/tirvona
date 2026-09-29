@@ -587,7 +587,7 @@ export const UserManagementPage: React.FC = () => {
       } else {
         const res = await userService.permanentDelete(deleteTarget._id, {
           adminPassword,
-          confirmText: confirmDeleteText,
+          confirmText: confirmDeleteText.trim().toUpperCase(),
         });
         if (res.data?.success) {
           addNotification(
@@ -1861,6 +1861,7 @@ export const UserManagementPage: React.FC = () => {
               </div>
 
               <div className="flex gap-3">
+                {!deleteTarget.isDeleted && (
                 <button
                   type="button"
                   onClick={() => setDeleteType("soft")}
@@ -1868,6 +1869,7 @@ export const UserManagementPage: React.FC = () => {
                 >
                   Soft Delete
                 </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setDeleteType("permanent")}
@@ -1900,6 +1902,8 @@ export const UserManagementPage: React.FC = () => {
                       type="text"
                       required
                       placeholder="DELETE"
+                      data-text-case="none"
+                      autoCapitalize="characters"
                       value={confirmDeleteText}
                       onChange={(e) => setConfirmDeleteText(e.target.value)}
                       className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 rounded-xl font-bold text-rose-600 focus:outline-none"
@@ -2249,6 +2253,20 @@ export const UserManagementPage: React.FC = () => {
                   className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 px-3.5 py-2 text-[10px] font-extrabold text-emerald-700 hover:bg-emerald-50"
                 >
                   <RotateCcw size={13} /> Restore Account
+                </button>
+              )}
+              {canModerate && viewingUser.isDeleted && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Already soft deleted: the only remaining step is the permanent purge.
+                    setDeleteTarget(viewingUser);
+                    setDeleteType("permanent");
+                    setViewingUser(null);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 px-3.5 py-2 text-[10px] font-extrabold text-rose-700 hover:bg-rose-50"
+                >
+                  <Trash2 size={13} /> Delete Permanently
                 </button>
               )}
               <button

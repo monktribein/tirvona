@@ -1,6 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { marketplaceService } from "../services/marketplace.service";
+import {
+  flattenCategories,
+  storeApi,
+  toStoreProduct,
+} from "../services/marketplace.service";
 import api from "../lib/api";
 import { formatCurrency } from "../utils/format";
 import { humanizeLabel } from "../utils/labels";
@@ -13,11 +17,9 @@ import {
   PackageSearch,
   RefreshCw,
   Search,
-  ShoppingBag,
   Sparkles,
   Star,
   X,
-  Zap,
 } from "lucide-react";
 
 interface Product {
@@ -29,11 +31,18 @@ interface Product {
   price?: number;
   salePrice?: number;
   stock?: number;
+  inStock?: boolean;
   status?: string;
   templeSource?: string;
   weight?: string;
   images?: string[];
-  vendor?: { name?: string; location?: string; isVerified?: boolean };
+  vendor?: {
+    id?: string;
+    name?: string;
+    slug?: string;
+    location?: string;
+    isVerified?: boolean;
+  };
   rating?: number;
   reviewCount?: number;
   specifications?: Array<{ key: string; value: string }>;
@@ -44,6 +53,7 @@ interface Category {
   _id: string;
   name: string;
   slug?: string;
+  depth: number;
 }
 
 const PAGE_SIZE = 24;
@@ -74,9 +84,8 @@ const ProductCard: React.FC<{
 }> = ({ product, onOpen, onAdd, onBuyNow }) => {
   const discount = discountOf(product);
   const outOfStock =
-    product.status === "out_of_stock" &&
-    product.stock !== undefined &&
-    Number(product.stock) <= 0;
+    product.inStock === false ||
+    (product.stock !== undefined && Number(product.stock) <= 0);
   return (
     <button
       type="button"
@@ -136,7 +145,7 @@ const ProductCard: React.FC<{
         </div>
         {product.vendor?.isVerified && (
           <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600">
-            <BadgeCheck size={11} /> Verified vendor
+            <BadgeCheck size={11} /> {product.vendor.name || "Verified vendor"}
           </span>
         )}
 
@@ -204,10 +213,10 @@ const ProductModal: React.FC<{
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    marketplaceService
-      .getBySlug(product.slug || product._id)
+    storeApi
+      .product(product.slug || product._id)
       .then((res) => {
-        if (!cancelled && res.data?.data) setDetail(res.data.data);
+        if (!cancelled && res.data?.data) setDetail(toStoreProduct(res.data.data));
       })
       .catch(() => undefined)
       .finally(() => {
@@ -431,6 +440,9 @@ export const MarketplaceHubPage: React.FC = () => {
         image: product.images?.[0],
         displayPrice: priceOf(product),
         maxQuantity: product.stock,
+        vendorId: product.vendor?.id,
+        vendorName: product.vendor?.name,
+        vendorSlug: product.vendor?.slug,
       });
     },
     [addLineToCart],
@@ -446,6 +458,9 @@ export const MarketplaceHubPage: React.FC = () => {
           image: product.images?.[0],
           displayPrice: priceOf(product),
           maxQuantity: product.stock,
+          vendorId: product.vendor?.id,
+          vendorName: product.vendor?.name,
+          vendorSlug: product.vendor?.slug,
         },
         1,
         false,
@@ -469,9 +484,9 @@ export const MarketplaceHubPage: React.FC = () => {
   }, [term]);
 
   useEffect(() => {
-    api
-      .get("/marketplace/categories")
-      .then((res) => setCategories(res.data?.data ?? []))
+    storeApi
+      .categories()
+      .then((res) => setCategories(flattenCategories(res.data?.data ?? [])))
       .catch(() => setCategories([]));
   }, []);
 
@@ -481,15 +496,15 @@ export const MarketplaceHubPage: React.FC = () => {
       if (append) setLoadingMore(true);
       else setLoading(true);
       try {
-        const res = await marketplaceService.getProducts({
+        const res = await storeApi.products({
           page: nextPage,
           limit: PAGE_SIZE,
-          ...(search ? { search } : {}),
-          ...(category ? { category } : {}),
+          search,
+          categoryId: category,
           ...(sortBy !== "featured" ? { sortBy } : {}),
         });
         if (ticket !== requestId.current) return;
-        const rows: Product[] = res.data?.data ?? [];
+        const rows: Product[] = (res.data?.data ?? []).map(toStoreProduct);
         setProducts((prev) => (append ? [...prev, ...rows] : rows));
         setTotal(Number(res.data?.total ?? rows.length));
         setPage(nextPage);
@@ -515,24 +530,14 @@ export const MarketplaceHubPage: React.FC = () => {
   const hasMore = products.length < total;
   const activeFilters = Boolean(search || category);
 
-  const categoryOptions = useMemo(() => {
-    const seen = new Map<string, string>();
-    for (const value of [
-      ...categories.map((c) => c.name),
-      ...products.map((p) => p.category),
-    ]) {
-      const raw = (value ?? "").trim();
-      if (raw && !seen.has(raw.toLowerCase())) seen.set(raw.toLowerCase(), raw);
-    }
-    return [...seen.values()].sort((a, b) => a.localeCompare(b));
-  }, [categories, products]);
+  const categoryOptions = categories;
 
   return (
     <div className="min-h-screen pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
         <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
           <p className="font-['Kalam'] text-3xl sm:text-5xl font-bold text-[#E58C28]">
-            Explore Sacred Prasad
+            Tirvona Marketplace
           </p>
           <div className="flex items-center justify-center gap-2.5 my-1.5">
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
@@ -543,8 +548,14 @@ export const MarketplaceHubPage: React.FC = () => {
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
           </div>
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            Authentic temple prasad, from verified sacred vendors.
+            Puja essentials and sacred goods from verified Tirvona sellers.
           </p>
+          <button
+            onClick={() => navigate("/vendor/dashboard")}
+            className="mt-2 text-xs font-extrabold text-[#F28C28] hover:underline cursor-pointer"
+          >
+            Sell on Tirvona →
+          </button>
         </div>
       </div>
 
@@ -559,7 +570,7 @@ export const MarketplaceHubPage: React.FC = () => {
               type="text"
               value={term}
               onChange={(e) => setTerm(e.target.value)}
-              placeholder="Search sacred prasad..."
+              placeholder="Search the marketplace..."
               aria-label="Search marketplace"
               className="w-full pl-10 pr-9 py-2.5 rounded-full border border-gray-200 dark:border-slate-800 bg-white dark:bg-[#0B192C] text-xs font-medium text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-[#F28C28] focus:ring-2 focus:ring-[#F28C28]/15"
             />
@@ -582,9 +593,10 @@ export const MarketplaceHubPage: React.FC = () => {
               className="px-4 py-2.5 rounded-full border border-gray-200 dark:border-slate-800 bg-white dark:bg-[#0B192C] text-xs font-bold text-[#0B192C] dark:text-white cursor-pointer focus:outline-none focus:border-[#F28C28]"
             >
               <option value="">All categories</option>
-              {categoryOptions.map((name) => (
-                <option key={name} value={name}>
-                  {humanizeLabel(name)}
+              {categoryOptions.map((c) => (
+                <option key={c._id} value={c._id}>
+                  {"  ".repeat(c.depth)}
+                  {humanizeLabel(c.name)}
                 </option>
               ))}
             </select>
@@ -634,7 +646,7 @@ export const MarketplaceHubPage: React.FC = () => {
           <div className="text-center py-16 space-y-3">
             <PackageSearch size={34} className="mx-auto text-gray-300" />
             <p className="text-sm font-bold text-[#0B192C] dark:text-white">
-              The Sacred Prasad could not be loaded
+              The marketplace could not be loaded
             </p>
             <button
               onClick={() => load(1, false)}
@@ -649,7 +661,7 @@ export const MarketplaceHubPage: React.FC = () => {
               <>
                 <PackageSearch size={34} className="mx-auto text-gray-300" />
                 <p className="text-sm font-bold text-[#0B192C] dark:text-white">
-                  Nothing matched your Sacred Prasad
+                  Nothing matched your search
                 </p>
                 <button
                   onClick={() => {
@@ -681,7 +693,7 @@ export const MarketplaceHubPage: React.FC = () => {
                     onClick={() => navigate("/search")}
                     className="px-6 py-3 rounded-full bg-[#E58C28] hover:bg-amber-600 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 shadow-lg cursor-pointer"
                   >
-                    Explore verified ashrams <ArrowRight size={16} />
+                    Explore verified stays <ArrowRight size={16} />
                   </button>
                 </div>
               </>

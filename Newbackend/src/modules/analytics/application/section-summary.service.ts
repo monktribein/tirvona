@@ -303,11 +303,12 @@ const SECTIONS: SectionSpec[] = [
   {
     key: "marketplace",
     label: "Marketplace Management",
-    collection: "marketplace_orders",
+    // Vendor marketplace checkouts (one master order per payment).
+    collection: "marketplace_master_orders",
     platformOnly: true,
     tiles: [
-      { label: "Orders" },
-      { label: "Delivered", where: { status: "delivered" } },
+      { label: "Paid orders", where: { paymentStatus: { $nin: ["pending", "failed"] } } },
+      { label: "Completed", where: { status: "completed" } },
       { label: "Collected", sum: "pricing.amountPaid", format: "currency" },
     ],
   },
@@ -402,10 +403,12 @@ const SECTIONS: SectionSpec[] = [
     label: "Marketplace Products",
     collection: "marketplaceproducts",
     platformOnly: true,
+    // Vendor products only; the retired Prasad catalog (no vendorId) is not counted.
     tiles: [
-      { label: "Products" },
-      { label: "Published", where: { status: "active" } },
-      { label: "Out of stock", where: { stockCount: { $lte: 0 } } },
+      { label: "Products", where: { vendorId: { $ne: null }, deletedAt: null } },
+      { label: "Live", where: { vendorId: { $ne: null }, deletedAt: null, status: "active", approvalStatus: "approved" } },
+      { label: "Awaiting approval", where: { vendorId: { $ne: null }, deletedAt: null, approvalStatus: "pending" } },
+      { label: "Out of stock", where: { vendorId: { $ne: null }, deletedAt: null, "inventory.trackInventory": { $ne: false }, stock: { $lte: 0 } } },
     ],
   },
   {
@@ -413,7 +416,10 @@ const SECTIONS: SectionSpec[] = [
     label: "Marketplace Categories",
     collection: "marketplacecategories",
     platformOnly: true,
-    tiles: [{ label: "Categories" }, { label: "Active", where: { status: "active" } }],
+    tiles: [
+      { label: "Categories", where: { scope: "vendor_marketplace" } },
+      { label: "Active", where: { scope: "vendor_marketplace", status: "active" } },
+    ],
   },
   {
     key: "marketplaceWaitlist",

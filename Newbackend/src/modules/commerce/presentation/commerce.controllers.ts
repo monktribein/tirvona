@@ -16,52 +16,11 @@ import { Public } from "../../../common/decorators/public.decorator";
 import { Roles } from "../../../common/decorators/roles.decorator";
 import { CommerceService } from "../application/commerce.service";
 import {
-  MarketplaceOrderDto,
-  ProductDto,
   ServiceBookingDto,
   ServiceProviderDto,
-  UpdateProductDto,
   UpdateServiceProviderDto,
   WaitlistDto,
 } from "./dtos/commerce.dto";
-
-@Controller("marketplace")
-export class MarketplaceController {
-  constructor(private readonly commerce: CommerceService) {}
-  @Public() @Get("categories") categories() {
-    return this.commerce.categories();
-  }
-  @Public() @Get("category/:slug") category(@Param("slug") slug: string) {
-    return this.commerce.category(slug);
-  }
-  @Public() @Get("products") products(@Query() query: Record<string, string>) {
-    return this.commerce.products(query);
-  }
-  @Public() @Get("products/:idOrSlug") product(@Param("idOrSlug") id: string) {
-    return this.commerce.product(id);
-  }
-  @Post("order") @Roles("customer", "owner", "manager", "super_admin") order(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: MarketplaceOrderDto,
-  ) {
-    return this.commerce.order(user, dto);
-  }
-  @Post("products")
-  @Roles("super_admin", "owner", "manager", "marketplace_manager")
-  create(@Body() dto: ProductDto) {
-    return this.commerce.createProduct(dto);
-  }
-  @Put("products/:id")
-  @Roles("super_admin", "owner", "manager", "marketplace_manager")
-  update(@Param("id") id: string, @Body() dto: UpdateProductDto) {
-    return this.commerce.updateProduct(id, dto);
-  }
-  @Delete("products/:id")
-  @Roles("super_admin", "owner", "manager", "marketplace_manager")
-  remove(@Param("id") id: string) {
-    return this.commerce.deleteProduct(id);
-  }
-}
 
 @Controller("marketplace/hub")
 export class MarketplaceHubController {

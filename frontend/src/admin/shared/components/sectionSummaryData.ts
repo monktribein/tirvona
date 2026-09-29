@@ -153,7 +153,6 @@ const PATH_SECTIONS: Record<string, string[]> = {
   "/admin/manage/featured_banner": ["banners"],
   "/admin/manage/local": ["localServices", "serviceProviders"],
   "/admin/manage/marketplace/orders": ["marketplace"],
-  "/admin/manage/marketplace/products": ["marketplaceProducts"],
   "/admin/manage/marketplace/categories": ["marketplaceCategories"],
   "/admin/manage/marketplace/waitlist": ["marketplaceWaitlist"],
 

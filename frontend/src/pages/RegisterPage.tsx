@@ -5,6 +5,7 @@ import OtpChallengeForm from "../components/OtpChallengeForm";
 import CompleteProfileModal from "../components/CompleteProfileModal";
 import useGoogleAuth from "../hooks/useGoogleAuth";
 import { isGoogleConfigured } from "../lib/googleAuth";
+import { vendorApi } from "../services/marketplace.service";
 
 const GoogleIcon: React.FC = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
@@ -38,6 +39,8 @@ import {
   ArrowRight,
   Landmark,
   Zap,
+  Store,
+  Car,
 } from "lucide-react";
 
 import { getPostLoginRedirect } from "../utils/roleRedirect";
@@ -48,7 +51,13 @@ export const RegisterPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const redirect = searchParams.get("redirect");
 
-  const [role, setRole] = useState<"customer" | "owner">("customer");
+  // "seller" is a normal Tirvona account plus a marketplace store: it signs up
+  // as a customer (never a stay owner) and its store is then approved by the
+  // Super Admin in Admin > Marketplace > Pending Sellers.
+  const [accountType, setAccountType] = useState<"customer" | "owner" | "seller">("customer");
+  const role: "customer" | "owner" = accountType === "owner" ? "owner" : "customer";
+  const setRole = (next: "customer" | "owner") => setAccountType(next);
+  const [storeName, setStoreName] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -68,7 +77,21 @@ export const RegisterPage: React.FC = () => {
     if (message) setError(message);
   };
 
-  const goAfterSignup = (userRole?: string) => {
+  const goAfterSignup = async (userRole?: string) => {
+    if (accountType === "seller") {
+      // Opens the store as a draft application; the seller then adds documents
+      // and submits it for Super Admin approval from the onboarding page.
+      try {
+        await vendorApi.createProfile({
+          storeName: storeName.trim(),
+          contactPhone: phone.replace(/[\s-]/g, "") || undefined,
+        });
+      } catch {
+        // Already has a store, or the name needs fixing: onboarding shows it.
+      }
+      navigate("/vendor/onboarding", { replace: true });
+      return;
+    }
     const target = getPostLoginRedirect(userRole || role, redirect);
     navigate(target.url, { replace: true });
   };
@@ -241,7 +264,7 @@ export const RegisterPage: React.FC = () => {
                     type="button"
                     onClick={() => setRole("customer")}
                     className={`py-2 px-3 rounded-[14px] border flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
-                      role === "customer"
+                      accountType === "customer"
                         ? "border-[#F28C28] bg-[#F28C28]/5 text-[#F28C28] shadow-sm"
                         : "border-gray-200 dark:border-slate-800 text-gray-400 hover:border-gray-300"
                     }`}
@@ -261,6 +284,27 @@ export const RegisterPage: React.FC = () => {
                     <Building2 size={16} />
                     <span className="text-[11px] font-bold">Individual Stay Owner</span>
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setAccountType("seller")}
+                    className={`py-2 px-3 rounded-[14px] border flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
+                      accountType === "seller"
+                        ? "border-[#F28C28] bg-[#F28C28]/5 text-[#F28C28] shadow-sm"
+                        : "border-gray-200 dark:border-slate-800 text-gray-400 hover:border-gray-300"
+                    }`}
+                  >
+                    <Store size={16} />
+                    <span className="text-[11px] font-bold">Marketplace Seller</span>
+                  </button>
+                  <div
+                    aria-disabled="true"
+                    title="Tirvona Ride is coming soon"
+                    className="py-2 px-3 rounded-[14px] border border-dashed border-gray-200 dark:border-slate-800 text-gray-300 dark:text-slate-600 flex flex-col items-center justify-center gap-1 cursor-not-allowed select-none"
+                  >
+                    <Car size={16} />
+                    <span className="text-[11px] font-bold">Tirvona Ride</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wider">Coming soon</span>
+                  </div>
                 </div>
 
                 {error && (
@@ -269,7 +313,7 @@ export const RegisterPage: React.FC = () => {
                   </div>
                 )}
 
-                {role === "customer" && (
+                {accountType === "customer" && (
                   <>
                     <button
                       type="button"
@@ -299,6 +343,32 @@ export const RegisterPage: React.FC = () => {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-2.5">
+                  {accountType === "seller" && (
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-extrabold text-[#0B192C] dark:text-gray-200">
+                        Store Name
+                      </label>
+                      <div className="relative">
+                        <Store
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                          size={15}
+                        />
+                        <input
+                          type="text"
+                          required
+                          minLength={3}
+                          maxLength={80}
+                          placeholder="e.g. Haridwar Sacred Store"
+                          value={storeName}
+                          onChange={(e) => setStoreName(e.target.value)}
+                          className="w-full pl-9 pr-3.5 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
+                        />
+                      </div>
+                      <p className="text-[9px] text-gray-400 leading-normal">
+                        Your shop is reviewed and approved by Tirvona before it can sell.
+                      </p>
+                    </div>
+                  )}
                   <div className="space-y-1">
                     <label className="text-[11px] font-extrabold text-[#0B192C] dark:text-gray-200">
                       Full Name

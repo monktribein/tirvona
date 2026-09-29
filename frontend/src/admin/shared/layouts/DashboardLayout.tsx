@@ -199,6 +199,62 @@ const getFormattedRole = (role?: string): string => {
   }
 };
 
+const MARKETPLACE_ADMIN_LINKS = [
+  { label: "Marketplace Overview", path: "/admin/manage/marketplace" },
+  { label: "Pending Sellers", path: "/admin/manage/marketplace/vendors?status=awaiting" },
+  { label: "Vendors", path: "/admin/manage/marketplace/vendors" },
+  { label: "Product Approvals", path: "/admin/manage/marketplace/approvals" },
+  { label: "Categories", path: "/admin/manage/marketplace/categories" },
+  { label: "Orders", path: "/admin/manage/marketplace/orders" },
+  { label: "Payouts & Commission", path: "/admin/manage/marketplace/payouts" },
+  { label: "Reviews", path: "/admin/manage/marketplace/reviews" },
+  { label: "Marketplace Settings", path: "/admin/manage/marketplace/settings" },
+];
+
+/** Seller console; shown on every /vendor page (the store belongs to the user, not to a role). */
+const VENDOR_GROUPS: NavGroup[] = [
+  {
+    groupName: "My Shop",
+    icon: <ShoppingBag size={15} />,
+    links: [
+      { label: "Shop Profile & Settings", path: "/vendor/store" },
+      { label: "Verification & Documents", path: "/vendor/onboarding" },
+    ],
+  },
+  {
+    groupName: "Products",
+    icon: <Tag size={15} />,
+    links: [
+      { label: "All Products", path: "/vendor/products" },
+      { label: "Add Product", path: "/vendor/products/new" },
+      { label: "Inventory", path: "/vendor/inventory" },
+    ],
+  },
+  {
+    groupName: "Orders",
+    icon: <ClipboardList size={15} />,
+    links: [
+      { label: "All Orders", path: "/vendor/orders" },
+      { label: "Pending", path: "/vendor/orders?status=confirmed" },
+      { label: "Processing", path: "/vendor/orders?status=processing" },
+      { label: "Shipped", path: "/vendor/orders?status=shipped" },
+    ],
+  },
+  {
+    groupName: "Earnings & Payouts",
+    icon: <DollarSign size={15} />,
+    links: [
+      { label: "Earnings", path: "/vendor/earnings" },
+      { label: "Payouts", path: "/vendor/payouts" },
+    ],
+  },
+  {
+    groupName: "Reviews",
+    icon: <Heart size={15} />,
+    links: [{ label: "Customer Reviews", path: "/vendor/reviews" }],
+  },
+];
+
 export const DashboardLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -224,6 +280,12 @@ export const DashboardLayout: React.FC = () => {
     "reception",
   ].includes(String(user?.role || ""));
   const isSuperAdmin = user?.role === "super_admin";
+  // In the seller console a normal account acts as a marketplace seller;
+  // its stored role stays "customer" so it can still shop and book.
+  const roleLabel =
+    location.pathname.startsWith("/vendor") && ["customer", "pilgrim"].includes(String(user?.role))
+      ? "Seller"
+      : getFormattedRole(user?.role);
 
   const refreshOwnerStays = React.useCallback(async () => {
     if (!isStayOwnerOrAdmin) return;
@@ -602,10 +664,7 @@ export const DashboardLayout: React.FC = () => {
       groupName: "Marketplace Management",
       icon: <ShoppingBag size={15} />,
       links: [
-        { label: "Marketplace Products", path: "/admin/manage/marketplace/products" },
-        { label: "Marketplace Categories", path: "/admin/manage/marketplace/categories" },
-        { label: "Marketplace Vendors", path: "/admin/manage/marketplace/vendors" },
-        { label: "Marketplace Orders", path: "/admin/manage/marketplace/orders" },
+        ...MARKETPLACE_ADMIN_LINKS,
         { label: "Marketplace Waitlist", path: "/admin/manage/marketplace/waitlist" },
         { label: "Marketplace Newsletter", path: "/admin/manage/marketplace/newsletter" },
       ],
@@ -879,6 +938,16 @@ export const DashboardLayout: React.FC = () => {
   ];
 
   const getRoleNavData = () => {
+    if (location.pathname.startsWith("/vendor")) {
+      return {
+        topLink: {
+          label: "Shop Dashboard",
+          path: "/vendor/dashboard",
+          icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
+        },
+        groups: VENDOR_GROUPS,
+      };
+    }
     if (user?.role === "super_admin") {
       return {
         topLink: {
@@ -1044,11 +1113,33 @@ export const DashboardLayout: React.FC = () => {
     if (user?.role === "marketplace_manager") {
       return {
         topLink: {
-          label: "Marketplace Products",
-          path: "/admin/manage/marketplace/products",
+          label: "Marketplace Overview",
+          path: "/admin/manage/marketplace",
           icon: <ShoppingBag size={16} className="text-[#E58C28]" />,
         },
-        groups: [],
+        groups: [
+          {
+            groupName: "Marketplace Management",
+            icon: <ShoppingBag size={15} />,
+            links: MARKETPLACE_ADMIN_LINKS.filter((l) => l.path !== "/admin/manage/marketplace"),
+          },
+        ],
+      };
+    }
+    if (user?.role === "finance_manager") {
+      return {
+        topLink: {
+          label: "Finance & Refunds",
+          path: "/admin/manage/bookings/refunds",
+          icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
+        },
+        groups: [
+          {
+            groupName: "Marketplace Finance",
+            icon: <DollarSign size={15} />,
+            links: [{ label: "Marketplace Payouts & Commission", path: "/admin/manage/marketplace/payouts" }],
+          },
+        ],
       };
     }
     if (
@@ -1201,7 +1292,7 @@ export const DashboardLayout: React.FC = () => {
               Tirvona
             </span>
             <span className="text-[10px] font-extrabold text-[#F28C28]">
-              {t(getFormattedRole(user?.role))}
+              {t(roleLabel)}
             </span>
           </div>
         </div>
@@ -1447,7 +1538,7 @@ export const DashboardLayout: React.FC = () => {
                 Tirvona
               </span>
               <span className="text-[10px] font-semibold leading-none text-[#F28C28]">
-                {t(getFormattedRole(user?.role))}
+                {t(roleLabel)}
               </span>
             </div>
           </Link>
@@ -1513,7 +1604,7 @@ export const DashboardLayout: React.FC = () => {
                 {user.name || user.email || t("User")}
               </span>
               <span className="text-[10px] font-medium text-[#F28C28]">
-                {t(getFormattedRole(user.role))}
+                {t(roleLabel)}
               </span>
             </div>
             <span className="hidden h-6 w-px bg-blue-100 xl:block dark:bg-slate-700" />

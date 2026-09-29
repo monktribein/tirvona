@@ -1,1 +1,1 @@
-export { AdminMarketplaceProductsPage } from "./pages/AdminMarketplaceProductsPage";
+export { MarketplaceOverviewPage } from "./pages/MarketplaceOverviewPage";

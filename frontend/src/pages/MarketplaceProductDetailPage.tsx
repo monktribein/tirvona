@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { marketplaceService } from "../services/marketplace.service";
+import { storeApi, toStoreProduct } from "../services/marketplace.service";
 import { useCart } from "../contexts/CartContext";
 import { formatCurrency } from "../utils/format";
 import { humanizeLabel } from "../utils/labels";
@@ -10,10 +10,9 @@ import {
   PackageSearch,
   Plus,
   ShieldCheck,
-  ShoppingBag,
   Star,
+  Store,
   Truck,
-  Zap,
 } from "lucide-react";
 
 interface Product {
@@ -29,7 +28,16 @@ interface Product {
   weight?: string;
   authenticityCertificate?: string;
   images?: string[];
-  vendor?: { name?: string; type?: string; location?: string; isVerified?: boolean };
+  categoryId?: string;
+  categoryName?: string;
+  inStock?: boolean;
+  vendor?: {
+    id?: string;
+    name?: string;
+    slug?: string;
+    location?: string;
+    isVerified?: boolean;
+  };
   rating?: number;
   reviewCount?: number;
   specifications?: Array<{ key: string; value: string }>;
@@ -46,94 +54,14 @@ const discountOf = (p: Product) => {
   return Math.round(((list - sale) / list) * 100);
 };
 
-const DEFAULT_PRODUCTS: Record<string, Product> = {
-  "prasad-1": {
-    _id: "prasad-1",
-    name: "neelkanth mahadev prasad",
-    slug: "prasad-1",
-    description:
-      "Authentic Mahaprasad from Neelkanth Mahadev temple, prepared with pure ingredients and blessed under traditional Vedic rituals.",
-    category: "Prasad & Puja Essentials",
-    price: 999,
-    salePrice: 799,
-    stock: 50,
-    templeSource: "Heritage Brass Guild",
-    weight: "500g",
-    rating: 4.8,
-    reviewCount: 128,
-    images: [FALLBACK_IMAGE],
-  },
-  "prasad-2": {
-    _id: "prasad-2",
-    name: "ganga arti prasad",
-    slug: "prasad-2",
-    description:
-      "Sacred Mahaprasad and holy Ganga jal collected during evening Ganga Aarti at Haridwar.",
-    category: "Prasad & Puja Essentials",
-    price: 1200,
-    salePrice: 899,
-    stock: 30,
-    templeSource: "Haridwar Ganga Sabha Trust",
-    weight: "250g",
-    rating: 5.0,
-    reviewCount: 256,
-    images: [FALLBACK_IMAGE],
-  },
-  "prasad-3": {
-    _id: "prasad-3",
-    name: "Nitya Puja prasad",
-    slug: "prasad-3",
-    description:
-      "Daily sanctified offering box containing kumkum, akshat, and temple prasad for home altar.",
-    category: "Prasad & Puja Essentials",
-    price: 599,
-    salePrice: 499,
-    stock: 100,
-    templeSource: "Tirvona Spiritual Foundation",
-    weight: "300g",
-    rating: 4.9,
-    reviewCount: 84,
-    images: [FALLBACK_IMAGE],
-  },
-  "prasad-4": {
-    _id: "prasad-4",
-    name: "Vrindavan prasad",
-    slug: "prasad-4",
-    description:
-      "Traditional Mathura peda and sacred Tulsi prasadam from ISKCON Vrindavan.",
-    category: "Prasad & Puja Essentials",
-    price: 299,
-    salePrice: 199,
-    stock: 45,
-    templeSource: "ISKCON Vrindavan Artisans",
-    weight: "400g",
-    rating: 4.9,
-    reviewCount: 312,
-    images: [FALLBACK_IMAGE],
-  },
-};
-
-const createFallbackProduct = (idOrSlug: string): Product => {
-  const humanizedName = idOrSlug
-    .replace(/-/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-  return {
-    _id: idOrSlug,
-    name: humanizedName || "Sacred Temple Prasad",
-    slug: idOrSlug,
-    description:
-      "Authentic Mahaprasad & sacred puja essentials prepared with divine reverence and delivered directly from certified holy shrines.",
-    category: "Prasad & Puja Essentials",
-    price: 499,
-    salePrice: 350,
-    stock: 50,
-    templeSource: "Tirvona Sacred Foundations",
-    weight: "500g",
-    rating: 4.9,
-    reviewCount: 150,
-    images: [FALLBACK_IMAGE],
-  };
-};
+interface Review {
+  _id: string;
+  rating: number;
+  title?: string;
+  comment?: string;
+  createdAt: string;
+  customerId?: { name?: string };
+}
 
 export const MarketplaceProductDetailPage: React.FC = () => {
   const { productSlug, idOrSlug: legacyKey } = useParams();
@@ -147,37 +75,33 @@ export const MarketplaceProductDetailPage: React.FC = () => {
   const [failed, setFailed] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
+  const [reviews, setReviews] = useState<Review[]>([]);
 
   const load = useCallback(async () => {
     if (!idOrSlug) return;
     setLoading(true);
     setFailed(false);
     try {
-      const res = await marketplaceService.getBySlug(idOrSlug);
-      const row: Product | null = res.data?.data ?? null;
-      if (row) {
-        setProduct(row);
-      } else if (DEFAULT_PRODUCTS[idOrSlug]) {
-        setProduct(DEFAULT_PRODUCTS[idOrSlug]);
-      } else {
-        setProduct(createFallbackProduct(idOrSlug));
-      }
+      const res = await storeApi.product(idOrSlug);
+      const row: Product = toStoreProduct(res.data?.data);
+      setProduct(row);
       setActiveImage(0);
       setQuantity(1);
-      if (row?.category) {
-        const rel = await marketplaceService
-          .getProducts({ category: row.category, limit: 8 })
-          .catch(() => null);
-        setRelated(
-          (rel?.data?.data ?? []).filter((p: Product) => p._id !== row._id),
-        );
-      } else setRelated([]);
+      const [rel, rev] = await Promise.all([
+        row.categoryId
+          ? storeApi.products({ categoryId: row.categoryId, limit: 8 }).catch(() => null)
+          : Promise.resolve(null),
+        storeApi.reviews(row._id, { limit: 10 }).catch(() => null),
+      ]);
+      setRelated(
+        (rel?.data?.data ?? [])
+          .map(toStoreProduct)
+          .filter((p: Product) => p._id !== row._id),
+      );
+      setReviews(rev?.data?.data ?? []);
     } catch {
-      if (DEFAULT_PRODUCTS[idOrSlug]) {
-        setProduct(DEFAULT_PRODUCTS[idOrSlug]);
-      } else {
-        setProduct(createFallbackProduct(idOrSlug));
-      }
+      setProduct(null);
+      setFailed(true);
     } finally {
       setLoading(false);
     }
@@ -225,7 +149,9 @@ export const MarketplaceProductDetailPage: React.FC = () => {
 
   const images = product.images?.length ? product.images : [FALLBACK_IMAGE];
   const discount = discountOf(product);
-  const outOfStock = product.stock !== undefined && product.stock <= 0;
+  const outOfStock =
+    product.inStock === false ||
+    (product.stock !== undefined && product.stock <= 0);
   const maxQty = Math.min(product.stock ?? 20, 20);
 
   const addToCart = () => {
@@ -237,6 +163,9 @@ export const MarketplaceProductDetailPage: React.FC = () => {
         image: product.images?.[0],
         displayPrice: priceOf(product),
         maxQuantity: product.stock,
+        vendorId: product.vendor?.id,
+        vendorName: product.vendor?.name,
+        vendorSlug: product.vendor?.slug,
       },
       quantity,
     );
@@ -251,6 +180,9 @@ export const MarketplaceProductDetailPage: React.FC = () => {
         image: product.images?.[0],
         displayPrice: priceOf(product),
         maxQuantity: product.stock,
+        vendorId: product.vendor?.id,
+        vendorName: product.vendor?.name,
+        vendorSlug: product.vendor?.slug,
       },
       quantity,
       false,
@@ -401,19 +333,29 @@ export const MarketplaceProductDetailPage: React.FC = () => {
                   </dd>
                 </div>
               )}
-              {product.category && (
+              {(product.categoryName || product.category) && (
                 <div className="flex justify-between gap-3">
                   <dt className="text-gray-500">Category</dt>
                   <dd className="font-bold text-[#0B192C] dark:text-white">
-                    {humanizeLabel(product.category)}
+                    {product.categoryName ?? humanizeLabel(product.category ?? "")}
                   </dd>
                 </div>
               )}
               {product.vendor?.name && (
                 <div className="flex justify-between gap-3">
-                  <dt className="text-gray-500">Vendor</dt>
+                  <dt className="text-gray-500">Sold by</dt>
                   <dd className="font-bold text-[#0B192C] dark:text-white text-right">
-                    {product.vendor.name}
+                    {product.vendor.slug ? (
+                      <Link
+                        to={`/marketplace/store/${product.vendor.slug}`}
+                        className="inline-flex items-center gap-1 hover:text-[#F28C28]"
+                      >
+                        <Store size={12} className="text-[#F28C28]" />
+                        {product.vendor.name}
+                      </Link>
+                    ) : (
+                      product.vendor.name
+                    )}
                     {product.vendor.isVerified && (
                       <BadgeCheck
                         size={12}
@@ -455,23 +397,74 @@ export const MarketplaceProductDetailPage: React.FC = () => {
                 payment
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Truck size={13} className="text-[#F28C28]" /> Free delivery
-                over {formatCurrency(999)}
+                <Truck size={13} className="text-[#F28C28]" /> Shipping
+                calculated per store at checkout
               </span>
             </div>
           </div>
         </div>
 
+        <section className="space-y-4 pt-6 border-t border-gray-200 dark:border-slate-800">
+          <h2 className="text-base font-black text-[#0B192C] dark:text-white">
+            Customer reviews
+          </h2>
+          {reviews.length === 0 ? (
+            <p className="text-xs text-gray-500">
+              No reviews yet. Reviews come only from customers who received this
+              product.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {reviews.map((review) => (
+                <article
+                  key={review._id}
+                  className="rounded-2xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-[#0B192C] p-4 space-y-1.5"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-0.5">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <Star
+                          key={n}
+                          size={12}
+                          fill={n <= review.rating ? "currentColor" : "none"}
+                          className={n <= review.rating ? "text-[#E58C28]" : "text-gray-300"}
+                        />
+                      ))}
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-600 inline-flex items-center gap-1">
+                      <BadgeCheck size={11} /> Verified purchase
+                    </span>
+                  </div>
+                  {review.title && (
+                    <h3 className="text-xs font-black text-[#0B192C] dark:text-white">
+                      {review.title}
+                    </h3>
+                  )}
+                  {review.comment && (
+                    <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+                      {review.comment}
+                    </p>
+                  )}
+                  <p className="text-[10px] text-gray-400">
+                    {review.customerId?.name ?? "Customer"} ·{" "}
+                    {new Date(review.createdAt).toLocaleDateString("en-IN")}
+                  </p>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
         {related.length > 0 && (
           <div className="space-y-4 pt-6 border-t border-gray-200 dark:border-slate-800">
             <h2 className="text-base font-black text-[#0B192C] dark:text-white">
-              More {humanizeLabel(product.category ?? "items")}
+              More {product.categoryName ?? humanizeLabel(product.category ?? "items")}
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {related.slice(0, 4).map((rel) => (
                 <Link
                   key={rel._id}
-                  to={`/marketplace/product/${rel.slug || rel._id}`}
+                  to={`/marketplace/products/${rel.slug || rel._id}`}
                   className="bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-2xl overflow-hidden hover:shadow-lg hover:border-[#E58C28]/60 transition-all"
                 >
                   <img

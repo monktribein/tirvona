@@ -1,10 +1,12 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useCart } from "../../contexts/CartContext";
+import { useCart, type CartLine } from "../../contexts/CartContext";
+import { storeApi } from "../../services/marketplace.service";
+import { getErrorMessage } from "../../lib/api";
 import { useAuth } from "../../contexts/AuthContext";
 import { formatCurrency } from "../../utils/format";
 import { setGuestPendingIntent } from "../../utils/guestGate";
-import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
+import { AlertTriangle, Minus, Plus, ShoppingBag, Store, Trash2, X } from "lucide-react";
 
 const FALLBACK_IMAGE =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
@@ -54,6 +56,52 @@ export const CartDrawer: React.FC = () => {
       document.body.style.overflow = "";
     };
   }, [isOpen, close]);
+
+  // Server-priced preview (public endpoint, so guests get it too). The
+  // backend is the price authority; the local subtotal is only a fallback.
+  const [quote, setQuote] = useState<any | null>(null);
+  const [quoteError, setQuoteError] = useState("");
+  const cartKey = JSON.stringify(
+    lines.map((l) => [l.productId, l.quantity]),
+  );
+  useEffect(() => {
+    if (!isOpen || lines.length === 0) {
+      setQuote(null);
+      setQuoteError("");
+      return;
+    }
+    let cancelled = false;
+    const id = window.setTimeout(() => {
+      storeApi
+        .quote(lines.map((l) => ({ productId: l.productId, quantity: l.quantity })))
+        .then((res) => {
+          if (cancelled) return;
+          setQuote(res.data?.data ?? null);
+          setQuoteError("");
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          setQuote(null);
+          setQuoteError(getErrorMessage(err, "Some items could not be priced."));
+        });
+    }, 250);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(id);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, cartKey]);
+
+  const groups = useMemo(() => {
+    const byVendor = new Map<string, { name: string; lines: CartLine[] }>();
+    for (const line of lines) {
+      const key = line.vendorId || line.vendorName || "_";
+      if (!byVendor.has(key))
+        byVendor.set(key, { name: line.vendorName || "Tirvona Marketplace", lines: [] });
+      byVendor.get(key)!.lines.push(line);
+    }
+    return [...byVendor.entries()].map(([key, group]) => ({ key, ...group }));
+  }, [lines]);
 
   if (!isOpen) return null;
 
@@ -108,7 +156,7 @@ export const CartDrawer: React.FC = () => {
               Your cart is empty
             </p>
             <p className="text-xs text-gray-500 max-w-xs">
-              Browse temple prasad, rudraksha and puja essentials from verified
+              Browse puja essentials and sacred goods from verified
               vendors.
             </p>
             <button
@@ -123,8 +171,26 @@ export const CartDrawer: React.FC = () => {
           </div>
         ) : (
           <>
-            <div className="flex-1 overflow-y-auto overscroll-contain divide-y divide-gray-100 dark:divide-slate-800">
-              {lines.map((line) => (
+            <div className="flex-1 overflow-y-auto overscroll-contain">
+              {groups.map((group) => {
+                const priced = quote?.vendorOrders?.find(
+                  (vo: any) => String(vo.vendorId) === group.key,
+                );
+                const localSubtotal = group.lines.reduce(
+                  (sum, l) => sum + l.displayPrice * l.quantity,
+                  0,
+                );
+                return (
+              <section
+                key={group.key}
+                className="border-b border-gray-100 dark:border-slate-800"
+              >
+                <h3 className="px-4 pt-3 pb-1 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  <Store size={12} className="text-[#F28C28]" />
+                  {priced?.storeName ?? group.name}
+                </h3>
+                <div className="divide-y divide-gray-100 dark:divide-slate-800">
+              {group.lines.map((line) => (
                 <div key={line.productId} className="p-4 flex gap-3">
                   <img
                     src={line.image || FALLBACK_IMAGE}
@@ -179,27 +245,61 @@ export const CartDrawer: React.FC = () => {
                   </span>
                 </div>
               ))}
+                </div>
+                <div className="px-4 pb-3 flex justify-between text-[11px] font-bold text-gray-500 dark:text-gray-400">
+                  <span>Store subtotal</span>
+                  <span className="tabular-nums text-[#0B192C] dark:text-white">
+                    {formatCurrency(priced ? priced.subtotal : localSubtotal)}
+                  </span>
+                </div>
+              </section>
+                );
+              })}
             </div>
 
             <footer className="p-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] border-t border-gray-200 dark:border-slate-800 space-y-3">
+              {quoteError && (
+                <div className="flex items-start gap-2 text-[11px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-xl p-2.5">
+                  <AlertTriangle size={13} className="mt-0.5 shrink-0" />
+                  <span>{quoteError} Update or remove that item to continue.</span>
+                </div>
+              )}
               <div className="flex items-center justify-between text-sm">
                 <span className="font-bold text-gray-600 dark:text-gray-300">
                   Subtotal
                 </span>
                 <span className="font-black text-[#0B192C] dark:text-white tabular-nums">
-                  {formatCurrency(displaySubtotal)}
+                  {formatCurrency(quote?.pricing?.itemsSubtotal ?? displaySubtotal)}
                 </span>
               </div>
               <p className="text-[10px] text-gray-400 leading-relaxed">
                 Shipping and GST are calculated at checkout, where every price
                 is re-confirmed against the live catalogue.
               </p>
-              <button
-                onClick={goToCheckout}
-                className="w-full py-3 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold shadow-md cursor-pointer transition-all"
-              >
-                {user ? "Proceed to checkout" : "Sign in to checkout"}
-              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => {
+                    close();
+                    if (!location.pathname.startsWith("/marketplace"))
+                      navigate("/marketplace");
+                  }}
+                  className="py-3 rounded-full border border-gray-200 dark:border-slate-700 text-[#0B192C] dark:text-white text-xs font-extrabold cursor-pointer transition-all hover:border-[#F28C28]"
+                >
+                  Continue shopping
+                </button>
+                <button
+                  onClick={goToCheckout}
+                  disabled={Boolean(quoteError)}
+                  className="py-3 rounded-full bg-[#F28C28] hover:bg-[#D97706] disabled:bg-gray-200 dark:disabled:bg-slate-800 disabled:text-gray-400 disabled:cursor-not-allowed text-white text-xs font-extrabold shadow-md cursor-pointer transition-all"
+                >
+                  Checkout
+                </button>
+              </div>
+              {!user && (
+                <p className="text-[10px] text-center text-gray-400">
+                  You will be asked to sign in before payment. Your cart is kept.
+                </p>
+              )}
             </footer>
           </>
         )}

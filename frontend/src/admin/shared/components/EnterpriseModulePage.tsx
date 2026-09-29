@@ -11,11 +11,11 @@ import api, { getErrorMessage } from "../../../lib/api";
 import {
   ashramService,
   bookingService,
-  marketplaceService,
   offerService,
   roomService,
   userService,
 } from "../../../services";
+import { storeApi } from "../../../services/marketplace.service";
 import { parkingAdminService } from "../../../modules/parking/services/parking.service";
 import { humanizeLabel } from "../../../utils/labels";
 import { formatCurrency, getFormattingLocale } from "../../../utils/format";
@@ -194,7 +194,7 @@ export const EnterpriseModulePage: React.FC<{
     if (activeModule !== "featured_banner") return;
     void Promise.allSettled([
       ashramService.search({ limit: "100" }),
-      marketplaceService.getProducts({ limit: 100 }),
+      storeApi.products({ limit: 100 }),
       offerService.getPublicOffers({ limit: "100" }),
       api.get("/services/events"),
       ashramService.destinations(),

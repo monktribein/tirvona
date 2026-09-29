@@ -112,7 +112,7 @@ export const getRoleDefaultDashboard = (
       return "/admin/manage/blogs/all";
 
     case "marketplace_manager":
-      return "/admin/manage/marketplace/products";
+      return "/admin/manage/marketplace";
 
     case "blog_manager":
       return "/admin/manage/blogs/all";

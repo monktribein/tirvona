@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowRight, CalendarDays, Clock, MapPin } from "lucide-react";
 import api from "../lib/api";
-import { ashramService, marketplaceService, offerService } from "../services";
+import { ashramService, offerService } from "../services";
+import { storeApi, toStoreProduct } from "../services/marketplace.service";
 import { getFormattingLocale } from "../utils/format";
 
 const imagesOf = (value: any) => Array.from(new Set([
@@ -51,7 +52,7 @@ const BannerDetailPage: React.FC = () => {
       let offerRows: any[] = [];
       try {
         if (type === "ashram" && id) linked = (await ashramService.getById(id)).data?.data;
-        if (type === "marketplace" && slug) linked = (await marketplaceService.getBySlug(slug)).data?.data;
+        if (type === "marketplace" && slug) linked = toStoreProduct((await storeApi.product(slug)).data?.data);
         if (type === "offer" && id) linked = (await offerService.getById(id)).data?.data;
         if (type === "event" && slug) linked = (await api.get(`/services/events/${slug}`)).data?.data;
         if (type === "destination") linked = { name: record.linkedEntityName, city: record.linkedEntityName };
@@ -116,8 +117,8 @@ const BannerDetailPage: React.FC = () => {
           const city = linked?.address?.city || linked?.city || linked?.location || record.location;
           if (["event", "destination"].includes(type) && city) {
             relatedRows = (await ashramService.search({ city: String(city), limit: "8" })).data?.data || [];
-          } else if (type === "marketplace" && linked?.category) {
-            relatedRows = (await marketplaceService.getProducts({ category: linked.category, limit: 8 })).data?.data || [];
+          } else if (type === "marketplace" && linked?.categoryId) {
+            relatedRows = ((await storeApi.products({ categoryId: linked.categoryId, limit: 8 })).data?.data || []).map(toStoreProduct);
             relatedRows = relatedRows.filter((row: any) => row._id !== linked._id);
           } else if (type === "offer") {
             const ids = linked?.applicableAshrams || linked?.ashramIds || (linked?.ashramId ? [linked.ashramId] : []);
