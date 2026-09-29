@@ -606,13 +606,24 @@ describe("DayStay Engine Unit & Integration Tests", () => {
     });
 
     it("H3. If the gateway refund fails the booking is flagged for manual refund, not marked refunded", async () => {
-      const expiredDoc = createPendingBookingDoc({ reservationExpiresAt: new Date(Date.now() - 60000) });
+      const expiredDoc = createPendingBookingDoc({
+        reservationExpiresAt: new Date(Date.now() - 60000),
+        dayStayDetails: {
+          productCode: "DAY_REST_3H",
+          slotStartTime: new Date("2030-10-01T09:00:00.000+05:30"),
+          slotEndTime: new Date("2030-10-01T12:00:00.000+05:30"),
+          durationMinutes: 180,
+        },
+      });
       mockBookingModel.findOne.mockResolvedValue(expiredDoc);
       (bookingService as any).razorpay = {
         payments: { refund: jest.fn().mockRejectedValue(new Error("gateway down")) },
       };
       mockAshramModel.findById.mockReturnValue({
-        lean: jest.fn().mockResolvedValue({ _id: "ashram_01", dayStayConfig: { enabled: true } }),
+        lean: jest.fn().mockResolvedValue({
+          _id: "ashram_01",
+          dayStayConfig: { enabled: true, operatingHours: { start: "06:00", end: "20:00" } },
+        }),
       });
       mockRoomModel.findOne.mockReturnValue({
         lean: jest.fn().mockResolvedValue({
@@ -620,7 +631,19 @@ describe("DayStay Engine Unit & Integration Tests", () => {
           dayStayConfig: { enabled: true, allocatedInventory: 1, products: [{ productCode: "DAY_REST_3H", enabled: true, durationMinutes: 180 }] },
         }),
       });
-      mockBookingModel.find.mockReturnValue({ lean: jest.fn().mockResolvedValue([]) });
+      mockBookingModel.find.mockReturnValue({
+        lean: jest.fn().mockResolvedValue([
+          {
+            bookingType: "day_rest",
+            status: "confirmed",
+            roomsBookedCount: 1,
+            dayStayDetails: {
+              slotStartTime: expiredDoc.dayStayDetails.slotStartTime,
+              slotEndTime: expiredDoc.dayStayDetails.slotEndTime,
+            },
+          },
+        ]),
+      });
 
       await expect(
         bookingService.confirmPayment(
