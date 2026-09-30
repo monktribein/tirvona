@@ -147,7 +147,7 @@ describe("applyPromo follows the website's validate-then-quote sequence", () => 
         coupon: { promoCode: "SAVE10" },
       });
 
-  it("validates against the server's gross payable amount, then prices with the code", async () => {
+  it("validates against the stay amount a coupon applies to, then prices with the code", async () => {
     const quote = priced(500);
     const { service, offers } = build({ quote });
     const result = await service.applyPromo({ ...stay(), promoCode: "SAVE10" });

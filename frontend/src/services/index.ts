@@ -313,13 +313,7 @@ export const refundPolicyService = {
   remove: (id: string) => api.delete(`/refund-policies/${id}`),
 };
 
-export const supportService = {
-  create: (data: unknown) => api.post("/support", data),
-  list: () => api.get("/support"),
-  addMessage: (id: string, text: string) =>
-    api.post(`/support/${id}/message`, { text }),
-  resolve: (id: string) => api.post(`/support/${id}/resolve`, {}),
-};
+export { supportApi, supportAdminApi } from "./support.service";
 
 export const analyticsService = {
   dashboard: (params: Record<string, string> = {}) =>

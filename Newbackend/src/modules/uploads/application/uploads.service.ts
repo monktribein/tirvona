@@ -29,7 +29,11 @@ export class UploadsService {
   async upload(
     file: Express.Multer.File | undefined,
     folder?: string,
-    options?: { imagesOnly?: boolean },
+    options?: {
+      imagesOnly?: boolean;
+      /** Restrict to these detected kinds (checked from the file's bytes, not its name). */
+      allowedKinds?: Array<"image" | "pdf" | "audio" | "video">;
+    },
   ): Promise<any> {
     if (!file)
       throw new BadRequestException(
@@ -45,6 +49,12 @@ export class UploadsService {
     if (options?.imagesOnly && detected.kind !== "image")
       throw new BadRequestException(
         "Camera captures must be an image. Use the attachment picker to upload a PDF.",
+      );
+    if (options?.allowedKinds && !options.allowedKinds.includes(detected.kind))
+      throw new BadRequestException(
+        `That file type is not allowed here. Allowed: ${options.allowedKinds
+          .map((kind) => (kind === "image" ? "images (JPG, PNG, WEBP, GIF, AVIF, HEIC)" : kind.toUpperCase()))
+          .join(", ")}.`,
       );
     const limit = UploadsService.SIZE_LIMITS[detected.kind];
     if (file.buffer.length > limit)
@@ -87,6 +97,8 @@ export class UploadsService {
         resourceType: result.resource_type,
         bytes: result.bytes,
         format: result.format,
+        mimeType: detected.mime,
+        kind: detected.kind,
       };
     } catch (error) {
       const raw = error as {

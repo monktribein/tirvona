@@ -2231,6 +2231,7 @@ export const hiUi: Record<string, string> = {
   "Reservations": "आरक्षण",
   "Mahaprasad": "महाप्रसाद",
   "Yatra Support": "यात्रा सहायता",
+  "Help & Support": "मदद और सहायता",
   "Stay Connected": "जुड़े रहें",
   "Subscribe for sacred yatra updates, upcoming festival darshan alerts & exclusive stays.": "पावन यात्रा अपडेट, आगामी पर्व दर्शन अलर्ट एवं विशेष प्रवास हेतु सदस्यता लें।",
   "Enter your email address...": "अपना ईमेल पता दर्ज करें...",

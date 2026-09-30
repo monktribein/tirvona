@@ -257,3 +257,10 @@ export const Wrench = materialIcon("build");
 export const X = materialIcon("close");
 export const XCircle = materialIcon("cancel");
 export const Zap = materialIcon("bolt");
+// Support Management
+export const AlarmClock = materialIcon("alarm");
+export const Hourglass = materialIcon("hourglass_top");
+export const Link2 = materialIcon("add_link");
+export const Paperclip = materialIcon("attach_file");
+export const Timer = materialIcon("timer");
+export const UserMinus = materialIcon("person_off");

@@ -365,7 +365,8 @@ const SECTIONS: SectionSpec[] = [
     scopeField: "ashramId",
     tiles: [
       { label: "Tickets" },
-      { label: "Open", where: { status: { $in: ["open", "in_progress"] } } },
+      { label: "Open", where: { status: { $in: ["OPEN", "IN_PROGRESS", "WAITING_FOR_USER", "REOPENED"] } } },
+      { label: "Urgent", where: { priority: "URGENT", status: { $in: ["OPEN", "IN_PROGRESS", "WAITING_FOR_USER", "REOPENED"] } } },
     ],
   },
   {

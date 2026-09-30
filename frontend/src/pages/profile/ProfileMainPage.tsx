@@ -27,10 +27,12 @@ import {
   RefreshCw,
   BookOpen,
   HandHeart,
+  LifeBuoy,
 } from "lucide-react";
 import { VisitorArticlesTab } from "./VisitorArticlesTab";
 import { VolunteerApplicationsTab } from "./VolunteerApplicationsTab";
 import ProfileOrdersPage from "./ProfileOrdersPage";
+import ProfileSupportTab from "./ProfileSupportTab";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNotifications } from "../../contexts/NotificationContext";
 import {
@@ -105,6 +107,7 @@ export const ProfileMainPage: React.FC = () => {
     | "orders"
     | "wishlist"
     | "payments"
+    | "support"
     | "settings" => {
     if (
       pathname.includes("/profile/bookings") ||
@@ -120,6 +123,7 @@ export const ProfileMainPage: React.FC = () => {
     if (pathname.includes("/profile/orders")) return "orders";
     if (pathname.includes("/profile/wishlist")) return "wishlist";
     if (pathname.includes("/profile/payments")) return "payments";
+    if (pathname.includes("/profile/support")) return "support";
     if (pathname.includes("/profile/settings")) return "settings";
     return "overview";
   };
@@ -475,6 +479,14 @@ export const ProfileMainPage: React.FC = () => {
       desc: "Transactions & GST receipts",
       icon: <CreditCard size={18} />,
       iconBg: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600",
+    },
+    {
+      key: "support",
+      path: "/profile/support",
+      label: "Help & Support",
+      desc: "Tickets, replies & status",
+      icon: <LifeBuoy size={18} />,
+      iconBg: "bg-sky-50 dark:bg-sky-950/40 text-sky-600",
     },
     {
       key: "settings",
@@ -886,6 +898,8 @@ export const ProfileMainPage: React.FC = () => {
             {activeTab === "volunteer" && <VolunteerApplicationsTab />}
 
             {activeTab === "orders" && <ProfileOrdersPage />}
+
+            {activeTab === "support" && <ProfileSupportTab />}
 
             {activeTab === "wishlist" && (
               <div className="space-y-5">

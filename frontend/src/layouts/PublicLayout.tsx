@@ -32,6 +32,7 @@ import {
   PhoneCall,
   Package,
   MessageSquare,
+  LifeBuoy,
 } from "lucide-react";
 
 const FooterAccordion: React.FC<{
@@ -592,6 +593,19 @@ export const PublicLayout: React.FC = () => {
                               </Link>
 
                               <Link
+                                to="/profile/support"
+                                onClick={() => setProfileDropdownOpen(false)}
+                                className="px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                              >
+                                <div className="w-6 h-6 rounded-md bg-sky-100/60 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
+                                  <LifeBuoy size={13} />
+                                </div>
+                                <span className="text-xs font-bold">
+                                  Help &amp; Support
+                                </span>
+                              </Link>
+
+                              <Link
                                 to="/vendor/dashboard"
                                 onClick={() => setProfileDropdownOpen(false)}
                                 className="px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
@@ -1115,6 +1129,20 @@ export const PublicLayout: React.FC = () => {
                         className="text-slate-500 shrink-0"
                       />{" "}
                       Yatra Support
+                    </Link>
+                  </li>
+                  <li>
+                    {/* Support tickets. /support is login-protected: guests go to
+                        login first and come back; staff land in the support console. */}
+                    <Link
+                      to="/support"
+                      className="hover:text-amber-400 transition-colors flex items-center gap-1"
+                    >
+                      <ArrowRight
+                        size={10}
+                        className="text-slate-500 shrink-0"
+                      />{" "}
+                      Help &amp; Support
                     </Link>
                   </li>
                 </ul>

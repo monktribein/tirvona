@@ -267,9 +267,18 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     lifecycleEvents.forEach((event) =>
       socket.on(event, (payload) => onLifecycleEvent(event, payload)),
     );
+    // Inbox rows written by the backend (support replies, assignments, …).
+    const onInboxNotification = (payload: { title?: string; body?: string; kind?: string }) =>
+      addNotificationRef.current(
+        payload.title || "Notification",
+        payload.body || "",
+        payload.kind === "support.resolved" ? "success" : "info",
+      );
+    socket.on("notification", onInboxNotification);
 
     return () => {
       window.clearTimeout(connectTimer);
+      socket.off("notification", onInboxNotification);
       lifecycleEvents.forEach((event) => socket.off(event));
       if (socket.connected || socket.active) socket.disconnect();
       socketRef.current = null;
