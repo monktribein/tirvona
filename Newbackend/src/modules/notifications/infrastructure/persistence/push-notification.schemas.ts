@@ -53,6 +53,8 @@ export const UserNotificationSchema = new Schema(
     body: { type: String, required: true },
     imageUrl: String,
     deepLink: String,
+    /** Optional machine tag for system notifications, e.g. "support.reply". */
+    kind: String,
     read: { type: Boolean, default: false, index: true },
     readAt: Date,
   },

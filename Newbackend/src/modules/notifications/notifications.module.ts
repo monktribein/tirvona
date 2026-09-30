@@ -16,6 +16,7 @@ import { NotificationsGateway } from "./notifications.gateway";
 import { NotificationsController } from "./presentation/notifications.controller";
 import { NotificationsAdminService } from "./application/notifications-admin.service";
 import { UserInboxService } from "./application/user-inbox.service";
+import { InAppNotificationService } from "./application/in-app-notification.service";
 import { AudienceResolverService } from "./fcm/audience-resolver.service";
 import { FcmService } from "./fcm/fcm.service";
 import {
@@ -76,7 +77,8 @@ import { WhatsAppModule } from "../../integrations/whatsapp/whatsapp.module";
     AudienceResolverService,
     UserInboxService,
     NotificationsAdminService,
+    InAppNotificationService,
   ],
-  exports: [NotificationsGateway, FcmService],
+  exports: [NotificationsGateway, FcmService, InAppNotificationService],
 })
 export class NotificationsModule {}

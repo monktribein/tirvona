@@ -126,7 +126,7 @@ export const getRoleDefaultDashboard = (
 
     case "support":
     case "support_executive":
-      return "/support";
+      return "/admin/support";
 
     case "customer":
     case "pilgrim":

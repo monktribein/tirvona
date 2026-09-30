@@ -71,6 +71,12 @@ import {
   CookiePolicyPage,
 } from "./pages/StaticPages";
 const SupportTicketsPage = lazy(() => import("./pages/SupportTicketsPage"));
+const SupportDashboardPage = lazy(() => import("./admin/support/pages/SupportDashboardPage"));
+const SupportAdminTicketsPage = lazy(() => import("./admin/support/pages/SupportTicketsPage"));
+const SupportTicketWorkspacePage = lazy(() => import("./admin/support/pages/SupportTicketWorkspacePage"));
+const SupportNewTicketPage = lazy(() => import("./admin/support/pages/SupportNewTicketPage"));
+const SupportCategoriesPage = lazy(() => import("./admin/support/pages/SupportCategoriesPage"));
+const SupportStaffPage = lazy(() => import("./admin/support/pages/SupportStaffPage"));
 const OwnerDashboard = lazy(() => import("./pages/OwnerDashboard"));
 const ManageAshramsPage = lazy(() => import("./pages/ManageAshramsPage"));
 const AddAshramWizardPage = lazy(() => import("./pages/AddAshramWizardPage"));
@@ -694,6 +700,9 @@ const AppContent: React.FC = () => {
             <Route path="/profile/wishlist" element={<ProfileMainPage />} />
             <Route path="/profile/coupons" element={<ProfileMainPage />} />
             <Route path="/profile/payments" element={<ProfileMainPage />} />
+            <Route path="/profile/support" element={<ProfileMainPage />} />
+            <Route path="/profile/support/new" element={<ProfileMainPage />} />
+            <Route path="/profile/support/:ticketId" element={<ProfileMainPage />} />
             <Route path="/profile/settings" element={<ProfileMainPage />} />
             <Route
               path="/profile/notifications"
@@ -979,25 +988,55 @@ const AppContent: React.FC = () => {
 
 
 
+          {/* Old address: sends staff to the console and everyone else to Help & Support. */}
+          <Route
+            path="/support"
+            element={
+              <ProtectedRoute>
+                <SupportTicketsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Support Management console. Which tickets each role sees is enforced by the backend. */}
           <Route
             element={
               <ProtectedRoute
                 allowedRoles={[
-                  "customer",
-                  "ashram_owner",
-                  "ashram_admin",
-                  "stay_admin",
-                  "owner",
-                  "manager",
-                  "support",
                   "super_admin",
+                  "support",
+                  "national_admin",
+                  "marketplace_manager",
+                  "finance_manager",
+                  "service_manager",
                 ]}
               >
                 <DashboardLayout />
               </ProtectedRoute>
             }
           >
-            <Route path="/support" element={<SupportTicketsPage />} />
+            <Route path="/admin/support" element={<SupportDashboardPage />} />
+            <Route path="/admin/support/tickets" element={<SupportAdminTicketsPage />} />
+            <Route path="/admin/support/tickets/:id" element={<SupportTicketWorkspacePage />} />
+            <Route path="/admin/support/staff" element={<SupportStaffPage />} />
+          </Route>
+          <Route
+            element={
+              <ProtectedRoute allowedRoles={["super_admin", "support"]}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/admin/support/tickets/new" element={<SupportNewTicketPage />} />
+          </Route>
+          <Route
+            element={
+              <ProtectedRoute allowedRoles={["super_admin"]}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/admin/support/categories" element={<SupportCategoriesPage />} />
           </Route>
 
           <Route

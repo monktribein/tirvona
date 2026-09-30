@@ -72,6 +72,7 @@ const SIDEBAR_SEQUENCE = [
   "parking",
   "payout",
   "refund",
+  "support",
   "offers",
   "marketplace",
   "local services",
@@ -103,6 +104,7 @@ const MATERIAL_ICON_BY_SECTION: Array<[string, string]> = [
   ["parking", "local_parking"],
   ["payout", "account_balance_wallet"],
   ["refund", "currency_exchange"],
+  ["support", "support_agent"],
   ["offers", "sell"],
   ["marketplace", "storefront"],
   ["local services", "home_repair_service"],
@@ -210,6 +212,28 @@ const MARKETPLACE_ADMIN_LINKS = [
   { label: "Reviews", path: "/admin/manage/marketplace/reviews" },
   { label: "Marketplace Settings", path: "/admin/manage/marketplace/settings" },
 ];
+
+/** Support Management console. Categories is Super Admin only; the backend scopes tickets per role. */
+const SUPPORT_ADMIN_LINKS = [
+  { label: "Support Dashboard", path: "/admin/support" },
+  { label: "All Tickets", path: "/admin/support/tickets" },
+  { label: "My Assigned Tickets", path: "/admin/support/tickets?view=mine" },
+  { label: "Unassigned Tickets", path: "/admin/support/tickets?view=unassigned" },
+  { label: "Urgent Tickets", path: "/admin/support/tickets?view=urgent" },
+  { label: "Escalated Tickets", path: "/admin/support/tickets?view=escalated" },
+  { label: "SLA Overdue", path: "/admin/support/tickets?view=overdue" },
+  { label: "Create Ticket", path: "/admin/support/tickets/new" },
+  { label: "Support Staff", path: "/admin/support/staff" },
+  { label: "Support Categories", path: "/admin/support/categories" },
+];
+/** For roles that only handle some categories (marketplace/finance/service managers, national admin). */
+const SUPPORT_HANDLER_GROUP: NavGroup = {
+  groupName: "Support Tickets",
+  icon: <LifeBuoy size={15} />,
+  links: SUPPORT_ADMIN_LINKS.filter((l) =>
+    ["/admin/support", "/admin/support/tickets", "/admin/support/tickets?view=mine", "/admin/support/tickets?view=unassigned"].includes(l.path),
+  ),
+};
 
 /** Seller console; shown on every /vendor page (the store belongs to the user, not to a role). */
 const VENDOR_GROUPS: NavGroup[] = [
@@ -735,6 +759,11 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
+      groupName: "Support Management",
+      icon: <LifeBuoy size={15} />,
+      links: SUPPORT_ADMIN_LINKS,
+    },
+    {
       groupName: "Reports & Audit",
       icon: <BarChart3 size={15} />,
       links: [
@@ -1123,6 +1152,7 @@ export const DashboardLayout: React.FC = () => {
             icon: <ShoppingBag size={15} />,
             links: MARKETPLACE_ADMIN_LINKS.filter((l) => l.path !== "/admin/manage/marketplace"),
           },
+          SUPPORT_HANDLER_GROUP,
         ],
       };
     }
@@ -1139,6 +1169,7 @@ export const DashboardLayout: React.FC = () => {
             icon: <DollarSign size={15} />,
             links: [{ label: "Marketplace Payouts & Commission", path: "/admin/manage/marketplace/payouts" }],
           },
+          SUPPORT_HANDLER_GROUP,
         ],
       };
     }
@@ -1174,17 +1205,25 @@ export const DashboardLayout: React.FC = () => {
           ...landing,
           icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
         },
-        groups: [],
+        groups: user!.role === "service_manager" ? [SUPPORT_HANDLER_GROUP] : [],
       };
     }
     if (user?.role === "support") {
       return {
         topLink: {
-          label: "Support Tickets",
-          path: "/support",
+          label: "Support Dashboard",
+          path: "/admin/support",
           icon: <LifeBuoy size={16} className="text-[#E58C28]" />,
         },
-        groups: [],
+        groups: [
+          {
+            groupName: "Support Management",
+            icon: <LifeBuoy size={15} />,
+            links: SUPPORT_ADMIN_LINKS.filter(
+              (l) => l.path !== "/admin/support" && l.path !== "/admin/support/categories",
+            ),
+          },
+        ],
       };
     }
     if (user?.role === "inspector") {
@@ -1213,15 +1252,18 @@ export const DashboardLayout: React.FC = () => {
           path: "/admin/dashboard",
           icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
         },
-        groups: districtAdminGroups.map((group) => ({
-          ...group,
-          links: group.links.filter(
-            (link) =>
-              link.path === "/admin/verifications" ||
-              (["govt_admin", "government_admin"].includes(user?.role || "") &&
-                link.path === "/admin/users"),
-          ),
-        })),
+        groups: [
+          ...districtAdminGroups.map((group) => ({
+            ...group,
+            links: group.links.filter(
+              (link) =>
+                link.path === "/admin/verifications" ||
+                (["govt_admin", "government_admin"].includes(user?.role || "") &&
+                  link.path === "/admin/users"),
+            ),
+          })),
+          ...(user?.role === "national_admin" ? [SUPPORT_HANDLER_GROUP] : []),
+        ],
       };
     }
     return {
