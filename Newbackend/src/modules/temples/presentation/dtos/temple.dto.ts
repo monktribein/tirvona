@@ -1,5 +1,5 @@
 import { PartialType } from "@nestjs/swagger";
-import { IsString, IsOptional, IsBoolean, IsArray, IsNumber, ValidateNested, IsDateString, IsEnum, Min, Max, IsUrl, ArrayMinSize, ArrayMaxSize, Matches, MinLength } from "class-validator";
+import { IsString, IsOptional, IsBoolean, IsArray, IsNumber, ValidateNested, IsDateString, IsEnum, Min, Max, ArrayMinSize, ArrayMaxSize, Matches, MinLength } from "class-validator";
 import { Type } from "class-transformer";
 
 export class AddressDto {
