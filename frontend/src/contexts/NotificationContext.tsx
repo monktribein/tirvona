@@ -218,9 +218,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const token = localStorage.getItem(TOKEN_KEY);
     const socket = io(`${API_BASE_URL}/notifications`, {
-      transports: ["polling", "websocket"],
+      transports: ["websocket", "polling"],
+      withCredentials: true,
       autoConnect: false,
       auth: { token },
+      reconnectionAttempts: 5,
+      timeout: 10_000,
+    });
+    socket.on("connect_error", () => {
+      // Handled gracefully without throwing uncaught errors; HTTP polling maintains sync
     });
     socketRef.current = socket;
     const connectTimer = window.setTimeout(() => socket.connect(), 50);

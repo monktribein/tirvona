@@ -206,15 +206,6 @@ export const HomePage: React.FC = () => {
     }
   };
 
-  const ensureLoopItems = <T,>(arr: T[], minCount = 6): T[] => {
-    if (!arr || arr.length === 0) return [];
-    let base = [...arr];
-    while (base.length < minCount) {
-      base = [...base, ...arr];
-    }
-    return base;
-  };
-
   interface MarqueeSliderProps<T> {
     items: T[];
     renderItem: (item: T, index: number) => React.ReactNode;
@@ -243,12 +234,24 @@ export const HomePage: React.FC = () => {
     const lastPointerRef = useRef({ x: 0, time: 0 });
     const isVisibleRef = useRef(false);
     const [isGrabbing, setIsGrabbing] = useState(false);
+    const uniqueItems = useMemo(() => {
+      if (!items || items.length === 0) return [];
+      const seen = new Set<string>();
+      return items.filter((item: any) => {
+        const key = String(
+          item?._id || item?.id || item?.slug || item?.name || JSON.stringify(item),
+        );
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }, [items]);
 
-    const baseList = useMemo(() => ensureLoopItems(items, minItems), [items, minItems]);
     const loopList = useMemo(() => {
-      if (baseList.length === 0) return [];
-      return [...baseList, ...baseList];
-    }, [baseList]);
+      if (uniqueItems.length === 0) return [];
+      if (uniqueItems.length === 1) return uniqueItems;
+      return [...uniqueItems, ...uniqueItems];
+    }, [uniqueItems]);
 
     useEffect(() => {
       const container = containerRef.current;
@@ -274,7 +277,7 @@ export const HomePage: React.FC = () => {
 
       const measure = () => {
         const kids = track.children;
-        const halfIdx = baseList.length;
+        const halfIdx = uniqueItems.length;
         if (kids.length >= halfIdx * 2 && halfIdx > 0) {
           const firstChild = kids[0] as HTMLElement;
           const halfChild = kids[halfIdx] as HTMLElement;
@@ -297,7 +300,7 @@ export const HomePage: React.FC = () => {
         ro.disconnect();
         mo.disconnect();
       };
-    }, [baseList, loopList]);
+    }, [uniqueItems, loopList]);
 
     useEffect(() => {
       if (loopList.length === 0) return;

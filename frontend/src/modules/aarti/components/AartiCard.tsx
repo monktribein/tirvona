@@ -39,11 +39,16 @@ export const AartiCard: React.FC<AartiCardProps> = ({
         month: "short",
       })
     : null;
+  const aartiTarget = session.slug || session._id || (session as any).id;
+  const safeHref =
+    aartiTarget && aartiTarget !== "undefined" && aartiTarget !== "null"
+      ? `/aarti/${aartiTarget}${query}`
+      : `/aarti${query}`;
 
   if (compact) {
     return (
       <Link
-        to={`/aarti/${session.slug}${query}`}
+        to={safeHref}
         aria-label={`View ${session.name}`}
         className="group block w-full bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
       >
@@ -204,7 +209,7 @@ export const AartiCard: React.FC<AartiCardProps> = ({
             </div>
 
             <Link
-              to={`/aarti/${session.slug}${query}`}
+              to={safeHref}
               className="mt-2.5 bg-[#F28C28] hover:bg-[#D97706] text-white text-[11px] font-bold pl-4 pr-1.5 py-1.5 rounded-full inline-flex items-center gap-2 shadow-md transition-all active:scale-95 shrink-0"
             >
               <span>Book</span>

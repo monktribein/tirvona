@@ -7,11 +7,29 @@ import {
 } from "@nestjs/websockets";
 import type { Server, Socket } from "socket.io";
 import { corsOriginsFromEnvironment } from "../../config/environment";
+
+const isOriginAllowed = (origin: string | undefined): boolean => {
+  if (!origin) return true;
+  const normalized = origin.trim().replace(/\/+$/, "");
+  const allowed = corsOriginsFromEnvironment();
+  if (allowed.includes(normalized)) return true;
+  if (/^https:\/\/([a-zA-Z0-9-]+\.)*tirvona\.com$/.test(normalized)) return true;
+  if (/^http:\/\/localhost:[0-9]+$/.test(normalized)) return true;
+  if (/^http:\/\/127\.0\.0\.1:[0-9]+$/.test(normalized)) return true;
+  return false;
+};
+
 @Injectable()
 @WebSocketGateway({
   namespace: "/notifications",
   cors: {
-    origin: corsOriginsFromEnvironment(),
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      if (isOriginAllowed(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, false);
+      }
+    },
     credentials: true,
   },
 })

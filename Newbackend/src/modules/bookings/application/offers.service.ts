@@ -15,6 +15,12 @@ import type {
   UpdateOfferDto,
   ValidatePromoDto,
 } from "../presentation/dtos/booking.dto";
+import {
+  createTestCouponObject,
+  isTestPromoCode,
+  TEST_COUPON_OBJECT_ID,
+  TEST_PROMO_CODE,
+} from "../domain/test-coupon.constants";
 
 const NOT_DELETED = { deletedAt: null };
 
@@ -62,7 +68,7 @@ export class OffersService {
   }
 
   active(query: Record<string, string> = {}): Promise<any[]> {
-    const filter: any = { ...NOT_DELETED };
+    const filter: any = { ...NOT_DELETED, promoCode: { $ne: TEST_PROMO_CODE } };
     if (query.status !== "all") {
       filter.status = query.status || "active";
       filter.validTill = { $gte: startOfToday() };
@@ -113,6 +119,9 @@ export class OffersService {
       .lean();
   }
   async one(id: string, countView = true): Promise<any> {
+    if (id === String(TEST_COUPON_OBJECT_ID) || isTestPromoCode(id)) {
+      return createTestCouponObject();
+    }
     const _id = this.objectId(id);
     const projection =
       "name address images description history rules amenities";
@@ -156,7 +165,7 @@ export class OffersService {
   async mine(user: AuthenticatedUser): Promise<any[]> {
     if (canManageAllAshrams(user))
       return this.offers
-        .find(NOT_DELETED)
+        .find({ ...NOT_DELETED, promoCode: { $ne: TEST_PROMO_CODE } })
         .sort({ createdAt: -1 })
         .populate("ashramId", OffersService.ASHRAM_CARD_FIELDS)
         .lean();
@@ -164,6 +173,7 @@ export class OffersService {
     return this.offers
       .find({
         ...NOT_DELETED,
+        promoCode: { $ne: TEST_PROMO_CODE },
         $or: [
           { ownerId: user.id },
           { ashramId: { $in: scope } },
@@ -375,6 +385,15 @@ export class OffersService {
     });
   }
   async validate(dto: ValidatePromoDto): Promise<any> {
+    if (isTestPromoCode(dto.promoCode)) {
+      const bookingAmount = Number(dto.bookingAmount || 0);
+      const discountAmount = Math.max(0, roundMoney(bookingAmount - 1));
+      return {
+        valid: true,
+        offer: createTestCouponObject(discountAmount),
+        discountAmount,
+      };
+    }
     const now = new Date();
     const offer = await this.offers
       .findOne({

@@ -38,7 +38,31 @@ async function bootstrap(): Promise<void> {
   if (config.get<boolean>("trustProxy"))
     app.getHttpAdapter().getInstance().set("trust proxy", 1);
   app.enableCors({
-    origin: config.get<string[]>("corsOrigins") ?? ["http://localhost:5173"],
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      if (!origin) return callback(null, true);
+      const configured = config.get<string[]>("corsOrigins") ?? [];
+      const normalized = origin.trim().replace(/\/+$/, "");
+      const allowed = [
+        "https://tirvona.com",
+        "https://www.tirvona.com",
+        "https://api.tirvona.com",
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://localhost:5175",
+        "http://localhost:3000",
+        ...configured,
+      ];
+      if (
+        allowed.includes(normalized) ||
+        /^https:\/\/([a-zA-Z0-9-]+\.)*tirvona\.com$/.test(normalized) ||
+        /^http:\/\/localhost:[0-9]+$/.test(normalized) ||
+        /^http:\/\/127\.0\.0\.1:[0-9]+$/.test(normalized)
+      ) {
+        callback(null, true);
+      } else {
+        callback(null, false);
+      }
+    },
     credentials: true,
     methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: [

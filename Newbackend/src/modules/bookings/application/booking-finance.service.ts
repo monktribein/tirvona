@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import type { Model } from "mongoose";
+import { Types, type Model } from "mongoose";
 import { TransactionService } from "../../../common/database/transaction.service";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { canManageAllAshrams, isAshramOwner } from "../../../common/auth/ashram-access";
@@ -16,6 +16,22 @@ import type {
   CreateSettlementDto,
   ProcessRefundDto,
 } from "../presentation/dtos/booking-finance.dto";
+
+const safeObjectId = (val: unknown): Types.ObjectId | null => {
+  if (!val) return null;
+  const str = String((val as any)?._id ?? val);
+  return Types.ObjectId.isValid(str) ? new Types.ObjectId(str) : null;
+};
+
+const safeObjectIdList = (ids: unknown[]): (Types.ObjectId | string)[] => {
+  const result: (Types.ObjectId | string)[] = [];
+  for (const id of ids) {
+    const objId = safeObjectId(id);
+    if (objId) result.push(objId);
+    if (typeof id === "string" && id) result.push(id);
+  }
+  return result;
+};
 
 @Injectable()
 export class BookingFinanceService {
@@ -50,7 +66,7 @@ export class BookingFinanceService {
     const scope = await resolveAshramScope(user, this.ashrams);
     if (isUnrestricted(scope)) return requested ? [requested] : null;
     if (!scope || !scope.length)
-      throw new ForbiddenException("An authorized ashram scope is required");
+      return [];
     if (requested && !scope.includes(requested))
       throw new ForbiddenException("You do not manage that ashram");
     return requested ? [requested] : scope;
@@ -62,27 +78,30 @@ export class BookingFinanceService {
   ): Promise<any> {
     const ownerId = await this.owner(user, requested);
     const scope = await this.ashramScope(user, ashramId);
+    if (scope && scope.length === 0) {
+      return {
+        grossAmount: 0,
+        commissionAmount: 0,
+        ownerEarning: 0,
+        pendingEarning: 0,
+        settledEarning: 0,
+      };
+    }
+    const ownerObjectId = safeObjectId(ownerId);
+    const scopeObjects = scope ? safeObjectIdList(scope) : null;
+
     const [row] = await this.commissions.aggregate([
       {
         $match: {
-          ...(ownerId
+          ...(ownerObjectId
             ? {
-                ownerId:
-                  this.commissions.db.base.Types.ObjectId.createFromHexString(
-                    ownerId,
-                  ),
+                $or: [{ ownerId: ownerObjectId }, { ownerId: String(ownerId) }],
               }
             : {}),
-          ...(scope === null
+          ...(scopeObjects === null
             ? {}
             : {
-                ashramId: {
-                  $in: scope.map((id) =>
-                    this.commissions.db.base.Types.ObjectId.createFromHexString(
-                      id,
-                    ),
-                  ),
-                },
+                ashramId: { $in: scopeObjects },
               }),
         },
       },
@@ -113,6 +132,38 @@ export class BookingFinanceService {
         },
       },
     ]);
+
+    if (!row || Number(row.grossAmount ?? 0) === 0) {
+      const paymentScopeFilter =
+        scopeObjects === null
+          ? {}
+          : { ashramId: { $in: scopeObjects } };
+      const [paymentRow] = await this.payments.aggregate([
+        {
+          $match: {
+            status: "success",
+            ...paymentScopeFilter,
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalCollected: { $sum: "$amount" },
+          },
+        },
+      ]);
+      const totalCollected = Number(paymentRow?.totalCollected ?? 0);
+      if (totalCollected > 0) {
+        return {
+          grossAmount: totalCollected,
+          commissionAmount: 0,
+          ownerEarning: totalCollected,
+          pendingEarning: totalCollected,
+          settledEarning: 0,
+        };
+      }
+    }
+
     return (
       row ?? {
         grossAmount: 0,
@@ -129,9 +180,11 @@ export class BookingFinanceService {
     source?: string,
   ): Promise<any[]> {
     const scope = await this.ashramScope(user, ashramId);
+    if (scope && scope.length === 0) return [];
+    const scopeObjects = scope ? safeObjectIdList(scope) : null;
     const rows = await this.payments
       .find({
-        ...(scope === null ? {} : { ashramId: { $in: scope } }),
+        ...(scopeObjects === null ? {} : { ashramId: { $in: scopeObjects } }),
         ...(source && source !== "all" ? { bookingSource: source } : {}),
       })
       .populate({
@@ -177,20 +230,22 @@ export class BookingFinanceService {
     ashramId?: string,
   ): Promise<any> {
     const scope = await this.ashramScope(user, ashramId);
+    if (scope && scope.length === 0) {
+      return {
+        tirvona: { collected: 0, bookings: 0 },
+        self: { collected: 0, bookings: 0 },
+        total: { collected: 0, bookings: 0 },
+      };
+    }
+    const scopeObjects = scope ? safeObjectIdList(scope) : null;
     const rows = await this.payments.aggregate([
       {
         $match: {
           status: "success",
-          ...(scope === null
+          ...(scopeObjects === null
             ? {}
             : {
-                ashramId: {
-                  $in: scope.map((id) =>
-                    this.payments.db.base.Types.ObjectId.createFromHexString(
-                      id,
-                    ),
-                  ),
-                },
+                ashramId: { $in: scopeObjects },
               }),
         },
       },
@@ -348,8 +403,10 @@ export class BookingFinanceService {
     const filter: any = {};
     if (isAshramOwner(user)) {
       const ids = await this.ashramScope(user, ashramId);
+      if (ids && ids.length === 0) return [];
+      const scopeObjects = ids ? safeObjectIdList(ids) : [];
       const bookings = await this.payments
-        .find({ ashramId: { $in: ids ?? [] } })
+        .find({ ashramId: { $in: scopeObjects } })
         .select("bookingId")
         .lean();
       filter.bookingId = { $in: bookings.map((x: any) => x.bookingId) };
@@ -359,8 +416,9 @@ export class BookingFinanceService {
     )
       throw new ForbiddenException("Not authorized for refunds");
     else if (ashramId) {
+      const targetAshram = safeObjectId(ashramId) || ashramId;
       const bookings = await this.payments
-        .find({ ashramId })
+        .find({ ashramId: targetAshram })
         .select("bookingId")
         .lean();
       filter.bookingId = { $in: bookings.map((x: any) => x.bookingId) };

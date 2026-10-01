@@ -122,6 +122,14 @@ export class AartiPublicController {
     @Param("idOrSlug") idOrSlug: string,
     @Query() query: AartiDateQueryDto,
   ) {
+    if (
+      !idOrSlug ||
+      !String(idOrSlug).trim() ||
+      String(idOrSlug).trim().toLowerCase() === "undefined" ||
+      String(idOrSlug).trim().toLowerCase() === "null"
+    ) {
+      throw new NotFoundException("Aarti not found.");
+    }
     const data = await this.discovery.detail(idOrSlug, query.date);
     if (!data) throw new NotFoundException("Aarti not found.");
     return { success: true, data };

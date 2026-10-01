@@ -118,20 +118,29 @@ export const OwnerBookingCenterPage: React.FC<OwnerBookingCenterPageProps> = ({
           ),
         );
 
-      const allBookings: any[] = [];
-      let page = 1;
-      let batch: any[] = [];
-      do {
-        const response = await bookingService.dashboard({
-          page: String(page),
-          limit: "100",
-          ...(selected ? { ashramId: selected } : {}),
-        });
-        batch = response.data?.success ? response.data.data || [] : [];
-        allBookings.push(...batch);
-        page += 1;
-      } while (batch.length === 100);
-      setBookings(allBookings);
+      try {
+        const allBookings: any[] = [];
+        let page = 1;
+        let batch: any[] = [];
+        let maxPages = 10;
+        do {
+          const response = await bookingService.dashboard({
+            page: String(page),
+            limit: "100",
+            ...(selected ? { ashramId: selected } : {}),
+          });
+          batch = response.data?.success ? response.data.data || [] : [];
+          allBookings.push(...batch);
+          page += 1;
+          maxPages -= 1;
+        } while (batch.length === 100 && maxPages > 0);
+        setBookings(allBookings);
+      } catch (bErr) {
+        console.warn("Could not load owner dashboard bookings:", bErr);
+        if (!failedResult) {
+          setError(getErrorMessage(bErr, "Could not load booking records."));
+        }
+      }
     } catch (loadError) {
       setError(
         getErrorMessage(loadError, "Could not load booking and payment data."),
@@ -275,11 +284,40 @@ export const OwnerBookingCenterPage: React.FC<OwnerBookingCenterPageProps> = ({
     );
   }, [paymentRows, search]);
 
+  const roomNameOf = (booking: any): string => {
+    if (booking?.roomId?.name) return booking.roomId.name;
+    if (Array.isArray(booking?.rooms) && booking.rooms.length > 0) {
+      const names = booking.rooms
+        .map((r: any) => r.roomId?.name || r.name || r.roomName || r.type)
+        .filter(Boolean);
+      if (names.length > 0) return names.join(", ");
+    }
+    if (Array.isArray(booking?.roomsSnapshot) && booking.roomsSnapshot.length > 0) {
+      const names = booking.roomsSnapshot
+        .map((s: any) => s.name || s.roomName || s.type)
+        .filter(Boolean);
+      if (names.length > 0) return names.join(", ");
+    }
+    return booking?.roomName || "Standard Room";
+  };
+
   const tabs: { id: View; title: string }[] = [
-    { id: "bookings", title: `Bookings (${scopedBookings.length})` },
-    { id: "payments", title: `Payments (${paymentRows.length})` },
-    { id: "settlements", title: `Settlements (${scopedSettlements.length})` },
-    { id: "refunds", title: `Refunds (${scopedRefunds.length})` },
+    {
+      id: "bookings",
+      title: loading ? "Bookings (Loading…)" : `Bookings (${scopedBookings.length})`,
+    },
+    {
+      id: "payments",
+      title: loading ? "Payments (Loading…)" : `Payments (${paymentRows.length})`,
+    },
+    {
+      id: "settlements",
+      title: loading ? "Settlements (Loading…)" : `Settlements (${scopedSettlements.length})`,
+    },
+    {
+      id: "refunds",
+      title: loading ? "Refunds (Loading…)" : `Refunds (${scopedRefunds.length})`,
+    },
   ];
 
   return (
@@ -327,7 +365,16 @@ export const OwnerBookingCenterPage: React.FC<OwnerBookingCenterPageProps> = ({
       </section>
 
       {error && (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 text-rose-700 px-4 py-3 text-xs font-semibold">{error}</div>
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 text-rose-700 px-4 py-3 text-xs font-semibold flex items-center justify-between">
+          <span>{error}</span>
+          <button
+            type="button"
+            onClick={load}
+            className="px-3 py-1 bg-rose-600 text-white rounded-lg text-[11px] font-bold hover:bg-rose-700 transition"
+          >
+            Retry
+          </button>
+        </div>
       )}
 
       <section className="grid grid-cols-2 lg:grid-cols-5 gap-3">
@@ -341,7 +388,13 @@ export const OwnerBookingCenterPage: React.FC<OwnerBookingCenterPageProps> = ({
           <div key={title} className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[20px] p-4 shadow-sm">
             <Icon size={16} className="text-[#F28C28]" />
             <p className="text-[10px] text-gray-400 font-bold mt-2">{title}</p>
-            <p className="text-base font-black text-[#0B192C] dark:text-white mt-1">{money(value)}</p>
+            <p className="text-base font-black text-[#0B192C] dark:text-white mt-1">
+              {loading ? (
+                <span className="inline-block w-20 h-5 bg-gray-200 dark:bg-slate-700 animate-pulse rounded" />
+              ) : (
+                money(value)
+              )}
+            </p>
           </div>
         ))}
       </section>
@@ -359,7 +412,7 @@ export const OwnerBookingCenterPage: React.FC<OwnerBookingCenterPageProps> = ({
               <label className="relative flex-1 min-w-56"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Booking, guest, phone, room or stay" className="w-full pl-9 pr-3 py-2.5 bg-gray-50 dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-800 text-xs focus:outline-none" /></label>
               <select value={status} onChange={(event) => setStatus(event.target.value)} className="px-3 py-2.5 bg-gray-50 dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-800 text-xs font-bold"><option value="">All statuses</option>{["pending","confirmed","checked_in","checked_out","completed","cancelled","refunded","no_show","expired"].map((item) => <option key={item} value={item}>{label(item)}</option>)}</select>
             </div>
-            <DataTable loading={loading} headers={["Booking", "Guest", "Ashram / Room", "Stay", "Guests", "Payment", "Total", "Status", "Details"]} rows={filteredBookings.map((booking) => [booking.bookingId || booking.reservationNumber || "—", <Contact key="guest" item={booking.customerId} />, <div key="place"><b>{booking.ashramId?.name || "—"}</b><small>{booking.roomId?.name || "—"}</small></div>, <div key="stay"><span>{dateTime(booking.checkInDate)}</span><small>to {dateTime(booking.checkOutDate)}</small></div>, `${booking.guestsCount || 1} / ${booking.roomsBookedCount || 1} room(s)`, label(booking.paymentStatus), money(booking.pricing?.totalAmount), <Status key="status" value={booking.status} />, <button key="details" onClick={() => setSelectedBooking(booking)} className="text-[#F28C28] font-extrabold hover:underline">View full record</button>])} />
+            <DataTable loading={loading} headers={["Booking", "Guest", "Ashram / Room", "Stay", "Guests", "Payment", "Total", "Status", "Details"]} rows={filteredBookings.map((booking) => [booking.bookingId || booking.reservationNumber || "—", <Contact key="guest" item={booking.customerId} />, <div key="place"><b>{booking.ashramId?.name || "—"}</b><small>{roomNameOf(booking)}</small></div>, <div key="stay"><span>{dateTime(booking.checkInDate)}</span><small>to {dateTime(booking.checkOutDate)}</small></div>, `${booking.guestsCount || 1} / ${booking.roomsBookedCount || 1} room(s)`, label(booking.paymentStatus), money(booking.pricing?.totalAmount), <Status key="status" value={booking.status} />, <button key="details" onClick={() => setSelectedBooking(booking)} className="text-[#F28C28] font-extrabold hover:underline">View full record</button>])} />
           </div>
         )}
 
@@ -439,7 +492,7 @@ export const OwnerBookingCenterPage: React.FC<OwnerBookingCenterPageProps> = ({
                 ["Guest", selectedBooking.customerId?.name],
                 ["Contact", selectedBooking.customerId?.phone || selectedBooking.customerId?.email],
                 ["Stay", selectedBooking.ashramId?.name],
-                ["Room", selectedBooking.roomId?.name],
+                ["Room", roomNameOf(selectedBooking)],
                 ["Check in", dateTime(selectedBooking.checkInDate)],
                 ["Check out", dateTime(selectedBooking.checkOutDate)],
                 ["Guests", selectedBooking.guestsCount],

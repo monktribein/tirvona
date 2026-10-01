@@ -79,7 +79,10 @@ import {
   MessageSquare,
   Clock,
 } from "lucide-react";
-import { checkAshramBookingAvailable } from "../utils/ashramAvailabilityHelper";
+import {
+  checkAshramBookingAvailable,
+  isAshramEnquiryOnly,
+} from "../utils/ashramAvailabilityHelper";
 
 import {
   volunteerService,
@@ -1410,8 +1413,12 @@ export const AshramDetailPage: React.FC = () => {
                 .join(", ")}
             </span>
             {!checkAshramBookingAvailable(ashram) && (
-              <span className="px-2.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black uppercase tracking-wider shadow-sm">
-                Not Available
+              <span
+                className={`px-2.5 py-0.5 rounded-full text-white text-[10px] font-black uppercase tracking-wider shadow-sm ${
+                  isAshramEnquiryOnly(ashram) ? "bg-amber-600" : "bg-rose-600"
+                }`}
+              >
+                {isAshramEnquiryOnly(ashram) ? "ENQUIRY ONLY" : "Not Available"}
               </span>
             )}
           </div>
@@ -1421,9 +1428,21 @@ export const AshramDetailPage: React.FC = () => {
           </h2>
 
           {!checkAshramBookingAvailable(ashram) && (
-            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/60 text-xs font-black uppercase tracking-wider">
-              <XCircle size={14} className="shrink-0" />
-              <span>Online Booking Currently Not Available</span>
+            <div
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${
+                isAshramEnquiryOnly(ashram)
+                  ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60"
+                  : "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/60"
+              }`}
+            >
+              {isAshramEnquiryOnly(ashram) ? (
+                <span>Enquiry Only Property — Direct Contact Required</span>
+              ) : (
+                <>
+                  <XCircle size={14} className="shrink-0" />
+                  <span>Online Booking Currently Not Available</span>
+                </>
+              )}
             </div>
           )}
           <div className="text-xs font-bold text-gray-600 dark:text-gray-300 flex flex-col sm:flex-row sm:flex-wrap items-center justify-center gap-y-2 sm:gap-x-2.5 leading-relaxed">
@@ -2778,7 +2797,9 @@ export const AshramDetailPage: React.FC = () => {
                   }`}
                 >
                   {!checkAshramBookingAvailable(ashram)
-                    ? "Booking Not Available"
+                    ? isAshramEnquiryOnly(ashram)
+                      ? "Enquiry Only — Contact Property"
+                      : "Booking Not Available"
                     : paying
                       ? "Opening Secure Payment..."
                       : quoting
@@ -3034,10 +3055,21 @@ export const AshramDetailPage: React.FC = () => {
               el.scrollIntoView({ behavior: "smooth", block: "start" });
             }
           }}
-          className="px-5 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#B45309] text-white text-xs font-extrabold shadow-md cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all"
+          disabled={!checkAshramBookingAvailable(ashram)}
+          className={`px-5 py-2.5 rounded-full text-white text-xs font-extrabold shadow-md flex items-center gap-1.5 transition-all ${
+            !checkAshramBookingAvailable(ashram)
+              ? "bg-gray-400 dark:bg-slate-700 cursor-not-allowed opacity-80"
+              : "bg-[#F28C28] hover:bg-[#B45309] cursor-pointer active:scale-95"
+          }`}
         >
-          <span>Book Now</span>
-          <ArrowRight size={13} />
+          <span>
+            {!checkAshramBookingAvailable(ashram)
+              ? isAshramEnquiryOnly(ashram)
+                ? "Enquiry Only"
+                : "Not Available"
+              : "Book Now"}
+          </span>
+          {checkAshramBookingAvailable(ashram) && <ArrowRight size={13} />}
         </button>
       </div>
     </div>

@@ -260,25 +260,25 @@ export const RefundRequestsPage: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <EnterpriseStatsCard
           title="Awaiting action"
-          value={summary?.openCount ?? 0}
+          value={loading ? "..." : (summary?.openCount ?? 0)}
           description="Pending, in review, approved or processing"
           icon={<Clock size={18} />}
         />
         <EnterpriseStatsCard
           title="Refunded"
-          value={summary?.settledCount ?? 0}
+          value={loading ? "..." : (summary?.settledCount ?? 0)}
           description="Settled back to the customer"
           icon={<CheckCircle2 size={18} />}
         />
         <EnterpriseStatsCard
           title="Total refunded"
-          value={formatCurrency(summary?.settledAmount ?? 0)}
+          value={loading ? "..." : formatCurrency(summary?.settledAmount ?? 0)}
           description="Net of processing fees"
           icon={<BadgeIndianRupee size={18} />}
         />
         <EnterpriseStatsCard
           title="Needs attention"
-          value={(counts.failed ?? 0) + (counts.pending ?? 0)}
+          value={loading ? "..." : ((counts.failed ?? 0) + (counts.pending ?? 0))}
           description="Failed at the gateway, or not yet triaged"
           icon={<AlertTriangle size={18} />}
         />
@@ -414,14 +414,22 @@ export const RefundRequestsPage: React.FC = () => {
       </div>
 
       {error && (
-        <div className="flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50 dark:bg-rose-500/10 dark:border-rose-500/30 px-4 py-3">
-          <AlertTriangle size={16} className="text-rose-600 mt-0.5 shrink-0" />
-          <div className="text-xs">
-            <p className="font-bold text-rose-900 dark:text-rose-300">
-              Could not load refunds
-            </p>
-            <p className="text-rose-800/80 dark:text-rose-400/80">{error}</p>
+        <div className="flex items-center justify-between gap-2.5 rounded-2xl border border-rose-200 bg-rose-50 dark:bg-rose-500/10 dark:border-rose-500/30 px-4 py-3">
+          <div className="flex items-start gap-2.5">
+            <AlertTriangle size={16} className="text-rose-600 mt-0.5 shrink-0" />
+            <div className="text-xs">
+              <p className="font-bold text-rose-900 dark:text-rose-300">
+                Could not load refunds
+              </p>
+              <p className="text-rose-800/80 dark:text-rose-400/80">{error}</p>
+            </div>
           </div>
+          <button
+            onClick={() => load(true)}
+            className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shrink-0 cursor-pointer transition-colors"
+          >
+            Retry
+          </button>
         </div>
       )}
 

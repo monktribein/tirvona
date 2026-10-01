@@ -454,7 +454,7 @@ export const BookingDetailPage: React.FC = () => {
       ctx.textAlign = "left";
       ctx.fillStyle = "#475569";
       ctx.font = "600 9.5px sans-serif";
-      ctx.fillText("📞 24x7 Pilgrim Helpline: 1800-11-1363 / 112 • Support: +91 98765 43210", 24, 574);
+      ctx.fillText(`📞 24x7 Pilgrim Helpline: 1800-11-1363 / 112 • Support: ${SUPPORT_CONFIG.phone}`, 24, 574);
       ctx.fillStyle = "#94A3B8";
       ctx.font = "500 9px sans-serif";
       ctx.fillText("Valid digital accommodation voucher issued under Government Digital India guidelines.", 24, 592);
@@ -917,7 +917,7 @@ export const BookingDetailPage: React.FC = () => {
               <p className="text-gray-500 dark:text-gray-400 font-medium">
                 Phone:{" "}
                 <strong className="text-[#0B192C] dark:text-white">
-                  {ashram?.contactPhone || "+91 98765 43210"}
+                  {ashram?.contactPhone || SUPPORT_CONFIG.phone}
                 </strong>
               </p>
               <p className="text-gray-500 dark:text-gray-400 font-medium">
@@ -1134,7 +1134,7 @@ export const BookingDetailPage: React.FC = () => {
               </div>
 
               <div className="text-[10px] text-gray-400 leading-relaxed space-y-0.5 pt-1">
-                <p>📞 <strong>24x7 Pilgrim Helpline:</strong> 1800-11-1363 / 112 | <strong>Support:</strong> +91 98765 43210</p>
+                <p>📞 <strong>24x7 Pilgrim Helpline:</strong> 1800-11-1363 / 112 | <strong>Support:</strong> {SUPPORT_CONFIG.phone}</p>
                 <p className="italic text-gray-400">Digital India compliant stay voucher. Present check-in code at stay desk.</p>
               </div>
             </div>

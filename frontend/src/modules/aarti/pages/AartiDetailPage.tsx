@@ -37,7 +37,13 @@ const FALLBACK_IMAGE =
 export const AartiDetailPage: React.FC = () => {
   // /aarti/:city/:ashramSlug and /pooja/:city/:ashramSlug, or legacy /aarti/:id.
   const { id = "", city = "", ashramSlug = "" } = useParams();
-  const aartiKey = ashramSlug || id;
+  const rawKey = (ashramSlug || id || "").trim();
+  const aartiKey =
+    rawKey &&
+    rawKey.toLowerCase() !== "undefined" &&
+    rawKey.toLowerCase() !== "null"
+      ? rawKey
+      : "";
   const navigate = useNavigate();
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -56,6 +62,11 @@ export const AartiDetailPage: React.FC = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!aartiKey) {
+      setError("Please select a valid aarti session from our directory.");
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     setLoading(true);
     aartiDiscoveryService
@@ -152,8 +163,8 @@ export const AartiDetailPage: React.FC = () => {
   const proceed = () => {
     if (!session || !quote) return;
     if (!user) {
-      toast.info("Please sign in to reserve your aarti pass.");
-      navigate(`/login?returnTo=/aarti/${session.slug}?date=${date}`);
+      const target = session.slug || session._id;
+      navigate(`/login?returnTo=/aarti/${target}?date=${date}`);
       return;
     }
     navigate("/aarti/checkout", {

@@ -279,7 +279,18 @@ export default function AddEditTemplePage() {
     if (problem) { toast.error(problem); return; }
     try {
       setSaving(true);
-      const payload = { ...formData, status: publish ? "published" : formData.status };
+      const cleanedMedia = { ...formData.media };
+      if (!cleanedMedia.videoUrl && cleanedMedia.youtubeUrl) {
+        cleanedMedia.videoUrl = cleanedMedia.youtubeUrl;
+      }
+      if (!cleanedMedia.youtubeUrl && cleanedMedia.videoUrl) {
+        cleanedMedia.youtubeUrl = cleanedMedia.videoUrl;
+      }
+      const payload = { 
+        ...formData, 
+        media: cleanedMedia,
+        status: publish ? "published" : formData.status 
+      };
 
       let templeId = id;
       if (isEdit) {
@@ -524,12 +535,22 @@ export default function AddEditTemplePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">YouTube Video URL</label>
-            <input type="url" value={formData.media.youtubeUrl} onChange={(e) => handleChange("media.youtubeUrl", e.target.value)} className="w-full rounded-full border border-gray-200 px-4 py-2" />
+            <input 
+              type="url" 
+              value={formData.media.youtubeUrl || formData.media.videoUrl} 
+              onChange={(e) => {
+                const val = e.target.value;
+                handleChange("media.youtubeUrl", val);
+                handleChange("media.videoUrl", val);
+              }} 
+              className="w-full rounded-full border border-gray-200 px-4 py-2" 
+              placeholder="https://www.youtube.com/..."
+            />
           </div>
-          <div><label className="block text-sm font-medium text-gray-700 mb-1">Official Website</label><input type="url" value={formData.media.officialWebsite} onChange={(e) => handleChange("media.officialWebsite", e.target.value)} className="w-full rounded-full border border-gray-200 px-4 py-2" /></div>
+          <div><label className="block text-sm font-medium text-gray-700 mb-1">Official Website</label><input type="url" value={formData.media.officialWebsite} onChange={(e) => handleChange("media.officialWebsite", e.target.value)} className="w-full rounded-full border border-gray-200 px-4 py-2" placeholder="https://..." /></div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Live Stream / Live Aarti URL</label>
-            <input type="url" value={formData.media.liveStreamUrl} onChange={(e) => handleChange("media.liveStreamUrl", e.target.value)} className="w-full rounded-full border border-gray-200 px-4 py-2" />
+            <input type="url" value={formData.media.liveStreamUrl} onChange={(e) => handleChange("media.liveStreamUrl", e.target.value)} className="w-full rounded-full border border-gray-200 px-4 py-2" placeholder="https://..." />
           </div>
         </div>
       </div>
