@@ -54,8 +54,15 @@ export class TemplesService {
       slug = `${baseSlug}-${counter++}`;
     }
 
+    const media = dto.media ? { ...dto.media } : undefined;
+    if (media) {
+      if (!media.videoUrl && media.youtubeUrl) media.videoUrl = media.youtubeUrl;
+      if (!media.youtubeUrl && media.videoUrl) media.youtubeUrl = media.videoUrl;
+    }
+
     const temple = await this.temples.create({
       ...dto,
+      ...(media ? { media } : {}),
       address: this.normalizeAddress(dto.address),
       slug,
       createdBy: user?.id,
@@ -77,9 +84,19 @@ export class TemplesService {
     if (dto.slug && await this.temples.exists({ slug: dto.slug, _id: { $ne: id }, deletedAt: null })) {
       throw new ConflictException("Temple slug is already in use");
     }
+    const media = dto.media ? { ...dto.media } : undefined;
+    if (media) {
+      if (!media.videoUrl && media.youtubeUrl) media.videoUrl = media.youtubeUrl;
+      if (!media.youtubeUrl && media.videoUrl) media.youtubeUrl = media.videoUrl;
+    }
     const temple = await this.temples.findByIdAndUpdate(
       id,
-      { ...dto, ...(dto.address ? { address: this.normalizeAddress(dto.address) } : {}), updatedBy: user?.id },
+      {
+        ...dto,
+        ...(media ? { media } : {}),
+        ...(dto.address ? { address: this.normalizeAddress(dto.address) } : {}),
+        updatedBy: user?.id,
+      },
       { new: true }
     );
     if (!temple) throw new NotFoundException("Temple not found");
@@ -231,6 +248,7 @@ export class TemplesService {
   }
 
   private normalizeAddress(address: any) {
+    if (!address) return address;
     const coordinates = Array.isArray(address.coordinates) ? address.coordinates : address.coordinates?.coordinates;
     return { ...address, coordinates: { type: "Point", coordinates } };
   }

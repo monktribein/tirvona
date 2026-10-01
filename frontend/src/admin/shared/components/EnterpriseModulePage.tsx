@@ -1445,7 +1445,30 @@ export const EnterpriseModulePage: React.FC<{
             {
               key: "roomId",
               label: "Room Category",
-              render: (value: any) => value?.name || "Room unavailable",
+              render: (value: any, item: any) => {
+                if (value?.name) return value.name;
+                if (Array.isArray(item?.rooms) && item.rooms.length > 0) {
+                  const names = item.rooms
+                    .map(
+                      (r: any) =>
+                        r.roomId?.name || r.name || r.roomName || r.type,
+                    )
+                    .filter(Boolean);
+                  if (names.length > 0) return names.join(", ");
+                }
+                if (
+                  Array.isArray(item?.roomsSnapshot) &&
+                  item.roomsSnapshot.length > 0
+                ) {
+                  const names = item.roomsSnapshot
+                    .map((s: any) => s.name || s.roomName || s.type)
+                    .filter(Boolean);
+                  if (names.length > 0) return names.join(", ");
+                }
+                if (item?.roomName) return item.roomName;
+                if (item?.roomType) return item.roomType;
+                return "Reserved Room";
+              },
             },
             {
               key: "checkInDate",

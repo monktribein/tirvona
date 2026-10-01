@@ -57,6 +57,7 @@ import { BookingIdentityService } from "./booking-identity.service";
 import { BookingPricingService } from "./booking-pricing.service";
 import { bookingConfirmedOutboxEvent } from "./booking-notification.factory";
 import { normalizeWhatsAppNumber } from "../../../integrations/whatsapp/utils/whatsapp-phone.util";
+import { isTestPromoCode } from "../domain/test-coupon.constants";
 
 /**
  * Matches a coupon redemption to the identity that made it. A redemption row
@@ -249,6 +250,34 @@ export class BookingsService {
     );
   }
 
+  private async publishEnterpriseNotification(
+    title: string,
+    message: string,
+    severity = "info",
+    module = "BOOKINGS",
+    extra: Record<string, any> = {},
+  ): Promise<void> {
+    try {
+      const col = this.bookings.db?.collection("notifications");
+      if (col) {
+        await col.insertOne({
+          recipientRole: "all",
+          type: "in_app",
+          title,
+          message,
+          module,
+          severity,
+          isRead: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          ...extra,
+        });
+      }
+    } catch {
+      // safe fire-and-forget
+    }
+  }
+
   async quote(dto: CreateBookingDto): Promise<any> {
     const quote = await this.pricing.quote(dto);
     return {
@@ -308,26 +337,28 @@ export class BookingsService {
         });
       }
       if (quote.coupon) {
-        const used = await this.redemptions
-          .countDocuments({
-            couponId: quote.coupon._id,
-            // Counted against whichever identity is booking, so a WhatsApp
-            // guest gets the same per-customer cap as a website account.
-            ...redemptionOwnerFilter(actor),
-            status: { $in: ["reserved", "redeemed"] },
-          })
-          .session(session);
-        if (used >= Number(quote.coupon.perUserLimit ?? 1))
-          throw new ConflictException(
-            "You have already used this offer the maximum number of times",
+        if (!isTestPromoCode(quote.coupon.promoCode)) {
+          const used = await this.redemptions
+            .countDocuments({
+              couponId: quote.coupon._id,
+              // Counted against whichever identity is booking, so a WhatsApp
+              // guest gets the same per-customer cap as a website account.
+              ...redemptionOwnerFilter(actor),
+              status: { $in: ["reserved", "redeemed"] },
+            })
+            .session(session);
+          if (used >= Number(quote.coupon.perUserLimit ?? 1))
+            throw new ConflictException(
+              "You have already used this offer the maximum number of times",
+            );
+          const reserved = await this.coupons.updateOne(
+            { _id: quote.coupon._id, remainingRedemptions: { $gt: 0 } },
+            { $inc: { remainingRedemptions: -1, redemptionsCount: 1 } },
+            { session },
           );
-        const reserved = await this.coupons.updateOne(
-          { _id: quote.coupon._id, remainingRedemptions: { $gt: 0 } },
-          { $inc: { remainingRedemptions: -1, redemptionsCount: 1 } },
-          { session },
-        );
-        if (!reserved.modifiedCount)
-          throw new ConflictException("This offer is no longer available");
+          if (!reserved.modifiedCount)
+            throw new ConflictException("This offer is no longer available");
+        }
       }
       const identityCode = await this.identity.issueForBooking(
         dto.ashramId,
@@ -483,6 +514,13 @@ export class BookingsService {
         );
       return created;
     });
+    void this.publishEnterpriseNotification(
+      "Reservation held",
+      `Booking ${booking.bookingId} created and held for payment.`,
+      "info",
+      "BOOKINGS",
+      { bookingId: booking._id, ashramId: dto.ashramId },
+    );
     return booking;
   }
 
@@ -727,6 +765,13 @@ export class BookingsService {
         data: { bookingId: String(id) },
         meta: { correlationId: `booking:${id}:payment_failed` },
       });
+      void this.publishEnterpriseNotification(
+        "Payment failed",
+        `Payment verification failed for booking ${id}`,
+        "critical",
+        "PAYMENTS",
+        { bookingId: id },
+      );
       throw new BadRequestException("Payment signature verification failed");
     }
     return this.transactions.run(async (session) => {
@@ -1079,6 +1124,13 @@ export class BookingsService {
           { session },
         ),
       ]);
+      void this.publishEnterpriseNotification(
+        "Booking confirmed",
+        `Payment verified for ${booking.bookingId}. Room inventory confirmed.`,
+        "success",
+        "BOOKINGS",
+        { bookingId: booking._id, ashramId: booking.ashramId },
+      );
       return { booking, payment, invoice };
     });
   }
@@ -2455,11 +2507,13 @@ export class BookingsService {
         );
       }
       if (existing.offerId) {
-        await this.coupons.updateOne(
-          { _id: existing.offerId },
-          { $inc: { remainingRedemptions: 1, redemptionsCount: -1 } },
-          { session },
-        );
+        if (!isTestPromoCode(existing.promoCode)) {
+          await this.coupons.updateOne(
+            { _id: existing.offerId },
+            { $inc: { remainingRedemptions: 1, redemptionsCount: -1 } },
+            { session },
+          );
+        }
         await this.redemptions.updateOne(
           { bookingId: existing._id },
           { $set: { status: "released", releasedAt: new Date() } },
@@ -2499,6 +2553,13 @@ export class BookingsService {
           { session },
         ),
       ]);
+      void this.publishEnterpriseNotification(
+        "Booking cancelled",
+        `Booking ${existing.bookingId} cancelled. Reason: ${dto.reason}. Refund: ₹${refundAmount}.`,
+        "warning",
+        "BOOKINGS",
+        { bookingId: existing._id, ashramId: existing.ashramId },
+      );
       return { booking: existing, refundAmount };
     });
   }

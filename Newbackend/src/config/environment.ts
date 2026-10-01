@@ -85,13 +85,22 @@ export const applyDnsServersFromEnvironment = (): string[] => {
   return servers;
 };
 
-export const corsOriginsFromEnvironment = (): string[] =>
-  csv(
+export const corsOriginsFromEnvironment = (): string[] => {
+  const envOrigins = csv(
     process.env.CORS_ORIGINS,
-    process.env.FRONTEND_URL ??
-    process.env.CLIENT_URL ??
-    "http://localhost:5173,http://localhost:5174,http://localhost:5175",
+    process.env.FRONTEND_URL ?? process.env.CLIENT_URL ?? "",
   );
+  const defaults = [
+    "https://tirvona.com",
+    "https://www.tirvona.com",
+    "https://api.tirvona.com",
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:5175",
+    "http://localhost:3000",
+  ];
+  return Array.from(new Set([...defaults, ...envOrigins.filter(Boolean)]));
+};
 
 export const parkingQrSecretFromEnvironment = (): string =>
   process.env.PARKING_QR_SECRET ||

@@ -54,12 +54,76 @@ const assertNoInlineMedia = (dto: {
 };
 
 
+const CANONICAL_CITIES: Record<string, string> = {
+  vrinadavn: "Vrindavan",
+  vrindaban: "Vrindavan",
+  vrindavan: "Vrindavan",
+  vrindavandham: "Vrindavan",
+  mathura: "Mathura",
+  mathuraa: "Mathura",
+  varanasi: "Varanasi",
+  banaras: "Varanasi",
+  kashi: "Varanasi",
+  ayodhya: "Ayodhya",
+  ayodha: "Ayodhya",
+  rishikesh: "Rishikesh",
+  hrishikesh: "Rishikesh",
+  haridwar: "Haridwar",
+  hardwar: "Haridwar",
+  puri: "Puri",
+  tirupati: "Tirupati",
+  shirdi: "Shirdi",
+  ujjain: "Ujjain",
+};
+
+const CANONICAL_STATES: Record<string, string> = {
+  "utar pradesh": "Uttar Pradesh",
+  "uttar pradesh": "Uttar Pradesh",
+  up: "Uttar Pradesh",
+  "u.p.": "Uttar Pradesh",
+  uttarpradesh: "Uttar Pradesh",
+  uttarakhand: "Uttarakhand",
+  uttrakhand: "Uttarakhand",
+  uttaranchal: "Uttarakhand",
+  uk: "Uttarakhand",
+  "u.k.": "Uttarakhand",
+  "madhya pradesh": "Madhya Pradesh",
+  mp: "Madhya Pradesh",
+  odisha: "Odisha",
+  orissa: "Odisha",
+  "andhra pradesh": "Andhra Pradesh",
+  maharashtra: "Maharashtra",
+  rajasthan: "Rajasthan",
+  gujarat: "Gujarat",
+};
+
+export const canonicalizeCity = (city: string): string => {
+  const clean = String(city ?? "").trim();
+  const key = clean.toLowerCase().replace(/[^a-z]/g, "");
+  return CANONICAL_CITIES[key] || clean;
+};
+
+export const canonicalizeState = (state: string): string => {
+  const clean = String(state ?? "").trim();
+  const key = clean.toLowerCase().replace(/[^a-z]/g, " ").trim();
+  return CANONICAL_STATES[key] || CANONICAL_STATES[clean.toLowerCase()] || clean;
+};
+
 const normalizeAshramAddress = (
   address: Record<string, any> = {},
   legacy: Record<string, any> = {},
 ): Record<string, any> => {
   const text = (...values: unknown[]): string =>
     String(values.find((value) => value !== undefined && value !== null && String(value).trim()) ?? "").trim();
+  
+  const rawCity = text(address.city, legacy.city);
+  const rawState = text(address.state, legacy.state);
+  const rawDistrict = text(address.district, legacy.district);
+
+  const city = canonicalizeCity(rawCity);
+  const state = canonicalizeState(rawState);
+  const district = canonicalizeCity(rawDistrict) || city;
+
   return {
     ...address,
     street: text(
@@ -70,9 +134,9 @@ const normalizeAshramAddress = (
       legacy.streetAddress,
       legacy.addressLine,
     ),
-    city: text(address.city, legacy.city),
-    district: text(address.district, legacy.district),
-    state: text(address.state, legacy.state),
+    city,
+    district,
+    state,
     pincode: text(
       address.pincode,
       address.pinCode,
@@ -317,25 +381,57 @@ export class AshramsService {
           ),
       );
 
+      const totalInventory = ashramRooms.reduce(
+        (sum, room) => sum + Number(room.totalInventory ?? 0),
+        0,
+      );
+      const hasValidPrice =
+        ashramRooms.some((room) => Number(room.basePrice ?? 0) > 0) ||
+        Number(row.pricing?.startingPrice ?? 0) > 0;
+      const isBookable =
+        row.bookingPaused !== true &&
+        row.status === "approved" &&
+        ashramRooms.length > 0 &&
+        totalInventory > 0 &&
+        hasValidPrice;
+      const enquiryOnly = !isBookable;
+      const normalizedAddress = normalizeAshramAddress(row.address, row);
+      const isVerified = Boolean(
+        row.isVerified || row.verificationStatus === "verified",
+      );
+
       return {
         ...row,
+        address: normalizedAddress,
+        isVerified,
+        isBookable,
+        enquiryOnly,
         discovery: {
           distanceKm:
             row.distanceKm == null ? null : round2(Number(row.distanceKm)),
           isNearby: Boolean(row.isNearby),
+          bookability: {
+            isBookable,
+            enquiryOnly,
+            badge: isBookable ? "BOOKABLE" : "ENQUIRY ONLY",
+            reason: !isBookable
+              ? ashramRooms.length === 0 || totalInventory === 0
+                ? "Zero active room inventory"
+                : !hasValidPrice
+                  ? "Contact for price / pricing incomplete"
+                  : "Enquiry only property"
+              : null,
+          },
           bookingAvailability: {
             checkedForDates: dates.length > 0,
-            available: availableRooms > 0,
+            available: isBookable && availableRooms > 0,
             availableRooms,
             checkIn: query.checkIn ?? null,
             checkOut: query.checkOut ?? null,
           },
           rooms: {
             categories: ashramRooms.length,
-            totalInventory: ashramRooms.reduce(
-              (sum, room) => sum + Number(room.totalInventory ?? 0),
-              0,
-            ),
+            totalInventory,
             types: roomTypes,
             hasAc: ashramRooms.some((room) => room.acType === "AC"),
             amenities: roomAmenities.slice(0, 8),
@@ -358,6 +454,9 @@ export class AshramsService {
 
   async publicList(query: AshramQueryDto): Promise<any> {
     const filter: Record<string, any> = { status: "approved", deletedAt: null };
+    if (query.verified === "true" || (query as any).verified === true) {
+      filter.isVerified = true;
+    }
     if (query.city)
       filter["address.city"] = {
         $regex: escapeRegex(query.city),

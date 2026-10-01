@@ -182,6 +182,14 @@ export class AartiDiscoveryService {
   }
 
   async detail(idOrSlug: string, date?: string): Promise<any | null> {
+    if (
+      !idOrSlug ||
+      !String(idOrSlug).trim() ||
+      String(idOrSlug).trim().toLowerCase() === "undefined" ||
+      String(idOrSlug).trim().toLowerCase() === "null"
+    ) {
+      return null;
+    }
     const filter = /^[0-9a-f]{24}$/i.test(idOrSlug)
       ? { _id: idOrSlug }
       : { slug: idOrSlug.toLowerCase() };

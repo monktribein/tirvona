@@ -21,13 +21,13 @@ export class AddressDto {
   @Max(180, { each: true })
   coordinates?: number[]; // [longitude, latitude]
 
-  @IsOptional() @IsUrl({ require_tld: false }) mapUrl?: string;
-  @IsOptional() @IsUrl({ require_tld: false }) googleMapsEmbedUrl?: string;
+  @IsOptional() @IsString() mapUrl?: string;
+  @IsOptional() @IsString() googleMapsEmbedUrl?: string;
   @IsOptional() @IsString() plusCode?: string;
 }
 
 export class TempleMediaDto {
-  @IsOptional() @IsUrl({ require_tld: false }) coverImage?: string;
+  @IsOptional() @IsString() coverImage?: string;
   @IsOptional() @IsArray() @IsString({ each: true }) galleryImages?: string[];
   @IsOptional() @IsArray() @IsString({ each: true }) templeExteriorImages?: string[];
   @IsOptional() @IsArray() @IsString({ each: true }) templeInteriorImages?: string[];
@@ -36,10 +36,10 @@ export class TempleMediaDto {
   @IsOptional() @IsArray() @IsString({ each: true }) festivalImages?: string[];
   @IsOptional() @IsArray() @IsString({ each: true }) aartiImages?: string[];
   @IsOptional() @IsArray() @IsString({ each: true }) additionalImages?: string[];
-  @IsOptional() @IsUrl({ require_tld: false }) videoUrl?: string;
-  @IsOptional() @IsUrl({ require_tld: false }) youtubeUrl?: string;
-  @IsOptional() @IsUrl({ require_tld: false }) liveStreamUrl?: string;
-  @IsOptional() @IsUrl({ require_tld: false }) officialWebsite?: string;
+  @IsOptional() @IsString() videoUrl?: string;
+  @IsOptional() @IsString() youtubeUrl?: string;
+  @IsOptional() @IsString() liveStreamUrl?: string;
+  @IsOptional() @IsString() officialWebsite?: string;
 }
 
 export class TimeSlotDto {

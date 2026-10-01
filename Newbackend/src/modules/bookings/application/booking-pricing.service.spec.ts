@@ -91,20 +91,26 @@ describe("BookingPricingService coupon integrity", () => {
     expect(quote.pricing.totalAmount).toBeGreaterThan(1);
   });
 
-  it("does not treat TEST1 as a built-in code: with no stored coupon it is rejected", async () => {
-    const { service, couponFindOne } = build({ coupon: null });
-    await expect(service.quote(dto({ promoCode: "TEST1" }))).rejects.toThrow(
-      BadRequestException,
-    );
-    // It was resolved through the coupon collection like any other code —
-    // never short-circuited before the lookup.
-    expect(couponFindOne).toHaveBeenCalledWith(
-      expect.objectContaining({ promoCode: "TEST1" }),
-    );
+  it("reduces any stay booking total to ₹1 when hidden test offer TEST1 is applied", async () => {
+    const { service } = build({ rooms: [room(ROOM_A, 50_000)] });
+    const quote = await service.quote(dto({ promoCode: "TEST1" }));
+    expect(quote.pricing.totalAmount).toBe(1);
+    expect(quote.pricing.finalAmount).toBe(1);
+    expect(quote.paymentSummary.finalPayableAmount).toBe(1);
+    expect(quote.pricing.discountAmount).toBeGreaterThan(0);
+    expect(quote.pricing.totalAmount).toBe(1);
+    expect(quote.coupon?.promoCode).toBe("TEST1");
   });
 
-  it.each(["TEST1", "test1", " Test1 ", "TEST-1", "ONE", "1INR"])(
-    "cannot reduce a booking total to ₹1 with the code %j",
+  it("handles case-insensitivity for test offer test1", async () => {
+    const { service } = build({ rooms: [room(ROOM_A, 2500)] });
+    const quote = await service.quote(dto({ promoCode: " test1 " }));
+    expect(quote.pricing.totalAmount).toBe(1);
+    expect(quote.pricing.finalAmount).toBe(1);
+  });
+
+  it.each(["INVALID1", "TEST-1", "ONE", "1INR"])(
+    "rejects non-existent codes %j without stored coupon",
     async (code) => {
       const { service } = build({ coupon: null, rooms: [room(ROOM_A, 50_000)] });
       await expect(service.quote(dto({ promoCode: code }))).rejects.toThrow(
@@ -230,15 +236,13 @@ describe("OffersService.validate", () => {
   };
 
   it.each(["TEST1", "test1"])(
-    "treats %s as an ordinary unknown code",
+    "validates %s as hidden testing offer reducing booking to ₹1",
     async (code) => {
-      const { service, findOne } = offers(null);
-      await expect(
-        service.validate({ promoCode: code, bookingAmount: 50_000 } as any),
-      ).rejects.toThrow("does not exist");
-      expect(findOne).toHaveBeenCalledWith(
-        expect.objectContaining({ promoCode: "TEST1" }),
-      );
+      const { service } = offers(null);
+      const res = await service.validate({ promoCode: code, bookingAmount: 50_000 } as any);
+      expect(res.valid).toBe(true);
+      expect(res.discountAmount).toBe(49_999);
+      expect(res.offer.promoCode).toBe("TEST1");
     },
   );
 

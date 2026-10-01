@@ -215,19 +215,32 @@ export const withBookingCustomer = <T extends Record<string, any>>(
 ): T => {
   if (!row) return row;
   const view = bookingCustomerView(row);
-  if (!view) return row;
+  const primaryRoom = Array.isArray(row.rooms) && row.rooms.length > 0 ? row.rooms[0] : null;
+  const primaryRoomId = row.roomId ?? (primaryRoom?.roomId || null);
+  const resolvedRoomName =
+    (primaryRoomId as any)?.name ||
+    primaryRoom?.name ||
+    primaryRoom?.roomName ||
+    (Array.isArray(row.roomsSnapshot) && row.roomsSnapshot.length > 0 ? row.roomsSnapshot[0]?.name : null) ||
+    row.roomName ||
+    null;
+
   return {
     ...row,
+    roomId: primaryRoomId,
+    roomName: resolvedRoomName,
     customerId:
-      view.kind === "account"
+      view?.kind === "account"
         ? row.customerId
-        : {
-            _id: view._id,
-            name: view.name,
-            email: view.email,
-            phone: view.phone,
-          },
-    ...(view.kind === "whatsapp"
+        : view
+          ? {
+              _id: view._id,
+              name: view.name,
+              email: view.email,
+              phone: view.phone,
+            }
+          : row.customerId,
+    ...(view?.kind === "whatsapp"
       ? {
           whatsappCustomer: {
             _id: view._id,
@@ -237,7 +250,7 @@ export const withBookingCustomer = <T extends Record<string, any>>(
           },
         }
       : {}),
-    customerKind: view.kind,
+    ...(view ? { customerKind: view.kind } : {}),
   };
 };
 

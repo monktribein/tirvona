@@ -340,6 +340,7 @@ export class RefundsService {
     query: { status?: string; module?: string; page?: number; limit?: number },
   ): Promise<any> {
     const scope = await this.scopeFor(user);
+    await this.reconcileBookingRefunds(scope);
     const filter = {
       ...scope,
       ...(query.status ? { status: query.status } : {}),
@@ -737,8 +738,113 @@ export class RefundsService {
     return this.requests.findById(request._id).lean();
   }
 
+  private async reconcileBookingRefunds(
+    scope: Record<string, any>,
+  ): Promise<void> {
+    try {
+      const bookingScope: Record<string, any> = { isDeleted: { $ne: true } };
+      if (scope.ashramId) bookingScope.ashramId = scope.ashramId;
+      if (scope.customerId) bookingScope.customerId = scope.customerId;
+
+      const refundedBookings = await this.bookings
+        .find({
+          ...bookingScope,
+          $or: [
+            { status: "refunded" },
+            { paymentStatus: "refunded" },
+            { "cancellation.refundAmount": { $gt: 0 } },
+          ],
+        })
+        .select(
+          "_id bookingId customerId whatsappCustomerId ashramId status paymentStatus pricing paymentSummary cancellation createdAt updatedAt",
+        )
+        .lean();
+
+      if (!refundedBookings.length) return;
+
+      const existingSourceIds = new Set(
+        (
+          await this.requests
+            .find({
+              module: "ashram_booking",
+              sourceId: { $in: refundedBookings.map((b) => b._id) },
+            })
+            .select("sourceId")
+            .lean()
+        ).map((r) => String(r.sourceId)),
+      );
+
+      for (const booking of refundedBookings) {
+        if (existingSourceIds.has(String(booking._id))) continue;
+
+        const amount = Number(
+          booking.cancellation?.refundAmount ??
+            booking.paymentSummary?.amount ??
+            booking.pricing?.amountPaid ??
+            0,
+        );
+        if (amount <= 0) continue;
+
+        const isSettled =
+          booking.status === "refunded" || booking.paymentStatus === "refunded";
+        const refundStatus: RefundStatus = isSettled ? "refunded" : "pending";
+        const refundNumber = `RFD-BK-${(booking.bookingId || String(booking._id).slice(-6)).toUpperCase()}`;
+
+        try {
+          const calculation = await this.calculations.create({
+            originalAmount: Number(booking.pricing?.basePrice ?? amount),
+            amountPaid: Number(booking.pricing?.amountPaid ?? amount),
+            breakdown: {
+              baseAmount: Number(booking.pricing?.basePrice ?? amount),
+              platformFee: Number(booking.pricing?.platformFee ?? 0),
+              gstAmount: Number(booking.pricing?.gstAmount ?? 0),
+            },
+            grossRefundable: amount,
+            netRefundable: amount,
+            notes: ["Reconciled from booking refund"],
+          });
+
+          const created = await this.requests.create({
+            refundNumber,
+            module: "ashram_booking",
+            sourceId: booking._id,
+            sourceReference: booking.bookingId ?? String(booking._id),
+            customerId: booking.customerId ?? null,
+            whatsappCustomerId: booking.whatsappCustomerId ?? null,
+            ashramId: booking.ashramId ?? null,
+            reason: booking.cancellation?.reason || "Booking cancellation refund",
+            customerNote: "Reconciled from booking record",
+            requestedAmount: amount,
+            calculationId: calculation._id,
+            status: refundStatus,
+            requestedBy: booking.customerId ?? null,
+            requestedByWhatsAppCustomerId: booking.whatsappCustomerId ?? null,
+            settledAt: isSettled
+              ? booking.cancellation?.date || booking.updatedAt || new Date()
+              : null,
+          });
+
+          await this.history.create({
+            requestId: created._id,
+            toStatus: refundStatus,
+            note: isSettled
+              ? "Refund settled on booking"
+              : "Refund pending on booking",
+            occurredAt:
+              booking.cancellation?.date || booking.updatedAt || new Date(),
+          });
+        } catch {
+          // ignore concurrent collision
+        }
+      }
+    } catch {
+      // safe fallback
+    }
+  }
+
   async summary(user: AuthenticatedUser): Promise<any> {
     const scope = await this.scopeFor(user);
+    await this.reconcileBookingRefunds(scope);
     const [byStatus, totals] = await Promise.all([
       this.requests.aggregate([
         { $match: scope },
@@ -778,3 +884,4 @@ export class RefundsService {
     };
   }
 }
+

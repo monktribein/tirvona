@@ -19,7 +19,7 @@ export const DEFAULT_PLATFORM_FEE_VALUE = 49;
 
 export interface PlatformFeeSettings {
   enabled?: boolean;
-  type?: "flat" | "percentage";
+  type?: "flat" | "percentage" | "tiered";
   value?: number;
   label?: string;
   appliesTo?: unknown;
@@ -43,21 +43,41 @@ export const platformFeeAppliesTo = (
   return platformFeeScopesOf(settings).includes(scope);
 };
 
+export const calculateTieredPlatformFeePerRoom = (
+  roomNightRate: number,
+): number => {
+  const rate = Math.max(0, Number(roomNightRate) || 0);
+  if (rate < 1000) return 50;
+  if (rate < 2000) return 75;
+  return 100;
+};
+
+
 export const resolvePlatformFee = ({
   settings,
   scope,
   baseAmount,
   policyPercent,
+  roomsCount = 1,
+  isCharitable = false,
 }: {
   settings?: PlatformFeeSettings | null;
   scope: PlatformFeeScope;
   baseAmount: number;
   policyPercent?: number | null;
+  roomsCount?: number;
+  isCharitable?: boolean;
 }): number => {
+  if (isCharitable) return 0;
   if (!platformFeeAppliesTo(settings, scope)) return 0;
   const base = Math.max(0, Number(baseAmount) || 0);
   if (policyPercent != null && Number.isFinite(Number(policyPercent)))
     return Math.max(0, Math.round((base * Number(policyPercent)) / 100));
+  if (settings?.type === "tiered") {
+    const rooms = Math.max(1, Number(roomsCount) || 1);
+    const perRoomBase = base / rooms;
+    return calculateTieredPlatformFeePerRoom(perRoomBase) * rooms;
+  }
   if (settings?.type === "percentage")
     return Math.max(0, Math.round((base * Number(settings.value ?? 0)) / 100));
   return Math.max(
@@ -65,3 +85,4 @@ export const resolvePlatformFee = ({
     Math.round(Number(settings?.value ?? DEFAULT_PLATFORM_FEE_VALUE)),
   );
 };
+

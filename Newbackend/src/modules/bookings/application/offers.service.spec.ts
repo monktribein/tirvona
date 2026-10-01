@@ -34,6 +34,8 @@ type SetUpdate = { $set: Record<string, any> };
 const build = (row: unknown = legacyRow()) => {
   const findChain: any = {
     sort: jest.fn(() => findChain),
+    skip: jest.fn(() => findChain),
+    limit: jest.fn(() => findChain),
     populate: jest.fn(() => findChain),
     lean: jest.fn().mockResolvedValue([]),
   };
@@ -150,9 +152,30 @@ describe("OffersService administration actions", () => {
     expect(created.promoCode).toMatch(/^KUMBH2026-COPY-\d+$/);
   });
 
-  it("hides deleted rows from the administration listing", async () => {
+  it("hides deleted rows and TEST1 from the administration listing", async () => {
     const { service, offers } = build();
     await service.mine(asUser());
-    expect(offers.find).toHaveBeenCalledWith({ deletedAt: null });
+    expect(offers.find).toHaveBeenCalledWith({ deletedAt: null, promoCode: { $ne: "TEST1" } });
+  });
+
+  it("validates TEST1 as hidden test offer and calculates discount to ₹1", async () => {
+    const { service } = build();
+    const res = await service.validate({
+      promoCode: "test1",
+      bookingAmount: 5000,
+    });
+    expect(res.valid).toBe(true);
+    expect(res.discountAmount).toBe(4999);
+    expect(res.offer.promoCode).toBe("TEST1");
+  });
+
+  it("excludes TEST1 from public active listings", async () => {
+    const { service, offers } = build();
+    await service.active();
+    expect(offers.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        promoCode: { $ne: "TEST1" },
+      }),
+    );
   });
 });

@@ -45,6 +45,7 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
   const [activities, setActivities] = useState<any[]>([]);
   const [notificationsList, setNotificationsList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -61,6 +62,7 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
   const fetchCenterData = useCallback(
     async (background = false) => {
       if (!background) setLoading(true);
+      setError("");
       try {
         const [statsRes, actRes, notifRes] = await Promise.all([
           enterpriseNotificationService.getStats(),
@@ -81,6 +83,7 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
         setLastSyncedAt(new Date());
       } catch (err) {
         console.warn("Fetch Enterprise Notifications Error:", err);
+        setError(getErrorMessage(err, "Failed to load notification events."));
       } finally {
         if (!background) setLoading(false);
       }
@@ -339,6 +342,26 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
           </div>
         }
       />
+
+      {error && (
+        <div className="flex items-center justify-between gap-2.5 rounded-2xl border border-rose-200 bg-rose-50 dark:bg-rose-500/10 dark:border-rose-500/30 px-4 py-3">
+          <div className="flex items-start gap-2.5">
+            <AlertTriangle size={16} className="text-rose-600 mt-0.5 shrink-0" />
+            <div className="text-xs">
+              <p className="font-bold text-rose-900 dark:text-rose-300">
+                Notification Feed Error
+              </p>
+              <p className="text-rose-800/80 dark:text-rose-400/80">{error}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => fetchCenterData()}
+            className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shrink-0 cursor-pointer transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <EnterpriseStatsCard

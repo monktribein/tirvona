@@ -1,5 +1,6 @@
 import {
   DEFAULT_PLATFORM_FEE_SCOPES,
+  calculateTieredPlatformFeePerRoom,
   platformFeeAppliesTo,
   platformFeeScopesOf,
   resolvePlatformFee,
@@ -191,3 +192,120 @@ describe("the enabled fee amount", () => {
     ).toBe(0);
   });
 });
+
+describe("Phase 16 — Tiered Platform Fee & Charitable Rules", () => {
+  const TIERED_SETTINGS = {
+    enabled: true,
+    type: "tiered" as const,
+    appliesTo: ["ashram_booking"],
+  };
+
+  it("calculates correct fee for boundary values per room", () => {
+    // Below ₹1,000: ₹50
+    expect(calculateTieredPlatformFeePerRoom(999)).toBe(50);
+    expect(calculateTieredPlatformFeePerRoom(0)).toBe(50);
+    expect(calculateTieredPlatformFeePerRoom(500)).toBe(50);
+
+    // ₹1,000 to below ₹2,000: ₹75
+    expect(calculateTieredPlatformFeePerRoom(1000)).toBe(75);
+    expect(calculateTieredPlatformFeePerRoom(1500)).toBe(75);
+    expect(calculateTieredPlatformFeePerRoom(1999)).toBe(75);
+
+    // ₹2,000 and above: ₹100
+    expect(calculateTieredPlatformFeePerRoom(2000)).toBe(100);
+    expect(calculateTieredPlatformFeePerRoom(2500)).toBe(100);
+    expect(calculateTieredPlatformFeePerRoom(10000)).toBe(100);
+  });
+
+  it("resolves tiered platform fee for single room across boundaries", () => {
+    expect(
+      resolvePlatformFee({
+        settings: TIERED_SETTINGS,
+        scope: "ashram_booking",
+        baseAmount: 999,
+        roomsCount: 1,
+      }),
+    ).toBe(50);
+
+    expect(
+      resolvePlatformFee({
+        settings: TIERED_SETTINGS,
+        scope: "ashram_booking",
+        baseAmount: 1000,
+        roomsCount: 1,
+      }),
+    ).toBe(75);
+
+    expect(
+      resolvePlatformFee({
+        settings: TIERED_SETTINGS,
+        scope: "ashram_booking",
+        baseAmount: 1999,
+        roomsCount: 1,
+      }),
+    ).toBe(75);
+
+    expect(
+      resolvePlatformFee({
+        settings: TIERED_SETTINGS,
+        scope: "ashram_booking",
+        baseAmount: 2000,
+        roomsCount: 1,
+      }),
+    ).toBe(100);
+  });
+
+  it("calculates tiered platform fee correctly for multiple rooms", () => {
+    // 2 rooms at ₹1,000 each = ₹2,000 total (₹1,000 per room => ₹75 per room * 2 = ₹150)
+    expect(
+      resolvePlatformFee({
+        settings: TIERED_SETTINGS,
+        scope: "ashram_booking",
+        baseAmount: 2000,
+        roomsCount: 2,
+      }),
+    ).toBe(150);
+
+    // 3 rooms at ₹500 each = ₹1,500 total (₹500 per room => ₹50 per room * 3 = ₹150)
+    expect(
+      resolvePlatformFee({
+        settings: TIERED_SETTINGS,
+        scope: "ashram_booking",
+        baseAmount: 1500,
+        roomsCount: 3,
+      }),
+    ).toBe(150);
+
+    // 2 rooms at ₹2,500 each = ₹5,000 total (₹2,500 per room => ₹100 per room * 2 = ₹200)
+    expect(
+      resolvePlatformFee({
+        settings: TIERED_SETTINGS,
+        scope: "ashram_booking",
+        baseAmount: 5000,
+        roomsCount: 2,
+      }),
+    ).toBe(200);
+  });
+
+  it("exempts charitable institutions / trusts from booking commission (₹0 fee)", () => {
+    expect(
+      resolvePlatformFee({
+        settings: TIERED_SETTINGS,
+        scope: "ashram_booking",
+        baseAmount: 5000,
+        roomsCount: 2,
+        isCharitable: true,
+      }),
+    ).toBe(0);
+
+    expect(
+      resolvePlatformFee({
+        settings: ENABLED_FLAT,
+        scope: "ashram_booking",
+        baseAmount: 1000,
+        isCharitable: true,
+      }),
+    ).toBe(0);
+  });
+});
+
