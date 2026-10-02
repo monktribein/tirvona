@@ -3,6 +3,7 @@ import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth, type OtpChallenge } from "../contexts/AuthContext";
 import OtpChallengeForm from "../components/OtpChallengeForm";
 import CompleteProfileModal from "../components/CompleteProfileModal";
+import PhoneInput, { phoneProblem } from "../components/PhoneInput";
 import useGoogleAuth from "../hooks/useGoogleAuth";
 import { isGoogleConfigured } from "../lib/googleAuth";
 import { vendorApi } from "../services/marketplace.service";
@@ -30,7 +31,6 @@ const GoogleIcon: React.FC = () => (
 import {
   ShieldCheck,
   Mail,
-  Phone,
   Lock,
   User as UserIcon,
   Building2,
@@ -99,6 +99,11 @@ export const RegisterPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    const problem = phoneProblem(phone);
+    if (problem) {
+      setError(problem);
+      return;
+    }
     setLoading(true);
 
     const payload: any = { name, email, phone, password, role };
@@ -413,20 +418,7 @@ export const RegisterPage: React.FC = () => {
                     <label className="text-[11px] font-extrabold text-[#0B192C] dark:text-gray-200">
                       Mobile Phone Number
                     </label>
-                    <div className="relative">
-                      <Phone
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                        size={15}
-                      />
-                      <input
-                        type="tel"
-                        required
-                        placeholder="+91 98765 43210"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        className="w-full pl-9 pr-3.5 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
-                      />
-                    </div>
+                    <PhoneInput required value={phone} onChange={setPhone} />
                   </div>
 
                   <div className="space-y-1">

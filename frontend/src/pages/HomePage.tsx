@@ -519,10 +519,10 @@ export const HomePage: React.FC = () => {
           views: bp.views || 0,
           readingTime: bp.readingTime || "6 min read",
           contentType: bp.contentType || "article",
-          author: bp.authorId || {
-            name: "Vedic Scholar",
-            photo: bp.coverImage,
-          },
+          // An admin-entered author name wins over the linked author record.
+          author: bp.authorName
+            ? { ...(bp.authorId || {}), name: bp.authorName }
+            : bp.authorId || { name: "Tirvona Editorial", photo: bp.coverImage },
         }),
       );
 
@@ -840,7 +840,8 @@ export const HomePage: React.FC = () => {
         .filter(Boolean)
         .join(", ")
       : "",
-    reviewer: r.customerId?.name || "Guest",
+    // A super admin posting on a guest's behalf sets displayName.
+    reviewer: r.displayName || r.customerId?.name || "Guest",
     verifiedStay: Boolean(r.verifiedStay),
     rating: Math.max(1, Math.round(r.rating?.overall || 5)),
     ratingValue: (r.rating?.overall || 5).toFixed(1),
@@ -1971,7 +1972,7 @@ export const HomePage: React.FC = () => {
                         }}
                       />
                       <span className="text-xs font-bold text-gray-600 dark:text-gray-300 truncate">
-                        {author.name || "Verified Author"}
+                        {author.name || "Tirvona Editorial"}
                       </span>
                     </div>
                     <button className="px-3.5 py-1.5 bg-[#F0F5FC] dark:bg-blue-950/40 text-gray-700 dark:text-amber-300 group-hover:bg-[#F28C28] group-hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0">

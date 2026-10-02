@@ -43,6 +43,7 @@ import {
 import { WhatsAppOtpService } from "../../../integrations/whatsapp/services/whatsapp-otp.service";
 import { WhatsAppIntegrationError } from "../../../integrations/whatsapp/errors/whatsapp.errors";
 import { normalizeWhatsAppNumber } from "../../../integrations/whatsapp/utils/whatsapp-phone.util";
+import { realEmail } from "../../users/domain/placeholder-email";
 
 @Injectable()
 export class AuthService {
@@ -74,14 +75,25 @@ export class AuthService {
       identifier,
       localPhone,
       localPhone ? `+91${localPhone}` : "",
+      // Non-Indian numbers are stored as "+<country><number>".
+      phoneDigits ? `+${phoneDigits}` : "",
     ].filter(Boolean);
     const user = identifier.includes("@")
       ? await this.users.findByEmail(identifier.toLowerCase(), true)
       : await this.userModel
           .findOne({ phone: { $in: phoneCandidates } })
           .select("+passwordHash");
+    // Product decision: an unknown identifier is told to sign up rather than
+    // getting the same message as a wrong password.
+    if (!user) {
+      throw new NotFoundException(
+        identifier.includes("@")
+          ? "This email is not registered. Please sign up first."
+          : "This phone number is not registered. Please sign up first.",
+      );
+    }
     if (
-      !user?.passwordHash ||
+      !user.passwordHash ||
       !(await bcrypt.compare(dto.password, user.passwordHash))
     ) {
       throw new UnauthorizedException(
@@ -120,12 +132,14 @@ export class AuthService {
   async register(dto: RegisterDto): Promise<Record<string, any>> {
     if (await this.users.findByEmail(dto.email))
       throw new ConflictException("Email is already registered");
-    if (await this.users.findByPhone(dto.phone))
+    // Match every stored format, so "+919876543210" and "9876543210" are
+    // recognised as the same number.
+    if (await this.findUserByPhoneInput(dto.phone))
       throw new ConflictException("Phone number is already registered");
     const role =
       dto.role === "owner" ? ASHRAM_OWNER_ROLE : dto.role ?? "customer";
     const email = dto.email.trim().toLowerCase();
-    const phone = dto.phone.trim();
+    const phone = this.canonicalPhone(dto.phone);
     return {
       otpRequired: true,
       // Registration OTPs are delivered over WhatsApp (via the phone number)
@@ -174,7 +188,8 @@ export class AuthService {
       id: user._id,
       _id: user._id,
       name: user.name,
-      email: user.email,
+      // A walk-in's stand-in address is not theirs to see.
+      email: realEmail(user.email),
       phone: user.phone,
       role: user.role,
       status: user.status,
@@ -186,6 +201,45 @@ export class AuthService {
       parkingRoles: parkingRoles ?? (await this.activeParkingRoles(user._id)),
       token,
     };
+  }
+
+  /**
+   * Starts an email change. The email is where password-reset links go, so
+   * the new address is saved only after the code sent to it is confirmed
+   * (`confirmEmailChange`); returns null when nothing would change.
+   */
+  async requestEmailChange(
+    userId: string,
+    email: string,
+  ): Promise<Record<string, unknown> | null> {
+    const next = email.trim().toLowerCase();
+    const user = await this.users.findById(userId);
+    if (!user) throw new NotFoundException("User not found");
+    if (realEmail(user.email)?.toLowerCase() === next) return null;
+    const owner = await this.users.findByEmail(next);
+    if (owner && String(owner._id) !== String(user._id))
+      throw new ConflictException("This email is already registered to another account.");
+    return this.createChallenge("email_change", next, { userId: String(user._id) });
+  }
+
+  async confirmEmailChange(
+    userId: string,
+    token: string,
+    otp: string,
+  ): Promise<UserDocument> {
+    const row = await this.challenge(token, otp);
+    if (row.purpose !== "email_change" || row.payload?.userId !== userId)
+      throw new UnauthorizedException("This verification code is not valid for your account");
+    const owner = await this.users.findByEmail(row.identifier);
+    if (owner && String(owner._id) !== userId)
+      throw new ConflictException("This email is already registered to another account.");
+    const user = await this.users.findById(userId);
+    if (!user) throw new NotFoundException("User not found");
+    user.email = row.identifier;
+    await user.save();
+    row.consumedAt = new Date();
+    await row.save();
+    return user;
   }
 
   async changeMyPassword(
@@ -388,6 +442,35 @@ export class AuthService {
     await user.save();
     return this.session(user);
   }
+  /**
+   * The stored form of a phone number. Indian mobiles keep the 10-digit local
+   * form existing accounts use; any other country is "+<country><number>".
+   * The signup forms send "+<country><number>" for every country.
+   */
+  canonicalPhone(phone: string): string {
+    const normalized = normalizeWhatsAppNumber(phone);
+    if (!normalized) return phone.trim();
+    if (/^91[6-9]\d{9}$/.test(normalized)) return normalized.slice(2);
+    return `+${normalized}`;
+  }
+
+  /**
+   * The value to store when a user edits their phone, or null to leave it as
+   * is. The same number in another format ("919936968762" vs "9936968762")
+   * is not a change: rewriting it could collide with a duplicate account
+   * that holds the other format.
+   */
+  async phoneUpdate(user: UserDocument, phone: string): Promise<string | null> {
+    const current = normalizeWhatsAppNumber(String(user.phone ?? ""));
+    const next = normalizeWhatsAppNumber(phone);
+    if (next ? next === current : phone.trim() === String(user.phone ?? "").trim())
+      return null;
+    const owner = await this.findUserByPhoneInput(phone);
+    if (owner && String(owner._id) !== String(user._id))
+      throw new ConflictException("This phone number is already registered to another account.");
+    return this.canonicalPhone(phone);
+  }
+
   private async findUserByPhoneInput(phone: string): Promise<UserDocument | null> {
     const normalized = normalizeWhatsAppNumber(phone);
     const candidates = [
@@ -410,7 +493,7 @@ export class AuthService {
     correlationId?: string,
   ): Promise<Record<string, unknown>> {
     if (!(await this.findUserByPhoneInput(phone)))
-      throw new NotFoundException("No account was found for this phone number");
+      throw new NotFoundException("This phone number is not registered. Please sign up first.");
     return this.createChallenge("phone_login", phone, {}, correlationId);
   }
   async verifyPhoneOtp(
@@ -488,7 +571,8 @@ export class AuthService {
 
   async forgotPassword(email: string): Promise<void> {
     const user = await this.users.findByEmail(email);
-    if (!user) return;
+    if (!user)
+      throw new NotFoundException("This email is not registered. Please sign up first.");
     const token = randomBytes(32).toString("hex");
     user.resetTokenHash = this.digest(token);
     user.resetTokenExpiresAt = new Date(Date.now() + 30 * 60_000);
@@ -581,12 +665,12 @@ export class AuthService {
     const row = await this.challenge(token, undefined, true);
     if (row.purpose !== "google")
       throw new UnauthorizedException("Google challenge is invalid");
-    if (await this.users.findByPhone(phone))
+    if (await this.findUserByPhoneInput(phone))
       throw new ConflictException("Phone number is already registered");
     const user = await this.users.create({
       name,
       email: row.payload.email,
-      phone,
+      phone: this.canonicalPhone(phone),
       googleId: row.payload.googleId,
       authProvider: "google",
       role: "customer",

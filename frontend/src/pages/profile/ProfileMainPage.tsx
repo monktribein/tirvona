@@ -39,6 +39,7 @@ import {
   EnterpriseModal,
 } from "../../admin/shared";
 import { authService, bookingService } from "../../services";
+import OtpChallengeForm from "../../components/OtpChallengeForm";
 import { parkingBookingService } from "../../modules/parking/services/parking.service";
 import { getErrorMessage, TOKEN_KEY } from "../../lib/api";
 import useMyBookings, {
@@ -46,6 +47,7 @@ import useMyBookings, {
   type UnifiedBooking,
 } from "../../hooks/useMyBookings";
 import { isParkingRole } from "../../utils/roleRedirect";
+import { realEmail } from "../../utils/email";
 
 const BOOKING_TABS: { key: BookingCategory; label: string }[] = [
   { key: "upcoming", label: "Upcoming" },
@@ -133,6 +135,12 @@ export const ProfileMainPage: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editName, setEditName] = useState(user?.name || "");
   const [editPhone, setEditPhone] = useState(user?.phone || "");
+  const [editEmail, setEditEmail] = useState(realEmail(user?.email));
+  // Set while a code sent to a new email is awaiting confirmation.
+  const [emailChallenge, setEmailChallenge] = useState<{
+    otpToken: string;
+    email: string;
+  } | null>(null);
   const [saving, setSaving] = useState(false);
 
   const [bookingCategoryTab, setBookingCategoryTab] =
@@ -208,8 +216,15 @@ export const ProfileMainPage: React.FC = () => {
     if (user) {
       setEditName(user.name || "");
       setEditPhone(user.phone || "");
+      setEditEmail(realEmail(user.email));
     }
   }, [user]);
+
+  const closeEditModal = () => {
+    setIsEditModalOpen(false);
+    setEmailChallenge(null);
+    setEditEmail(realEmail(user?.email));
+  };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -217,19 +232,30 @@ export const ProfileMainPage: React.FC = () => {
 
     setSaving(true);
     try {
+      const nextEmail = editEmail.trim().toLowerCase();
+      const emailChanged =
+        nextEmail !== "" && nextEmail !== realEmail(user?.email).toLowerCase();
       const res = await authService.updateMe({
         name: editName.trim(),
         phone: editPhone.trim(),
+        ...(emailChanged ? { email: nextEmail } : {}),
       });
 
-      if (res.data?.success) {
+      if (res.data?.success && res.data?.otpRequired && res.data?.challenge) {
+        // Name and phone are saved; the email waits for the code.
+        await refreshUser();
+        setEmailChallenge({
+          otpToken: res.data.challenge.otpToken,
+          email: nextEmail,
+        });
+      } else if (res.data?.success) {
         await refreshUser();
         addNotification(
           "Profile Updated",
           "Your profile details have been saved.",
           "success",
         );
-        setIsEditModalOpen(false);
+        closeEditModal();
       } else {
         addNotification(
           "Update Failed",
@@ -514,10 +540,12 @@ export const ProfileMainPage: React.FC = () => {
                 {user?.name || "User Profile"}
               </h2>
               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 flex items-center gap-3 flex-wrap">
-                <span className="flex items-center gap-1">
-                  <Mail size={13} className="text-[#F28C28]" />{" "}
-                  {user?.email || "user@example.com"}
-                </span>
+                {realEmail(user?.email) && (
+                  <span className="flex items-center gap-1">
+                    <Mail size={13} className="text-[#F28C28]" />{" "}
+                    {realEmail(user?.email)}
+                  </span>
+                )}
                 {user?.phone && (
                   <span className="flex items-center gap-1">
                     <Phone size={13} className="text-[#F28C28]" /> {user.phone}
@@ -1140,10 +1168,40 @@ export const ProfileMainPage: React.FC = () => {
 
       <EnterpriseModal
         isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
+        onClose={closeEditModal}
         title="Edit Profile Details"
-        subtitle="Update your name and primary contact number"
+        subtitle="Update your name, email and primary contact number"
       >
+        {emailChallenge ? (
+          <OtpChallengeForm
+            challenge={{ channel: "email" }}
+            destination={emailChallenge.email}
+            title="Verify New Email"
+            onVerify={async (otp) => {
+              try {
+                await authService.verifyEmailChange(emailChallenge.otpToken, otp);
+                return { success: true };
+              } catch (err) {
+                return { success: false, message: getErrorMessage(err, "Invalid code") };
+              }
+            }}
+            onResend={async () => {
+              try {
+                const res = await authService.resendOtp(emailChallenge.otpToken);
+                const otpToken = res.data?.data?.otpToken;
+                if (otpToken) setEmailChallenge({ ...emailChallenge, otpToken });
+                return { success: true, message: "A new code has been sent." };
+              } catch (err) {
+                return { success: false, message: getErrorMessage(err, "Could not resend the code") };
+              }
+            }}
+            onCancel={() => setEmailChallenge(null)}
+            onVerified={async () => {
+              await refreshUser();
+              closeEditModal();
+            }}
+          />
+        ) : (
         <form
           onSubmit={handleSaveProfile}
           className="space-y-4 text-xs font-bold"
@@ -1174,10 +1232,27 @@ export const ProfileMainPage: React.FC = () => {
             />
           </div>
 
+          <div className="space-y-1">
+            <label className="text-gray-700 dark:text-gray-300">
+              Email Address
+            </label>
+            <input
+              type="email"
+              autoComplete="email"
+              placeholder="name@example.com"
+              value={editEmail}
+              onChange={(e) => setEditEmail(e.target.value)}
+              className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-[#F28C28]"
+            />
+            <p className="text-[10px] font-semibold text-gray-400">
+              A new email is saved after you enter the code we send to it.
+            </p>
+          </div>
+
           <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex justify-end gap-2">
             <button
               type="button"
-              onClick={() => setIsEditModalOpen(false)}
+              onClick={closeEditModal}
               className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 text-gray-700 dark:text-gray-200 text-xs font-bold rounded-full cursor-pointer transition-colors"
             >
               Cancel
@@ -1192,6 +1267,7 @@ export const ProfileMainPage: React.FC = () => {
             </button>
           </div>
         </form>
+        )}
       </EnterpriseModal>
     </div>
   );

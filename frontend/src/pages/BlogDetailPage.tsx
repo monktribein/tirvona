@@ -68,16 +68,23 @@ export const BlogDetailPage: React.FC = () => {
               likes: va.likesCount || 0,
               gallery: va.galleryImages || [],
               tags: va.tags || [],
-              isVerifiedStay: true,
+              // Only articles linked to a completed stay are verified.
+              isVerifiedStay: Boolean(va.isVerifiedStay),
               ashramName: va.ashramId?.name,
               authorId: {
-                name: va.visitorId?.name || "Verified Pilgrim",
+                name: va.visitorId?.name || "Tirvona Pilgrim",
                 photo:
                   va.visitorId?.avatar ||
                   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E",
-                verified: true,
-                designation: "Verified Stay Traveler",
-                bio: `Completed stay at ${va.ashramId?.name || "Stay"}. Shared authentic pilgrim experience.`,
+                verified: Boolean(va.isVerifiedStay),
+                designation: va.isVerifiedStay
+                  ? "Verified Stay Traveler"
+                  : "Community Contributor",
+                bio: va.isVerifiedStay
+                  ? `Completed stay at ${va.ashramId?.name || "Stay"}. Shared authentic pilgrim experience.`
+                  : va.ashramId?.name
+                    ? `Shared an experience of ${va.ashramId.name} with the Tirvona community.`
+                    : "Shared an experience with the Tirvona community.",
               },
             },
             comments: vRes.data.data.comments || [],
@@ -258,7 +265,10 @@ export const BlogDetailPage: React.FC = () => {
   }
 
   const { post, comments, relatedPosts } = data;
-  const author = post.authorId || {};
+  // An admin-entered author name wins over the linked author record.
+  const author = post.authorName
+    ? { ...(post.authorId || {}), name: post.authorName }
+    : post.authorId || {};
 
   const renderFormattedContent = (text: string) => {
     if (!text) return null;
@@ -373,7 +383,7 @@ export const BlogDetailPage: React.FC = () => {
                     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
                 }}
               />
-              <span>{author.name || "Gordon V. Shastri"}</span>
+              <span>{author.name || "Tirvona Editorial"}</span>
             </span>
             <span>•</span>
             <span className="flex items-center gap-1">

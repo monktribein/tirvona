@@ -99,13 +99,46 @@ describe("TemplesService.create — slug + coordinates", () => {
     ).rejects.toBeInstanceOf(ConflictException);
   });
 
-  it("rejects [0, 0] placeholder coordinates", async () => {
-    const { service } = build();
+  it("saves a draft with [0, 0] placeholder coordinates and stores no location", async () => {
+    const { service, temples } = build();
     const dto = baseDto();
     dto.address.coordinates = [0, 0];
-    await expect(service.create(dto as never, user)).rejects.toBeInstanceOf(
-      BadRequestException,
+    await service.create(dto as never, user);
+    const saved = temples.create.mock.calls[0][0];
+    expect(saved.address.city).toBe("Mathura");
+    expect(saved.address).not.toHaveProperty("coordinates");
+  });
+
+  it("publishes without a location when the maps link carried none", async () => {
+    const { service, temples } = build();
+    const dto = { ...baseDto(), status: "published" };
+    dto.address.coordinates = [0, 0];
+    await service.create(dto as never, user);
+    const saved = temples.create.mock.calls[0][0];
+    expect(saved.status).toBe("published");
+    expect(saved.address).not.toHaveProperty("coordinates");
+  });
+
+  it("stores real coordinates as a GeoJSON Point", async () => {
+    const { service, temples } = build();
+    await service.create(baseDto() as never, user);
+    expect(temples.create.mock.calls[0][0].address.coordinates).toEqual({
+      type: "Point",
+      coordinates: [77.68, 27.49],
+    });
+  });
+
+  it("drops the location on update when the new maps link carries none", async () => {
+    const { service, temples } = build();
+    temples.findOne.mockReturnValue(
+      chain({ _id: "t1", status: "published", address: { city: "Mathura" } }),
     );
+    const dto = baseDto();
+    dto.address.coordinates = [0, 0];
+    await service.update("t1", dto as never, user);
+    const update = temples.findByIdAndUpdate.mock.calls[0][1];
+    expect(update.address.city).toBe("Mathura");
+    expect(update.address).not.toHaveProperty("coordinates");
   });
 
   it("rejects coordinates outside geographic bounds", async () => {

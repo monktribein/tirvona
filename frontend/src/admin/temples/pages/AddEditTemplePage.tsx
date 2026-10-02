@@ -5,7 +5,7 @@ import api, { getErrorMessage } from "../../../lib/api";
 import { templeService } from "../../../services";
 import { useAuth } from "../../../contexts/AuthContext";
 import { toast } from "../../../lib/toast";
-import TirvonaMap from "../../../components/TirvonaMap";
+import { coordinatesFromGoogleMapsUrl } from "../../../utils/geo";
 import { ImageGalleryManager } from "../../shared/components/ImageGalleryManager";
 import {
   ChevronRight,
@@ -250,22 +250,17 @@ export default function AddEditTemplePage() {
     }
   };
 
-  const handleCoordinateChange = (index: number, value: string) => {
-    const num = parseFloat(value) || 0;
-    setFormData((prev) => {
-      const coords = [...prev.address.coordinates];
-      coords[index] = num;
-      return {
-        ...prev,
-        address: { ...prev.address, coordinates: coords },
-      };
-    });
-  };
-
-  const handleLocationSelect = (lat: number, lng: number) => {
+  // The location follows the Google Maps link: a full link carries the pin,
+  // anything else (empty, short link) leaves the temple without coordinates.
+  const handleMapUrlChange = (mapUrl: string) => {
+    const point = coordinatesFromGoogleMapsUrl(mapUrl);
     setFormData((prev) => ({
       ...prev,
-      address: { ...prev.address, coordinates: [lng, lat] },
+      address: {
+        ...prev.address,
+        mapUrl,
+        coordinates: point ? [point.lng, point.lat] : [0, 0],
+      },
     }));
   };
 
@@ -447,7 +442,7 @@ export default function AddEditTemplePage() {
 
   const renderStep2 = () => (
     <div className="space-y-6 animate-fade-in">
-      <h2 className="text-xl font-bold text-gray-900 border-b pb-2">Location & Map</h2>
+      <h2 className="text-xl font-bold text-gray-900 border-b pb-2">Location</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">Street Address *</label>
@@ -487,35 +482,14 @@ export default function AddEditTemplePage() {
         </div>
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">Google Maps Link</label>
-          <input type="url" value={formData.address.mapUrl} onChange={(e) => handleChange("address.mapUrl", e.target.value)} className="w-full rounded-full border border-gray-200 px-4 py-2" placeholder="https://maps.google.com/..." />
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Google Maps Embed URL</label>
-          <input type="url" value={formData.address.googleMapsEmbedUrl} onChange={(e) => handleChange("address.googleMapsEmbedUrl", e.target.value)} className="w-full rounded-full border border-gray-200 px-4 py-2" placeholder="https://www.google.com/maps/embed?..." />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Longitude *</label>
-          <input type="number" step="any" required value={formData.address.coordinates[0]} onChange={(e) => handleCoordinateChange(0, e.target.value)} className="w-full rounded-full border border-gray-200 px-4 py-2" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Latitude *</label>
-          <input type="number" step="any" required value={formData.address.coordinates[1]} onChange={(e) => handleCoordinateChange(1, e.target.value)} className="w-full rounded-full border border-gray-200 px-4 py-2" />
-        </div>
-      </div>
-      
-      <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mt-6">
-        <p className="text-sm text-gray-600 mb-3">Click on the map to pinpoint the temple location and automatically set coordinates.</p>
-        <div className="h-96 rounded-xl overflow-hidden border border-gray-300">
-          <TirvonaMap
-            center={formData.address.coordinates[1] !== 0 ? [formData.address.coordinates[1], formData.address.coordinates[0]] : undefined}
-            onMapClick={handleLocationSelect}
-            markers={formData.address.coordinates[1] !== 0 ? [{
-              id: 'preview',
-              latitude: formData.address.coordinates[1],
-              longitude: formData.address.coordinates[0],
-              title: formData.name || "Temple Location"
-            }] : []}
-          />
+          <input type="url" value={formData.address.mapUrl} onChange={(e) => handleMapUrlChange(e.target.value)} className="w-full rounded-full border border-gray-200 px-4 py-2" placeholder="https://www.google.com/maps/place/..." />
+          {formData.address.mapUrl.trim() !== "" && (
+            formData.address.coordinates[0] === 0 && formData.address.coordinates[1] === 0 ? (
+              <p className="mt-2 text-xs text-amber-700">This link has no location in it (short links like maps.app.goo.gl don't). Open it in a browser and paste the full address-bar link so the temple shows on maps and in nearby results.</p>
+            ) : (
+              <p className="mt-2 text-xs text-emerald-700">Location set ({formData.address.coordinates[1].toFixed(5)}, {formData.address.coordinates[0].toFixed(5)}).</p>
+            )
+          )}
         </div>
       </div>
     </div>

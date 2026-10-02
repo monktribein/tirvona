@@ -1211,7 +1211,10 @@ export const EnterpriseModulePage: React.FC<{
               key: "author",
               label: "Author",
               render: (value: any, item: any) =>
-                value?.name || item.authorId?.name || "Tirvona Editorial",
+                item.authorName ||
+                value?.name ||
+                item.authorId?.name ||
+                "Tirvona Editorial",
             },
             {
               key: "views",
@@ -1234,6 +1237,11 @@ export const EnterpriseModulePage: React.FC<{
             {
               name: "slug",
               label: "URL Slug (auto-generated when blank)",
+              type: "text",
+            },
+            {
+              name: "authorName",
+              label: "Author Name (shown publicly; blank shows Tirvona Editorial)",
               type: "text",
             },
             {

@@ -36,6 +36,7 @@ import type {
 } from "../presentation/dtos/self-booking.dto";
 import { BookingPricingService } from "./booking-pricing.service";
 import { QrService } from "../../smart-contact/application/qr.service";
+import { walkInPlaceholderEmail } from "../../users/domain/placeholder-email";
 
 const SELF_BOOKING_ROLES = [
   "ashram_owner",
@@ -271,7 +272,7 @@ export class SelfBookingService {
           phone,
           email:
             dto.guestEmail?.trim().toLowerCase() ||
-            `walkin.${phone.replace(/\D/g, "")}@guest.tirvona.local`,
+            walkInPlaceholderEmail(phone),
           role: "customer",
           status: "active",
           isVerified: false,

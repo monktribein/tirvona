@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../lib/api";
 import { Search, MapPin, Building2, Compass, ArrowRight, Crosshair, X, Sparkles } from "lucide-react";
@@ -12,11 +12,15 @@ export default function TempleSearchPage() {
   const [searchTitle, setSearchTitle] = useState("Explore Sacred Temples");
   
   // Geolocation states
-  const [showLocationModal, setShowLocationModal] = useState(false);
   const [locationError, setLocationError] = useState("");
   const [isLocating, setIsLocating] = useState(false);
   const [hasLocation, setHasLocation] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  // Only the latest request may update the grid. On a first visit the full
+  // list and the nearby lookup are in flight together, and a slower earlier
+  // response must not overwrite a newer one.
+  const requestSeq = useRef(0);
 
   useEffect(() => {
     // Check if we previously allowed location in this session
@@ -25,62 +29,88 @@ export default function TempleSearchPage() {
       try {
         const { lat, lng } = JSON.parse(storedLocation);
         fetchNearbyTemples(lat, lng);
-      } catch { sessionStorage.removeItem("tirvona_location"); fetchPopularTemples(); }
+      } catch { sessionStorage.removeItem("tirvona_location"); fetchAllTemples(); }
     } else {
-      fetchPopularTemples();
+      fetchAllTemples();
       if (localStorage.getItem("tirvona_location_denied") !== "true") requestLocation();
     }
   }, []);
 
-  const fetchPopularTemples = async () => {
+  /** Every published temple; the featured ones also fill the carousel. */
+  const loadAllTemples = async (): Promise<any[]> => {
+    const res = await api.get("/temples?public=true&limit=48");
+    const rows: any[] = res.data?.success ? res.data.data?.data || [] : [];
+    setPopularTemples(rows.filter((t) => t.isFeatured));
+    return rows;
+  };
+
+  const fetchAllTemples = async () => {
+    const seq = ++requestSeq.current;
     try {
       setLoading(true);
+      setError("");
+      setNotice("");
+      setHasLocation(false);
       setSearchTitle("Explore Sacred Temples");
-      const res = await api.get("/temples?public=true&isFeatured=true&limit=20");
-      if (res.data?.success) {
-        setPopularTemples(res.data.data?.data || []);
-        // Also set temples so the grid isn't empty initially
-        setTemples(res.data.data?.data || []); 
-      }
+      const rows = await loadAllTemples();
+      if (seq === requestSeq.current) setTemples(rows);
     } catch (err) {
-      console.error(err); setError("Unable to load temples. Please try again.");
+      console.error(err);
+      if (seq === requestSeq.current) setError("Unable to load temples. Please try again.");
     } finally {
-      setLoading(false);
+      if (seq === requestSeq.current) setLoading(false);
     }
   };
 
   const fetchNearbyTemples = async (lat: number, lng: number) => {
+    const seq = ++requestSeq.current;
     try {
       setLoading(true);
-      setSearchTitle("Temples Near You");
+      setError("");
+      setNotice("");
       setHasLocation(true);
+      setSearchTitle("Temples Near You");
       const res = await api.get(`/temples/nearby?lat=${lat}&lng=${lng}&radius=20`);
-      if (res.data?.success) {
-        setTemples(res.data.data?.temples || []);
+      const nearby: any[] = res.data?.success ? res.data.data?.temples || [] : [];
+      if (seq !== requestSeq.current) return;
+      if (nearby.length) {
+        setTemples(nearby);
+        return;
       }
+      // Nothing within 20 km: show every temple rather than an empty page.
+      const rows = await loadAllTemples();
+      if (seq !== requestSeq.current) return;
+      setSearchTitle("All Temples");
+      setNotice("No temples within 20 km of your location, so we're showing all temples instead.");
+      setTemples(rows);
     } catch (err) {
-      console.error(err); setError("Unable to load nearby temples. Please try again.");
+      console.error(err);
+      if (seq === requestSeq.current) setError("Unable to load nearby temples. Please try again.");
     } finally {
-      setLoading(false);
+      if (seq === requestSeq.current) setLoading(false);
     }
   };
 
   const handleManualSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cityQuery.trim()) return;
-    
+
+    const seq = ++requestSeq.current;
     try {
       setLoading(true);
+      setError("");
+      setNotice("");
       setSearchTitle(`Results for "${cityQuery}"`);
       setHasLocation(false);
       const res = await api.get(`/temples?search=${encodeURIComponent(cityQuery)}&public=true&limit=48`);
-      if (res.data?.success) {
+      if (seq === requestSeq.current && res.data?.success) {
         setTemples(res.data.data?.data || []);
       }
     } catch (err) {
-      console.error(err); setError("Unable to search temples. Please try again.");
+      console.error(err);
+      if (seq === requestSeq.current) setError("Unable to search temples. Please try again.");
     } finally {
-      setLoading(false);
+      if (seq === requestSeq.current) setLoading(false);
     }
   };
 
@@ -94,7 +124,6 @@ export default function TempleSearchPage() {
           const lng = position.coords.longitude;
           sessionStorage.setItem("tirvona_location", JSON.stringify({ lat, lng }));
           localStorage.removeItem("tirvona_location_denied");
-          setShowLocationModal(false);
           setIsLocating(false);
           fetchNearbyTemples(lat, lng);
         },
@@ -116,72 +145,73 @@ export default function TempleSearchPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#070F1B] flex flex-col">
+    <div className="min-h-screen flex flex-col overflow-x-hidden">
 
-      {/* Hero Section styled with Tirvona Home Theme */}
-      <section className="relative pt-24 sm:pt-32 pb-28 sm:pb-36 flex items-center overflow-hidden rounded-b-[36px] sm:rounded-b-[48px] shadow-xl bg-gradient-to-br from-[#0B192C] via-[#0D233E] to-[#0B192C]">
-        <div className="absolute inset-0 z-0 opacity-25">
-          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#E58C28]/20 via-[#F28C28]/20 to-transparent"></div>
-        </div>
-        
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10 w-full flex flex-col items-center text-center">
-          <span className="inline-flex items-center gap-2 bg-[#E58C28]/15 text-[#E58C28] text-xs sm:text-sm font-bold px-4 py-1.5 rounded-full mb-5 border border-[#E58C28]/30 backdrop-blur-md shadow-xs">
-            <Sparkles className="w-4 h-4 text-[#E58C28]" /> Spiritual Discovery
-          </span>
-
-          <h1 
-            className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight mb-4 drop-shadow-md leading-tight"
-            style={{
-              fontFamily: "'Kalam', cursive, sans-serif",
-              letterSpacing: "0.01em",
-            }}
-          >
-            Explore <span className="text-[#E58C28]">Sacred Temples</span>
+      {/* Headline — same treatment as the Aarti and Parking hubs */}
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
+        <div className="text-center space-y-2 max-w-3xl mx-auto py-2">
+          <h1 className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
+            Explore Sacred Temples
           </h1>
-
-          <p 
-            className="text-slate-200 text-sm sm:text-base md:text-lg max-w-2xl mx-auto mb-10 leading-relaxed font-medium drop-shadow-xs"
-            style={{
-              fontFamily: "Satoshi, 'General Sans', Manrope, Inter, sans-serif",
-            }}
-          >
+          <div className="flex items-center justify-center gap-2.5 my-1.5">
+            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
+            <Sparkles size={14} className="text-[#E58C28] fill-[#E58C28] shrink-0" />
+            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
+          </div>
+          <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
             Discover sacred temples, their historical significance, live daily aartis, darshan timings and nearby stays across India.
           </p>
+        </div>
+      </div>
 
-          <form onSubmit={handleManualSearch} className="w-full max-w-3xl flex flex-col sm:flex-row gap-3 bg-white/10 dark:bg-black/30 p-2 rounded-3xl border border-white/20 backdrop-blur-md shadow-2xl">
-            <div className="relative flex-1">
-              <Search className="w-5 h-5 text-slate-300 absolute left-5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search temples by city, name, or deity..."
-                value={cityQuery}
-                onChange={(e) => setCityQuery(e.target.value)}
-                className="w-full pl-12 pr-6 py-4 bg-transparent border-0 text-white placeholder-slate-300 font-medium focus:outline-none focus:ring-0 text-sm sm:text-base"
-              />
+      {/* Search */}
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 mt-6 relative z-20">
+        <form
+          onSubmit={handleManualSearch}
+          className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800/80 rounded-[24px] p-3 sm:p-4 shadow-lg shadow-[#0B192C]/5"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+            <div className="flex-1 min-w-0">
+              <label htmlFor="temple-search" className="block text-[10px] tracking-wider font-bold text-gray-400 mb-1.5 px-1">
+                Temple, City or Deity
+              </label>
+              <div className="relative">
+                <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#F28C28] stroke-[2.5] pointer-events-none" />
+                <input
+                  id="temple-search"
+                  type="text"
+                  placeholder="Banke Bihari, Varanasi, Lord Shiva…"
+                  value={cityQuery}
+                  onChange={(e) => setCityQuery(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 placeholder:font-medium focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 focus:border-[#F28C28] transition-all"
+                />
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <button
-                type="submit"
-                className="flex-1 sm:flex-none bg-[#E58C28] hover:bg-[#d67d1d] text-white px-8 py-3.5 rounded-2xl font-bold transition-all shadow-lg shadow-[#E58C28]/30 cursor-pointer text-sm sm:text-base"
+                type="button"
+                onClick={requestLocation}
+                disabled={isLocating}
+                className="flex-1 sm:flex-none border border-[#F28C28]/40 text-[#F28C28] hover:bg-[#F28C28]/10 font-bold text-xs sm:text-sm px-5 py-3 rounded-full flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap disabled:opacity-60 disabled:cursor-wait"
               >
-                Search
+                <Crosshair size={15} className="stroke-[2.5]" /> {isLocating ? "Locating…" : "Near Me"}
               </button>
               <button
-                type="button"
-                onClick={() => setShowLocationModal(true)}
-                className="bg-white/15 hover:bg-white/25 text-white px-5 py-3.5 rounded-2xl font-semibold border border-white/20 transition-all flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer text-sm sm:text-base"
+                type="submit"
+                disabled={loading}
+                className="flex-1 sm:flex-none bg-[#F28C28] hover:bg-[#D97706] disabled:opacity-60 text-white font-bold text-xs sm:text-sm px-6 py-3 rounded-full flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer shrink-0 active:scale-95"
               >
-                <Crosshair className="w-4 h-4 text-[#E58C28]" /> Near Me
+                <Search size={15} className="stroke-[2.5]" /> Search
               </button>
             </div>
-          </form>
-        </div>
-      </section>
+          </div>
+        </form>
+      </div>
 
       {/* Featured / Popular Carousel (Only show if not doing a specific search) */}
       {!hasLocation && cityQuery === "" && popularTemples.length > 0 && (
-        <div className="pt-12 pb-8 bg-white dark:bg-[#0B192C] border-b border-gray-100 dark:border-slate-800">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="pt-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <Building2 className="w-6 h-6 text-[#E58C28]" /> Popular Spiritual Destinations
@@ -224,17 +254,20 @@ export default function TempleSearchPage() {
       )}
 
       {/* Results Section */}
-      <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-12">
+      <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-8 pb-16 lg:pb-24">
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{searchTitle}</h2>
           {hasLocation && (
-            <button onClick={() => setShowLocationModal(true)} className="text-sm text-[#F28C28] dark:text-amber-400 font-bold hover:underline flex items-center gap-1 cursor-pointer">
-              <Crosshair className="w-4 h-4" /> Change Location
+            <button onClick={requestLocation} disabled={isLocating} className="text-sm text-[#F28C28] dark:text-amber-400 font-bold hover:underline flex items-center gap-1 cursor-pointer disabled:opacity-60 disabled:cursor-wait">
+              <Crosshair className="w-4 h-4" /> {isLocating ? "Locating…" : "Refresh Location"}
             </button>
           )}
         </div>
 
+        {locationError && <p className="mb-6 rounded-xl border border-amber-100 bg-amber-50 p-4 text-center text-sm text-amber-800">{locationError}</p>}
+
         {error && <p className="mb-6 rounded-xl border border-red-100 bg-red-50 p-4 text-center text-red-700">{error}</p>}
+        {notice && !loading && <p className="mb-6 rounded-xl border border-amber-100 bg-amber-50 p-4 text-center text-sm text-amber-800">{notice}</p>}
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
             {[1, 2, 3, 4, 5, 6].map(i => (
@@ -248,7 +281,7 @@ export default function TempleSearchPage() {
             </div>
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No temples found</h3>
             <p className="text-gray-500 dark:text-slate-400 mb-6 max-w-md mx-auto text-sm">We couldn't find any temples matching your search. Try a different city or location.</p>
-            <button onClick={() => { setCityQuery(""); fetchPopularTemples(); }} className="px-6 py-2.5 bg-[#F28C28] text-white rounded-xl font-bold hover:bg-[#B45309] transition-colors cursor-pointer text-sm">
+            <button onClick={() => { setCityQuery(""); fetchAllTemples(); }} className="px-6 py-2.5 bg-[#F28C28] text-white rounded-xl font-bold hover:bg-[#B45309] transition-colors cursor-pointer text-sm">
               Clear Search
             </button>
           </div>

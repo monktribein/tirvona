@@ -15,7 +15,7 @@ describe("AuthController phone OTP delivery response", () => {
       ),
     ).resolves.toEqual({
       success: true,
-      message: "OTP sent.",
+      message: "OTP sent to your WhatsApp number.",
       data: { otpToken: "token" },
     });
     expect(auth.sendPhoneOtp).toHaveBeenCalledWith(

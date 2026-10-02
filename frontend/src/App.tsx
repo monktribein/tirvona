@@ -216,6 +216,7 @@ const MarketplaceCategoriesAdminPage = lazy(() => import("./admin/marketplace/pa
 const MarketplaceOrdersAdminPage = lazy(() => import("./admin/marketplace/pages/MarketplaceOrdersAdminPage"));
 const MarketplacePayoutsAdminPage = lazy(() => import("./admin/marketplace/pages/MarketplacePayoutsAdminPage"));
 const MarketplaceReviewsAdminPage = lazy(() => import("./admin/marketplace/pages/MarketplaceReviewsAdminPage"));
+const StayReviewsAdminPage = lazy(() => import("./admin/reviews/pages/StayReviewsAdminPage"));
 const MarketplaceSettingsAdminPage = lazy(() => import("./admin/marketplace/pages/MarketplaceSettingsAdminPage"));
 const MarketplaceStorePage = lazy(() => import("./pages/MarketplaceStorePage"));
 const VendorOnboardingPage = lazy(() => import("./modules/marketplace/vendor/VendorOnboardingPage"));
@@ -1268,6 +1269,17 @@ const AppContent: React.FC = () => {
             <Route path="/vendor/earnings" element={<VendorEarningsPage />} />
             <Route path="/vendor/payouts" element={<VendorPayoutsPage />} />
             <Route path="/vendor/reviews" element={<VendorReviewsPage />} />
+          </Route>
+
+          {/* Kept off /admin/manage/*, which the generic module console owns. */}
+          <Route
+            element={
+              <ProtectedRoute allowedRoles={["super_admin"]}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/admin/reviews/stays" element={<StayReviewsAdminPage />} />
           </Route>
 
           <Route
