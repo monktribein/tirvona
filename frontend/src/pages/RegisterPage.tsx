@@ -49,22 +49,6 @@ const GoogleIcon: React.FC = () => (
     />
   </svg>
 );
-import {
-  ShieldCheck,
-  Mail,
-  Lock,
-  User as UserIcon,
-  Building2,
-  BadgeCheck,
-  Headphones,
-  ArrowRight,
-  Landmark,
-  Zap,
-  Store,
-  Car,
-} from "lucide-react";
-
-import { getPostLoginRedirect } from "../utils/roleRedirect";
 
 export const RegisterPage: React.FC = () => {
   const { registerUser, verifyRegistrationOtp, resendOtp } = useAuth();
