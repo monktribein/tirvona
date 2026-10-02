@@ -170,6 +170,9 @@ export const BookingReviewSchema = new Schema(
       valueForMoney: { type: Number, min: 1, max: 5 },
     },
     comment: { type: String, required: true },
+    // Public reviewer name a super admin enters when posting on a guest's
+    // behalf; otherwise the author's own account name is shown.
+    displayName: { type: String, trim: true, maxlength: 80 },
     reply: { managerId: id("User"), comment: String, timestamp: Date },
     status: {
       type: String,

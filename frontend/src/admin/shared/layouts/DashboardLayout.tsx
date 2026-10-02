@@ -482,6 +482,7 @@ export const DashboardLayout: React.FC = () => {
         { label: "Pending Verification", path: "/admin/verifications" },
         { label: "Approved Stays", path: "/admin/manage/ashrams/approved" },
         { label: "Rejected Stays", path: "/admin/manage/ashrams/rejected" },
+        { label: "Stay Reviews", path: "/admin/reviews/stays" },
         {
           label: "Add-On Services (Dynamic Pricing)",
           path: "/admin/manage/ashrams/add-ons",

@@ -34,6 +34,8 @@ export class RegisterDto {
 export class UpdateMeDto {
   @IsOptional() @IsString() @MinLength(2) name?: string;
   @IsOptional() @IsPhoneNumber("IN") phone?: string;
+  /** A new email is only saved once a code sent to it is confirmed. */
+  @IsOptional() @IsEmail() email?: string;
 }
 
 export class ChangeMyPasswordDto {

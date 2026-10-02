@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { User as UserIcon, Phone, ArrowRight, ShieldCheck } from "lucide-react";
+import { User as UserIcon, ArrowRight, ShieldCheck } from "lucide-react";
+import PhoneInput, { phoneProblem } from "./PhoneInput";
 
 interface Props {
   email: string;
@@ -35,6 +36,11 @@ export const CompleteProfileModal: React.FC<Props> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    const problem = phoneProblem(phone);
+    if (problem) {
+      setError(problem);
+      return;
+    }
     setLoading(true);
     const res = await onSubmit(name.trim(), phone.trim());
     setLoading(false);
@@ -91,21 +97,13 @@ export const CompleteProfileModal: React.FC<Props> = ({
             <label className="text-xs font-extrabold text-[#0B192C] dark:text-gray-200">
               Mobile Phone Number
             </label>
-            <div className="relative">
-              <Phone
-                className="absolute left-3.5 top-3.5 text-gray-400"
-                size={16}
-              />
-              <input
-                type="tel"
-                required
-                autoFocus
-                placeholder="+91 98765 43210"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full pl-10 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
-              />
-            </div>
+            <PhoneInput
+              required
+              autoFocus
+              size="md"
+              value={phone}
+              onChange={setPhone}
+            />
             <p className="text-[10px] text-gray-400 font-semibold">
               Used for booking confirmations and check-in at the stay.
             </p>

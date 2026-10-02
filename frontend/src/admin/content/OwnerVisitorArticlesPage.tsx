@@ -346,9 +346,11 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
 
                 <div className="space-y-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 rounded-full text-[10px] font-black flex items-center gap-1">
-                      <ShieldCheck size={11} /> Verified Visitor Stay
-                    </span>
+                    {art.isVerifiedStay && (
+                      <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 rounded-full text-[10px] font-black flex items-center gap-1">
+                        <ShieldCheck size={11} /> Verified Visitor Stay
+                      </span>
+                    )}
                     <span className="px-2.5 py-0.5 bg-blue-50 text-[#F28C28] dark:bg-blue-950/40 dark:text-amber-300 rounded-full text-[10px] font-black">
                       {humanizeLabel(art.category)}
                     </span>
@@ -379,7 +381,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
                     <span>
                       • Ashram:{" "}
                       <strong className="text-[#0B192C] dark:text-white">
-                        {art.ashramId?.name}
+                        {art.ashramId?.name || "General (no ashram)"}
                       </strong>
                     </span>
                     <span>
@@ -446,7 +448,11 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
           isOpen={Boolean(selectedArticle)}
           onClose={() => setSelectedArticle(null)}
           title="Review Visitor Experience Article"
-          subtitle={`Submitted for ${selectedArticle.ashramId?.name}`}
+          subtitle={
+            selectedArticle.ashramId?.name
+              ? `Submitted for ${selectedArticle.ashramId.name}`
+              : "General article — not linked to an ashram"
+          }
           maxWidth="5xl"
           footer={
             <div className="flex items-center justify-between gap-3 flex-wrap text-xs font-bold">
@@ -539,12 +545,20 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
 
                 <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl border border-emerald-200 dark:border-emerald-900 space-y-1.5">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <span className="text-emerald-700 dark:text-emerald-400 font-black text-[11px] flex items-center gap-1.5">
-                      <ShieldCheck size={14} /> Verified Stay Record
-                    </span>
-                    <span className="text-[10px] text-gray-500 font-mono">
-                      {selectedArticle.bookingId?.bookingId || "Verified"}
-                    </span>
+                    {selectedArticle.isVerifiedStay ? (
+                      <>
+                        <span className="text-emerald-700 dark:text-emerald-400 font-black text-[11px] flex items-center gap-1.5">
+                          <ShieldCheck size={14} /> Verified Stay Record
+                        </span>
+                        <span className="text-[10px] text-gray-500 font-mono">
+                          {selectedArticle.bookingId?.bookingId || "Verified"}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-gray-600 dark:text-gray-300 font-black text-[11px]">
+                        Author (no linked stay)
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
                     Visitor: <strong>{selectedArticle.visitorId?.name}</strong>

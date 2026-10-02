@@ -44,7 +44,7 @@ export class TemplesService {
   ) {}
 
   async create(dto: CreateTempleDto, user: any) {
-    if (dto.address?.coordinates) this.validateCoordinates(dto.address.coordinates);
+    this.checkLocation(dto.address?.coordinates);
     const baseSlug = slugify(dto.slug || `${dto.name || 'unnamed-temple'}-${dto.address?.city || 'unknown'}`);
     let slug = baseSlug;
     let counter = 1;
@@ -80,7 +80,7 @@ export class TemplesService {
       delete (dto as any).isVerified;
       delete (dto as any).isFeatured;
     }
-    if (dto.address?.coordinates) this.validateCoordinates(dto.address.coordinates);
+    if (dto.address) this.checkLocation(dto.address.coordinates);
     if (dto.slug && await this.temples.exists({ slug: dto.slug, _id: { $ne: id }, deletedAt: null })) {
       throw new ConflictException("Temple slug is already in use");
     }
@@ -249,8 +249,32 @@ export class TemplesService {
 
   private normalizeAddress(address: any) {
     if (!address) return address;
+    // A draft saved before a map pin is chosen stores no location at all; an
+    // empty or [0, 0] Point would break the 2dsphere index and nearby queries.
+    if (this.isUnsetLocation(address.coordinates)) {
+      const rest = { ...address };
+      delete rest.coordinates;
+      return rest;
+    }
     const coordinates = Array.isArray(address.coordinates) ? address.coordinates : address.coordinates?.coordinates;
     return { ...address, coordinates: { type: "Point", coordinates } };
+  }
+
+  /** Missing, empty, or the [0, 0] the admin form sends until the map is used. */
+  private isUnsetLocation(coordinates: any): boolean {
+    const values = Array.isArray(coordinates) ? coordinates : coordinates?.coordinates;
+    return !Array.isArray(values) || values.length === 0 || (values[0] === 0 && values[1] === 0);
+  }
+
+  /**
+   * The admin form derives coordinates from the Google Maps link, and a short
+   * link carries none, so a temple may be saved or published without a
+   * location; it then simply has no map pin or nearby results. Coordinates
+   * that are supplied must still be valid.
+   */
+  private checkLocation(coordinates: any) {
+    if (this.isUnsetLocation(coordinates)) return;
+    this.validateCoordinates(coordinates);
   }
 
   private validateCoordinates(coordinates: any) {
@@ -260,11 +284,6 @@ export class TemplesService {
     }
     if (values[0] < -180 || values[0] > 180 || values[1] < -90 || values[1] > 90) {
       throw new BadRequestException("Coordinates are outside valid geographic bounds");
-    }
-    // [0, 0] is the Gulf-of-Guinea placeholder the admin form ships by default.
-    // Persisting it silently breaks the map, directions and every nearby query.
-    if (values[0] === 0 && values[1] === 0) {
-      throw new BadRequestException("Set the temple location on the map before saving — coordinates cannot be 0, 0");
     }
   }
 

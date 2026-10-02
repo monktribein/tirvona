@@ -3,6 +3,7 @@ import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth, type OtpChallenge } from "../contexts/AuthContext";
 import OtpChallengeForm from "../components/OtpChallengeForm";
 import CompleteProfileModal from "../components/CompleteProfileModal";
+import PhoneInput, { phoneProblem } from "../components/PhoneInput";
 import useGoogleAuth from "../hooks/useGoogleAuth";
 import { isGoogleConfigured } from "../lib/googleAuth";
 import { vendorApi } from "../services/marketplace.service";
@@ -48,6 +49,22 @@ const GoogleIcon: React.FC = () => (
     />
   </svg>
 );
+import {
+  ShieldCheck,
+  Mail,
+  Lock,
+  User as UserIcon,
+  Building2,
+  BadgeCheck,
+  Headphones,
+  ArrowRight,
+  Landmark,
+  Zap,
+  Store,
+  Car,
+} from "lucide-react";
+
+import { getPostLoginRedirect } from "../utils/roleRedirect";
 
 export const RegisterPage: React.FC = () => {
   const { registerUser, verifyRegistrationOtp, resendOtp } = useAuth();
@@ -105,6 +122,11 @@ export const RegisterPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    const problem = phoneProblem(phone);
+    if (problem) {
+      setError(problem);
+      return;
+    }
     setLoading(true);
 
     const payload: any = { name, email, phone, password, role };
@@ -538,20 +560,7 @@ export const RegisterPage: React.FC = () => {
                     <label className="text-[11px] font-bold text-gray-700 dark:text-gray-300 block">
                       Mobile Phone Number <span className="text-[#F28C28]">*</span>
                     </label>
-                    <div className="relative">
-                      <Phone
-                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
-                        size={15}
-                      />
-                      <input
-                        type="tel"
-                        required
-                        placeholder="+91 98765 43210"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        className="w-full h-10 pl-10 pr-3.5 bg-gray-50/60 dark:bg-slate-900/60 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-medium text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:bg-white dark:focus:bg-slate-900 focus:border-[#F28C28] focus:ring-2 focus:ring-[#F28C28]/20 transition-all outline-none"
-                      />
-                    </div>
+                    <PhoneInput required value={phone} onChange={setPhone} />
                   </div>
 
                   {/* Security Password with Eye Toggle */}

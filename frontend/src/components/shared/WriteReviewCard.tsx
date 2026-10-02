@@ -10,6 +10,7 @@ import { BadgeCheck, CheckCircle2, Loader2, Star } from "lucide-react";
 interface Eligibility {
   canReview: boolean;
   alreadyReviewed: boolean;
+  existingReview?: { _id: string; displayName?: string } | null;
   verifiedStay: boolean;
   bookingId: string | null;
 }
@@ -71,6 +72,11 @@ export const WriteReviewCard: React.FC<{
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  // Super admins post reviews on guests' behalf and name the reviewer, so the
+  // public card shows that name instead of "Super Admin".
+  const isSuperAdmin = user?.role === "super_admin";
+  const [displayName, setDisplayName] = useState("");
+  const [savingName, setSavingName] = useState(false);
 
   const check = useCallback(async () => {
     if (!user) {
@@ -80,6 +86,7 @@ export const WriteReviewCard: React.FC<{
     try {
       const res = await reviewService.eligibility(ashramId);
       setEligibility(res.data?.data ?? null);
+      setDisplayName(res.data?.data?.existingReview?.displayName ?? "");
     } catch {
       setEligibility(null);
     } finally {
@@ -100,6 +107,9 @@ export const WriteReviewCard: React.FC<{
         rating: { overall, ...subScores },
         comment: comment.trim(),
         ...(eligibility?.bookingId ? { bookingId: eligibility.bookingId } : {}),
+        ...(isSuperAdmin && displayName.trim()
+          ? { displayName: displayName.trim() }
+          : {}),
       });
       setDone(true);
       addNotification(
@@ -118,6 +128,35 @@ export const WriteReviewCard: React.FC<{
       setSubmitting(false);
     }
   };
+
+  const saveDisplayName = async () => {
+    const id = eligibility?.existingReview?._id;
+    if (!id) return;
+    setSavingName(true);
+    try {
+      await reviewService.setDisplayName(id, displayName.trim());
+      onSubmitted?.();
+    } catch {
+      // The API client already shows the error as a toast.
+    } finally {
+      setSavingName(false);
+    }
+  };
+
+  const nameField = (
+    <div className="space-y-1">
+      <label className="text-[11px] font-black text-gray-500 block">
+        Reviewer name shown publicly{" "}
+        <span className="text-gray-300 font-normal">(super admin)</span>
+      </label>
+      <input
+        value={displayName}
+        onChange={(e) => setDisplayName(e.target.value.slice(0, 80))}
+        placeholder="e.g. Ramesh Sharma — leave empty to show your account name"
+        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]"
+      />
+    </div>
+  );
 
   if (checking && user) return null;
 
@@ -159,6 +198,19 @@ export const WriteReviewCard: React.FC<{
           <p className="text-xs text-emerald-700/80 dark:text-emerald-400/80">
             Thank you for helping other pilgrims choose their stay.
           </p>
+          {isSuperAdmin && eligibility?.existingReview?._id && !done && (
+            <div className="mt-3 space-y-2">
+              {nameField}
+              <button
+                onClick={saveDisplayName}
+                disabled={savingName}
+                className="px-4 py-2 rounded-full bg-[#F28C28] hover:bg-[#D97706] disabled:opacity-60 text-white text-[11px] font-extrabold flex items-center gap-1.5 cursor-pointer"
+              >
+                {savingName && <Loader2 size={12} className="animate-spin" />}
+                Save reviewer name
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -224,6 +276,8 @@ export const WriteReviewCard: React.FC<{
           {comment.length}/1500
         </span>
       </div>
+
+      {isSuperAdmin && nameField}
 
       <button
         onClick={submit}

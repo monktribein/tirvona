@@ -68,8 +68,12 @@ export const visitorArticleService = {
     }>(
       `/visitor-articles/visitor/my-articles${status ? `?status=${status}` : ""}`,
     ),
+  /** Both links are optional: a completed stay (verified) and/or an ashram. */
   createArticle: (
-    data: Omit<Partial<VisitorArticle>, "bookingId"> & { bookingId: string },
+    data: Omit<Partial<VisitorArticle>, "bookingId" | "ashramId"> & {
+      bookingId?: string;
+      ashramId?: string;
+    },
   ) =>
     api.post<{ success: boolean; message: string; data: VisitorArticle }>(
       "/visitor-articles",

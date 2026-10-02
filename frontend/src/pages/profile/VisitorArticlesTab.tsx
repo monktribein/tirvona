@@ -24,7 +24,7 @@ import {
   type EligibleBooking,
   type VisitorArticle,
 } from "../../services/visitorArticleService";
-import { uploadService } from "../../services";
+import { ashramService, uploadService } from "../../services";
 import { ImageUploadGrid } from "../../components/shared/ImageUploadGrid";
 import { useNotifications } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../lib/api";
@@ -74,6 +74,14 @@ export const VisitorArticlesTab: React.FC = () => {
   const [loadingEligible, setLoadingEligible] = useState(false);
   const [selectedBooking, setSelectedBooking] =
     useState<EligibleBooking | null>(null);
+  // For an article without a linked stay: the ashram it is about, if any.
+  // That ashram's owner can then review it; otherwise a super admin does.
+  const [ashramOptions, setAshramOptions] = useState<
+    { _id: string; name: string; city?: string }[]
+  >([]);
+  const [selectedAshramId, setSelectedAshramId] = useState("");
+  // When editing, the stay/ashram link is fixed; this is shown read-only.
+  const [linkedAshramName, setLinkedAshramName] = useState("");
 
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("Experience");
@@ -113,9 +121,9 @@ export const VisitorArticlesTab: React.FC = () => {
   }, [fetchMyArticles]);
 
   const handleOpenWizard = async () => {
+    resetForm();
     setIsWizardOpen(true);
     setStep(1);
-    setSelectedBooking(null);
     setLoadingEligible(true);
 
     try {
@@ -123,15 +131,32 @@ export const VisitorArticlesTab: React.FC = () => {
       if (res.data.success) {
         setEligibleBookings(res.data.data);
       }
-    } catch (err) {
-      addNotification(
-        "Error",
-        getErrorMessage(err, "Failed to fetch completed bookings."),
-        "error",
-      );
+    } catch {
+      // Linking a stay is optional; without the list the writer can still
+      // continue without one.
+      setEligibleBookings([]);
     } finally {
       setLoadingEligible(false);
     }
+  };
+
+  const loadAshramOptions = async () => {
+    if (ashramOptions.length) return;
+    try {
+      const res = await ashramService.search({ limit: "100" });
+      const rows: any[] = res.data?.data || [];
+      setAshramOptions(
+        rows.map((a) => ({ _id: a._id, name: a.name, city: a.address?.city })),
+      );
+    } catch {
+      // The ashram link is optional; the picker just stays empty.
+    }
+  };
+
+  const handleWriteWithoutStay = () => {
+    setSelectedBooking(null);
+    setStep(2);
+    void loadAshramOptions();
   };
 
   const MAX_COVER_BYTES = 10 * 1024 * 1024;
@@ -201,7 +226,6 @@ export const VisitorArticlesTab: React.FC = () => {
   };
 
   const handleSubmitArticle = async (asDraft = false) => {
-    if (!selectedBooking) return;
     if (!title.trim() || !shortDescription.trim() || !content.trim()) {
       addNotification(
         "Missing Information",
@@ -242,7 +266,11 @@ export const VisitorArticlesTab: React.FC = () => {
       const res = editingId
         ? await visitorArticleService.updateArticle(editingId, payload)
         : await visitorArticleService.createArticle({
-            bookingId: selectedBooking._id,
+            ...(selectedBooking
+              ? { bookingId: selectedBooking._id }
+              : selectedAshramId
+                ? { ashramId: selectedAshramId }
+                : {}),
             ...payload,
           });
 
@@ -272,6 +300,8 @@ export const VisitorArticlesTab: React.FC = () => {
     setVideoUrl("");
     setGalleryImages([]);
     setSelectedBooking(null);
+    setSelectedAshramId("");
+    setLinkedAshramName("");
     setEditingId(null);
     setStep(1);
   };
@@ -287,10 +317,15 @@ export const VisitorArticlesTab: React.FC = () => {
     setGalleryImages(article.galleryImages || []);
     setTagsStr((article.tags || []).join(", "));
     setLanguage(article.language || "English");
-    setSelectedBooking({
-      ...(article.bookingId as any),
-      ashram: (article.bookingId as any)?.ashram ?? article.ashramId,
-    } as any);
+    setSelectedBooking(
+      article.bookingId
+        ? ({
+            ...(article.bookingId as any),
+            ashram: (article.bookingId as any)?.ashram ?? article.ashramId,
+          } as any)
+        : null,
+    );
+    setLinkedAshramName(article.ashramId?.name || "");
     setStep(2);
     setIsWizardOpen(true);
   };
@@ -304,8 +339,8 @@ export const VisitorArticlesTab: React.FC = () => {
             <span>My Articles & Blogs</span>
           </h2>
           <p className="text-xs text-gray-400 font-medium">
-            Share your verified stay experience with the spiritual yatri
-            community.
+            Write articles and blogs for the spiritual yatri community.
+            Approved articles are published on the Tirvona blog.
           </p>
         </div>
 
@@ -364,8 +399,8 @@ export const VisitorArticlesTab: React.FC = () => {
             No articles found in {activeSubTab}
           </h3>
           <p className="text-xs text-gray-400 max-w-sm mx-auto font-medium">
-            After completing a Stay, write an article to share your
-            experience with fellow yatris!
+            Write an article or blog to share your journey, a temple story or
+            a travel guide with fellow yatris!
           </p>
           <button
             onClick={handleOpenWizard}
@@ -419,7 +454,7 @@ export const VisitorArticlesTab: React.FC = () => {
                         {art.status === "approved"
                           ? "Published"
                           : art.status === "pending"
-                            ? "Pending Owner Approval"
+                            ? "Pending Approval"
                             : art.status}
                       </span>
                     </span>
@@ -436,7 +471,7 @@ export const VisitorArticlesTab: React.FC = () => {
                   <p className="text-[10px] text-gray-400 font-semibold flex items-center gap-3 pt-1">
                     <span className="flex items-center gap-1">
                       <MapPin size={11} className="text-[#E58C28]" />{" "}
-                      {art.ashramId?.name || "Stay"}
+                      {art.ashramId?.name || "General"}
                     </span>
                     <span>
                       •{" "}
@@ -500,20 +535,48 @@ export const VisitorArticlesTab: React.FC = () => {
         onClose={() => setIsWizardOpen(false)}
         title={
           step === 1
-            ? "Step 1: Select Verified Stay"
+            ? "Step 1: Link a Stay (Optional)"
             : editingId
-              ? "Edit Your Experience Article"
-              : "Step 2: Write Experience Article"
+              ? "Edit Your Article"
+              : "Step 2: Write Your Article or Blog"
         }
         subtitle={
           step === 1
-            ? "Choose from your completed stay bookings to link your article"
-            : `Writing article for ${selectedBooking?.ashram?.name || "Ashram Stay"}`
+            ? "Link a completed stay for a Verified Stay badge, or write without one"
+            : selectedBooking?.ashram?.name
+              ? `Writing about your stay at ${selectedBooking.ashram.name}`
+              : "Approved articles are published on the Tirvona blog"
         }
         maxWidth="2xl"
       >
         {step === 1 ? (
           <div className="space-y-4">
+            <button
+              type="button"
+              onClick={handleWriteWithoutStay}
+              className="w-full p-4 rounded-2xl border-2 border-dashed border-[#F28C28]/40 hover:border-[#F28C28] hover:bg-[#FFF4E5]/50 dark:hover:bg-slate-900 transition-all flex items-center justify-between gap-3 text-left cursor-pointer"
+            >
+              <div className="space-y-0.5">
+                <span className="font-black text-sm text-[#0B192C] dark:text-white flex items-center gap-1.5">
+                  <Pencil size={14} className="text-[#F28C28]" /> Write without a stay
+                </span>
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 block">
+                  Share a guide, temple story, festival or any spiritual experience.
+                </span>
+              </div>
+              <span className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#F28C28] text-white text-xs font-extrabold rounded-full whitespace-nowrap shrink-0">
+                Start Writing <ArrowRight size={13} />
+              </span>
+            </button>
+
+            <div className="flex items-center gap-2.5">
+              <span className="h-px flex-grow bg-gray-200 dark:bg-slate-800" />
+              <span className="text-[10px] font-bold text-gray-400 tracking-wider">
+                Or link a completed stay for a Verified Stay badge
+              </span>
+              <span className="h-px flex-grow bg-gray-200 dark:bg-slate-800" />
+            </div>
+
             {loadingEligible ? (
               <div className="py-8 text-center space-y-2">
                 <Loader2
@@ -525,15 +588,10 @@ export const VisitorArticlesTab: React.FC = () => {
                 </p>
               </div>
             ) : eligibleBookings.length === 0 ? (
-              <div className="p-6 text-center space-y-2 bg-amber-50 dark:bg-amber-950/20 rounded-2xl border border-amber-100 dark:border-amber-900 text-amber-800 dark:text-amber-300">
-                <AlertCircle size={24} className="mx-auto text-amber-600" />
-                <h4 className="font-extrabold text-sm">
-                  No Completed Stays Found
-                </h4>
+              <div className="p-4 text-center space-y-1 bg-gray-50 dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 text-gray-500 dark:text-gray-400">
+                <AlertCircle size={18} className="mx-auto text-gray-400" />
                 <p className="text-xs font-medium">
-                  Articles can only be written for completed stays. Once
-                  your stay booking status becomes completed, you can write an
-                  article here!
+                  No completed stays yet. You can still write without one above.
                 </p>
               </div>
             ) : (
@@ -587,31 +645,76 @@ export const VisitorArticlesTab: React.FC = () => {
             }}
             className="space-y-4 text-xs font-bold"
           >
-            <div className="p-3 bg-blue-50/80 dark:bg-blue-950/30 rounded-xl border border-blue-100 dark:border-slate-800 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <ShieldCheck size={16} className="text-[#F28C28]" />
-                <div>
-                  <span className="font-extrabold text-[#0B192C] dark:text-white block">
-                    {selectedBooking?.ashram?.name}
-                  </span>
-                  <span className="text-[10px] text-gray-400 font-semibold">
-                    Visit Date:{" "}
-                    {selectedBooking?.checkInDate
-                      ? new Date(
-                          selectedBooking.checkInDate,
-                        ).toLocaleDateString("en-IN")
-                      : "Completed Stay"}
-                  </span>
+            {selectedBooking ? (
+              <div className="p-3 bg-blue-50/80 dark:bg-blue-950/30 rounded-xl border border-blue-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck size={16} className="text-[#F28C28]" />
+                  <div>
+                    <span className="font-extrabold text-[#0B192C] dark:text-white block">
+                      {selectedBooking.ashram?.name} · Verified Stay
+                    </span>
+                    <span className="text-[10px] text-gray-400 font-semibold">
+                      Visit Date:{" "}
+                      {selectedBooking.checkInDate
+                        ? new Date(
+                            selectedBooking.checkInDate,
+                          ).toLocaleDateString("en-IN")
+                        : "Completed Stay"}
+                    </span>
+                  </div>
                 </div>
+                {!editingId && (
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="text-[10px] text-[#F28C28] hover:underline font-extrabold"
+                  >
+                    Change
+                  </button>
+                )}
               </div>
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="text-[10px] text-[#F28C28] hover:underline font-extrabold"
-              >
-                Change Stay
-              </button>
-            </div>
+            ) : editingId ? (
+              <div className="p-3 bg-gray-50 dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-800 text-xs">
+                <span className="text-gray-500 dark:text-gray-400 font-semibold flex items-center gap-1.5">
+                  <MapPin size={13} className="text-[#E58C28]" />
+                  {linkedAshramName
+                    ? `About ${linkedAshramName}`
+                    : "General article (not linked to an ashram)"}
+                </span>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <label className="text-gray-700 dark:text-gray-300">
+                  About an Ashram (optional)
+                </label>
+                <select
+                  value={selectedAshramId}
+                  onChange={(e) => setSelectedAshramId(e.target.value)}
+                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold focus:outline-none focus:border-[#F28C28]"
+                >
+                  <option value="">Not about a specific ashram</option>
+                  {ashramOptions.map((a) => (
+                    <option key={a._id} value={a._id}>
+                      {a.name}
+                      {a.city ? ` — ${a.city}` : ""}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] font-semibold text-gray-400">
+                  {selectedAshramId
+                    ? "The ashram's owner or a Tirvona admin reviews it before it is published."
+                    : "A Tirvona admin reviews it before it is published."}
+                  {"  "}
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="text-[#F28C28] hover:underline font-extrabold"
+                  >
+                    Link a stay instead
+                  </button>
+                </p>
+              </div>
+            )}
 
             <div className="space-y-1">
               <label className="text-gray-700 dark:text-gray-300">

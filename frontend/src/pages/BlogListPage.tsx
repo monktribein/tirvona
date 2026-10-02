@@ -61,10 +61,11 @@ export const BlogListPage: React.FC = () => {
         createdAt: va.createdAt,
         views: va.viewsCount || 0,
         readingTime: "5 min read",
-        isVerifiedStay: true,
+        // Only articles linked to a completed stay are verified.
+        isVerifiedStay: Boolean(va.isVerifiedStay),
         ashramName: va.ashramId?.name,
         authorId: {
-          name: va.visitorId?.name || "Verified Visitor",
+          name: va.visitorId?.name || "Tirvona Pilgrim",
           photo:
             va.visitorId?.avatar ||
             "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E",
@@ -158,7 +159,10 @@ export const BlogListPage: React.FC = () => {
               const targetUrl = isVideo
                 ? `/video/${item.slug}`
                 : `/blog/${item.slug}`;
-              const author = item.authorId || {};
+              // An admin-entered author name wins over the linked author record.
+              const author = item.authorName
+                ? { ...(item.authorId || {}), name: item.authorName }
+                : item.authorId || {};
 
               return (
                 <div
@@ -232,7 +236,7 @@ export const BlogListPage: React.FC = () => {
                       />
                       <span className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1 truncate">
                         <span className="truncate">
-                          {author.name || "Verified Author"}
+                          {author.name || "Tirvona Editorial"}
                         </span>
                         <CheckCircle2
                           size={12}

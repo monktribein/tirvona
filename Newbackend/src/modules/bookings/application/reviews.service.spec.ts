@@ -149,3 +149,66 @@ describe("ReviewsService.create", () => {
     );
   });
 });
+
+describe("ReviewsService reviewer display name", () => {
+  const admin = { id: user.id, role: "super_admin" } as AuthenticatedUser;
+
+  it("stores a display name when a super admin posts", async () => {
+    const { service, created } = build({});
+    await service.create(admin, dto({ displayName: "  Ramesh Sharma " }));
+    expect(created[0].displayName).toBe("Ramesh Sharma");
+  });
+
+  it("ignores a display name from anyone else", async () => {
+    const { service, created } = build({});
+    await service.create(user, dto({ displayName: "Someone Famous" }));
+    expect(created[0]).not.toHaveProperty("displayName");
+  });
+
+  it("lets a super admin rename only their own review, and clear it", async () => {
+    const { service, reviews } = build({});
+    const review: any = { customerId: admin.id, displayName: "Old", save: jest.fn() };
+    (reviews as any).findById = jest.fn().mockResolvedValue(review);
+    await service.setDisplayName(admin, "r1", " Sita Devi ");
+    expect(review.displayName).toBe("Sita Devi");
+    await service.setDisplayName(admin, "r1", "  ");
+    expect(review.displayName).toBeUndefined();
+
+    review.customerId = "someone-else";
+    await expect(service.setDisplayName(admin, "r1", "X")).rejects.toThrow(/reviews you posted/);
+    await expect(service.setDisplayName(user, "r1", "X")).rejects.toThrow(/super admin/);
+  });
+});
+
+describe("ReviewsService admin console", () => {
+  const admin = { id: user.id, role: "super_admin" } as AuthenticatedUser;
+  const chain = (rows: unknown) => {
+    const c: any = {};
+    for (const m of ["populate", "sort", "skip", "limit", "select"]) c[m] = jest.fn(() => c);
+    c.lean = jest.fn().mockResolvedValue(rows);
+    return c;
+  };
+
+  it("filters by status and searches comments, names and ashram names", async () => {
+    const { service, reviews, ashrams } = build({});
+    (reviews as any).find = jest.fn(() => chain([{ _id: "r1" }]));
+    (reviews as any).countDocuments = jest.fn().mockResolvedValue(1);
+    (ashrams as any).find = jest.fn(() => chain([{ _id: "a1" }]));
+    const res = await service.adminList({ status: "hidden", search: "Gayatri", page: "2", limit: "10" });
+    const filter = (reviews as any).find.mock.calls[0][0];
+    expect(filter.status).toBe("hidden");
+    expect(filter.$or).toHaveLength(3);
+    expect(filter.$or[2]).toEqual({ ashramId: { $in: ["a1"] } });
+    expect(res).toMatchObject({ total: 1, page: 2, limit: 10 });
+  });
+
+  it("hides a review and recalculates the ashram rating", async () => {
+    const { service, reviews, ashrams } = build({});
+    const review: any = { ashramId: ASHRAM_ID, status: "approved", save: jest.fn() };
+    (reviews as any).findById = jest.fn().mockResolvedValue(review);
+    await service.setStatus(admin, "r1", "hidden");
+    expect(review.status).toBe("hidden");
+    expect(ashrams.updateOne).toHaveBeenCalled();
+    await expect(service.setStatus(user, "r1", "hidden")).rejects.toThrow(/super admin/);
+  });
+});

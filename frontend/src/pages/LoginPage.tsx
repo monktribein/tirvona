@@ -3,13 +3,13 @@ import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth, type OtpChallenge } from "../contexts/AuthContext";
 import OtpChallengeForm from "../components/OtpChallengeForm";
 import CompleteProfileModal from "../components/CompleteProfileModal";
+import PhoneInput, { phoneProblem } from "../components/PhoneInput";
 import useGoogleAuth from "../hooks/useGoogleAuth";
 import { isGoogleConfigured } from "../lib/googleAuth";
 import {
   ShieldCheck,
   Lock,
   Mail,
-  Phone,
   Send,
   Loader2,
   Eye,
@@ -63,7 +63,6 @@ export const LoginPage: React.FC = () => {
   const [sendingOtp, setSendingOtp] = useState(false);
   const [resendIn, setResendIn] = useState(0);
   const [otpCode, setOtpCode] = useState("");
-  const [serverOtpMsg, setServerOtpMsg] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
@@ -178,7 +177,8 @@ export const LoginPage: React.FC = () => {
   const handleSendOtp = async (e: React.MouseEvent) => {
     e.preventDefault();
     setError("");
-    if (!phone) return setError("Enter phone number");
+    const problem = phoneProblem(phone);
+    if (problem) return setError(problem);
     setSendingOtp(true);
     // A very fast response makes the spinner flash and read as "nothing
     // happened", so hold it briefly before showing the result.
@@ -192,10 +192,13 @@ export const LoginPage: React.FC = () => {
     try {
       const res = await authService.sendOtp(phone);
       await settle();
+      // The server's "OTP sent to your WhatsApp number." arrives as a toast
+      // through the API client.
       if (res.data.success) {
         setOtpSent(true);
         setResendIn(30);
-        setServerOtpMsg("OTP sent to your WhatsApp number.");
+        setOtpCode("");
+        submittedOtpRef.current = "";
       }
     } catch (err) {
       await settle();
@@ -203,11 +206,16 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const handleOtpSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // The last code sent for verification, so the auto-verify below does not
+  // resubmit the same code (e.g. after a failure, or on a re-render).
+  const submittedOtpRef = useRef("");
+
+  const verifyOtpCode = async (code: string) => {
+    if (loading || code.length !== 6) return;
+    submittedOtpRef.current = code;
     setError("");
     setLoading(true);
-    const res = await loginOTP(phone, otpCode);
+    const res = await loginOTP(phone, code);
     setLoading(false);
     if (res.success) {
       goAfterAuthentication(
@@ -217,8 +225,22 @@ export const LoginPage: React.FC = () => {
       );
     } else {
       setError(res.message || "Invalid OTP");
+      setOtpCode("");
+      submittedOtpRef.current = "";
     }
   };
+
+  const handleOtpSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    void verifyOtpCode(otpCode);
+  };
+
+  // Verify as soon as the sixth digit is entered.
+  useEffect(() => {
+    if (otpCode.length === 6 && submittedOtpRef.current !== otpCode)
+      void verifyOtpCode(otpCode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [otpCode]);
 
   const switchMode = (otp: boolean) => {
     setUseOtp(otp);
@@ -600,18 +622,15 @@ export const LoginPage: React.FC = () => {
                         Mobile Phone Number
                       </label>
                       <div className="flex gap-2">
-                        <div className="relative flex-grow">
-                          <Phone
-                            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                            size={15}
-                          />
-                          <input
-                            type="tel"
+                        <div className="flex-grow min-w-0">
+                          <PhoneInput
                             required
-                            placeholder="+91 98765 43210"
                             value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
-                            className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
+                            onChange={(next) => {
+                              setPhone(next);
+                              // A new number needs a new code.
+                              if (otpSent) setOtpSent(false);
+                            }}
                           />
                         </div>
                         <button
@@ -630,7 +649,7 @@ export const LoginPage: React.FC = () => {
                           ) : (
                             <>
                               <Send size={13} />
-                              {otpSent ? "Resend on WhatsApp" : "Get OTP on WhatsApp"}
+                              {otpSent ? "Resend OTP" : "Get OTP"}
                             </>
                           )}
                         </button>
@@ -639,20 +658,22 @@ export const LoginPage: React.FC = () => {
 
                     {otpSent && (
                       <div className="space-y-2.5 animate-in fade-in duration-200">
-                        <div className="p-2.5 bg-yellow-50 dark:bg-yellow-950/20 text-yellow-700 dark:text-yellow-400 border border-yellow-200/50 text-[10px] rounded-xl font-semibold leading-relaxed">
-                          {serverOtpMsg}
-                        </div>
                         <div className="space-y-1">
                           <label className="text-[11px] font-extrabold text-[#0B192C] dark:text-gray-200">
                             Enter 6-digit OTP Code
                           </label>
                           <input
                             type="text"
+                            inputMode="numeric"
+                            autoComplete="one-time-code"
+                            autoFocus
                             required
-                            maxLength={6}
+                            disabled={loading}
                             placeholder="123456"
                             value={otpCode}
-                            onChange={(e) => setOtpCode(e.target.value)}
+                            onChange={(e) =>
+                              setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                            }
                             className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs text-center tracking-[0.4em] font-extrabold focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                           />
                         </div>

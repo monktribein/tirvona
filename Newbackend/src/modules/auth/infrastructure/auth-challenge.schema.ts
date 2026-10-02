@@ -5,7 +5,7 @@ export const AuthChallengeSchema = new Schema(
     codeHash: { type: String, required: true, select: false },
     purpose: {
       type: String,
-      enum: ["register", "login", "phone_login", "google"],
+      enum: ["register", "login", "phone_login", "google", "email_change"],
       required: true,
       index: true,
     },

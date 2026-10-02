@@ -96,7 +96,10 @@ export const VideoDetailPage: React.FC = () => {
   }
 
   const { post, comments, relatedPosts } = data;
-  const author = post?.authorId || {};
+  // An admin-entered author name wins over the linked author record.
+  const author = post?.authorName
+    ? { ...(post.authorId || {}), name: post.authorName }
+    : post?.authorId || {};
 
   const extractYouTubeId = (input?: any): string => {
     if (!input) return "50HnOmsPpxI";

@@ -78,6 +78,10 @@ export class ReviewsService {
         verifiedStay,
         rating: dto.rating,
         comment: dto.comment,
+        // Only a super admin may set a public name other than their own.
+        ...(user.role === "super_admin" && dto.displayName?.trim()
+          ? { displayName: dto.displayName.trim() }
+          : {}),
         status: "approved",
       });
     } catch (error: any) {
@@ -117,6 +121,83 @@ export class ReviewsService {
         },
       },
     );
+  }
+
+  /** Every stay review for the super-admin console, newest first. */
+  async adminList(query: Record<string, string>): Promise<{
+    data: any[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const page = Math.max(1, Number(query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(query.limit) || 20));
+    const filter: Record<string, any> = {};
+    if (["approved", "hidden", "pending"].includes(query.status))
+      filter.status = query.status;
+    if (query.ashramId && Types.ObjectId.isValid(query.ashramId))
+      filter.ashramId = query.ashramId;
+    const term = query.search?.trim().slice(0, 100);
+    if (term) {
+      const pattern = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+      const ashramIds = (
+        await this.ashrams.find({ name: pattern }).select("_id").lean()
+      ).map((a: any) => a._id);
+      filter.$or = [
+        { comment: pattern },
+        { displayName: pattern },
+        { ashramId: { $in: ashramIds } },
+      ];
+    }
+    const [data, total] = await Promise.all([
+      this.reviews
+        .find(filter)
+        .populate("customerId", "name email phone role")
+        .populate("ashramId", "name address")
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      this.reviews.countDocuments(filter),
+    ]);
+    return { data, total, page, limit };
+  }
+
+  /** Hides or re-shows a review; hidden reviews stop counting in the rating. */
+  async setStatus(
+    user: AuthenticatedUser,
+    id: string,
+    status: "approved" | "hidden",
+  ): Promise<any> {
+    if (user.role !== "super_admin")
+      throw new ForbiddenException("Only a super admin can moderate reviews");
+    const review = await this.reviews.findById(id);
+    if (!review) throw new NotFoundException("Review not found");
+    review.status = status;
+    await review.save();
+    await this.recalculateRating(String(review.ashramId));
+    return review;
+  }
+
+  /**
+   * Lets a super admin set or clear the public reviewer name on a review they
+   * posted. An empty name falls back to their account name.
+   */
+  async setDisplayName(
+    user: AuthenticatedUser,
+    id: string,
+    displayName: string,
+  ): Promise<any> {
+    if (user.role !== "super_admin")
+      throw new ForbiddenException("Only a super admin can set a reviewer name");
+    const review = await this.reviews.findById(id);
+    if (!review) throw new NotFoundException("Review not found");
+    if (String(review.customerId) !== user.id)
+      throw new ForbiddenException("You can only rename reviews you posted");
+    const name = displayName.trim();
+    review.displayName = name || undefined;
+    await review.save();
+    return review;
   }
 
   async eligibility(

@@ -231,4 +231,13 @@ export class CreateReviewDto {
   @Type(() => ReviewRatingDto)
   rating: ReviewRatingDto;
   @IsString() @MinLength(2) @MaxLength(1500) comment: string;
+  /** Super admin only: the reviewer name shown publicly. */
+  @IsOptional() @IsString() @MaxLength(80) displayName?: string;
+}
+export class ReviewStatusDto {
+  @IsIn(["approved", "hidden"]) status: "approved" | "hidden";
+}
+export class ReviewDisplayNameDto {
+  /** Empty clears it, so the author's account name shows again. */
+  @IsString() @MaxLength(80) displayName: string;
 }

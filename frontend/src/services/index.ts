@@ -25,8 +25,10 @@ export const authService = {
   resetPassword: (token: string, newPassword: string) =>
     api.post("/auth/reset-password", { token, newPassword }),
   me: () => api.get("/auth/me"),
-  updateMe: (data: { name?: string; phone?: string }) =>
+  updateMe: (data: { name?: string; phone?: string; email?: string }) =>
     api.put("/auth/me", data),
+  verifyEmailChange: (otpToken: string, otp: string) =>
+    api.post("/auth/me/email/verify", { otpToken, otp }),
   changePassword: (currentPassword: string, newPassword: string) =>
     api.put("/auth/me/password", { currentPassword, newPassword }),
 };
@@ -273,7 +275,16 @@ export const reviewService = {
     rating: { overall: number } & Record<string, number>;
     comment: string;
     bookingId?: string;
+    /** Super admin only: the reviewer name shown publicly. */
+    displayName?: string;
   }) => api.post("/reviews", data),
+  setDisplayName: (id: string, displayName: string) =>
+    api.patch(`/reviews/${id}/display-name`, { displayName }),
+  /** Super admin console: every stay review, filterable and paged. */
+  adminList: (params: Record<string, string | number>) =>
+    api.get("/reviews/admin/list", { params }),
+  setStatus: (id: string, status: "approved" | "hidden") =>
+    api.patch(`/reviews/${id}/status`, { status }),
   forAshram: (ashramId: string) => api.get(`/reviews/ashram/${ashramId}`),
   recent: () => api.get("/reviews/recent"),
   eligibility: (ashramId: string) =>

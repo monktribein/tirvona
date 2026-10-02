@@ -333,55 +333,70 @@ export class CommunityService {
     user: AuthenticatedUser,
     dto: VisitorArticleDto,
   ): Promise<any> {
-    const booking = await this.repository.one(
-      "bookings",
-      { _id: dto.bookingId },
-      { populate: ["ashramId"] },
-    );
-    if (!booking) throw new NotFoundException("Booking record not found.");
-    if (String(booking.customerId) !== user.id)
-      throw new ForbiddenException("Booking does not belong to you.");
-    if (!["completed", "checked_out"].includes(booking.status))
-      throw new BadRequestException(
-        "Only completed ashram stays are eligible for verified articles.",
+    // Anyone signed in may write. A completed stay is optional: linking one
+    // marks the article "Verified Stay". The ashram, from the stay or chosen
+    // directly, decides which owner can review; without one, only a super
+    // admin reviews it.
+    const { bookingId, ashramId, ...fields } = dto;
+    let booking: any = null;
+    if (bookingId) {
+      booking = await this.repository.one(
+        "bookings",
+        { _id: bookingId },
+        { populate: ["ashramId"] },
       );
-    if (
-      await this.repository.one("articles", {
-        bookingId: dto.bookingId,
-        status: { $in: ["pending", "approved"] },
-      })
-    )
-      throw new BadRequestException(
-        "An article has already been submitted for this completed stay.",
-      );
-    const ashram = booking.ashramId;
-    if (!ashram?.ownerId)
-      throw new BadRequestException(
-        "Associated Ashram or Owner information missing.",
-      );
+      if (!booking) throw new NotFoundException("Booking record not found.");
+      if (String(booking.customerId) !== user.id)
+        throw new ForbiddenException("Booking does not belong to you.");
+      if (!["completed", "checked_out"].includes(booking.status))
+        throw new BadRequestException(
+          "Only completed stays can be linked as a verified stay.",
+        );
+      if (
+        await this.repository.one("articles", {
+          bookingId,
+          status: { $in: ["pending", "approved"] },
+        })
+      )
+        throw new BadRequestException(
+          "An article has already been submitted for this completed stay.",
+        );
+    }
+    let ashram: any = booking?.ashramId ?? null;
+    if (!ashram && ashramId) {
+      ashram = await this.repository.one("ashrams", { _id: ashramId });
+      if (!ashram) throw new NotFoundException("Ashram not found.");
+    }
+    const visitDate = booking ? (booking.checkInDate ?? booking.createdAt) : undefined;
     const status = dto.status === "draft" ? "draft" : "pending";
     const data = await this.repository.create("articles", {
-      ...dto,
+      ...fields,
       uuid: `ART-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
       visitorId: user.id,
-      ashramId: ashram._id,
-      ownerId: ashram.ownerId,
+      ...(booking ? { bookingId: booking._id } : {}),
+      ...(ashram ? { ashramId: ashram._id } : {}),
+      ...(ashram?.ownerId ? { ownerId: ashram.ownerId } : {}),
       slug: this.slug(dto.title),
       status,
-      isVerifiedStay: true,
-      visitDate: booking.checkInDate ?? booking.createdAt,
-      visitMonth: new Date(
-        booking.checkInDate ?? booking.createdAt,
-      ).toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
+      isVerifiedStay: Boolean(booking),
+      ...(visitDate
+        ? {
+            visitDate,
+            visitMonth: new Date(visitDate).toLocaleDateString("en-IN", {
+              month: "long",
+              year: "numeric",
+            }),
+          }
+        : {}),
       viewsCount: 0,
       likesCount: 0,
     });
     await this.history(data._id, "new", status, user.id);
-    if (status === "pending")
+    if (status === "pending" && ashram?.ownerId)
       await this.notify(
         ashram.ownerId,
         "New Visitor Article Submitted",
-        `A new verified visitor article "${dto.title}" was submitted for ${ashram.name}.`,
+        `A new visitor article "${dto.title}" was submitted for ${ashram.name}.`,
         data._id,
       );
     return {
@@ -389,7 +404,7 @@ export class CommunityService {
       message:
         status === "draft"
           ? "Article saved as draft."
-          : "Article submitted for Owner approval.",
+          : "Article submitted for approval.",
       data,
     };
   }
@@ -403,8 +418,13 @@ export class CommunityService {
     if (String(article.visitorId) !== user.id)
       throw new ForbiddenException("Unauthorized to edit this article.");
     const previousStatus = article.status;
+    // The linked stay and ashram decide who reviews the article, so they are
+    // fixed once it is created.
+    const { bookingId: _booking, ashramId: _ashram, ...fields } = dto;
+    void _booking;
+    void _ashram;
     const update = {
-      ...dto,
+      ...fields,
       ...(dto.status === "pending" ? { rejectionReason: "" } : {}),
     };
     const data = await this.repository.update(
@@ -414,7 +434,7 @@ export class CommunityService {
     );
     if (dto.status && dto.status !== previousStatus) {
       await this.history(id, previousStatus, dto.status, user.id);
-      if (dto.status === "pending")
+      if (dto.status === "pending" && article.ownerId)
         await this.notify(
           article.ownerId,
           "Resubmitted Visitor Article",
@@ -517,8 +537,12 @@ export class CommunityService {
       { populate: ["ashramId"] },
     );
     if (!article) throw new NotFoundException("Article not found.");
+    // Articles not linked to an ashram are reviewed by a super admin only.
     if (user.role !== "super_admin" && String(article.ownerId) !== user.id)
       throw new ForbiddenException("You do not own this Ashram.");
+    // Now that owners can write too, nobody but a super admin approves their own.
+    if (user.role !== "super_admin" && String(article.visitorId) === user.id)
+      throw new ForbiddenException("You cannot review your own article.");
     const status = action === "approve" ? "approved" : "rejected";
     const data = await this.repository.update(
       "articles",

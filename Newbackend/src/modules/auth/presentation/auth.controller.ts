@@ -104,7 +104,7 @@ export class AuthController {
   ) {
     return {
       success: true,
-      message: "OTP sent.",
+      message: "OTP sent to your WhatsApp number.",
       data: await this.auth.sendPhoneOtp(dto.phone, request.id),
     };
   }
@@ -126,7 +126,7 @@ export class AuthController {
     await this.auth.forgotPassword(dto.email);
     return {
       success: true,
-      message: "If that account exists, a reset link has been sent.",
+      message: "A password reset link has been sent to your email.",
     };
   }
   @Public()
@@ -216,10 +216,44 @@ export class AuthController {
   ) {
     const user = await this.users.findById(current.id);
     if (!user) return { success: false, message: "User not found" };
+    // Check the phone and email first so a taken number or address fails
+    // before anything is saved.
+    const phone =
+      dto.phone !== undefined ? await this.auth.phoneUpdate(user, dto.phone) : null;
+    const emailChallenge = dto.email
+      ? await this.auth.requestEmailChange(current.id, dto.email)
+      : null;
     if (dto.name !== undefined) user.name = dto.name.trim();
-    if (dto.phone !== undefined) user.phone = dto.phone;
+    if (phone) user.phone = phone;
     await user.save();
+    if (emailChallenge)
+      return {
+        success: true,
+        message: `We sent a verification code to ${dto.email!.trim().toLowerCase()}.`,
+        otpRequired: true,
+        challenge: emailChallenge,
+        data: await this.auth.session(user),
+      };
     return { success: true, data: await this.auth.session(user) };
+  }
+
+  @Post("me/email/verify")
+  @ApiBearerAuth()
+  @SensitiveThrottle(30, 900_000, "token")
+  async verifyEmailChange(
+    @CurrentUser() current: AuthenticatedUser,
+    @Body() dto: VerifyChallengeDto,
+  ) {
+    const user = await this.auth.confirmEmailChange(
+      current.id,
+      dto.otpToken,
+      dto.otp,
+    );
+    return {
+      success: true,
+      message: "Your email has been updated.",
+      data: await this.auth.session(user),
+    };
   }
 
   @Put("me/password")
