@@ -13,6 +13,10 @@ import api from "../lib/api";
 import { extractCoordinates } from "../utils/geo";
 import { toTitleCase } from "../utils/textCase";
 import { ashramUrl } from "../lib/urls";
+import {
+  isAshramInDestination,
+  resolveApprovedDestination,
+} from "../utils/destinationNormalizer";
 
 export interface DestinationInventory {
   destination: Destination | null;
@@ -81,6 +85,7 @@ export function useDestinationData(slug: string): DestinationInventory {
         const [
           ashramByDestRes,
           ashramByCityRes,
+          allVerifiedAshramsRes,
           parkingCityRes,
           parkingDestRes,
           allTemplesRes,
@@ -91,6 +96,7 @@ export function useDestinationData(slug: string): DestinationInventory {
         ] = await Promise.allSettled([
           ashramService.search({ destination: initialCityName, limit: "50" }),
           ashramService.search({ city: initialCityName, limit: "50" }),
+          ashramService.search({ verified: "true", limit: "100" }),
           parkingDiscoveryService.search({ city: initialCityName, limit: 20 }),
           parkingDiscoveryService.search({ destination: initialCityName, limit: 20 }),
           api.get("/services/temples"),
@@ -125,6 +131,7 @@ export function useDestinationData(slug: string): DestinationInventory {
 
         addAshrams(ashramByDestRes);
         addAshrams(ashramByCityRes);
+        addAshrams(allVerifiedAshramsRes);
 
         // 2. DYNAMIC DESTINATION METADATA RESOLUTION
         let resolvedCityName = initialCityName;
@@ -163,9 +170,10 @@ export function useDestinationData(slug: string): DestinationInventory {
         };
 
         // Filter ashrams strictly to this specific destination city
-        const strictlyMatchedAshrams = rawAshrams.filter((a) =>
-          isStrictCityMatch(a.address?.city, a.address?.district),
-        );
+        const strictlyMatchedAshrams = rawAshrams.filter((a) => {
+          if (isAshramInDestination(a, cleanSlug)) return true;
+          return isStrictCityMatch(a.address?.city, a.address?.district);
+        });
         const finalAshrams = strictlyMatchedAshrams;
 
         // Prioritize ashrams whose address.city strictly matches this destination

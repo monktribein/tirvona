@@ -822,7 +822,7 @@ const DestinationOverviewPage: React.FC = () => {
         <motion.div className="dest-stats-strip" {...fadeUp}>
           {[
             { label: "Stays", value: liveStats.ashrams, icon: Home },
-            { label: "Stays", value: liveStats.stays, icon: Bed },
+            { label: "Rooms", value: liveStats.stays, icon: Bed },
             { label: "Parking", value: liveStats.parking, icon: CircleParking },
             { label: "Products", value: liveStats.prasad, icon: ShoppingBag },
             { label: "Places", value: liveStats.places, icon: Compass },

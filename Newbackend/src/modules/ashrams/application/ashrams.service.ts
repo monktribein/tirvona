@@ -457,11 +457,19 @@ export class AshramsService {
     if (query.verified === "true" || (query as any).verified === true) {
       filter.isVerified = true;
     }
-    if (query.city)
+    if (query.city) {
+      const cityClean = query.city.trim().toLowerCase();
+      let cityPattern = escapeRegex(query.city);
+      if (/gov[ae]rdhan/i.test(cityClean)) {
+        cityPattern = "gov[ae]rdhan";
+      } else if (/vrindavan|vrinadavn|vrindaban|brindavan/i.test(cityClean)) {
+        cityPattern = "vrindavan|vrinadavn|vrindaban|brindavan";
+      }
       filter["address.city"] = {
-        $regex: escapeRegex(query.city),
+        $regex: cityPattern,
         $options: "i",
       };
+    }
     if (query.state)
       filter["address.state"] = {
         $regex: escapeRegex(query.state),
@@ -470,7 +478,13 @@ export class AshramsService {
     const search =
       query.destination || query.query || query.category || query.search;
     if (search) {
-      const value = { $regex: escapeRegex(search), $options: "i" };
+      let searchPattern = escapeRegex(search);
+      if (/gov[ae]rdhan/i.test(search)) {
+        searchPattern = "gov[ae]rdhan";
+      } else if (/vrindavan|vrinadavn|vrindaban|brindavan/i.test(search)) {
+        searchPattern = "vrindavan|vrinadavn|vrindaban|brindavan";
+      }
+      const value = { $regex: searchPattern, $options: "i" };
       filter.$or = [
         { name: value },
         { description: value },
@@ -782,7 +796,7 @@ export class AshramsService {
   async destinations(): Promise<
     { city: string; state: string; count: number }[]
   > {
-    return this.ashrams.aggregate([
+    const raw = await this.ashrams.aggregate([
       {
         $match: {
           deletedAt: null,
@@ -800,20 +814,57 @@ export class AshramsService {
       { $project: { _id: 0, city: 1, state: 1, count: 1 } },
       { $sort: { city: 1 } },
     ]);
+
+    // Normalize into canonical destinations
+    const canonicalMap = new Map<string, { city: string; state: string; count: number }>();
+    const canonicalList = [
+      { city: "Vrindavan", state: "Uttar Pradesh" },
+      { city: "Mathura", state: "Uttar Pradesh" },
+      { city: "Govardhan", state: "Uttar Pradesh" },
+      { city: "Barsana", state: "Uttar Pradesh" },
+    ];
+    canonicalList.forEach((c) => {
+      canonicalMap.set(c.city.toLowerCase(), { city: c.city, state: c.state, count: 0 });
+    });
+
+    for (const item of raw) {
+      const c = String(item.city || "").trim().toLowerCase();
+      if (/vrindavan|vrinadavn|vrindaban|brindavan|burja road/i.test(c)) {
+        const dest = canonicalMap.get("vrindavan")!;
+        dest.count += item.count;
+      } else if (/mathura|muttra/i.test(c)) {
+        const dest = canonicalMap.get("mathura")!;
+        dest.count += item.count;
+      } else if (/gov[ae]rdhan/i.test(c)) {
+        const dest = canonicalMap.get("govardhan")!;
+        dest.count += item.count;
+      } else if (/barsana/i.test(c)) {
+        const dest = canonicalMap.get("barsana")!;
+        dest.count += item.count;
+      }
+    }
+
+    return Array.from(canonicalMap.values());
   }
 
   async byDestination(city: string): Promise<any[]> {
     const name = String(city ?? "").trim();
     if (!name) return [];
+    let pattern = `^${escapeRegex(name)}$`;
+    if (/gov[ae]rdhan/i.test(name)) {
+      pattern = "^gov[ae]rdhan$";
+    } else if (/vrindavan|vrinadavn|vrindaban|brindavan/i.test(name)) {
+      pattern = "^(vrindavan|vrinadavn|vrindaban|brindavan)$";
+    }
     return this.ashrams
       .find({
         deletedAt: null,
-        "address.city": {
-          $regex: `^${escapeRegex(name)}$`,
-          $options: "i",
-        },
+        $or: [
+          { "address.city": { $regex: pattern, $options: "i" } },
+          { "address.district": { $regex: pattern, $options: "i" } },
+        ],
       })
-      .select("name slug address.city address.state status isVerified")
+      .select("name slug address.city address.district address.state status isVerified")
       .sort({ name: 1 })
       .lean();
   }

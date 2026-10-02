@@ -249,6 +249,7 @@ export interface EnterpriseDataTableProps {
   statusOptions?: string[];
   bulkDeleteLabel?: string;
   deleteLabel?: string;
+  hideDefaultActionColumns?: boolean;
 }
 
 export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
@@ -276,6 +277,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
   statusOptions,
   bulkDeleteLabel = "Bulk Delete",
   deleteLabel = "Delete",
+  hideDefaultActionColumns = false,
 }) => {
   const { t } = useLanguage();
   const { confirmAction } = useNotifications();
@@ -807,17 +809,22 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                    {!columns.some((column) => column.key === "status") && (
                      <th className="py-4 px-4">Status</th>
                    )}
-                  <th className="py-4 px-4">Created Date</th>
-                   <th className="py-4 px-4 text-right">Edit / View</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedData.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={columns.length + (columns.some((column) => column.key === "status") ? 3 : 4)}
-                      className="py-12 text-center text-gray-400 font-semibold"
-                    >
+                   {!hideDefaultActionColumns && <th className="py-4 px-4">Created Date</th>}
+                   {!hideDefaultActionColumns && <th className="py-4 px-4 text-right">Edit / View</th>}
+                 </tr>
+               </thead>
+               <tbody>
+                 {paginatedData.length === 0 ? (
+                   <tr>
+                     <td
+                       colSpan={
+                         columns.length +
+                         (!columns.some((column) => column.key === "status") ? 1 : 0) +
+                         (!hideDefaultActionColumns ? 2 : 0) +
+                         1
+                       }
+                       className="py-12 text-center text-gray-400 font-semibold"
+                     >
                       {t("No records found.")}
                     </td>
                   </tr>
@@ -867,19 +874,23 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                             {statusStr === "approved" ? "active" : statusStr}
                           </span>
                          </td>}
-                        <td className="py-3.5 px-4 text-gray-400 text-[11px] font-mono whitespace-nowrap">
-                          {item.createdAt
-                            ? new Date(item.createdAt).toLocaleDateString(getFormattingLocale())
-                            : "—"}
-                        </td>
-                        <td className="py-3.5 px-4 text-right">
-                          <button
-                            onClick={() => openDetailModal(item)}
-                            className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#F28C28]/25 bg-[#F28C28]/5 px-3 py-1.5 text-[11px] font-extrabold text-[#F28C28] transition-colors hover:bg-[#F28C28] hover:text-white cursor-pointer whitespace-nowrap"
-                          >
-                            <Eye size={13} /> {t("Edit / View")}
-                          </button>
-                        </td>
+                        {!hideDefaultActionColumns && (
+                          <td className="py-3.5 px-4 text-gray-400 text-[11px] font-mono whitespace-nowrap">
+                            {item.createdAt
+                              ? new Date(item.createdAt).toLocaleDateString(getFormattingLocale())
+                              : "—"}
+                          </td>
+                        )}
+                        {!hideDefaultActionColumns && (
+                          <td className="py-3.5 px-4 text-right">
+                            <button
+                              onClick={() => openDetailModal(item)}
+                              className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#F28C28]/25 bg-[#F28C28]/5 px-3 py-1.5 text-[11px] font-extrabold text-[#F28C28] transition-colors hover:bg-[#F28C28] hover:text-white cursor-pointer whitespace-nowrap"
+                            >
+                              <Eye size={13} /> {t("Edit / View")}
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     );
                   })
