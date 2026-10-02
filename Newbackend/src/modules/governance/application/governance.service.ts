@@ -1070,6 +1070,8 @@ export class GovernanceService {
       throw new BadRequestException("A blog post needs a title to be saved");
     payload.title = title;
     payload.name = title;
+    // Public byline; empty falls back to the linked author or "Tirvona Editorial".
+    if ("authorName" in payload) payload.authorName = text(payload.authorName);
 
     if (!text(payload.slug))
       payload.slug = `${

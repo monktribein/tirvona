@@ -64,9 +64,41 @@ export const extractCoordinates = (
   return null;
 };
 
+/**
+ * Reads { lat, lng } out of a full Google Maps link. Handles the place pin
+ * (`!3d<lat>!4d<lng>`), the viewport (`/@<lat>,<lng>,17z`) and query
+ * parameters (`?q=`, `query=`, `ll=`, `destination=`). Short links
+ * (maps.app.goo.gl) carry no coordinates and return null.
+ */
+export const coordinatesFromGoogleMapsUrl = (
+  url?: string | null,
+): { lat: number; lng: number } | null => {
+  if (!url) return null;
+  let text = url.trim();
+  try {
+    text = decodeURIComponent(text);
+  } catch {
+    // Malformed escapes: match against the raw text.
+  }
+  const num = "(-?\\d{1,3}(?:\\.\\d+)?)";
+  const patterns = [
+    new RegExp(`!3d${num}!4d${num}`),
+    new RegExp(`@${num},${num}`),
+    new RegExp(`[?&](?:q|query|ll|destination|center)=${num},\\s*${num}`),
+  ];
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match && hasValidCoordinates(Number(match[1]), Number(match[2]))) {
+      return { lat: Number(match[1]), lng: Number(match[2]) };
+    }
+  }
+  return null;
+};
+
 export default {
   hasValidCoordinates,
   haversineDistance,
   buildDirectionsUrl,
   extractCoordinates,
+  coordinatesFromGoogleMapsUrl,
 };

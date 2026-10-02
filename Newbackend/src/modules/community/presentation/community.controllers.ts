@@ -125,12 +125,12 @@ export class VisitorArticlesController {
   @Public() @Get("public/:slug") publicOne(@Param("slug") slug: string) {
     return this.community.publicArticle(slug);
   }
-  @Get("visitor/eligible-bookings") @Roles("customer") eligible(
+  @Get("visitor/eligible-bookings") eligible(
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.community.eligibleBookings(user);
   }
-  @Get("visitor/my-articles") @Roles("customer") mine(
+  @Get("visitor/my-articles") mine(
     @CurrentUser() user: AuthenticatedUser,
     @Query("status") status?: string,
   ) {
@@ -142,13 +142,13 @@ export class VisitorArticlesController {
   ) {
     return this.community.ownerArticles(user, status);
   }
-  @Post() @Roles("customer") create(
+  @Post() create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: VisitorArticleDto,
   ) {
     return this.community.createArticle(user, dto);
   }
-  @Put(":id") @Roles("customer") update(
+  @Put(":id") update(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
     @Body() dto: UpdateVisitorArticleDto,

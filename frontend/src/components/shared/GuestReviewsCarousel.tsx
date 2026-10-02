@@ -17,6 +17,8 @@ import { reviewService } from "../../services";
 
 interface ReviewItem {
   _id: string;
+  /** Public reviewer name set by a super admin posting on a guest's behalf. */
+  displayName?: string;
   customerId?: {
     _id?: string;
     name?: string;
@@ -238,9 +240,10 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
         >
           <AnimatePresence mode="popLayout">
             {visibleReviews.map((rev, idx) => {
-              const reviewerName = rev.customerId?.name || "Verified Pilgrim";
+              const reviewerName =
+                rev.displayName || rev.customerId?.name || "Verified Pilgrim";
               const avatarUrl =
-                rev.customerId?.avatar ||
+                (!rev.displayName && rev.customerId?.avatar) ||
                 `https://ui-avatars.com/api/?name=${encodeURIComponent(reviewerName)}&background=0A4DA6&color=fff&bold=true`;
               const ratingVal = rev.rating?.overall || 5;
               const helpfulVal =
@@ -410,9 +413,9 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {reviews.map((rev, i) => {
                   const reviewerName =
-                    rev.customerId?.name || "Verified Pilgrim";
+                    rev.displayName || rev.customerId?.name || "Verified Pilgrim";
                   const avatarUrl =
-                    rev.customerId?.avatar ||
+                    (!rev.displayName && rev.customerId?.avatar) ||
                     `https://ui-avatars.com/api/?name=${encodeURIComponent(reviewerName)}&background=0A4DA6&color=fff&bold=true`;
                   const ratingVal = rev.rating?.overall || 5;
 

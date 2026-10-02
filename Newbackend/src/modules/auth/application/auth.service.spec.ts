@@ -267,6 +267,24 @@ describe("AuthService login issues a session without a second factor", () => {
     );
   });
 
+  it("tells an unregistered email to sign up first", async () => {
+    const service = new AuthService(
+      { findByEmail: jest.fn().mockResolvedValue(null) } as never,
+      { sign: jest.fn() } as never,
+      testConfig(),
+      {} as never,
+      {} as never,
+      {} as never,
+      { sendAuthenticationOtp: jest.fn() } as never,
+    );
+    await expect(
+      service.login({ email: "nobody@example.com", password: PASSWORD } as never),
+    ).rejects.toThrow(/email is not registered.*sign up/i);
+    await expect(service.forgotPassword("nobody@example.com")).rejects.toThrow(
+      /email is not registered.*sign up/i,
+    );
+  });
+
   it("refuses a suspended account that knows the password", async () => {
     await expect(
       login("customer", [], PASSWORD, { status: "suspended" }),
@@ -305,5 +323,124 @@ describe("AuthService login issues a session without a second factor", () => {
     const { result } = await login("super_admin");
     expect(result.otpRequired).toBeUndefined();
     expect(result.token).toBe("signed-jwt");
+  });
+});
+
+describe("AuthService phone numbers across countries", () => {
+  const build = (findByPhone: jest.Mock = jest.fn().mockResolvedValue(null)) =>
+    new AuthService(
+      { findByEmail: jest.fn().mockResolvedValue(null), findByPhone } as never,
+      { sign: jest.fn() } as never,
+      testConfig(),
+      {} as never,
+      {} as never,
+      {} as never,
+      { sendAuthenticationOtp: jest.fn() } as never,
+    );
+
+  it("stores Indian mobiles in the 10-digit form and others as +<country><number>", () => {
+    const service = build();
+    expect(service.canonicalPhone("+919876543210")).toBe("9876543210");
+    expect(service.canonicalPhone("9876543210")).toBe("9876543210");
+    expect(service.canonicalPhone("+14155550123")).toBe("+14155550123");
+    expect(service.canonicalPhone("+971501234567")).toBe("+971501234567");
+  });
+
+  it("treats +91 and 10-digit forms as the same number when registering", async () => {
+    const findByPhone = jest.fn(async (p: string) =>
+      p === "9876543210" ? { _id: "existing" } : null,
+    );
+    const service = build(findByPhone);
+    await expect(
+      service.register({
+        name: "Pilgrim",
+        email: "new@example.com",
+        phone: "+919876543210",
+        password: "secret123",
+      } as never),
+    ).rejects.toThrow(/already registered/);
+  });
+});
+
+describe("AuthService email change needs a code sent to the new address", () => {
+  const me = { _id: "user-1", email: "old@example.com" };
+  const build = (emailOwner: unknown = null) => {
+    const challenges = { create: jest.fn().mockResolvedValue({}) };
+    const service = new AuthService(
+      {
+        findById: jest.fn().mockResolvedValue(me),
+        findByEmail: jest.fn().mockResolvedValue(emailOwner),
+      } as never,
+      { sign: jest.fn() } as never,
+      testConfig(),
+      challenges as never,
+      {} as never,
+      {} as never,
+      { sendAuthenticationOtp: jest.fn() } as never,
+    );
+    return { service, challenges };
+  };
+
+  it("opens an email_change challenge for the new address without saving it", async () => {
+    const { service, challenges } = build();
+    const result = await service.requestEmailChange("user-1", " New@Example.com ");
+    expect(result).toHaveProperty("otpToken");
+    expect(result).toMatchObject({ channel: "email" });
+    expect(challenges.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        purpose: "email_change",
+        identifier: "new@example.com",
+        payload: { userId: "user-1" },
+      }),
+    );
+    expect(me.email).toBe("old@example.com");
+  });
+
+  it("does nothing when the email is unchanged", async () => {
+    const { service, challenges } = build();
+    await expect(service.requestEmailChange("user-1", "OLD@example.com")).resolves.toBeNull();
+    expect(challenges.create).not.toHaveBeenCalled();
+  });
+
+  it("refuses an email that belongs to another account", async () => {
+    const { service } = build({ _id: "someone-else" });
+    await expect(
+      service.requestEmailChange("user-1", "taken@example.com"),
+    ).rejects.toThrow(/already registered/);
+  });
+});
+
+describe("AuthService profile phone edits", () => {
+  const build = (findByPhone: jest.Mock = jest.fn().mockResolvedValue(null)) =>
+    new AuthService(
+      { findByPhone } as never,
+      { sign: jest.fn() } as never,
+      testConfig(),
+      {} as never,
+      {} as never,
+      {} as never,
+      { sendAuthenticationOtp: jest.fn() } as never,
+    );
+  const me = { _id: "user-1", phone: "919936968762" } as never;
+
+  it("leaves the stored phone alone when only its format differs", async () => {
+    // Another account holds "9936968762"; rewriting would collide with it.
+    const findByPhone = jest.fn().mockResolvedValue({ _id: "duplicate" });
+    const service = build(findByPhone);
+    await expect(service.phoneUpdate(me, "919936968762")).resolves.toBeNull();
+    await expect(service.phoneUpdate(me, "+91 99369 68762")).resolves.toBeNull();
+    expect(findByPhone).not.toHaveBeenCalled();
+  });
+
+  it("refuses a new number that belongs to another account", async () => {
+    const service = build(jest.fn().mockResolvedValue({ _id: "someone-else" }));
+    await expect(service.phoneUpdate(me, "+919876543210")).rejects.toThrow(
+      /already registered to another account/,
+    );
+  });
+
+  it("stores a genuinely new number in canonical form", async () => {
+    const service = build();
+    await expect(service.phoneUpdate(me, "+919876543210")).resolves.toBe("9876543210");
   });
 });

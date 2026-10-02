@@ -11,6 +11,7 @@ import { vendorApi } from "../services/marketplace.service";
 import { useCurrency } from "../contexts/CurrencyContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import { getFormattingLocale } from "../utils/format";
+import { realEmail } from "../utils/email";
 import {
   LogOut,
   Menu,
@@ -530,7 +531,7 @@ export const PublicLayout: React.FC = () => {
                               {user.name}
                             </span>
                             <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium truncate block leading-tight lowercase">
-                              {user.email}
+                              {realEmail(user.email) || user.phone}
                             </span>
                           </div>
                         </div>
@@ -721,11 +722,11 @@ export const PublicLayout: React.FC = () => {
           {user && (
             <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-900 rounded-2xl mb-4">
               <div className="w-10 h-10 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-black text-sm flex-shrink-0">
-                {(user.name || user.email || "U").charAt(0).toUpperCase()}
+                {(user.name || realEmail(user.email) || "U").charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0">
                 <span className="text-sm font-bold text-[#0B192C] dark:text-white block truncate">
-                  {user.name || user.email || "Tirvona User"}
+                  {user.name || realEmail(user.email) || "Tirvona User"}
                 </span>
                 <span className="text-[10px] text-gray-400 capitalize">
                   {(user.role || "customer").replace(/_/g, " ")}

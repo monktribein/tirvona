@@ -565,6 +565,26 @@ export class ConversationService {
       return this.turnPage(context, direction);
     }
 
+    if (kind === "location") {
+      // Tapping a destination is read exactly like typing its name would be
+      // — through the same slot-filling entry point, so a place picked this
+      // way behaves identically to one typed in free text.
+      session.flow = "stay_booking";
+      return this.handleStayFlow(context, value);
+    }
+
+    if (kind === "page") {
+      const direction = extra === "prev" ? "previous" : "next";
+      // A tap on an old list's page row only turns the list it belongs to.
+      if (session.paging?.list !== value)
+        return this.reply.text(
+          session.phone,
+          context.correlationId,
+          stayCopy.noMorePages(session.language),
+        );
+      return this.turnPage(context, direction);
+    }
+
     if (kind === "stay") {
       // Whether this ashram came from a dated search (dates and guests
       // already known) or from a plain discovery browse (they are not),

@@ -50,10 +50,13 @@ export const TempleSchema = new Schema(
       state: { type: String },
       country: { type: String, default: "India" },
       pincode: { type: String },
+      // Absent on drafts saved before a map pin is chosen; TemplesService
+      // requires it before a temple goes live. No defaults here: a Point
+      // without coordinates cannot be stored under the 2dsphere index.
       coordinates: {
-        type: { type: String, enum: ["Point"], default: "Point" },
+        type: { type: String, enum: ["Point"] },
         // [longitude, latitude]
-        coordinates: { type: [Number], required: true },
+        coordinates: { type: [Number], default: undefined },
       },
       mapUrl: String,
       googleMapsEmbedUrl: String,

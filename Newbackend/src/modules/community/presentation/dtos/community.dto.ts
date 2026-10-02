@@ -73,7 +73,10 @@ export class ApplicationStatusDto {
   @IsOptional() @IsString() @MaxLength(1000) notes?: string;
 }
 export class VisitorArticleDto {
-  @IsString() bookingId: string;
+  /** Optional: a completed stay of the author's marks the article "Verified Stay". */
+  @IsOptional() @IsString() bookingId?: string;
+  /** Optional: the ashram the article is about; its owner can then review it. */
+  @IsOptional() @IsString() ashramId?: string;
   @IsString() @MaxLength(200) title: string;
   @IsString() category: string;
   @IsString() @MaxLength(350) shortDescription: string;
