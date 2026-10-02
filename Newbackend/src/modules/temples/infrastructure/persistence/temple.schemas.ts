@@ -18,7 +18,7 @@ export const TempleSchema = new Schema(
     // 1. Basic Info
     name: { type: String, required: true, trim: true },
     templeShortName: { type: String, trim: true },
-    slug: { type: String, unique: true, required: true, index: true },
+    slug: { type: String, unique: true, required: true },
     shortDescription: { type: String },
     description: { type: String },
     deity: String,
@@ -187,7 +187,6 @@ export const TempleSchema = new Schema(
 // Crucial geospatial index for nearby entity detection
 TempleSchema.index({ "address.coordinates": "2dsphere" });
 // Fast lookup indexes
-TempleSchema.index({ slug: 1 });
 TempleSchema.index({ "address.city": 1, status: 1 });
 TempleSchema.index({ isFeatured: 1, status: 1 });
 TempleSchema.index({ ownerId: 1 });

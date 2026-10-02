@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import EnterpriseDataTable, { type TableColumn } from "./EnterpriseDataTable";
 import ImageGalleryManager from "./ImageGalleryManager";
-import { RecordFieldList } from "./RecordValue";
 import LocalHubEnterpriseDrawer from "./LocalHubEnterpriseDrawer";
 import DayStayManagerModal from "../../ashrams/components/DayStayManagerModal";
 import { EnterprisePageHeader } from "./EnterprisePageHeader";
@@ -31,7 +30,6 @@ import {
   ShieldCheck,
   X,
   XCircle,
-  CheckCircle,
   Car,
   Download,
   Printer,
@@ -68,7 +66,7 @@ export const EnterpriseModulePage: React.FC<{
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
-  const [pendingCmsRequests, setPendingCmsRequests] = useState<CmsRequest[]>(
+  const [_pendingCmsRequests, setPendingCmsRequests] = useState<CmsRequest[]>(
     [],
   );
   const [rejectionModalId, setRejectionModalId] = useState<string | null>(null);
@@ -188,6 +186,7 @@ export const EnterpriseModulePage: React.FC<{
     if (activeModule === "banner") {
       fetchPendingCmsRequests();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeModule, activeSubKey]);
 
   useEffect(() => {
@@ -287,7 +286,7 @@ export const EnterpriseModulePage: React.FC<{
     }
   };
 
-  const handleApproveCms = async (id: string) => {
+  const _handleApproveCms = async (id: string) => {
     try {
       const res = await api.post(`/cms/approve/${id}`, {});
       if (res.data?.success) {
@@ -335,7 +334,7 @@ export const EnterpriseModulePage: React.FC<{
     }
   };
 
-  const handleDeleteCms = async (id: string) => {
+  const _handleDeleteCms = async (id: string) => {
     try {
       const res = await api.delete(`/cms/request/${id}`);
       if (res.data?.success) {
@@ -2014,40 +2013,7 @@ export const EnterpriseModulePage: React.FC<{
     "aarti_sessions",
   ].includes(activeModule);
 
-  const handleEditOpen = (item: any) => {
-    setEditingItem(item);
-    const initial = { ...item };
-    if (!initial.city && item.address?.city) {
-      initial.city = item.address.city;
-    }
-    if (activeModule === "aarti_sessions") {
-      initial.ashramId = item.ashramId?._id || item.ashramId || "";
-      initial.state = item.venue?.state || "";
-      initial.city = item.venue?.city || "";
-    }
-    if (activeModule.startsWith("aarti_")) {
-      ["ashramId", "sessionId", "passTypeId", "userId"].forEach((key) => {
-        initial[key] = item[key]?._id || item[key] || "";
-      });
-      [
-        "includesPrasad",
-        "includesSankalp",
-        "isActive",
-        "isClosed",
-        "allowOnlineBooking",
-        "allowCancellation",
-        "requireDevoteeNames",
-      ].forEach((key) => {
-        if (typeof item[key] === "boolean") initial[key] = String(item[key]);
-      });
-      if (Array.isArray(item.daysOfWeek)) {
-        initial.daysOfWeek = item.daysOfWeek.join(",");
-      }
-    }
-    setFormData(initial);
-    setFeaturedAshramSearch("");
-    setIsModalOpen(true);
-  };
+
 
   const handleCreateOpen = () => {
     setEditingItem(null);

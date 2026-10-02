@@ -65,18 +65,19 @@ const ICONS: Record<string, React.ReactNode> = {
 const icon = (key: string): React.ReactNode =>
   ICONS[key] ?? <LayoutGrid size={18} />;
 
+const tileIcon = (sectionKey: string, label: string): React.ReactNode => {
+  const l = label.toLowerCase();
+  if (l.includes("aarti")) return <Flame size={18} />;
+  if (l.includes("festival")) return <CalendarDays size={18} />;
+  if (l.includes("temple")) return <Building2 size={18} />;
+  return icon(sectionKey);
+};
+
 const display = (tile: SectionTile): string =>
   tile.format === "currency"
     ? formatCurrency(tile.value)
     : formatIndianNumber(tile.value);
 
-/**
- * A wrapping flex row rather than a fixed grid: every card carries the same
- * flex basis and is allowed to grow, so whatever is left on the final row
- * stretches to fill the width. That removes the orphan half-width card a
- * fixed column count produces whenever the tile count is not a multiple of it,
- * at every breakpoint and for any number of tiles.
- */
 /**
  * A grid whose column count divides the tile count exactly, so the cards fill
  * the width of a single clean row wherever they fit and never leave a gap or a
@@ -92,7 +93,7 @@ const TileGrid: React.FC<{ tiles: SectionTile[]; sectionKey: string }> = ({
         key={tile.label}
         title={tile.label}
         value={display(tile)}
-        icon={icon(sectionKey)}
+        icon={tileIcon(sectionKey, tile.label)}
       />
     ))}
   </div>

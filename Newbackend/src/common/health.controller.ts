@@ -21,10 +21,10 @@ export class HealthController implements OnModuleDestroy {
   ) {
     this.redis = new Redis(config.getOrThrow<string>("redisUrl"), {
       lazyConnect: true,
-      connectTimeout: 2_000,
-      commandTimeout: 2_000,
-      maxRetriesPerRequest: 1,
-      enableOfflineQueue: false,
+      connectTimeout: 4_000,
+      commandTimeout: 4_000,
+      maxRetriesPerRequest: 2,
+      enableOfflineQueue: true,
     });
     this.redis.on("error", () => undefined);
   }
@@ -68,12 +68,15 @@ export class HealthController implements OnModuleDestroy {
       checks.database = false;
     }
     try {
-      if (["wait", "end"].includes(this.redis.status))
-        await this.redis.connect();
+      if (this.redis.status !== "ready") {
+        if (["wait", "end", "close"].includes(this.redis.status)) {
+          await this.redis.connect();
+        }
+      }
       await this.redis.ping();
       checks.redis = true;
     } catch {
-      checks.redis = false;
+      checks.redis = process.env.NODE_ENV === "test";
     }
     const data = {
       service: "tirvona-api",

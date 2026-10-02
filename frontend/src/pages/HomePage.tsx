@@ -9,18 +9,10 @@ import { storeApi, toStoreProduct, type StoreProduct } from "../services/marketp
 import { visitorArticleService } from "../services/visitorArticleService";
 import { formatCurrency } from "../utils/format";
 import { toTitleCase } from "../utils/textCase";
-import { getDestinationBySlug } from "../data/destinationData";
-const EXCLUDED_DESTINATIONS = new Set([
-  "ayodhya",
-  "ujjain",
-  "varanasi",
-  "varanshi",
-  "kashi",
-  "govardhan",
-  "goverdhan",
-  "barsana",
-]);
-import { CouponVoucherCard } from "../components/CouponVoucherCard";
+import {
+  APPROVED_SACRED_DESTINATIONS,
+  isAshramInDestination,
+} from "../utils/destinationNormalizer";
 import { DateRangePicker } from "../components/DateRangePicker";
 import { GuestRoomSelector } from "../components/shared/GuestRoomSelector";
 import {
@@ -250,7 +242,11 @@ export const HomePage: React.FC = () => {
     const loopList = useMemo(() => {
       if (uniqueItems.length === 0) return [];
       if (uniqueItems.length === 1) return uniqueItems;
-      return [...uniqueItems, ...uniqueItems];
+      let base = [...uniqueItems];
+      while (base.length < 8) {
+        base = [...base, ...uniqueItems];
+      }
+      return [...base, ...base];
     }, [uniqueItems]);
 
     useEffect(() => {
@@ -277,7 +273,7 @@ export const HomePage: React.FC = () => {
 
       const measure = () => {
         const kids = track.children;
-        const halfIdx = uniqueItems.length;
+        const halfIdx = Math.floor(kids.length / 2);
         if (kids.length >= halfIdx * 2 && halfIdx > 0) {
           const firstChild = kids[0] as HTMLElement;
           const halfChild = kids[halfIdx] as HTMLElement;
@@ -557,7 +553,7 @@ export const HomePage: React.FC = () => {
 
   const fetchStays = async () => {
     try {
-      const res = await ashramService.search({ verified: "true" });
+      const res = await ashramService.search({ verified: "true", limit: "100" });
       if (res.data.success) setAshrams(res.data.data);
     } catch (err) {
       console.error("Error fetching stays:", err);
@@ -706,7 +702,6 @@ export const HomePage: React.FC = () => {
 
     const dealMap = new Map<string, any>();
     offers.forEach((o: any) => {
-      if (!isLastMin(o)) return;
       const aId = String(o.ashramId?._id ?? o.ashramId ?? "");
       if (aId && !dealMap.has(aId)) dealMap.set(aId, o);
       if (Array.isArray(o.applicableAshrams)) {
@@ -736,102 +731,37 @@ export const HomePage: React.FC = () => {
   };
 
   const sacredDestinations = useMemo(() => {
-    const destMap = new Map<
-      string,
-      {
-        name: string;
-        state: string;
-        img: string;
-        count: number;
-        ratingSum: number;
-        ratingCount: number;
-      }
-    >();
+    return APPROVED_SACRED_DESTINATIONS.map((dest) => {
+      // Find matching live ashrams in database
+      const matchingAshrams = ashrams.filter((a) =>
+        isAshramInDestination(a, dest.id),
+      );
 
-    // 1. Ingest backend aggregated destinations directly from database
-    destinationsData.forEach((d: any) => {
-      const city = d.city?.trim();
-      if (!city) return;
-      const key = city.toLowerCase();
-      if (EXCLUDED_DESTINATIONS.has(key)) return;
+      const count = matchingAshrams.length;
+      const ratings = matchingAshrams
+        .map((a) =>
+          typeof a.rating === "number" ? a.rating : a.rating?.average || 0,
+        )
+        .filter((r) => r > 0);
 
-      destMap.set(key, {
-        name: toTitleCase(city),
-        state: toTitleCase(d.state || "India"),
-        img: d.image || "",
-        count: d.count || 0,
-        ratingSum: (d.avgRating || 4.8) * (d.count || 1),
-        ratingCount: d.count || 1,
-      });
+      const avgRating =
+        ratings.length > 0
+          ? (ratings.reduce((sum, r) => sum + r, 0) / ratings.length).toFixed(1)
+          : dest.defaultRating;
+
+      return {
+        id: dest.id,
+        slug: dest.slug,
+        name: dest.name,
+        state: dest.state,
+        img: dest.image,
+        tagline: dest.tagline,
+        count,
+        rating: avgRating,
+        tours: `${count} ${count === 1 ? "Stay" : "Stays"}`,
+      };
     });
-
-    // 2. Ingest active ashrams from database (dynamically updates counts & live photos)
-    ashrams.forEach((a: any) => {
-      const city =
-        a.address?.city?.trim() ||
-        a.address?.district?.trim() ||
-        a.address?.state?.trim();
-      if (!city) return;
-
-      const key = city.toLowerCase();
-      if (EXCLUDED_DESTINATIONS.has(key)) return;
-
-      const primaryImg =
-        (Array.isArray(a.images) &&
-          a.images.find(
-            (img: any) => typeof img === "string" && img.trim().length > 0,
-          )) ||
-        a.coverImage ||
-        a.thumbnail ||
-        a.img ||
-        "";
-
-      const ratingVal =
-        typeof a.rating === "number" ? a.rating : a.rating?.average || 0;
-
-      const existing = destMap.get(key);
-      if (!existing) {
-        destMap.set(key, {
-          name: toTitleCase(city),
-          state: toTitleCase(a.address?.state),
-          img: primaryImg,
-          count: 1,
-          ratingSum: ratingVal,
-          ratingCount: ratingVal ? 1 : 0,
-        });
-      } else {
-        if (!destinationsData.some((d: any) => String(d.city).toLowerCase() === key)) {
-          existing.count += 1;
-        }
-        if (!existing.img && primaryImg) {
-          existing.img = primaryImg;
-        }
-        if (ratingVal) {
-          existing.ratingSum += ratingVal;
-          existing.ratingCount += 1;
-        }
-      }
-    });
-
-    return Array.from(destMap.values())
-      .filter((d) => !EXCLUDED_DESTINATIONS.has(d.name.toLowerCase()))
-      .map((d) => {
-        const staticDest = getDestinationBySlug(d.name);
-        return {
-          name: d.name,
-          state: staticDest?.state || d.state,
-          rating:
-            d.ratingCount > 0
-              ? (d.ratingSum / d.ratingCount).toFixed(1)
-              : "4.8",
-          tours: `${d.count} ${d.count === 1 ? "Stay" : "Stays"}`,
-          img:
-            staticDest?.heroImage ||
-            d.img ||
-            "https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=800&q=80",
-        };
-      });
-  }, [destinationsData, ashrams]);
+  }, [ashrams]);
 
   const customerFeedbacks = feedbacks.map((r, i) => ({
     name: r.ashramId?.name || "Stay",
@@ -856,7 +786,7 @@ export const HomePage: React.FC = () => {
       icon: Sparkles,
       category: "day-stay",
       target: "/search?tab=day-stay",
-      isHighlight: true,
+      isHighlight: false,
     },
     {
       id: "circuits",
@@ -924,7 +854,7 @@ export const HomePage: React.FC = () => {
     },
     {
       id: "volunteer",
-      label: "Volunteer",
+      label: "Volunteer & Jobs",
       icon: HeartHandshake,
       category: "volunteer",
       target: "/volunteer",
@@ -933,7 +863,6 @@ export const HomePage: React.FC = () => {
   ];
 
   const publishedHero = publishedCms.hero_banner || {};
-  const publishedOffer = publishedCms.offer_banner || {};
   const activeHeroBg = publishedHero.bannerImage || "";
   const activeHeading =
     publishedHero.heading ||
@@ -1315,11 +1244,8 @@ export const HomePage: React.FC = () => {
             speed={30}
             renderItem={(item: any, idx: number) => (
               <div
-                onClick={() =>
-                  navigate(
-                    `/destination/${item.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`,
-                  )
-                }
+                key={item.id || idx}
+                onClick={() => navigate(`/destination/${item.slug}`)}
                 className="flex-shrink-0 relative group cursor-pointer"
                 style={{ width: "clamp(200px, 48vw, 220px)" }}
               >
@@ -1332,14 +1258,30 @@ export const HomePage: React.FC = () => {
                       <img
                         src={item.img}
                         alt={item.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         loading="lazy"
                       />
                     ) : null}
+
+                    {item.rating && (
+                      <span className="absolute top-3 right-3 bg-white/95 dark:bg-[#0B192C]/90 text-[#0B192C] dark:text-white text-[10px] font-extrabold px-2 py-1 rounded-full shadow-sm flex items-center gap-1 backdrop-blur-sm">
+                        <Star
+                          size={11}
+                          className="text-[#D4AF37] fill-[#D4AF37]"
+                        />{" "}
+                        {item.rating}
+                      </span>
+                    )}
+
+                    <div className="absolute bottom-2.5 left-2.5">
+                      <span className="bg-[#F28C28] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
+                        {item.tours}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="p-4 text-center flex flex-col items-center justify-center min-h-[72px]">
-                    <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center">
+                    <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#F28C28] transition-colors">
                       {item.name}
                     </h4>
                     <p className="text-[11px] text-gray-400 font-bold mt-1 text-center">
@@ -1638,8 +1580,7 @@ export const HomePage: React.FC = () => {
                   o?.offerType === "Last Minute Deal" ||
                   (o?.promoCode && String(o.promoCode).toUpperCase().startsWith("LASTMINUTE"));
 
-                const ashramDeal = offers.find((o: any) => {
-                  if (!isLastMin(o)) return false;
+                const matchingOffers = offers.filter((o: any) => {
                   const directId = String(o.ashramId?._id ?? o.ashramId ?? "");
                   const applicableIds = Array.isArray(o.applicableAshrams)
                     ? o.applicableAshrams.map((app: any) =>
@@ -1648,6 +1589,14 @@ export const HomePage: React.FC = () => {
                     : [];
                   return directId === aId || applicableIds.includes(aId);
                 });
+
+                const ashramDeal = matchingOffers.sort((a: any, b: any) => {
+                  const aIsLast = isLastMin(a);
+                  const bIsLast = isLastMin(b);
+                  if (aIsLast && !bIsLast) return -1;
+                  if (!aIsLast && bIsLast) return 1;
+                  return (Number(b.discountValue) || 0) - (Number(a.discountValue) || 0);
+                })[0];
 
                 const rawNightPrice = ashram.lowestNightPrice ?? 150;
                 let finalNightPrice = rawNightPrice;
@@ -1660,6 +1609,31 @@ export const HomePage: React.FC = () => {
                     finalNightPrice = Math.max(0, rawNightPrice - Number(ashramDeal.discountValue || 0));
                     dealDiscountPct = rawNightPrice > 0 ? Math.min(100, Math.round(((rawNightPrice - finalNightPrice) / rawNightPrice) * 100)) : 0;
                   }
+                }
+
+                const isDeal = Boolean(
+                  isLastMin(ashramDeal) ||
+                  String(ashramDeal?.offerType || "").toUpperCase().includes("DEAL") ||
+                  String(ashramDeal?.offerTitle || "").toUpperCase().includes("DEAL")
+                );
+
+                let ribbonText = "OFFER";
+                if (dealDiscountPct > 0) {
+                  if (isDeal) {
+                    ribbonText = `${dealDiscountPct}% OFF`;
+                  } else if (ashramDeal?.promoCode) {
+                    ribbonText = `${dealDiscountPct}% COUPON`;
+                  } else {
+                    ribbonText = `${dealDiscountPct}% OFF`;
+                  }
+                } else if (ashramDeal?.discountType === "Flat Amount" && ashramDeal?.discountValue) {
+                  ribbonText = `₹${ashramDeal.discountValue} OFF`;
+                } else if (isDeal) {
+                  ribbonText = "SPECIAL DEAL";
+                } else if (ashramDeal?.promoCode) {
+                  ribbonText = "COUPON";
+                } else {
+                  ribbonText = "SPECIAL OFFER";
                 }
 
                 const queryParts: string[] = [];
@@ -1699,6 +1673,18 @@ export const HomePage: React.FC = () => {
                           }}
                         />
 
+                        {ashramDeal && (
+                          <div className="absolute top-0 left-0 w-28 h-28 overflow-hidden pointer-events-none z-20">
+                            <div
+                              className="absolute -left-[35px] top-[20px] w-[136px] -rotate-45 bg-gradient-to-r from-[#ea580c] via-[#f97316] to-[#f59e0b] text-white text-[9.5px] font-black uppercase tracking-wider text-center py-1 border-y border-white/20 select-none shadow-md shadow-black/25"
+                            >
+                              <span className="drop-shadow-sm font-black">
+                                {ribbonText}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
                         {!isAvailable && (
                           <div className="absolute top-2.5 right-2.5 z-10">
                             <span className="text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-md bg-rose-600 text-white">
@@ -1707,52 +1693,22 @@ export const HomePage: React.FC = () => {
                           </div>
                         )}
 
-                        {ashramDeal && (
-                          <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between pointer-events-none z-10">
-                            <span
-                              className={`text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-md backdrop-blur-md flex items-center gap-1 ${
-                                ashramDeal.isLastMinuteDeal
-                                  ? "bg-rose-600/90 text-white animate-pulse"
-                                  : "bg-amber-500/90 text-white"
-                              }`}
-                            >
-                              <Sparkles size={9} />
-                              {ashramDeal.isLastMinuteDeal ? "Last Minute Deal" : "Special Deal"}
-                            </span>
-                            {dealDiscountPct > 0 && (
-                              <span className="text-[9px] font-black bg-black/70 text-amber-400 px-2 py-0.5 rounded-full shadow-sm">
-                                {dealDiscountPct}% OFF
-                              </span>
-                            )}
-                          </div>
-                        )}
-
-                        <div className="absolute bottom-2.5 left-2.5">
+                        <div className="absolute bottom-2.5 left-2.5 z-10">
                           {ashramDeal && finalNightPrice < rawNightPrice ? (
-                            <div className="bg-[#F28C28]/95 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-full shadow-sm flex items-center gap-1.5">
-                              <span className="text-[9px] line-through opacity-70">
+                            <div className="bg-[#F28C28]/95 backdrop-blur-sm text-white px-2.5 py-1 rounded-full shadow-md flex items-center gap-1.5">
+                              <span className="text-[10px] line-through opacity-75">
                                 {formatCurrency(rawNightPrice)}
                               </span>
-                              <span className="text-[10px] sm:text-[11px] font-black text-amber-300">
+                              <span className="text-[10px] sm:text-[11px] font-black text-amber-200">
                                 {formatCurrency(finalNightPrice)} / night
                               </span>
                             </div>
                           ) : (
-                            <span className="bg-[#F28C28] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
+                            <span className="bg-[#F28C28] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-md">
                               {formatCurrency(rawNightPrice)} / night
                             </span>
                           )}
                         </div>
-
-                        {ashram.rating?.count > 0 && !ashramDeal && (
-                          <span className="absolute top-3 right-3 bg-white/95 dark:bg-[#0B192C]/90 text-[#0B192C] dark:text-white text-[10px] font-extrabold px-2 py-1 rounded-full shadow-sm flex items-center gap-1 backdrop-blur-sm">
-                            <Star
-                              size={11}
-                              className="text-[#D4AF37] fill-[#D4AF37]"
-                            />{" "}
-                            {ashram.rating.average}
-                          </span>
-                        )}
                       </div>
 
                       <div className="p-4 text-center flex flex-col items-center justify-center min-h-[72px]">
@@ -1790,89 +1746,6 @@ export const HomePage: React.FC = () => {
         )}
       </section>
       </div>
-
-      {offers.length > 0 && (
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20 mt-6">
-        <div className="text-center space-y-2 max-w-3xl mx-auto py-2">
-          <p className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
-            {publishedOffer.heading || publishedOffer.title || "Exclusive Offers"}
-          </p>
-          <div className="flex items-center justify-center gap-2.5 my-1.5">
-            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
-            <Sparkles
-              size={14}
-              className="text-[#E58C28] fill-[#E58C28] shrink-0"
-            />
-            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
-          </div>
-          <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            {publishedOffer.description ||
-              publishedOffer.subtitle ||
-              "Exclusive discounts, promo vouchers, and festival packages for your sacred retreat."}
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate("/offers")}
-            className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#B45309] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
-          >
-            Explore All Offers <ArrowRight size={14} />
-          </button>
-        </div>
-
-        <div className="pt-2 pb-6">
-          <MarqueeSlider
-            items={offers}
-            speed={30}
-            renderItem={(offer: any, idx: number) => {
-              const cardImg =
-                offer.bannerImage ||
-                offer.thumbnailImage ||
-                offer.image ||
-                "";
-
-              const targetAshram = offer.ashramId?._id
-                ? offer.ashramId
-                : offer.applicableAshrams && offer.applicableAshrams[0];
-              const city =
-                offer.ashramId?.address?.city || targetAshram?.address?.city;
-
-              const handleCardClick = () => {
-                const boundAshramId = String(
-                  offer.ashramId?._id ??
-                    offer.ashramId ??
-                    targetAshram?._id ??
-                    "",
-                );
-                const promo = encodeURIComponent(offer.promoCode || "");
-                if (boundAshramId) {
-                  navigate(`/ashram/${boundAshramId}?promoCode=${promo}`);
-                } else if (offer._id) {
-                  navigate(`/offers/${offer._id}`);
-                } else if (offer.promoCode) {
-                  navigate(`/search?promoCode=${promo}`);
-                }
-              };
-
-              return (
-                <CouponVoucherCard
-                  key={`${offer._id || "offer"}-${idx}`}
-                  offer={{
-                    ...offer,
-                    image: cardImg,
-                    ashramId:
-                      city || targetAshram?.name
-                        ? { address: { city }, name: targetAshram?.name }
-                        : undefined,
-                  }}
-                  onBookNow={handleCardClick}
-                  isCarouselItem={true}
-                />
-              );
-            }}
-          />
-        </div>
-      </section>
-      )}
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20">
         <div className="text-center space-y-2 max-w-3xl mx-auto py-2">

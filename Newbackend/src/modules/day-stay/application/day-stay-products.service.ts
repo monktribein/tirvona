@@ -45,7 +45,7 @@ export class DayStayProductsService {
       await this.productModel.findOneAndUpdate(
         { productCode: prod.productCode },
         { $set: prod },
-        { upsert: true, new: true }
+        { upsert: true, returnDocument: "after" }
       );
       this.logger.log(`Seeded Day Stay Product: ${prod.productCode}`);
     }

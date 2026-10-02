@@ -188,6 +188,7 @@ export const hiUi: Record<string, string> = {
   "Security Guard": "सुरक्षा गार्ड",
   "Customer": "ग्राहक",
   "Volunteer": "सेवा / स्वयंसेवक",
+  "Volunteer & Jobs": "सेवा और नौकरियाँ",
   "Manager": "प्रबंधक",
   "Housekeeping": "हाउसकीपिंग",
   "Reception": "रिसेप्शन",

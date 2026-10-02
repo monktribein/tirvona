@@ -106,7 +106,7 @@ const destinations: Destination[] = [
     description:
       "The sacred land of Lord Krishna's childhood Leelas. Vrindavan is dotted with thousands of temples and stays, each resonating with devotion, kirtan, and the eternal love of Radha-Krishna.",
     heroImage:
-      "https://images.unsplash.com/photo-1627894483216-2138af692e32?w=1400&q=80",
+      "/images/destinations/vrindavan-sacred-destination.jpg",
     coordinates: { lat: 27.5839, lng: 77.6979 },
     stats: { ashrams: 30, stays: 55, parking: 8, prasad: 22, places: 40 },
     nearbyPlaces: [
@@ -161,7 +161,7 @@ const destinations: Destination[] = [
     description:
       "The birthplace of Lord Krishna, Mathura is one of the seven sacred cities in Hinduism. Steeped in mythology and living tradition, the city vibrates with devotional energy year-round.",
     heroImage:
-      "/images/destinations/mathura/krishna_janmabhoomi.jpg",
+      "/images/destinations/mathura-sacred-destination.jpg",
     coordinates: { lat: 27.4924, lng: 77.6737 },
     stats: { ashrams: 18, stays: 35, parking: 10, prasad: 15, places: 28 },
     nearbyPlaces: [
@@ -280,10 +280,51 @@ const destinations: Destination[] = [
     description:
       "The sacred village of Radha Rani, beloved of Lord Krishna. Barsana is famed for the colourful Lathmar Holi festival and the hilltop Radha Rani Temple, a jewel of Braj devotion.",
     heroImage:
-      "https://images.unsplash.com/photo-1627894483216-2138af692e32?w=1400&q=80",
+      "/images/destinations/barsana-sacred-destination.jpg",
     coordinates: { lat: 27.6467, lng: 77.3768 },
     stats: { ashrams: 8, stays: 15, parking: 4, prasad: 10, places: 12 },
-    nearbyPlaces: [],
+    nearbyPlaces: [
+      {
+        id: "radha-rani-mandir-barsana",
+        name: "Shri Radha Rani Temple (Shreeji Mandir)",
+        category: "Temple / Hilltop",
+        description:
+          "The grand hilltop temple dedicated to Shri Radha Rani atop Bhanugarh peak, overlooking the historic landscape of Barsana.",
+        coordinates: { lat: 27.6467, lng: 77.3768 },
+        image: "/images/destinations/barsana-sacred-destination.jpg",
+        availableOnTirvona: false,
+      },
+      {
+        id: "maan-mandir-barsana",
+        name: "Maan Mandir",
+        category: "Temple / Heritage",
+        description:
+          "Situated on the Maan Garh hill, where Shri Radha expressed her transcendental loving pique (maan) with Krishna.",
+        coordinates: { lat: 27.6435, lng: 77.3712 },
+        image: "/images/destinations/barsana-sacred-destination.jpg",
+        availableOnTirvona: false,
+      },
+      {
+        id: "mor-kuti-barsana",
+        name: "Mor Kuti",
+        category: "Sacred Site",
+        description:
+          "The divine spot where Radha and Krishna danced as peacocks (mor), surrounded by lush Braj peacocks.",
+        coordinates: { lat: 27.641, lng: 77.3735 },
+        image: "/images/destinations/barsana-sacred-destination.jpg",
+        availableOnTirvona: false,
+      },
+      {
+        id: "rangeeli-mahal",
+        name: "Rangeeli Mahal",
+        category: "Spiritual Centre",
+        description:
+          "A serene spiritual ashram and temple complex in Barsana founded by Jagadguru Shri Kripalu Ji Maharaj.",
+        coordinates: { lat: 27.648, lng: 77.382 },
+        image: "/images/destinations/barsana-sacred-destination.jpg",
+        availableOnTirvona: false,
+      },
+    ],
   },
   {
     id: "govardhan",
@@ -294,10 +335,51 @@ const destinations: Destination[] = [
     description:
       "Home of the sacred Govardhan Hill, which Lord Krishna lifted on his little finger. Millions of devotees perform the Govardhan Parikrama, a 21-km circumambulation of the hill.",
     heroImage:
-      "https://images.unsplash.com/photo-1632852745063-6a4d60390b89?w=1400&q=80",
+      "/images/destinations/govardhan-sacred-destination.jpg",
     coordinates: { lat: 27.4978, lng: 77.4624 },
     stats: { ashrams: 10, stays: 20, parking: 6, prasad: 12, places: 15 },
-    nearbyPlaces: [],
+    nearbyPlaces: [
+      {
+        id: "govardhan-hill-parikrama",
+        name: "Govardhan Hill & Parikrama Marg",
+        category: "Sacred Hill / Pilgrimage",
+        description:
+          "The 21-km holy circumambulation path around Govardhan Parvat, revered as non-different from Lord Krishna himself.",
+        coordinates: { lat: 27.4978, lng: 77.4624 },
+        image: "/images/destinations/govardhan-sacred-destination.jpg",
+        availableOnTirvona: false,
+      },
+      {
+        id: "dan-ghati-mandir",
+        name: "Daan Ghati Temple",
+        category: "Temple",
+        description:
+          "The main temple where Lord Krishna is believed to have demanded tax (daan) of milk and butter from the Gopis.",
+        coordinates: { lat: 27.502, lng: 77.4635 },
+        image: "/images/destinations/govardhan-sacred-destination.jpg",
+        availableOnTirvona: false,
+      },
+      {
+        id: "radha-kund-shyam-kund",
+        name: "Radha Kund & Shyam Kund",
+        category: "Sacred Sarovar",
+        description:
+          "The two holiest ponds in Gaudiya Vaishnavism created by Radha and Krishna, located at the foot of Govardhan Hill.",
+        coordinates: { lat: 27.5252, lng: 77.4938 },
+        image: "/images/destinations/govardhan-sacred-destination.jpg",
+        availableOnTirvona: false,
+      },
+      {
+        id: "kusum-sarovar-govardhan",
+        name: "Kusum Sarovar",
+        category: "Heritage / Sacred Kund",
+        description:
+          "A monumental 450-foot long historic sandstone sarovar and cenotaph complex with majestic chhatris where Radha met Krishna.",
+        coordinates: { lat: 27.5065, lng: 77.4707 },
+        image: "/images/destinations/govardhan-sacred-destination.jpg",
+        availableOnTirvona: false,
+      },
+    ],
   },
 ];
 
@@ -312,8 +394,21 @@ export const getDestinationBySlug = (
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+
+  // Alias aliases to canonical slugs
+  const aliasMap: Record<string, string> = {
+    goverdhan: "govardhan",
+    vrindaban: "vrindavan",
+    vrinadavn: "vrindavan",
+    brindavan: "vrindavan",
+    brindaban: "vrindavan",
+    varshana: "barsana",
+  };
+
+  const targetSlug = aliasMap[normalised] || normalised;
+
   return destinations.find(
-    (d) => d.slug === normalised || d.id === normalised,
+    (d) => d.slug === targetSlug || d.id === targetSlug,
   );
 };
 

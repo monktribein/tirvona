@@ -32,6 +32,20 @@ const fetchSections = (force = false): Promise<SectionSummary[]> => {
     .sections()
     .then((response) => {
       const data: SectionSummary[] = response?.data?.data ?? [];
+      // Normalize temples section so it always provides the 4 unified cards
+      const templesSec = data.find((s) => s.key === "temples");
+      if (templesSec) {
+        const aartisSec = data.find((s) => s.key === "templeAartis");
+        const festivalsSec = data.find((s) => s.key === "templeFestivals");
+        const hasAartis = templesSec.tiles.some((t) => t.label.toLowerCase().includes("aarti"));
+        if (!hasAartis && aartisSec?.tiles?.length) {
+          templesSec.tiles.push(...aartisSec.tiles);
+        }
+        const hasFestivals = templesSec.tiles.some((t) => t.label.toLowerCase().includes("festival"));
+        if (!hasFestivals && festivalsSec?.tiles?.length) {
+          templesSec.tiles.push(...festivalsSec.tiles);
+        }
+      }
       cache = { at: Date.now(), data };
       return data;
     })
@@ -101,7 +115,7 @@ const PATH_SECTIONS: Record<string, string[]> = {
   "/admin/manage/institution_contacts": ["institutionContacts"],
   "/admin/manage/institution_locations": ["institutionLocations"],
   "/admin/manage/institution_audits": ["institutionAudits"],
-  "/admin/temples": ["temples", "templeAartis", "templeFestivals"],
+  "/admin/temples": ["temples"],
 
   // Stays, bookings, offers.
   "/admin/manage/ashrams": ["stays"],
@@ -200,6 +214,7 @@ const PATH_SECTIONS: Record<string, string[]> = {
  * is meant to stay the one place that reports it.
  */
 const SELF_SUMMARISING_PATHS = [
+  "/admin/temples",
   "/admin/manage/rooms/total",
   "/owner/total-rooms",
   "/ashram-admin/total-rooms",

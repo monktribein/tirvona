@@ -34,7 +34,7 @@ export class PlatformSettingsService {
           },
         },
       },
-      { upsert: true, new: true },
+      { upsert: true, returnDocument: "after" },
     );
   }
   async update(
@@ -89,7 +89,7 @@ export class PlatformSettingsService {
     return this.settings.findOneAndUpdate(
       { key: "main" },
       { $set: update },
-      { new: true },
+      { returnDocument: "after" },
     );
   }
 }

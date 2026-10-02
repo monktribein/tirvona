@@ -38,6 +38,8 @@ interface TileSpec {
   /** Sums this field instead of counting rows. */
   sum?: string;
   format?: "number" | "currency";
+  /** Optional collection override if this tile queries a different collection. */
+  collection?: string;
 }
 
 interface SectionSpec {
@@ -84,9 +86,10 @@ const SECTIONS: SectionSpec[] = [
     collection: "temples",
     platformOnly: true,
     tiles: [
-      { label: "Temples", where: live },
-      { label: "Published", where: { ...live, status: "approved" } },
-      { label: "Awaiting review", where: { ...live, status: "pending" } },
+      { label: "Total temples", where: live },
+      { label: "Published", where: { ...live, status: { $in: ["published", "approved", "active"] } } },
+      { label: "Aarti timings", collection: "temple_aartis" },
+      { label: "Festivals", collection: "temple_festivals" },
     ],
   },
   {
@@ -626,7 +629,22 @@ export class SectionSummaryService {
     }
 
     try {
-      const values = await this.facet(section.collection, base, section.tiles);
+      const hasOverrides = section.tiles.some(
+        (tile) => tile.collection && tile.collection !== section.collection,
+      );
+      let values: number[];
+      if (!hasOverrides) {
+        values = await this.facet(section.collection, base, section.tiles);
+      } else {
+        values = await Promise.all(
+          section.tiles.map(async (tile) => {
+            const col = tile.collection ?? section.collection;
+            const filter = col === section.collection ? base : {};
+            const res = await this.facet(col, filter, [tile]);
+            return res[0] ?? 0;
+          }),
+        );
+      }
       return {
         key: section.key,
         label: section.label,
