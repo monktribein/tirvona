@@ -9,7 +9,6 @@ import { DayStayProductsService } from "../application/day-stay-products.service
 import { DayStayVendorService } from "../application/day-stay-vendor.service";
 import { TransactionService } from "../../../common/database/transaction.service";
 import { WalletService } from "../../wallet/application/wallet.service";
-import { ConflictException } from "@nestjs/common";
 import { isDayStayBlocked } from "../application/day-stay-inventory.service";
 import { istDateString } from "../domain/day-stay-time";
 
