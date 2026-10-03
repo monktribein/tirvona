@@ -14,10 +14,12 @@ import {
   isAshramInDestination,
 } from "../utils/destinationNormalizer";
 import { DateRangePicker } from "../components/DateRangePicker";
+import { ShortStayDateTimePicker } from "../components/ShortStayDateTimePicker";
 import { GuestRoomSelector } from "../components/shared/GuestRoomSelector";
 import {
   useBookingSearch,
   normalizeBookingDates,
+  getTodayYMD,
 } from "../contexts/BookingSearchContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useAutoScroll } from "../hooks/useAutoScroll";
@@ -73,6 +75,7 @@ export const HomePage: React.FC = () => {
   const [searchTab, setSearchTab] = useState<
     "destinations" | "stay" | "day-stay" | "experiences"
   >("stay");
+  const [dayStayTime, setDayStayTime] = useState<string>("10:00");
   const [activeService, setActiveService] = useState<number>(0);
   const [offerSlideIndex, setOfferSlideIndex] = useState<number>(0);
 
@@ -592,12 +595,18 @@ export const HomePage: React.FC = () => {
     if (destination) params.set("destination", destination);
     if (stayType) params.set("type", stayType);
     if (checkIn) params.set("checkIn", checkIn);
-    if (checkOut) params.set("checkOut", checkOut);
+    if (searchTab === "day-stay") {
+      params.set("checkOut", checkIn);
+      params.set("tab", "day-stay");
+      if (dayStayTime) params.set("time", dayStayTime);
+    } else {
+      if (checkOut) params.set("checkOut", checkOut);
+      if (searchTab && searchTab !== "destinations") params.set("tab", searchTab);
+    }
     params.set("rooms", String(searchState.rooms));
     params.set("adults", String(searchState.adults));
     params.set("children", String(searchState.children));
     params.set("guests", String(totalGuests));
-    if (searchTab && searchTab !== "destinations") params.set("tab", searchTab);
     navigate(`/search?${params.toString()}`);
   };
 
@@ -980,6 +989,11 @@ export const HomePage: React.FC = () => {
               },
               { id: "stay", icon: <Bed size={14} />, label: "Stay" },
               {
+                id: "day-stay",
+                icon: <Sparkles size={14} />,
+                label: "Short Stay",
+              },
+              {
                 id: "experiences",
                 icon: <Sparkles size={14} />,
                 label: "Experiences",
@@ -1068,16 +1082,33 @@ export const HomePage: React.FC = () => {
             </div>
 
             <div className="group rounded-2xl lg:rounded-full px-5 py-3 bg-white dark:bg-[#0B192C] hover:bg-gray-50/80 dark:hover:bg-slate-800/50 hover:shadow-lg transition-all flex items-center min-h-[64px] lg:border-r border-gray-200/80 dark:border-slate-800/80 relative min-w-0 z-10 focus-within:z-[90]">
-              <DateRangePicker
-                checkIn={checkIn}
-                checkOut={checkOut}
-                onChange={(nextIn, nextOut) => {
-                  setCheckIn(nextIn);
-                  setCheckOut(nextOut);
-                  updateBookingSearch({ checkIn: nextIn, checkOut: nextOut });
-                }}
-                pill
-              />
+              {searchTab === "day-stay" ? (
+                <ShortStayDateTimePicker
+                  date={checkIn || getTodayYMD()}
+                  time={dayStayTime}
+                  pill
+                  onChange={(nextDate, nextTime) => {
+                    setCheckIn(nextDate);
+                    setCheckOut(nextDate);
+                    setDayStayTime(nextTime);
+                    updateBookingSearch({
+                      checkIn: nextDate,
+                      checkOut: nextDate,
+                    });
+                  }}
+                />
+              ) : (
+                <DateRangePicker
+                  checkIn={checkIn}
+                  checkOut={checkOut}
+                  onChange={(nextIn, nextOut) => {
+                    setCheckIn(nextIn);
+                    setCheckOut(nextOut);
+                    updateBookingSearch({ checkIn: nextIn, checkOut: nextOut });
+                  }}
+                  pill
+                />
+              )}
             </div>
 
             <div className="group cursor-pointer rounded-2xl lg:rounded-full px-5 py-3 bg-white dark:bg-[#0B192C] hover:bg-gray-50/80 dark:hover:bg-slate-800/50 hover:shadow-lg transition-all flex flex-col justify-center min-h-[64px] relative min-w-0 z-10 focus-within:z-[90]">

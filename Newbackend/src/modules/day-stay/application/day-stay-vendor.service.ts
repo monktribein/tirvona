@@ -181,6 +181,13 @@ export class DayStayVendorService {
             enabled: p.enabled !== false,
           };
         });
+        const codes = rc.products.map((p: any) => p.productCode);
+        const dup = codes.find((c: string, i: number) => codes.indexOf(c) !== i);
+        if (dup) throw new BadRequestException(`Package code ${dup} is used twice in ${room.name ?? "this room"}`);
+        const overpriced = rc.products.find((p: any) => p.discountPrice > p.price);
+        if (overpriced) {
+          throw new BadRequestException(`Offer price for ${overpriced.productCode} cannot be above its price`);
+        }
       }
       room.dayStayConfig = rc;
       room.markModified("dayStayConfig");
@@ -223,8 +230,10 @@ export class DayStayVendorService {
         ? new Date(bk.dayStayDetails.graceExpiresAt)
         : new Date(end.getTime() + 15 * 60000);
 
-      if (bk.status === "confirmed" && now < start) {
-        upcomingArrivals.push(bk);
+      if (bk.status === "confirmed") {
+        // Not checked in yet; a guest running late stays on the arrivals list
+        // instead of silently dropping off the radar.
+        upcomingArrivals.push(now < start ? bk : { ...bk, lateByMinutes: Math.floor((now.getTime() - start.getTime()) / 60000) });
       } else if (bk.status === "checked_in") {
         if (now <= end) {
           currentlyResting.push(bk);

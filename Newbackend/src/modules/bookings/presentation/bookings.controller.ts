@@ -42,7 +42,17 @@ export class BookingsController {
   async quote(@Body() dto: CreateBookingDto) {
     return { success: true, data: await this.service.quote(dto) };
   }
-  @Post("create") @Roles("customer") async create(
+  @Post("create")
+  @Roles(
+    "customer",
+    "owner",
+    "ashram_owner",
+    "ashram_admin",
+    "stay_admin",
+    "manager",
+    "super_admin",
+  )
+  async create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateBookingDto,
   ) {
@@ -151,7 +161,7 @@ export class BookingsController {
   ) {
     return { success: true, data: await this.service.paymentPendingList(user, query) };
   }
-  @Get("history") @Roles("customer") async history(
+  @Get("history") async history(
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return { success: true, data: await this.service.historyFor({ userId: user.id }) };

@@ -347,6 +347,10 @@ export const BookingInventorySchema = new Schema(
     customPrice: Number,
     isClosed: { type: Boolean, default: false },
     note: String,
+    // Written whenever a Short Stay is held for this room around this night.
+    // An overnight hold in flight on the same row then hits a write conflict
+    // and retries, so it re-reads Short Stay bookings before committing.
+    dayStayTouchedAt: Date,
   },
   opts("booking_daily_availability"),
 );

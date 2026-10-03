@@ -546,7 +546,6 @@ const AppContent: React.FC = () => {
               element={<ResetPasswordPage />}
             />
             <Route path="/about" element={<AboutPage />} />
-            <Route path="/careers" element={<CareersPage />} />
             <Route path="/partner" element={<PartnerPage />} />
             <Route path="/press" element={<PressPage />} />
             <Route path="/help" element={<HelpCenterPage />} />

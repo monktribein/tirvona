@@ -29,6 +29,12 @@ import {
   HandHeart,
   LifeBuoy,
   Wallet,
+  Bell,
+  CheckCheck,
+  Shield,
+  AlertCircle,
+  AlertTriangle,
+  Info,
 } from "lucide-react";
 import { VisitorArticlesTab } from "./VisitorArticlesTab";
 import { VolunteerApplicationsTab } from "./VolunteerApplicationsTab";
@@ -87,9 +93,33 @@ const formatDateTime = (value?: string) =>
 export const ProfileMainPage: React.FC = () => {
   const { user, logout, refreshUser } = useAuth();
   const { balance: walletBalance } = useWallet();
-  const { addNotification, confirmAction } = useNotifications();
+  const {
+    addNotification,
+    confirmAction,
+    notifications,
+    unreadCount,
+    markAllAsRead,
+    removeNotification,
+    clearNotifications,
+  } = useNotifications();
   const location = useLocation();
   const navigate = useNavigate();
+
+  const isAdmin = Boolean(
+    user &&
+      [
+        "super_admin",
+        "admin",
+        "ashram_admin",
+        "stay_admin",
+        "owner",
+        "manager",
+        "national_admin",
+        "state_admin",
+        "government_admin",
+        "govt_admin",
+      ].includes(user.role),
+  );
 
   useEffect(() => {
     if (user && isParkingRole(user.parkingRoles, user.role, user.email)) {
@@ -116,7 +146,9 @@ export const ProfileMainPage: React.FC = () => {
     | "payments"
     | "wallet"
     | "support"
-    | "settings" => {
+    | "settings"
+    | "notifications" => {
+    if (pathname.includes("/profile/notifications")) return "notifications";
     if (
       pathname.includes("/profile/bookings") ||
       pathname.includes("/profile/history")
@@ -417,32 +449,37 @@ export const ProfileMainPage: React.FC = () => {
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         )
         .slice(0, 5)
-        .map((b) => ({
-          key: `${b.kind}-${b.id}`,
-          title:
-            b.kind === "parking"
-              ? `Parking at ${b.title}`
-              : `${b.status === "cancelled" ? "Cancelled" : "Booked"} ${b.title}`,
-          location: b.location || "Tirvona",
-          date: new Date(b.createdAt).toLocaleDateString("en-IN", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          }),
-          to:
-            b.detailHref ||
-            (b.kind === "parking"
-              ? `/parking/booking/${b.id}`
-              : `/booking/${b.reference || b.id}`),
-          icon:
-            b.category === "cancelled" ? (
-              <XCircle className="text-rose-500" size={16} />
-            ) : b.kind === "parking" ? (
-              <CircleParking className="text-[#F28C28]" size={16} />
-            ) : (
-              <CheckCircle2 className="text-emerald-500" size={16} />
-            ),
-        })),
+        .map((b) => {
+          const refSuffix = b.reference
+            ? ` (#${b.reference.length > 8 ? b.reference.slice(-8) : b.reference})`
+            : "";
+          return {
+            key: `${b.kind}-${b.id}`,
+            title:
+              b.kind === "parking"
+                ? `Parking at ${b.title}${refSuffix}`
+                : `${b.status === "cancelled" ? "Cancelled" : "Booked"} ${b.title}${refSuffix}`,
+            location: b.location || "Tirvona",
+            date: new Date(b.createdAt).toLocaleDateString("en-IN", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            }),
+            to:
+              b.detailHref ||
+              (b.kind === "parking"
+                ? `/parking/booking/${b.id}`
+                : `/booking/${b.reference || b.id}`),
+            icon:
+              b.category === "cancelled" ? (
+                <XCircle className="text-rose-500" size={16} />
+              ) : b.kind === "parking" ? (
+                <CircleParking className="text-[#F28C28]" size={16} />
+              ) : (
+                <CheckCircle2 className="text-emerald-500" size={16} />
+              ),
+          };
+        }),
     [bookings],
   );
 
@@ -464,6 +501,15 @@ export const ProfileMainPage: React.FC = () => {
       desc: "Account summary & recent yatras",
       icon: <User size={18} />,
       iconBg: "bg-[#FFF4E5]/40 text-[#F28C28]",
+    },
+    {
+      key: "notifications",
+      path: "/profile/notifications",
+      label: "Notifications & Alerts",
+      desc: "Live system alerts & updates",
+      icon: <Bell size={18} />,
+      iconBg: "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600",
+      badge: unreadCount > 0 ? String(unreadCount) : undefined,
     },
     {
       key: "bookings",
@@ -1178,6 +1224,168 @@ export const ProfileMainPage: React.FC = () => {
                       </button>
                     </div>
                   </form>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "notifications" && (
+              <div className="space-y-6">
+                {isAdmin && (
+                  <div className="bg-gradient-to-r from-amber-500/10 via-[#F28C28]/10 to-indigo-500/10 border border-[#F28C28]/30 rounded-[28px] p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-10 h-10 rounded-2xl bg-[#F28C28] text-white flex items-center justify-center shrink-0 shadow-md">
+                        <Shield size={20} />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-black text-[#0B192C] dark:text-white">
+                          Super Admin Enterprise Notification Center
+                        </h4>
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">
+                          Monitor platform telemetry, payment audit logs, webhook syncs, and system activities in real-time.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => navigate("/admin/enterprise-notifications")}
+                      className="px-4 py-2 bg-[#F28C28] hover:bg-[#D97706] text-white rounded-full text-xs font-black transition-all shadow-md shrink-0 cursor-pointer flex items-center gap-1.5"
+                    >
+                      <span>Open Enterprise Center</span>
+                      <ArrowRight size={13} />
+                    </button>
+                  </div>
+                )}
+
+                <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-5 sm:p-6 shadow-lg space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 dark:border-slate-800 pb-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-[#F28C28]/10 text-[#F28C28] flex items-center justify-center">
+                        <Bell size={16} />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-extrabold text-[#0B192C] dark:text-white tracking-wider">
+                          Notifications & System Alerts
+                        </h3>
+                        <p className="text-[11px] text-gray-400 font-medium">
+                          {unreadCount > 0
+                            ? `${unreadCount} unread update(s)`
+                            : "All caught up — no unread alerts"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {notifications.length > 0 && (
+                        <>
+                          <button
+                            onClick={markAllAsRead}
+                            className="px-3 py-1.5 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 text-xs font-extrabold flex items-center gap-1.5 cursor-pointer transition-all"
+                          >
+                            <CheckCheck size={13} className="text-emerald-500" />
+                            <span>Mark all read</span>
+                          </button>
+                          <button
+                            onClick={clearNotifications}
+                            className="px-3 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 text-xs font-extrabold flex items-center gap-1.5 cursor-pointer transition-all"
+                          >
+                            <Trash2 size={13} />
+                            <span>Clear all</span>
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {notifications.length === 0 ? (
+                      <div className="py-12 text-center space-y-3">
+                        <div className="w-14 h-14 rounded-full bg-gray-50 dark:bg-slate-900 text-gray-400 mx-auto flex items-center justify-center">
+                          <Bell size={24} />
+                        </div>
+                        <h4 className="text-sm font-extrabold text-gray-800 dark:text-gray-200">
+                          No notifications currently
+                        </h4>
+                        <p className="text-xs text-gray-400 max-w-sm mx-auto font-medium">
+                          You will receive real-time booking, stay check-in and platform updates here.
+                        </p>
+                        <button
+                          onClick={() => {
+                            addNotification(
+                              "Tirvona System Online",
+                              "All spiritual booking services, short-stay slots, and notifications are operating normally.",
+                              "success",
+                            );
+                            addNotification(
+                              "Stay Verification Radar",
+                              "New stay partner onboarding requests are ready for review.",
+                              "info",
+                            );
+                          }}
+                          className="mt-2 inline-flex items-center gap-1 px-4 py-2 rounded-full border border-gray-200 dark:border-slate-700 text-xs font-extrabold text-[#F28C28] hover:bg-[#F28C28]/10 cursor-pointer"
+                        >
+                          <RefreshCw size={12} />
+                          <span>Load Sample Alerts</span>
+                        </button>
+                      </div>
+                    ) : (
+                      notifications.map((notif) => (
+                        <div
+                          key={notif.id}
+                          className={`p-4 rounded-2xl border transition-all flex items-start justify-between gap-3 ${
+                            notif.read
+                              ? "bg-gray-50/50 dark:bg-slate-900/40 border-gray-100 dark:border-slate-800"
+                              : "bg-blue-50/40 dark:bg-slate-900/80 border-blue-200/60 dark:border-slate-700 shadow-xs"
+                          }`}
+                        >
+                          <div className="flex items-start gap-3 min-w-0">
+                            <div className="mt-0.5 shrink-0">
+                              {notif.type === "success" && (
+                                <CheckCircle2 size={18} className="text-emerald-500" />
+                              )}
+                              {notif.type === "warning" && (
+                                <AlertTriangle size={18} className="text-amber-500" />
+                              )}
+                              {notif.type === "error" && (
+                                <AlertCircle size={18} className="text-rose-500" />
+                              )}
+                              {notif.type === "info" && (
+                                <Info size={18} className="text-[#F28C28]" />
+                              )}
+                            </div>
+                            <div className="space-y-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className="text-xs font-black text-[#0B192C] dark:text-white">
+                                  {notif.title}
+                                </h4>
+                                {!notif.read && (
+                                  <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-[#F28C28] text-white">
+                                    NEW
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-600 dark:text-gray-300 font-medium leading-relaxed">
+                                {notif.message}
+                              </p>
+                              <span className="text-[10px] font-semibold text-gray-400 block pt-1">
+                                {new Date(notif.timestamp).toLocaleString("en-IN", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => removeNotification(notif.id)}
+                            className="p-1.5 text-gray-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors shrink-0 cursor-pointer"
+                            title="Dismiss notification"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
             )}

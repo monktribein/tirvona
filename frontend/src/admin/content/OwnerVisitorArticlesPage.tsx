@@ -687,7 +687,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
               <input
                 ref={coverInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif,.avif,.gif,.bmp"
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0];

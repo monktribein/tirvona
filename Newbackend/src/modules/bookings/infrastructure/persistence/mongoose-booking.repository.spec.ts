@@ -75,4 +75,70 @@ describe("MongooseBookingRepository", () => {
       $inc: { heldCount: -2, bookedCount: 2 },
     });
   });
+
+  describe("Short Stay guests", () => {
+    const chain = (value: unknown) => {
+      const q: any = {};
+      q.select = jest.fn(() => q);
+      q.session = jest.fn(() => q);
+      q.lean = jest.fn().mockResolvedValue(value);
+      return q;
+    };
+    const dayStay = (start: string, end: string) => ({
+      roomsBookedCount: 1,
+      dayStayDetails: { slotStartTime: new Date(start), slotEndTime: new Date(end), housekeepingEndsAt: new Date(end) },
+    });
+    const setup = (dayStays: any[]) => {
+      const inventory = {
+        updateOne: jest.fn().mockResolvedValue({}),
+        findOneAndUpdate: jest.fn().mockResolvedValue({ _id: "row" }),
+      } as any;
+      const bookings = { find: jest.fn(() => chain(dayStays)) } as any;
+      const ashrams = {
+        findById: jest.fn(() => chain({ policies: { checkInTime: "12:00", checkOutTime: "11:00" } })),
+      } as any;
+      return { inventory, bookings, repository: new MongooseBookingRepository(inventory, bookings, ashrams) };
+    };
+    const hold = (repository: MongooseBookingRepository) =>
+      repository.holdInventory({
+        ashramId: "a",
+        roomId: "r",
+        dates: [new Date("2030-10-01")],
+        count: 1,
+        capacity: 2,
+        session,
+      });
+
+    it("counts a Short Stay that overlaps the night against the overnight hold", async () => {
+      const { inventory, repository } = setup([dayStay("2030-10-01T14:00:00+05:30", "2030-10-01T19:00:00+05:30")]);
+      await hold(repository);
+      expect(inventory.findOneAndUpdate.mock.calls[0][0].$expr.$lte[0].$add).toEqual([
+        "$heldCount",
+        "$bookedCount",
+        "$maintenanceCount",
+        2,
+      ]);
+    });
+
+    it("counts back-to-back Short Stays on one unit once, not twice", async () => {
+      const { inventory, repository } = setup([
+        dayStay("2030-10-01T12:00:00+05:30", "2030-10-01T16:00:00+05:30"),
+        dayStay("2030-10-01T16:00:00+05:30", "2030-10-01T20:00:00+05:30"),
+      ]);
+      await hold(repository);
+      expect(inventory.findOneAndUpdate.mock.calls[0][0].$expr.$lte[0].$add[3]).toBe(2);
+    });
+
+    it("ignores a morning Short Stay that ends before the overnight check-in", async () => {
+      const { inventory, repository } = setup([dayStay("2030-10-01T06:00:00+05:30", "2030-10-01T11:00:00+05:30")]);
+      await hold(repository);
+      expect(inventory.findOneAndUpdate.mock.calls[0][0].$expr.$lte[0].$add[3]).toBe(1);
+    });
+
+    it("explains the refusal when Short Stays took the last room", async () => {
+      const { inventory, repository } = setup([dayStay("2030-10-01T14:00:00+05:30", "2030-10-01T19:00:00+05:30")]);
+      inventory.findOneAndUpdate.mockResolvedValue(null);
+      await expect(hold(repository)).rejects.toThrow(/Short Stay/);
+    });
+  });
 });

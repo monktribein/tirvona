@@ -8,9 +8,12 @@ import { formatCurrency } from "../utils/format";
 import { SearchResultStatus } from "../components/shared/SearchResultStatus";
 import { GuestRoomSelector } from "../components/shared/GuestRoomSelector";
 import { DateRangePicker } from "../components/DateRangePicker";
+import { ShortStayDateTimePicker } from "../components/ShortStayDateTimePicker";
 import {
   useBookingSearch,
   normalizeBookingDates,
+  getTodayYMD,
+  getTomorrowYMD,
 } from "../contexts/BookingSearchContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import { hiUi } from "../i18n/resources";
@@ -109,6 +112,9 @@ export const SearchPage: React.FC = () => {
   const [foodFilter, setFoodFilter] = useState(false);
   const [parkingFilter, setParkingFilter] = useState(false);
   const [dayStayOnlyFilter, setDayStayOnlyFilter] = useState(false);
+  const [dayStayTime, setDayStayTime] = useState(
+    searchParams.get("time") || "10:00",
+  );
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
   const activeFilterCount =
@@ -184,11 +190,22 @@ export const SearchPage: React.FC = () => {
         setHomestayFilter(true);
     }
     const tabQuery = searchParams.get("tab") || "";
-    if (tabQuery === "day-stay" || typeQuery.toLowerCase().includes("day") || typeQuery.toLowerCase().includes("freshen")) {
+    const isDayStayParam =
+      tabQuery === "day-stay" ||
+      typeQuery.toLowerCase().includes("day") ||
+      typeQuery.toLowerCase().includes("freshen");
+    if (isDayStayParam) {
       setDayStayOnlyFilter(true);
+      if (effIn) setCheckOut(effIn);
+    } else if (tabQuery === "stay") {
+      setDayStayOnlyFilter(false);
+    }
+    const rawTime = searchParams.get("time");
+    if (rawTime) {
+      setDayStayTime(rawTime);
     }
     setCheckIn(effIn);
-    setCheckOut(effOut);
+    setCheckOut(isDayStayParam && effIn ? effIn : effOut);
   }, [
     activeKeyword,
     typeQuery,
@@ -346,23 +363,36 @@ export const SearchPage: React.FC = () => {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     lastTrackedSearchFingerprintRef.current = "";
+    const isDayStay = activeTab === "day-stay";
+    const effectiveIn = checkIn || getTodayYMD();
+    const effectiveOut = isDayStay
+      ? effectiveIn
+      : (checkOut && checkOut > effectiveIn ? checkOut : getTomorrowYMD(effectiveIn));
+
     updateBookingSearch({
       destination,
-      checkIn,
-      checkOut,
+      checkIn: effectiveIn,
+      checkOut: effectiveOut,
     });
     trackSearchStay({
       destination: destination.trim(),
-      check_in: checkIn,
-      check_out: checkOut,
+      check_in: effectiveIn,
+      check_out: effectiveOut,
       guests: totalGuests,
       rooms: searchState.rooms,
     });
     const params: Record<string, string> = {};
     if (destination) params.destination = destination;
     if (stayType) params.type = stayType;
-    if (checkIn) params.checkIn = checkIn;
-    if (checkOut) params.checkOut = checkOut;
+    if (effectiveIn) params.checkIn = effectiveIn;
+    if (isDayStay) {
+      params.checkOut = effectiveIn;
+      params.tab = "day-stay";
+      if (dayStayTime) params.time = dayStayTime;
+    } else {
+      if (effectiveOut) params.checkOut = effectiveOut;
+      params.tab = "stay";
+    }
     params.rooms = String(searchState.rooms);
     params.adults = String(searchState.adults);
     params.children = String(searchState.children);
@@ -518,14 +548,19 @@ export const SearchPage: React.FC = () => {
   const buildDetailLink = (ashram: SluggableAshram) => {
     const params = new URLSearchParams();
     const activeCheckIn = checkIn || searchState.checkIn;
-    const activeCheckOut = checkOut || searchState.checkOut;
+    const activeCheckOut = dayStayOnlyFilter
+      ? activeCheckIn
+      : checkOut || searchState.checkOut;
     if (activeCheckIn) params.set("checkIn", activeCheckIn);
     if (activeCheckOut) params.set("checkOut", activeCheckOut);
     params.set("rooms", String(searchState.rooms));
     params.set("adults", String(searchState.adults));
     params.set("guests", String(totalGuests));
     // Tell AshramDetailPage which booking mode to open
-    if (dayStayOnlyFilter) params.set("mode", "daystay");
+    if (dayStayOnlyFilter) {
+      params.set("mode", "daystay");
+      if (dayStayTime) params.set("time", dayStayTime);
+    }
     const qStr = params.toString();
     return ashramUrl(ashram, qStr ? `?${qStr}` : "");
   };
@@ -537,6 +572,25 @@ export const SearchPage: React.FC = () => {
     setDayStayOnlyFilter(isDayStay);
     const nextParams = new URLSearchParams(searchParams);
     nextParams.set("tab", tabKey);
+    if (isDayStay) {
+      const singleDate = checkIn || getTodayYMD();
+      setCheckIn(singleDate);
+      setCheckOut(singleDate);
+      nextParams.set("checkIn", singleDate);
+      nextParams.set("checkOut", singleDate);
+      if (dayStayTime) nextParams.set("time", dayStayTime);
+    } else {
+      const effectiveIn = checkIn || getTodayYMD();
+      const nextOut =
+        checkOut && checkOut > effectiveIn
+          ? checkOut
+          : getTomorrowYMD(effectiveIn);
+      setCheckIn(effectiveIn);
+      setCheckOut(nextOut);
+      nextParams.set("checkIn", effectiveIn);
+      nextParams.set("checkOut", nextOut);
+      nextParams.delete("time");
+    }
     setSearchParams(nextParams);
   };
 
@@ -621,17 +675,35 @@ export const SearchPage: React.FC = () => {
             </div>
 
             <div className="relative rounded-xl lg:rounded-full px-4 py-2 min-h-[46px] flex items-center border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0B192C] hover:bg-slate-50 dark:hover:bg-slate-900/60 z-10">
-              <DateRangePicker
-                checkIn={checkIn}
-                checkOut={checkOut}
-                compact
-                pill
-                onChange={(nextIn, nextOut) => {
-                  setCheckIn(nextIn);
-                  setCheckOut(nextOut);
-                  updateBookingSearch({ checkIn: nextIn, checkOut: nextOut });
-                }}
-              />
+              {activeTab === "day-stay" ? (
+                <ShortStayDateTimePicker
+                  date={checkIn || getTodayYMD()}
+                  time={dayStayTime}
+                  compact
+                  pill
+                  onChange={(nextDate, nextTime) => {
+                    setCheckIn(nextDate);
+                    setCheckOut(nextDate);
+                    setDayStayTime(nextTime);
+                    updateBookingSearch({
+                      checkIn: nextDate,
+                      checkOut: nextDate,
+                    });
+                  }}
+                />
+              ) : (
+                <DateRangePicker
+                  checkIn={checkIn}
+                  checkOut={checkOut}
+                  compact
+                  pill
+                  onChange={(nextIn, nextOut) => {
+                    setCheckIn(nextIn);
+                    setCheckOut(nextOut);
+                    updateBookingSearch({ checkIn: nextIn, checkOut: nextOut });
+                  }}
+                />
+              )}
             </div>
 
             <div className="relative rounded-xl lg:rounded-full px-4 py-2 min-h-[46px] flex items-center bg-white dark:bg-[#0B192C] hover:bg-slate-50 dark:hover:bg-slate-900/60 z-10">
@@ -792,7 +864,9 @@ export const SearchPage: React.FC = () => {
                   <input
                     type="checkbox"
                     checked={dayStayOnlyFilter}
-                    onChange={() => setDayStayOnlyFilter(!dayStayOnlyFilter)}
+                    onChange={() =>
+                      handleTabChange(!dayStayOnlyFilter ? "day-stay" : "stay")
+                    }
                     className="rounded border-gray-200 dark:border-slate-700 text-[#E58C28] focus:ring-[#E58C28]/20 cursor-pointer w-4 h-4"
                   />
                   <span className="flex items-center gap-1.5 font-bold text-[#E58C28]">
@@ -1446,7 +1520,9 @@ export const SearchPage: React.FC = () => {
                     <input
                       type="checkbox"
                       checked={dayStayOnlyFilter}
-                      onChange={() => setDayStayOnlyFilter(!dayStayOnlyFilter)}
+                      onChange={() =>
+                      handleTabChange(!dayStayOnlyFilter ? "day-stay" : "stay")
+                    }
                       className="rounded border-gray-200 dark:border-slate-700 text-[#E58C28] focus:ring-[#E58C28]/20 cursor-pointer w-4 h-4"
                     />
                     <span className="flex items-center gap-1.5 font-bold text-[#E58C28]">

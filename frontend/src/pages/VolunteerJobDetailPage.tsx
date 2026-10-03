@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import {
   volunteerService,
+  getVolunteerCategoryLabel,
   type VolunteerJobItem,
 } from "../services/volunteer.service";
 import { SUPPORT_CONFIG } from "../constants/support";
@@ -297,16 +298,27 @@ export const VolunteerJobDetailPage: React.FC = () => {
 
   return (
     <div className="min-h-screen pb-24 pt-4 text-left sm:pt-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+        <Link
+          to={job?.type ? `/volunteer?type=${job.type}` : "/volunteer"}
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-[#F28C28] transition-colors"
+        >
+          <ChevronLeft size={16} /> Back to {job?.type ? getVolunteerCategoryLabel(job.type) : "Openings"}
+        </Link>
 
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 sm:p-8 shadow-lg space-y-6 relative overflow-hidden">
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-3 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="px-3 py-1 bg-blue-50 dark:bg-slate-850 text-[#F28C28] dark:text-amber-400 rounded-full text-xs font-black tracking-wider">
-                  {job.department}
+                <span className="px-3 py-1 bg-[#F28C28]/10 text-[#F28C28] border border-[#F28C28]/25 rounded-full text-xs font-black tracking-wider">
+                  {getVolunteerCategoryLabel(job.type)}
                 </span>
+                {job.department && job.department !== getVolunteerCategoryLabel(job.type) && (
+                  <span className="px-3 py-1 bg-gray-100 dark:bg-slate-850 text-gray-600 dark:text-gray-300 rounded-full text-xs font-bold">
+                    {job.department}
+                  </span>
+                )}
                 {job.isGovtVerified && (
                   <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 rounded-full text-xs font-bold flex items-center gap-1">
                     <ShieldCheck size={13} /> Tirvona Verified Seva

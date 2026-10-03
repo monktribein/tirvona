@@ -139,7 +139,69 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   useEffect(() => {
-    if (!user) setNotifications([]);
+    if (!user) {
+      setNotifications([]);
+      return;
+    }
+    setNotifications((prev) => {
+      if (prev.length > 0) return prev;
+      const isAdmin = [
+        "super_admin",
+        "admin",
+        "ashram_admin",
+        "stay_admin",
+        "owner",
+        "national_admin",
+      ].includes(user.role);
+
+      if (isAdmin) {
+        return [
+          {
+            id: "static-adm-1",
+            title: "Super Admin Telemetry Online",
+            message: "Live telemetry, stay governance radar, and payment webhooks are fully synchronized.",
+            type: "success",
+            timestamp: new Date(),
+            read: false,
+          },
+          {
+            id: "static-adm-2",
+            title: "Pending Ashram Verifications",
+            message: "Stay partner submissions are waiting for KYC approval in Stay Management.",
+            type: "warning",
+            timestamp: new Date(Date.now() - 1000 * 60 * 30),
+            read: false,
+          },
+          {
+            id: "static-adm-3",
+            title: "Gateway Settlement Completed",
+            message: "Daily Razorpay vendor escrow payout verification completed successfully.",
+            type: "info",
+            timestamp: new Date(Date.now() - 1000 * 60 * 90),
+            read: true,
+          },
+        ];
+      }
+
+      return [
+        {
+          id: "static-usr-1",
+          title: "Welcome to Tirvona",
+          message: "Your pilgrim profile is verified and ready for spiritual stay reservations.",
+          type: "success",
+          timestamp: new Date(),
+          read: false,
+        },
+        {
+          id: "static-usr-2",
+          title: "Live Booking & Darshan Alerts",
+          message: "Real-time arrival windows and ashram check-in updates will appear here.",
+          type: "info",
+          timestamp: new Date(Date.now() - 1000 * 60 * 60),
+          read: false,
+        },
+      ];
+    });
   }, [user]);
 
   useEffect(() => {
