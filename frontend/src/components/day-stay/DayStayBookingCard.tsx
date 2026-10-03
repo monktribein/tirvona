@@ -35,6 +35,8 @@ interface DayStayBookingCardProps {
   selectedRoomId?: string;
   onSelectRoom?: (roomId: string) => void;
   onSuccess?: (bookingResult: any) => void;
+  initialDate?: string;
+  initialTime?: string;
 }
 
 const format12H = (time24: string): string => {
@@ -91,6 +93,8 @@ export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
   selectedRoomId: externalSelectedRoomId,
   onSelectRoom,
   onSuccess,
+  initialDate,
+  initialTime,
 }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -98,7 +102,7 @@ export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
   const [products, setProducts] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<string>("DAY_REST_4H");
   const [internalRoomId, setInternalRoomId] = useState<string>("");
-  const [date, setDate] = useState<string>(istTodayString());
+  const [date, setDate] = useState<string>(initialDate || istTodayString());
   const [slots, setSlots] = useState<any[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<any | null>(null);
   const [guestsCount, setGuestsCount] = useState<number>(2);
@@ -205,8 +209,14 @@ export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
         if (res.data?.slots) {
           setSlots(res.data.slots);
           const draft = getBookingDraft();
-          const targetTime = draft?.dayStay?.startTime;
-          const matchedDraftSlot = targetTime ? res.data.slots.find((s: any) => s.startTime === targetTime && s.isAvailable) : null;
+          const targetTime = draft?.dayStay?.startTime || initialTime;
+          const matchedDraftSlot = targetTime
+            ? res.data.slots.find(
+                (s: any) =>
+                  (s.startTime === targetTime || s.startTime?.startsWith(targetTime)) &&
+                  s.isAvailable,
+              )
+            : null;
           const firstAvail = matchedDraftSlot || res.data.slots.find((s: any) => s.isAvailable);
           setSelectedSlot(firstAvail || null);
         }
@@ -219,7 +229,13 @@ export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
     };
 
     loadAvailability();
-  }, [ashram?._id, selectedRoomId, date, selectedProduct]);
+  }, [ashram?._id, selectedRoomId, date, selectedProduct, initialTime]);
+
+  useEffect(() => {
+    if (initialDate && initialDate !== date) {
+      setDate(initialDate);
+    }
+  }, [initialDate]);
 
   if (!ashram?.dayStayConfig?.enabled || activeRooms.length === 0) {
     return (

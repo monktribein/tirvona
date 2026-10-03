@@ -2202,6 +2202,8 @@ export const AshramDetailPage: React.FC = () => {
               rooms={rooms}
               selectedRoomId={selectedDayStayRoomId}
               onSelectRoom={setSelectedDayStayRoomId}
+              initialDate={validInitialCheckIn}
+              initialTime={searchParams.get("time") || undefined}
             />
           )}
 

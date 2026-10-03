@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import {
   volunteerService,
+  VOLUNTEER_CATEGORIES,
+  getVolunteerCategoryLabel,
   type VolunteerJobItem,
 } from "../../services/volunteer.service";
 import { ashramService } from "../../services";
@@ -432,9 +434,16 @@ export const OwnerVolunteerPage: React.FC = () => {
                 <div className="space-y-3">
                   <div className="flex items-start justify-between">
                     <div>
-                      <span className="text-[10px] font-black tracking-wider text-[#E58C28] bg-[#E58C28]/10 px-2.5 py-0.5 rounded-full border border-[#E58C28]/20">
-                        {job.department}
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[10px] font-black tracking-wider text-[#E58C28] bg-[#E58C28]/10 px-2.5 py-0.5 rounded-full border border-[#E58C28]/20">
+                          {getVolunteerCategoryLabel(job.type)}
+                        </span>
+                        {job.department && job.department !== getVolunteerCategoryLabel(job.type) && (
+                          <span className="text-[10px] font-bold text-gray-500 bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+                            {job.department}
+                          </span>
+                        )}
+                      </div>
                       <h3 className="text-base font-black text-[#0B192C] dark:text-white mt-1.5">
                         {job.title}
                       </h3>
@@ -732,14 +741,11 @@ export const OwnerVolunteerPage: React.FC = () => {
                   onChange={(e) => setType(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold"
                 >
-                  <option value="volunteer">Volunteer Seva</option>
-                  <option value="internship">Internship / Fellowship</option>
-                  <option value="kitchen_seva">Kitchen Seva</option>
-                  <option value="event_coordinator">
-                    Ganga Aarti & Events
-                  </option>
-                  <option value="digital_marketing">Digital Marketing</option>
-                  <option value="temple_guide">Pilgrim Guide</option>
+                  {VOLUNTEER_CATEGORIES.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 

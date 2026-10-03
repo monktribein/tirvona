@@ -1,5 +1,57 @@
 import api from "../lib/api";
 
+export interface VolunteerCategoryDef {
+  id: string;
+  label: string;
+  description: string;
+  popularRoles: string;
+}
+
+export const VOLUNTEER_CATEGORIES: readonly VolunteerCategoryDef[] = [
+  {
+    id: "volunteer",
+    label: "Volunteer Seva",
+    description: "Daily temple & ashram seva, devotee assistance, garden care, and sacred campus support.",
+    popularRoles: "Devotee Assistance, Ashram Maintenance, Seva Lead",
+  },
+  {
+    id: "internship",
+    label: "Internship / Fellowship",
+    description: "Structured ashram management internships, cultural preservation, and youth fellowships.",
+    popularRoles: "Hospitality Management, Project Fellow, Research",
+  },
+  {
+    id: "kitchen_seva",
+    label: "Kitchen Seva",
+    description: "Satvik food preparation, Prasad distribution, Bhandara service, and Annakshetra management.",
+    popularRoles: "Prasad Distribution, Annakshetra Cook, Bhandara Support",
+  },
+  {
+    id: "event_coordinator",
+    label: "Ganga Aarti & Events",
+    description: "Coordination of holy evening Aarti ceremonies, festivals, pilgrim crowd guidance, and special poojas.",
+    popularRoles: "Aarti Coordinator, Festival Organizer, Crowd Guide",
+  },
+  {
+    id: "digital_marketing",
+    label: "Digital Marketing",
+    description: "Photography, videography, social media outreach, website management, and spiritual stories.",
+    popularRoles: "Content Creator, Social Media Manager, Media Fellow",
+  },
+  {
+    id: "temple_guide",
+    label: "Pilgrim Guide",
+    description: "Helping pilgrims and tourists explore sacred shrines, spiritual history, ghats, and local heritage.",
+    popularRoles: "Ghat Guide, Heritage Walk Host, Temple Interpreter",
+  },
+] as const;
+
+export const getVolunteerCategoryLabel = (type?: string): string => {
+  if (!type) return "Volunteer Seva";
+  const found = VOLUNTEER_CATEGORIES.find((c) => c.id === type);
+  return found ? found.label : type;
+};
+
 export interface VolunteerJobItem {
   _id: string;
   ashramId: string;
