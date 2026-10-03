@@ -11,11 +11,13 @@ import { DayStayInventoryService } from "./application/day-stay-inventory.servic
 import { DayStayBookingService } from "./application/day-stay-booking.service";
 import { DayStayVendorService } from "./application/day-stay-vendor.service";
 import { DayStayController } from "./presentation/day-stay.controller";
+import { WalletModule } from "../wallet/wallet.module";
 
 @Module({
   imports: [
     ConfigModule,
     CommonModule,
+    WalletModule,
     MongooseModule.forFeature([
       { name: "DayStayProduct", schema: DayStayProductSchema },
       { name: "Ashram", schema: AshramSchema },

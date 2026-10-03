@@ -8,7 +8,7 @@ import {
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { ConfigService } from "@nestjs/config";
-import type { Model } from "mongoose";
+import { Types, type Model } from "mongoose";
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import Razorpay from "razorpay";
 import { TransactionService } from "../../../common/database/transaction.service";
@@ -21,6 +21,7 @@ import {
 import type { DayStayHoldDto, DayStayConfirmPaymentDto } from "../presentation/dtos/day-stay.dto";
 import { DayStayInventoryService } from "./day-stay-inventory.service";
 import { hhmmToMinutes, istDateString, istInstant, istTimeString } from "../domain/day-stay-time";
+import { WalletService } from "../../wallet/application/wallet.service";
 
 @Injectable()
 export class DayStayBookingService {
@@ -36,6 +37,7 @@ export class DayStayBookingService {
     private readonly inventoryService: DayStayInventoryService,
     private readonly transactions: TransactionService,
     private readonly config: ConfigService,
+    private readonly wallet: WalletService,
   ) {
     const keyId = this.config.get<string>("razorpayKeyId");
     const keySecret = this.config.get<string>("razorpayKeySecret");
@@ -149,43 +151,16 @@ export class DayStayBookingService {
       throw new ConflictException("Sorry, this time slot is not available. Please choose another time.");
     }
 
-    let isDemo = false;
-    let rzpOrderId = `mock_order_${Date.now()}`;
-    const keyId = this.config.get<string>("razorpayKeyId") || process.env.RAZORPAY_KEY_ID || "";
-    if (this.razorpay) {
-      try {
-        const order = await this.razorpay.orders.create({
-          amount: Math.round(totalAmount * 100),
-          currency: "INR",
-          receipt: bId,
-          notes: {
-            bookingType: product.productType,
-            productCode: product.productCode,
-            ashramId: dto.ashramId,
-          },
-        });
-        rzpOrderId = order.id;
-      } catch (err: any) {
-        // Never fall back to a mock order when live keys exist: that
-        // would let the booking be confirmed without a real payment.
-        this.logger.error(`Razorpay order creation failed: ${err.message}`);
-        throw new ServiceUnavailableException("Payment gateway is unavailable. Please try again shortly.");
-      }
-    } else if (this.demoPaymentsAllowed()) {
-      isDemo = true;
-    } else {
-      throw new ServiceUnavailableException("Online payments are not configured");
-    }
-    // A simulated order can never be paid for real, so in production it would
-    // only lock a slot for nothing. Refuse before anything is written.
-    if (isDemo && this.isProduction())
-      throw new ServiceUnavailableException(
-        "Online payment is temporarily unavailable. Please try again shortly.",
-      );
-
+    // Wallet first, Razorpay for whatever is left.
+    const bookingObjectId = new Types.ObjectId();
+    const { walletAmount, gatewayAmount } = await this.wallet.planSplit(
+      customerId,
+      totalAmount,
+      dto.useWallet,
+    );
     const bookingType = product.productType || "day_rest";
-
-    const bookingDoc = await this.bookingModel.create({
+    const bookingFields = {
+      _id: bookingObjectId,
       bookingId: bId,
       reservationNumber: resNo,
       customerId,
@@ -215,37 +190,11 @@ export class DayStayBookingService {
       checkOutDate: slotEndUtc,
       guestsCount: dto.guestsCount,
       roomsBookedCount: 1,
-      status: "pending",
-      paymentStatus: "pending",
-      gatewayStatus: "pending",
       paymentMode: "online",
-      reservationExpiresAt: holdExpiresAt,
-      pricing: {
-        basePrice: price,
-        roomMrp: product.price,
-        effectiveRoomPrice: price,
-        gstAmount,
-        gstPercent: 18,
-        totalAmount,
-      },
-      paymentSummary: {
-        razorpayOrderId: rzpOrderId,
-        demo: isDemo,
-      },
       specialRequests: dto.specialRequests,
       checkInCode: cCode,
-    });
-
-    await this.historyModel.create({
-      bookingId: bookingDoc._id,
-      fromStatus: "none",
-      toStatus: "pending",
-      note: `Day Stay slot held for ${duration} mins until ${holdExpiresAt.toISOString()}`,
-      actorId: customerId,
-      actorRole: "customer",
-    });
-
-    return {
+    };
+    const holdSummary = {
       bookingId: bId,
       reservationNumber: resNo,
       productName: product.displayName || product.productCode,
@@ -257,6 +206,176 @@ export class DayStayBookingService {
         gstAmount,
         totalAmount,
       },
+      wallet: { applied: walletAmount, gatewayAmount, total: totalAmount },
+    };
+
+    // The wallet covers it all: confirm straight away, no gateway order.
+    if (walletAmount > 0 && gatewayAmount <= 0) {
+      const confirmed = await this.transactions.run(async (session) => {
+        const [doc] = await this.bookingModel.create(
+          [
+            {
+              ...bookingFields,
+              status: "confirmed",
+              paymentStatus: "fully_paid",
+              gatewayStatus: "success",
+              reservationExpiresAt: null,
+              pricing: {
+                basePrice: price,
+                roomMrp: product.price,
+                effectiveRoomPrice: price,
+                gstAmount,
+                gstPercent: 18,
+                totalAmount,
+                amountPaid: totalAmount,
+              },
+              paymentSummary: {
+                method: "wallet",
+                walletAmount: totalAmount,
+                paidAt: new Date(),
+              },
+            },
+          ],
+          { session },
+        );
+        await this.wallet.spend(
+          {
+            userId: customerId,
+            module: "day_stay",
+            sourceId: doc._id,
+            amount: totalAmount,
+            reference: bId,
+            description: `Paid for day stay ${bId}`,
+            actorId: customerId,
+          },
+          session,
+        );
+        await this.historyModel.create(
+          [
+            {
+              bookingId: doc._id,
+              fromStatus: "none",
+              toStatus: "confirmed",
+              note: "Day Stay paid in full from the Tirvona wallet",
+              actorId: customerId,
+              actorRole: "customer",
+            },
+          ],
+          { session },
+        );
+        await this.notificationModel.create(
+          [
+            {
+              userId: customerId,
+              bookingId: doc._id,
+              ashramId: dto.ashramId,
+              event: "day_stay_confirmed",
+              title: "Day Stay Confirmed",
+              message: `Your Day Rest / Freshen-Up reservation #${resNo} is confirmed. Check-in code: ${cCode}`,
+              status: "queued",
+            },
+          ],
+          { session },
+        );
+        return doc;
+      });
+      return {
+        ...holdSummary,
+        walletPaid: true,
+        status: "confirmed",
+        confirmation: this.confirmedResponse(confirmed),
+        reservationExpiresAt: null,
+      };
+    }
+
+    if (walletAmount > 0)
+      await this.wallet.placeHold({
+        userId: customerId,
+        module: "day_stay",
+        sourceId: bookingObjectId,
+        amount: walletAmount,
+        reference: bId,
+      });
+
+    let isDemo = false;
+    let rzpOrderId = `mock_order_${Date.now()}`;
+    const keyId = this.config.get<string>("razorpayKeyId") || process.env.RAZORPAY_KEY_ID || "";
+    try {
+      if (this.razorpay) {
+        try {
+          const order = await this.razorpay.orders.create({
+            amount: Math.round(gatewayAmount * 100),
+            currency: "INR",
+            receipt: bId,
+            notes: {
+              bookingType: product.productType,
+              productCode: product.productCode,
+              ashramId: dto.ashramId,
+            },
+          });
+          rzpOrderId = order.id;
+        } catch (err: any) {
+          // Never fall back to a mock order when live keys exist: that
+          // would let the booking be confirmed without a real payment.
+          this.logger.error(`Razorpay order creation failed: ${err.message}`);
+          throw new ServiceUnavailableException("Payment gateway is unavailable. Please try again shortly.");
+        }
+      } else if (this.demoPaymentsAllowed()) {
+        isDemo = true;
+      } else {
+        throw new ServiceUnavailableException("Online payments are not configured");
+      }
+      // A simulated order can never be paid for real, so in production it would
+      // only lock a slot for nothing. Refuse before anything is written.
+      if (isDemo && this.isProduction())
+        throw new ServiceUnavailableException(
+          "Online payment is temporarily unavailable. Please try again shortly.",
+        );
+    } catch (error) {
+      // Nothing was booked, so give back any wallet share parked above.
+      await this.wallet.releaseHold("day_stay", bookingObjectId);
+      throw error;
+    }
+
+    let bookingDoc: any;
+    try {
+      bookingDoc = await this.bookingModel.create({
+        ...bookingFields,
+        status: "pending",
+        paymentStatus: "pending",
+        gatewayStatus: "pending",
+        reservationExpiresAt: holdExpiresAt,
+        pricing: {
+          basePrice: price,
+          roomMrp: product.price,
+          effectiveRoomPrice: price,
+          gstAmount,
+          gstPercent: 18,
+          totalAmount,
+        },
+        paymentSummary: {
+          razorpayOrderId: rzpOrderId,
+          demo: isDemo,
+          walletAmount,
+          gatewayAmount,
+        },
+      });
+    } catch (error) {
+      await this.wallet.releaseHold("day_stay", bookingObjectId);
+      throw error;
+    }
+
+    await this.historyModel.create({
+      bookingId: bookingDoc._id,
+      fromStatus: "none",
+      toStatus: "pending",
+      note: `Day Stay slot held for ${duration} mins until ${holdExpiresAt.toISOString()}`,
+      actorId: customerId,
+      actorRole: "customer",
+    });
+
+    return {
+      ...holdSummary,
       demo: isDemo,
       keyId,
       razorpayKeyId: keyId,
@@ -357,7 +476,11 @@ export class DayStayBookingService {
     if (booking.status === "confirmed" || booking.paymentStatus === "fully_paid")
       return this.confirmedResponse(booking);
 
-    const expectedPaise = Math.round(Number(booking.pricing?.totalAmount ?? 0) * 100);
+    // Razorpay collects only the gateway share; the rest comes from the wallet.
+    const walletAmount = Number(booking.paymentSummary?.walletAmount ?? 0);
+    const expectedPaise =
+      Math.round(Number(booking.pricing?.totalAmount ?? 0) * 100) -
+      Math.round(walletAmount * 100);
     if (capturedAmountPaise !== undefined && Math.round(Number(capturedAmountPaise)) !== expectedPaise) {
       this.logger.error(
         `Day Stay ${booking.bookingId}: captured ${capturedAmountPaise} paise but expected ${expectedPaise}`,
@@ -389,12 +512,38 @@ export class DayStayBookingService {
       if (occupied) {
         await this.cancelAndRefund(booking, dto, customerId);
         throw new ConflictException(
-          "Your hold expired before payment was completed and the slot is no longer available. A full refund has been initiated.",
+          "Your hold expired before payment was completed and the slot is no longer available. The full amount has been added to your Tirvona wallet.",
         );
       }
     }
 
     const fromStatus = booking.status;
+
+    if (walletAmount > 0) {
+      try {
+        await this.wallet.spend({
+          userId: String(booking.customerId),
+          module: "day_stay",
+          sourceId: booking._id,
+          amount: walletAmount,
+          reference: booking.bookingId,
+          description: `Paid for day stay ${booking.bookingId}`,
+          actorId: customerId ?? null,
+        });
+      } catch (error) {
+        booking.paymentSummary = {
+          ...(booking.paymentSummary || {}),
+          razorpayPaymentId: dto.razorpayPaymentId,
+          reconciliationNote: "WALLET_SHARE_UNAVAILABLE_MANUAL_REVIEW",
+        };
+        booking.markModified("paymentSummary");
+        await booking.save();
+        this.logger.error(
+          `Day Stay ${booking.bookingId}: wallet share of ${walletAmount} could not be taken after payment`,
+        );
+        throw error;
+      }
+    }
 
     // 5. Update booking state to CONFIRMED
     booking.status = "confirmed";
@@ -459,47 +608,44 @@ export class DayStayBookingService {
   }
 
   /**
-   * Cancels a paid booking whose slot was lost and issues a real Razorpay
-   * refund. If the gateway refund fails the booking is flagged for manual
-   * action instead of claiming the money was returned.
+   * Cancels a paid booking whose slot was lost. The wallet share parked for
+   * it goes back to the wallet, and what was paid on Razorpay is credited to
+   * the pilgrim's Tirvona wallet — like every other refund — so it is never
+   * stuck waiting on a gateway refund.
    */
   private async cancelAndRefund(booking: any, dto: DayStayConfirmPaymentDto, customerId?: string) {
     const fromStatus = booking.status;
-    const amount = Number(booking.pricing?.totalAmount ?? 0);
-    let refundId: string | undefined;
-    let refundError: string | undefined;
+    const total = Number(booking.pricing?.totalAmount ?? 0);
+    const walletAmount = Number(booking.paymentSummary?.walletAmount ?? 0);
+    const gatewayAmount = Math.max(0, Math.round((total - walletAmount) * 100) / 100);
 
-    if (this.razorpay && dto.razorpayPaymentId && !String(dto.razorpayPaymentId).startsWith("mock_")) {
-      try {
-        const result: any = await this.razorpay.payments.refund(dto.razorpayPaymentId, {
-          amount: Math.round(amount * 100),
-          speed: "normal",
-          notes: { bookingId: booking.bookingId, reason: "day_stay_slot_lost" },
-        });
-        refundId = result?.id;
-      } catch (err: any) {
-        refundError = String(err?.error?.description ?? err?.message ?? "Gateway rejected the refund");
-        this.logger.error(`Day Stay refund failed for ${booking.bookingId}: ${refundError}`);
-      }
-    } else if (!this.demoPaymentsAllowed()) {
-      refundError = "Payment gateway not configured";
-    }
+    await this.wallet.releaseHold("day_stay", booking._id);
+    const refund = await this.wallet.credit({
+      userId: String(booking.customerId),
+      amount: gatewayAmount,
+      module: "day_stay",
+      category: "refund",
+      sourceId: booking._id,
+      reference: booking.bookingId,
+      description: `Refund for day stay ${booking.bookingId}: slot no longer available`,
+      idempotencyKey: `refund:day_stay:${String(booking._id)}`,
+    });
 
     booking.status = "cancelled";
-    booking.paymentStatus = refundError ? "fully_paid" : "refunded";
+    booking.paymentStatus = "refunded";
     booking.gatewayStatus = "success";
     booking.cancellation = {
       reason: "Payment succeeded after hold expired and slot was acquired by another booking.",
       date: new Date(),
-      refundAmount: amount,
-      refundTransactionId: refundId,
+      refundAmount: total,
+      refundTransactionId: refund ? String(refund._id) : undefined,
+      refundMethod: "wallet",
     };
     booking.paymentSummary = {
       ...(booking.paymentSummary || {}),
       razorpayPaymentId: dto.razorpayPaymentId,
       razorpaySignature: dto.razorpaySignature,
-      reconciliationNote: refundError ? "REFUND_FAILED_MANUAL_ACTION_REQUIRED" : "OVERBOOK_PREVENTED_AUTO_REFUND",
-      refundError,
+      reconciliationNote: "OVERBOOK_PREVENTED_WALLET_REFUND",
     };
     await booking.save();
 
@@ -507,9 +653,7 @@ export class DayStayBookingService {
       bookingId: booking._id,
       fromStatus,
       toStatus: "cancelled",
-      note: refundError
-        ? `Hold expired before payment capture. Slot occupied; REFUND FAILED (${refundError}) - manual refund required.`
-        : `Hold expired before payment capture. Slot occupied; refund ${refundId ?? "(demo)"} issued.`,
+      note: `Hold expired before payment capture. Slot occupied; ${total} returned to the Tirvona wallet.`,
       actorId: customerId || booking.customerId,
       actorRole: "system",
     });

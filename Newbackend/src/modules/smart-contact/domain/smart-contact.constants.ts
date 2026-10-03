@@ -197,6 +197,7 @@ export const RESERVED_SLUGS: readonly string[] = [
   "travel-guides",
   "video",
   "volunteer",
+  "wallet",
 ];
 
 export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;

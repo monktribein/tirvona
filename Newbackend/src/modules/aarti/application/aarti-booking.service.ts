@@ -29,6 +29,8 @@ import type {
   ReviewAartiDto,
 } from "../presentation/dtos/aarti.dto";
 import { AartiPricingService } from "./aarti-pricing.service";
+import { WalletService } from "../../wallet/application/wallet.service";
+import { roundMoney } from "../../wallet/domain/wallet.constants";
 
 @Injectable()
 export class AartiBookingService {
@@ -47,6 +49,7 @@ export class AartiBookingService {
     private readonly notifications: Model<any>,
     @InjectModel(AARTI_MODEL.Review) private readonly reviews: Model<any>,
     @InjectModel(AARTI_MODEL.Session) private readonly sessions: Model<any>,
+    private readonly wallet: WalletService,
   ) {}
 
   async create(
@@ -185,7 +188,11 @@ export class AartiBookingService {
     );
   }
 
-  async createPaymentOrder(id: string, user: AuthenticatedUser): Promise<any> {
+  async createPaymentOrder(
+    id: string,
+    user: AuthenticatedUser,
+    options: { useWallet?: boolean } = {},
+  ): Promise<any> {
     const booking = await this.ownBooking(id, user.id);
     if (booking.paymentStatus === "paid")
       throw new AartiException("This booking is already paid.", 400);
@@ -200,6 +207,33 @@ export class AartiBookingService {
         410,
       );
 
+    const total = roundMoney(Number(booking.pricing.totalAmount));
+    const { walletAmount, gatewayAmount } = await this.wallet.planSplit(
+      user.id,
+      total,
+      options.useWallet,
+      { module: "aarti", sourceId: booking._id },
+    );
+    if (walletAmount > 0 && gatewayAmount <= 0)
+      return this.payWithWallet(id, user);
+    if (walletAmount > 0)
+      await this.wallet.placeHold({
+        userId: user.id,
+        module: "aarti",
+        sourceId: booking._id,
+        amount: walletAmount,
+        reference: booking.bookingReference,
+        expiresAt: booking.reservationExpiresAt,
+      });
+    else await this.wallet.releaseHold("aarti", booking._id);
+    const walletInfo = { applied: walletAmount, gatewayAmount, total };
+    // A newer order supersedes any earlier unpaid one, so confirmation always
+    // reads the split the pilgrim actually chose.
+    await this.payments.updateMany(
+      { bookingId: booking._id, purpose: "booking", status: "pending" },
+      { $set: { status: "failed", failureReason: "Superseded by a newer payment attempt" } },
+    );
+
     const keyId = this.config.get<string>("razorpayKeyId");
     const keySecret = this.config.get<string>("razorpayKeySecret");
     if (!keyId || !keySecret) {
@@ -207,25 +241,33 @@ export class AartiBookingService {
         bookingId: booking._id,
         userId: user.id,
         ashramId: booking.ashramId,
-        amount: booking.pricing.totalAmount,
+        amount: gatewayAmount,
+        walletAmount,
         purpose: "booking",
         method: "demo",
         status: "pending",
       });
-      return { demo: true, data: { amount: booking.pricing.totalAmount } };
+      return { demo: true, wallet: walletInfo, data: { amount: gatewayAmount } };
     }
 
     const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
-    const order = await razorpay.orders.create({
-      amount: Math.round(booking.pricing.totalAmount * 100),
-      currency: "INR",
-      receipt: booking.bookingReference,
-    });
+    let order: any;
+    try {
+      order = await razorpay.orders.create({
+        amount: Math.round(gatewayAmount * 100),
+        currency: "INR",
+        receipt: booking.bookingReference,
+      });
+    } catch (error) {
+      await this.wallet.releaseHold("aarti", booking._id);
+      throw error;
+    }
     await this.payments.create({
       bookingId: booking._id,
       userId: user.id,
       ashramId: booking.ashramId,
-      amount: booking.pricing.totalAmount,
+      amount: gatewayAmount,
+      walletAmount,
       purpose: "booking",
       method: "razorpay",
       status: "pending",
@@ -233,11 +275,100 @@ export class AartiBookingService {
     });
     return {
       demo: false,
+      wallet: walletInfo,
       data: {
         orderId: order.id,
         amount: order.amount,
         currency: order.currency,
         keyId,
+      },
+    };
+  }
+
+  /** Pays the whole booking from the pilgrim's wallet and confirms it. */
+  private async payWithWallet(id: string, user: AuthenticatedUser): Promise<any> {
+    const result = await this.transactions.run(async (txSession) => {
+      const booking = await this.loadPayableBooking(id, user.id, txSession);
+      const total = roundMoney(Number(booking.pricing.totalAmount));
+      await this.payments.updateMany(
+        { bookingId: booking._id, purpose: "booking", status: "pending" },
+        { $set: { status: "failed", failureReason: "Paid from the Tirvona wallet" } },
+        { session: txSession },
+      );
+      const [payment] = await this.payments.create(
+        [
+          {
+            bookingId: booking._id,
+            userId: user.id,
+            ashramId: booking.ashramId,
+            amount: 0,
+            walletAmount: total,
+            purpose: "booking",
+            method: "wallet",
+            status: "pending",
+          },
+        ],
+        { session: txSession },
+      );
+      const spent = await this.wallet.spend(
+        {
+          userId: user.id,
+          module: "aarti",
+          sourceId: booking._id,
+          amount: total,
+          reference: booking.bookingReference,
+          description: `Paid for aarti pass ${booking.bookingReference}`,
+          actorId: user.id,
+        },
+        txSession,
+      );
+      return this.settlePayment(txSession, booking, payment, user, {
+        method: "wallet",
+        transactionId: `WLT-${String(spent._id).slice(-10).toUpperCase()}`,
+        gateway: { orderId: "", paymentId: "", signature: "", provider: "wallet" },
+      });
+    });
+    return {
+      walletPaid: true,
+      wallet: { applied: result.payment.walletAmount, gatewayAmount: 0 },
+      data: await this.withQrImage(result),
+    };
+  }
+
+  /** The pilgrim's own booking, still open for payment, read in `txSession`. */
+  private async loadPayableBooking(
+    id: string,
+    userId: string,
+    txSession: ClientSession,
+  ): Promise<any> {
+    const booking = await this.bookings
+      .findOne({ _id: id, customerId: userId })
+      .session(txSession);
+    if (!booking) throw new AartiException("Booking not found.", 404);
+    if (booking.paymentStatus === "paid")
+      throw new ConflictException("This booking is already paid.");
+    if (
+      booking.status !== "pending" ||
+      (booking.reservationExpiresAt &&
+        booking.reservationExpiresAt < new Date())
+    )
+      throw new AartiException(
+        "Your pass hold expired. Please book again.",
+        410,
+      );
+    return booking;
+  }
+
+  private async withQrImage(result: any): Promise<any> {
+    return {
+      ...result,
+      qr: {
+        ...result.pass,
+        image: await QRCode.toDataURL(result.pass.token, {
+          width: 512,
+          margin: 2,
+          errorCorrectionLevel: "M",
+        }),
       },
     };
   }
@@ -331,21 +462,7 @@ export class AartiBookingService {
       throw new AartiException("Payment signature verification failed.", 400);
 
     const result = await this.transactions.run(async (txSession) => {
-      const booking = await this.bookings
-        .findOne({ _id: id, customerId: user.id })
-        .session(txSession);
-      if (!booking) throw new AartiException("Booking not found.", 404);
-      if (booking.paymentStatus === "paid")
-        throw new ConflictException("This booking is already paid.");
-      if (
-        booking.status !== "pending" ||
-        (booking.reservationExpiresAt &&
-          booking.reservationExpiresAt < new Date())
-      )
-        throw new AartiException(
-          "Your pass hold expired. Please book again.",
-          410,
-        );
+      const booking = await this.loadPayableBooking(id, user.id, txSession);
 
       let payment = await this.payments
         .findOne({
@@ -369,115 +486,139 @@ export class AartiBookingService {
           ],
           { session: txSession },
         );
-      payment.status = "paid";
-      payment.method = this.config.get<string>("razorpayKeySecret")
-        ? "razorpay"
-        : dto.method || "demo";
-      payment.paidAt = new Date();
-      payment.transactionId = dto.razorpay_payment_id || `ARTXN-${Date.now()}`;
-      payment.gateway = {
-        orderId: dto.razorpay_order_id || "",
-        paymentId: dto.razorpay_payment_id || "",
-        signature: dto.razorpay_signature || "",
-        provider: "razorpay",
-      };
-      await payment.save({ session: txSession });
-
-      const session = await this.sessions
-        .findById(booking.sessionId)
-        .session(txSession);
-      const commission = await this.pricingService.commission(
-        session,
-        booking.pricing.totalAmount,
-      );
-
-      booking.status = "upcoming";
-      booking.paymentStatus = "paid";
-      booking.pricing.amountPaid = booking.pricing.totalAmount;
-      booking.commission = commission;
-      booking.reservationExpiresAt = null;
-      booking.history.push({
-        status: "upcoming",
-        note: "Payment confirmed",
-        updatedBy: user.id,
+      if (Number(payment.walletAmount ?? 0) > 0)
+        await this.wallet.spend(
+          {
+            userId: user.id,
+            module: "aarti",
+            sourceId: booking._id,
+            amount: Number(payment.walletAmount),
+            reference: booking.bookingReference,
+            description: `Paid for aarti pass ${booking.bookingReference}`,
+            actorId: user.id,
+          },
+          txSession,
+        );
+      return this.settlePayment(txSession, booking, payment, user, {
+        method: this.config.get<string>("razorpayKeySecret")
+          ? "razorpay"
+          : dto.method || "demo",
+        transactionId: dto.razorpay_payment_id || `ARTXN-${Date.now()}`,
+        gateway: {
+          orderId: dto.razorpay_order_id || "",
+          paymentId: dto.razorpay_payment_id || "",
+          signature: dto.razorpay_signature || "",
+          provider: "razorpay",
+        },
       });
-      await booking.save({ session: txSession });
+    });
+    return this.withQrImage(result);
+  }
 
-      await this.commissions.updateOne(
-        { bookingId: booking._id },
+  /**
+   * Confirms a booking whose payment is verified — by Razorpay or by the
+   * wallet — issuing its pass, commission and ledger rows exactly once.
+   */
+  private async settlePayment(
+    txSession: ClientSession,
+    booking: any,
+    payment: any,
+    user: AuthenticatedUser,
+    proof: {
+      method: string;
+      transactionId: string;
+      gateway: Record<string, string>;
+    },
+  ): Promise<any> {
+    payment.status = "paid";
+    payment.method = proof.method;
+    payment.paidAt = new Date();
+    payment.transactionId = proof.transactionId;
+    payment.gateway = proof.gateway;
+    await payment.save({ session: txSession });
+
+    const session = await this.sessions
+      .findById(booking.sessionId)
+      .session(txSession);
+    const commission = await this.pricingService.commission(
+      session,
+      booking.pricing.totalAmount,
+    );
+
+    booking.status = "upcoming";
+    booking.paymentStatus = "paid";
+    booking.pricing.amountPaid = booking.pricing.totalAmount;
+    booking.commission = commission;
+    booking.reservationExpiresAt = null;
+    booking.history.push({
+      status: "upcoming",
+      note: "Payment confirmed",
+      updatedBy: user.id,
+    });
+    await booking.save({ session: txSession });
+
+    await this.commissions.updateOne(
+      { bookingId: booking._id },
+      {
+        $set: {
+          ashramId: booking.ashramId,
+          sessionId: booking.sessionId,
+          grossAmount: booking.pricing.totalAmount,
+          commissionPercent: commission.percent,
+          commissionAmount: commission.amount,
+          ashramEarning: commission.ashramEarning,
+          settlementStatus: "pending",
+        },
+        $setOnInsert: { bookingId: booking._id },
+      },
+      { upsert: true, session: txSession },
+    );
+
+    await this.ledger.create(
+      [
         {
-          $set: {
-            ashramId: booking.ashramId,
-            sessionId: booking.sessionId,
-            grossAmount: booking.pricing.totalAmount,
+          bookingId: booking._id,
+          paymentId: payment._id,
+          ashramId: booking.ashramId,
+          sessionId: booking.sessionId,
+          type: "booking",
+          direction: "credit",
+          amount: booking.pricing.totalAmount,
+          description: `Aarti booking ${booking.bookingReference}`,
+          reference: aartiTransactionReference(),
+          meta: {
             commissionPercent: commission.percent,
             commissionAmount: commission.amount,
-            ashramEarning: commission.ashramEarning,
-            settlementStatus: "pending",
+            donationAmount: booking.pricing.donationAmount,
           },
-          $setOnInsert: { bookingId: booking._id },
+          recordedBy: user.id,
         },
-        { upsert: true, session: txSession },
-      );
+      ],
+      { session: txSession },
+    );
 
-      await this.ledger.create(
-        [
-          {
-            bookingId: booking._id,
-            paymentId: payment._id,
-            ashramId: booking.ashramId,
-            sessionId: booking.sessionId,
-            type: "booking",
-            direction: "credit",
-            amount: booking.pricing.totalAmount,
-            description: `Aarti booking ${booking.bookingReference}`,
-            reference: aartiTransactionReference(),
-            meta: {
-              commissionPercent: commission.percent,
-              commissionAmount: commission.amount,
-              donationAmount: booking.pricing.donationAmount,
-            },
-            recordedBy: user.id,
+    const pass = await this.issuePass(booking, txSession);
+    await this.notifications.create(
+      [
+        {
+          userId: booking.customerId,
+          bookingId: booking._id,
+          event: "booking_confirmed",
+          title: "Aarti Pass Confirmed",
+          message: `Your aarti booking ${booking.bookingReference} is confirmed.`,
+          channel: "in_app",
+          status: "queued",
+          recipientPhone: booking.contactPhone || "",
+          meta: {
+            bookingReference: booking.bookingReference,
+            displayCode: pass.displayCode,
+            sessionName: session?.name ?? "",
           },
-        ],
-        { session: txSession },
-      );
-
-      const pass = await this.issuePass(booking, txSession);
-      await this.notifications.create(
-        [
-          {
-            userId: booking.customerId,
-            bookingId: booking._id,
-            event: "booking_confirmed",
-            title: "Aarti Pass Confirmed",
-            message: `Your aarti booking ${booking.bookingReference} is confirmed.`,
-            channel: "in_app",
-            status: "queued",
-            recipientPhone: booking.contactPhone || "",
-            meta: {
-              bookingReference: booking.bookingReference,
-              displayCode: pass.displayCode,
-              sessionName: session?.name ?? "",
-            },
-          },
-        ],
-        { session: txSession },
-      );
-      return { booking, payment, pass };
-    });
-
-    return {
-      ...result,
-      qr: {
-        ...result.pass,
-        image: await QRCode.toDataURL(result.pass.token, {
-          width: 512,
-          margin: 2,
-          errorCorrectionLevel: "M",
-        }),
-      },
-    };
+        },
+      ],
+      { session: txSession },
+    );
+    return { booking, payment, pass };
   }
 
   private async renderPass(
@@ -568,6 +709,7 @@ export class AartiBookingService {
     const refund = await this.pricingService.refundQuote(existing, session);
     if (!refund.allowed) throw new AartiException(refund.message, 400);
 
+    let toWallet = false;
     const booking = await this.transactions.run(async (txSession) => {
       const row = await this.bookings
         .findOne({
@@ -583,6 +725,8 @@ export class AartiBookingService {
           400,
         );
 
+      // The refund goes straight to the pilgrim's Tirvona wallet.
+      toWallet = Boolean(refund.refundAmount) && Boolean(row.customerId);
       row.status = "cancelled";
       row.cancellation = {
         reason: dto.reason || "Cancelled by user",
@@ -590,6 +734,7 @@ export class AartiBookingService {
         cancelledBy: user.id,
         refundAmount: refund.refundAmount,
         refundReference: refund.refundAmount ? aartiRefundReference() : "",
+        ...(toWallet ? { refundMethod: "wallet" } : {}),
       };
       row.pricing.refundAmount = refund.refundAmount;
       if (refund.refundAmount) row.paymentStatus = "refunded";
@@ -612,6 +757,23 @@ export class AartiBookingService {
         { $set: { status: "revoked", revokedReason: "Booking cancelled" } },
         { session: txSession },
       );
+      await this.wallet.releaseHold("aarti", row._id, txSession);
+      if (toWallet)
+        await this.wallet.credit(
+          {
+            userId: String(row.customerId),
+            amount: refund.refundAmount,
+            module: "aarti",
+            category: "refund",
+            sourceId: row._id,
+            reference: row.bookingReference,
+            description: `Refund for cancelled aarti booking ${row.bookingReference}`,
+            idempotencyKey: `refund:aarti:${String(row._id)}`,
+            actorId: user.id,
+            actorRole: user.role,
+          },
+          txSession,
+        );
 
       if (refund.refundAmount) {
         await this.ledger.create(
@@ -650,7 +812,9 @@ export class AartiBookingService {
             event: refund.refundAmount ? "refund" : "cancellation",
             title: "Aarti Booking Cancelled",
             message: refund.refundAmount
-              ? `Booking ${row.bookingReference} was cancelled. ₹${refund.refundAmount} will be refunded.`
+              ? toWallet
+                ? `Booking ${row.bookingReference} was cancelled. ₹${refund.refundAmount} has been added to your Tirvona wallet.`
+                : `Booking ${row.bookingReference} was cancelled. ₹${refund.refundAmount} will be refunded.`
               : `Booking ${row.bookingReference} was cancelled.`,
             channel: "in_app",
             status: "queued",
@@ -662,7 +826,11 @@ export class AartiBookingService {
       );
       return row;
     });
-    return { booking, refund };
+    return {
+      booking,
+      refund,
+      refundMethod: toWallet ? "wallet" : refund.refundAmount ? "gateway" : null,
+    };
   }
 
   async review(

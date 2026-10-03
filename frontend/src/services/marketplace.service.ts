@@ -120,6 +120,7 @@ export const checkoutApi = {
     address?: Record<string, unknown>;
     notes?: string;
     idempotencyKey?: string;
+    useWallet?: boolean;
   }) => api.post("/marketplace/checkout/orders", payload),
   confirmPayment: (id: string, payload: Record<string, string>) =>
     api.post(`/marketplace/checkout/orders/${id}/payment`, payload),

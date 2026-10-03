@@ -221,6 +221,9 @@ export const MasterOrderSchema = new Schema(
       shippingFee: Number,
       commissionAmount: Number,
       totalAmount: Number,
+      // How the total is paid: Tirvona wallet share + Razorpay share.
+      walletAmount: { type: Number, default: 0 },
+      gatewayAmount: Number,
       amountPaid: { type: Number, default: 0 },
       amountRefunded: { type: Number, default: 0 },
       currency: { type: String, default: "INR" },

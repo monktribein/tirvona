@@ -26,6 +26,7 @@ import {
 } from "../../utils/format";
 import { SUPPORT_CONFIG } from "../../constants/support";
 import { useNotifications } from "../../contexts/NotificationContext";
+import { notifyWalletChanged, walletRefundText } from "../../services/wallet.service";
 
 interface BookingDetailsData {
   _id: string;
@@ -183,8 +184,9 @@ export const BookingDetailPage: React.FC = () => {
         "Cancelled from Guest Booking Details",
       );
       if (res.data?.success) {
+        notifyWalletChanged();
         await fetchBookingDetails();
-        addNotification("Booking Cancelled", `${booking.bookingId} was cancelled successfully.`, "success");
+        addNotification("Booking Cancelled", `${booking.bookingId} was cancelled successfully.${walletRefundText(res.data.data)}`, "success");
       } else {
         setCancelError(res.data?.message || "Could not cancel booking.");
         addNotification("Cancellation Failed", res.data?.message || "Could not cancel booking.", "error");

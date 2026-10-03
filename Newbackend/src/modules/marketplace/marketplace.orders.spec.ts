@@ -174,7 +174,7 @@ describe("Marketplace orders", () => {
       });
       const [vo]: any[] = await h.models.vendorOrders.find({ masterOrderId: order._id }).lean();
       expect(vo.fulfillmentStatus).toBe("refunded");
-      expect(h.gateway.payments.refund).toHaveBeenCalled();
+      expect(h.wallet.credit).toHaveBeenCalled();
       const prod: any = await h.models.products.findById(p._id).lean();
       expect(prod.stock).toBe(0);
       expect(prod.inventory.sold).toBe(1);
@@ -191,7 +191,7 @@ describe("Marketplace orders", () => {
       const view = await h.orderService.cancelMine(buyer, String(order._id), "Changed my mind");
       expect(view.status).toBe("cancelled");
       expect(view.paymentStatus).toBe("refunded");
-      expect(h.gateway.payments.refund).toHaveBeenCalledTimes(2);
+      expect(h.wallet.credit).toHaveBeenCalledTimes(2);
       expect(((await h.models.products.findById(pb._id).lean()) as any).stock).toBe(3);
       expect(await h.ledger.balance(b.vendor._id)).toMatchObject({ pending: 0, available: 0 });
     });
@@ -206,15 +206,15 @@ describe("Marketplace orders", () => {
       await expect(h.orderService.cancelMine(buyer, String(order._id))).rejects.toThrow(/already shipped/);
     });
 
-    it("a failed gateway refund is flagged for retry, never marked refunded", async () => {
+    it("a failed wallet refund is flagged for retry, never marked refunded", async () => {
       const { h, cat, a } = await setup();
       const p = await h.publishedProduct(a.user, String(cat._id));
       const buyer = makeUser();
       const { order } = await h.paidOrder(buyer, [{ productId: String(p._id), quantity: 1 }]);
-      h.gateway.payments.refund.mockRejectedValueOnce(new Error("gateway down"));
+      h.wallet.credit.mockRejectedValueOnce(new Error("wallet down"));
       await h.orderService.cancelMine(buyer, String(order._id));
       let [vo]: any[] = await h.models.vendorOrders.find({ masterOrderId: order._id }).lean();
-      expect(vo).toMatchObject({ fulfillmentStatus: "cancelled", refundError: "gateway down" });
+      expect(vo).toMatchObject({ fulfillmentStatus: "cancelled", refundError: "wallet down" });
       await h.orderService.adminRetryRefund(h.admin, String(vo._id));
       [vo] = await h.models.vendorOrders.find({ masterOrderId: order._id }).lean();
       expect(vo.fulfillmentStatus).toBe("refunded");

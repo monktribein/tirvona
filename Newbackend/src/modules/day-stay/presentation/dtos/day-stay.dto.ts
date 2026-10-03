@@ -100,6 +100,11 @@ export class DayStayHoldDto {
   @IsOptional()
   @IsString()
   specialRequests?: string;
+
+  /** Apply the pilgrim's Tirvona wallet balance before Razorpay. */
+  @IsOptional()
+  @IsBoolean()
+  useWallet?: boolean;
 }
 
 export class DayStayConfirmPaymentDto {

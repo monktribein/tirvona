@@ -220,6 +220,8 @@ const SELF_SUMMARISING_PATHS = [
   "/ashram-admin/total-rooms",
   "/ashram-owner/total-rooms",
   "/admin/refunds",
+  "/admin/wallets",
+  "/admin/wallets/withdrawals",
   "/admin/payouts",
   "/owner/payouts",
   "/ashram-admin/payouts",

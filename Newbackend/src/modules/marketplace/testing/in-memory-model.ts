@@ -199,7 +199,7 @@ export function createInMemoryModel(name: string, schema: Schema, opts: InMemory
         const hit = all().find(f);
         if (!hit) {
           if (!options.upsert) return [];
-          const created: any = cast({});
+          const created: any = cast({ ...normalizeEq(filter), ...(update?.$setOnInsert ?? {}) });
           applyUpdate(created, update, true);
           store.set(created._id, created);
           return [created];

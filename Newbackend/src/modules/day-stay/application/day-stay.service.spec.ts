@@ -8,7 +8,7 @@ import { DayStayBookingService } from "../application/day-stay-booking.service";
 import { DayStayProductsService } from "../application/day-stay-products.service";
 import { DayStayVendorService } from "../application/day-stay-vendor.service";
 import { TransactionService } from "../../../common/database/transaction.service";
-import { ConflictException } from "@nestjs/common";
+import { WalletService } from "../../wallet/application/wallet.service";
 import { isDayStayBlocked } from "../application/day-stay-inventory.service";
 import { istDateString } from "../domain/day-stay-time";
 
@@ -62,8 +62,25 @@ describe("DayStay Engine Unit & Integration Tests", () => {
   /** Per-test config overrides; anything unset reads as "mock_secret". */
   let configOverrides: Record<string, string | undefined> = {};
 
+  /** The pilgrim has no wallet balance unless a test says otherwise. */
+  const mockWallet: any = {
+    planSplit: jest.fn(),
+    placeHold: jest.fn(),
+    releaseHold: jest.fn(),
+    spend: jest.fn(),
+    credit: jest.fn(),
+  };
+
   beforeEach(async () => {
     configOverrides = {};
+    mockWallet.planSplit.mockImplementation(async (_userId: unknown, total: number) => ({
+      walletAmount: 0,
+      gatewayAmount: total,
+    }));
+    mockWallet.placeHold.mockResolvedValue(null);
+    mockWallet.releaseHold.mockResolvedValue(0);
+    mockWallet.spend.mockResolvedValue(null);
+    mockWallet.credit.mockResolvedValue({ _id: "wtx_001" });
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         DayStayInventoryService,
@@ -80,6 +97,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
           provide: TransactionService,
           useValue: { run: jest.fn((cb) => cb({})) },
         },
+        { provide: WalletService, useValue: mockWallet },
         {
           provide: ConfigService,
           useValue: {
@@ -552,7 +570,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
       expect(mockNotificationModel.create).not.toHaveBeenCalled();
     });
 
-    it("H. Payment succeeds after hold expiry when slot is occupied -> triggers auto-refund state", async () => {
+    it("H. Payment succeeds after hold expiry when slot is occupied -> refunded to the wallet", async () => {
       const expiredDoc = createPendingBookingDoc({
         reservationExpiresAt: new Date(Date.now() - 60000), // Expired 1 min ago
       });
@@ -597,15 +615,19 @@ describe("DayStay Engine Unit & Integration Tests", () => {
           },
           "cust_01",
         ),
-      ).rejects.toThrow(/full refund has been initiated/);
+      ).rejects.toThrow(/added to your Tirvona wallet/);
 
       expect(expiredDoc.status).toBe("cancelled");
       expect(expiredDoc.paymentStatus).toBe("refunded");
-      expect(refund).toHaveBeenCalledWith("pay_rzp_001", expect.objectContaining({ amount: 82600 }));
-      expect((expiredDoc as any).cancellation.refundTransactionId).toBe("rfnd_001");
+      expect(refund).not.toHaveBeenCalled();
+      expect(mockWallet.credit).toHaveBeenCalledWith(
+        expect.objectContaining({ amount: 826, module: "day_stay", category: "refund" }),
+      );
+      expect((expiredDoc as any).cancellation.refundTransactionId).toBe("wtx_001");
+      expect((expiredDoc as any).cancellation.refundMethod).toBe("wallet");
     });
 
-    it("H3. If the gateway refund fails the booking is flagged for manual refund, not marked refunded", async () => {
+    it("H3. If the wallet credit fails the booking is not marked refunded", async () => {
       const expiredDoc = createPendingBookingDoc({
         reservationExpiresAt: new Date(Date.now() - 60000),
         dayStayDetails: {
@@ -616,9 +638,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
         },
       });
       mockBookingModel.findOne.mockResolvedValue(expiredDoc);
-      (bookingService as any).razorpay = {
-        payments: { refund: jest.fn().mockRejectedValue(new Error("gateway down")) },
-      };
+      mockWallet.credit.mockRejectedValueOnce(new Error("wallet down"));
       mockAshramModel.findById.mockReturnValue({
         lean: jest.fn().mockResolvedValue({
           _id: "ashram_01",
@@ -655,10 +675,9 @@ describe("DayStay Engine Unit & Integration Tests", () => {
           },
           "cust_01",
         ),
-      ).rejects.toThrow(ConflictException);
-      expect(expiredDoc.status).toBe("cancelled");
-      expect(expiredDoc.paymentStatus).toBe("fully_paid");
-      expect((expiredDoc as any).paymentSummary.reconciliationNote).toBe("REFUND_FAILED_MANUAL_ACTION_REQUIRED");
+      ).rejects.toThrow("wallet down");
+      expect(expiredDoc.paymentStatus).not.toBe("refunded");
+      expect(expiredDoc.status).not.toBe("cancelled");
     });
 
     it("S1. Demo/mock markers cannot bypass the signature when live keys are configured", async () => {

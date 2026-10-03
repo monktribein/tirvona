@@ -14,6 +14,7 @@ import {
   Store,
   Truck,
 } from "lucide-react";
+import { notifyWalletChanged } from "../../services/wallet.service";
 
 interface OrderItem {
   _id?: string;
@@ -217,7 +218,14 @@ export const ProfileOrdersPage: React.FC = () => {
 
   const cancelOrder = (order: MasterOrder) => {
     if (!window.confirm(`Cancel the items in ${order.orderNumber} that have not shipped yet?`)) return;
-    run(order._id, () => checkoutApi.cancel(order._id, "Cancelled by customer"), `${order.orderNumber} has been cancelled. Paid amounts are refunded to the original payment method.`);
+    run(
+      order._id,
+      async () => {
+        await checkoutApi.cancel(order._id, "Cancelled by customer");
+        notifyWalletChanged();
+      },
+      `${order.orderNumber} has been cancelled. Paid amounts are refunded to your Tirvona wallet.`,
+    );
   };
 
   const requestReturn = (vo: VendorOrder) => {

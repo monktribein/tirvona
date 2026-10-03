@@ -28,12 +28,15 @@ import {
   BookOpen,
   HandHeart,
   LifeBuoy,
+  Wallet,
 } from "lucide-react";
 import { VisitorArticlesTab } from "./VisitorArticlesTab";
 import { VolunteerApplicationsTab } from "./VolunteerApplicationsTab";
 import ProfileOrdersPage from "./ProfileOrdersPage";
 import ProfileSupportTab from "./ProfileSupportTab";
+import WalletPage from "../WalletPage";
 import { useAuth } from "../../contexts/AuthContext";
+import { useWallet } from "../../contexts/WalletContext";
 import { useNotifications } from "../../contexts/NotificationContext";
 import {
   EnterpriseModal,
@@ -48,6 +51,7 @@ import useMyBookings, {
 } from "../../hooks/useMyBookings";
 import { isParkingRole } from "../../utils/roleRedirect";
 import { realEmail } from "../../utils/email";
+import { notifyWalletChanged, walletRefundText } from "../../services/wallet.service";
 
 const BOOKING_TABS: { key: BookingCategory; label: string }[] = [
   { key: "upcoming", label: "Upcoming" },
@@ -82,6 +86,7 @@ const formatDateTime = (value?: string) =>
 
 export const ProfileMainPage: React.FC = () => {
   const { user, logout, refreshUser } = useAuth();
+  const { balance: walletBalance } = useWallet();
   const { addNotification, confirmAction } = useNotifications();
   const location = useLocation();
   const navigate = useNavigate();
@@ -109,6 +114,7 @@ export const ProfileMainPage: React.FC = () => {
     | "orders"
     | "wishlist"
     | "payments"
+    | "wallet"
     | "support"
     | "settings" => {
     if (
@@ -125,6 +131,7 @@ export const ProfileMainPage: React.FC = () => {
     if (pathname.includes("/profile/orders")) return "orders";
     if (pathname.includes("/profile/wishlist")) return "wishlist";
     if (pathname.includes("/profile/payments")) return "payments";
+    if (pathname.includes("/profile/wallet")) return "wallet";
     if (pathname.includes("/profile/support")) return "support";
     if (pathname.includes("/profile/settings")) return "settings";
     return "overview";
@@ -295,10 +302,11 @@ export const ProfileMainPage: React.FC = () => {
           : await bookingService.cancel(booking.id, "Cancelled from profile");
 
       if (res.data?.success) {
+        notifyWalletChanged();
         await refresh();
         addNotification(
           "Booking Cancelled",
-          `Booking ${booking.reference} was cancelled.`,
+          `Booking ${booking.reference} was cancelled.${walletRefundText(res.data.data)}`,
           "success",
         );
       } else {
@@ -497,6 +505,15 @@ export const ProfileMainPage: React.FC = () => {
       desc: "Favorite stays & stays",
       icon: <Heart size={18} />,
       iconBg: "bg-rose-50 dark:bg-rose-950/40 text-rose-600",
+    },
+    {
+      key: "wallet",
+      path: "/profile/wallet",
+      label: "Tirvona Wallet",
+      desc: "Balance, refunds & transfers",
+      icon: <Wallet size={18} />,
+      iconBg: "bg-[#FFF4E5]/40 text-[#F28C28]",
+      badge: walletBalance > 0 ? formatCurrency(walletBalance) : undefined,
     },
     {
       key: "payments",
@@ -926,6 +943,8 @@ export const ProfileMainPage: React.FC = () => {
             {activeTab === "volunteer" && <VolunteerApplicationsTab />}
 
             {activeTab === "orders" && <ProfileOrdersPage />}
+
+            {activeTab === "wallet" && <WalletPage />}
 
             {activeTab === "support" && <ProfileSupportTab />}
 

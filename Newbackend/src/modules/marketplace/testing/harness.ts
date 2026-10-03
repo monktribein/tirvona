@@ -100,9 +100,18 @@ export function buildMarketplace(opts: { razorpay?: boolean; nodeEnv?: string } 
   const inventory = new InventoryService(models.products);
   const productService = new ProductService(models.products, models.vendors, models.categories, vendorService, categoryService, inventory, audit);
   const ledger = new LedgerService(models.ledger, audit);
+  // Buyers start with an empty wallet, so checkouts go fully to the gateway;
+  // refunds land in the wallet and are observed through `credit`.
+  const wallet = {
+    planSplit: jest.fn(async (_userId: unknown, total: number) => ({ walletAmount: 0, gatewayAmount: total })),
+    placeHold: jest.fn(async () => null),
+    releaseHold: jest.fn(async () => 0),
+    spend: jest.fn(async () => null),
+    credit: jest.fn(async () => ({ _id: `wtx_${Math.random().toString(36).slice(2)}` })),
+  };
   const orderService = new OrderService(
     models.products, models.vendors, models.masterOrders, models.vendorOrders, models.addresses,
-    inventory, ledger, settings, vendorService, audit, transactions, config,
+    inventory, ledger, settings, vendorService, audit, transactions, config, wallet as any,
   );
   (orderService as any).razorpay = useRazorpay ? gateway : null;
   const payoutService = new PayoutService(models.payouts, models.vendors, models.bankAccounts, payoutProvider as unknown as PayoutProvider, crypto, ledger, settings, vendorService, audit);
@@ -161,7 +170,7 @@ export function buildMarketplace(opts: { razorpay?: boolean; nodeEnv?: string } 
   }
 
   return {
-    models, config, gateway, payoutProvider, admin,
+    models, config, gateway, wallet, payoutProvider, admin,
     audit, settings, vendorService, categoryService, inventory, productService, ledger, orderService, payoutService, reviewService,
     activeVendor, category, publishedProduct, paidOrder, address,
   };

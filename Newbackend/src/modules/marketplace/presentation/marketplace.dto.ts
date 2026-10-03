@@ -232,6 +232,8 @@ export class CheckoutDto extends QuoteDto {
   @IsOptional() @IsString() @MaxLength(500) notes?: string;
   /** Client-generated key; retrying checkout with the same key returns the same order. */
   @IsOptional() @IsString() @Length(8, 80) idempotencyKey?: string;
+  /** Apply the buyer's Tirvona wallet balance before Razorpay. */
+  @IsOptional() @IsBoolean() useWallet?: boolean;
 }
 
 export class ConfirmPaymentDto {

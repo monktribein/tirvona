@@ -16,6 +16,7 @@ import {
   PaginationDto,
   ReviewParkingDto,
 } from "../dtos/parking.dto";
+import { UseWalletDto } from "../../../wallet/presentation/use-wallet.dto";
 
 @ApiTags("Parking Bookings")
 @ApiBearerAuth()
@@ -119,8 +120,11 @@ export class ParkingBookingController {
   @Post(":id/payment/order") async order(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
+    @Body() dto: UseWalletDto,
   ) {
-    const result = await this.service.createPaymentOrder(id, user);
+    const result = await this.service.createPaymentOrder(id, user, {
+      useWallet: dto?.useWallet,
+    });
     return { success: true, ...result };
   }
 
@@ -181,7 +185,9 @@ export class ParkingBookingController {
     return {
       success: true,
       message: data.refund.refundAmount
-        ? `Booking cancelled. ₹${data.refund.refundAmount} will be refunded.`
+        ? data.refundMethod === "wallet"
+          ? `Booking cancelled. ₹${data.refund.refundAmount} has been added to your Tirvona wallet.`
+          : `Booking cancelled. ₹${data.refund.refundAmount} will be refunded.`
         : "Booking cancelled.",
       data,
     };

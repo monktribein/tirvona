@@ -44,6 +44,8 @@ import type {
   ReviewParkingDto,
 } from "../presentation/dtos/parking.dto";
 import { ParkingPricingService } from "./parking-pricing.service";
+import { WalletService } from "../../wallet/application/wallet.service";
+import { roundMoney } from "../../wallet/domain/wallet.constants";
 
 const isObjectId = (value: unknown): boolean =>
   /^[0-9a-f]{24}$/i.test(String(value ?? ""));
@@ -74,7 +76,19 @@ export class ParkingBookingService {
     private readonly notifications: Model<any>,
     @InjectModel(PARKING_MODEL.Review) private readonly reviews: Model<any>,
     @InjectModel(PARKING_MODEL.Location) private readonly locations: Model<any>,
+    private readonly wallet: WalletService,
   ) {}
+
+  /**
+   * The account whose wallet may pay: only the website customer who owns the
+   * booking. WhatsApp guests have no wallet.
+   */
+  private walletPayer(actor: BookingActor, booking: any): string | null {
+    if (!actor.userId || !booking?.customerId) return null;
+    return String(booking.customerId) === String(actor.userId)
+      ? String(actor.userId)
+      : null;
+  }
 
   private validateWindow(entryAt: string, exitAt: string): void {
     const entry = new Date(entryAt);
@@ -290,8 +304,12 @@ export class ParkingBookingService {
     );
   }
 
-  async createPaymentOrder(id: string, user: AuthenticatedUser): Promise<any> {
-    return this.createPaymentOrderFor(actorFromUser(user), id);
+  async createPaymentOrder(
+    id: string,
+    user: AuthenticatedUser,
+    options: { useWallet?: boolean } = {},
+  ): Promise<any> {
+    return this.createPaymentOrderFor(actorFromUser(user), id, options);
   }
 
   /**
@@ -300,7 +318,11 @@ export class ParkingBookingService {
    * second one created, so repeated "pay" taps cannot leave several live
    * orders against one booking.
    */
-  async createPaymentOrderFor(actor: BookingActor, id: string): Promise<any> {
+  async createPaymentOrderFor(
+    actor: BookingActor,
+    id: string,
+    options: { useWallet?: boolean } = {},
+  ): Promise<any> {
     const booking = await this.ownBookingFor(actor, id);
     if (booking.paymentStatus === "paid")
       throw new ParkingException("This booking is already paid.", 400);
@@ -317,6 +339,28 @@ export class ParkingBookingService {
         "Your reservation hold expired. Please book again.",
         410,
       );
+    const total = roundMoney(Number(booking.pricing.totalAmount));
+    const payerId = this.walletPayer(actor, booking);
+    const { walletAmount, gatewayAmount } = await this.wallet.planSplit(
+      payerId,
+      total,
+      options.useWallet,
+      { module: "parking", sourceId: booking._id },
+    );
+    if (payerId && walletAmount > 0 && gatewayAmount <= 0)
+      return this.payWithWallet(actor, String(booking._id), payerId);
+    if (payerId && walletAmount > 0)
+      await this.wallet.placeHold({
+        userId: payerId,
+        module: "parking",
+        sourceId: booking._id,
+        amount: walletAmount,
+        reference: booking.bookingReference,
+        expiresAt: booking.reservationExpiresAt,
+      });
+    else await this.wallet.releaseHold("parking", booking._id);
+    const walletInfo = { applied: walletAmount, gatewayAmount, total };
+
     const keyId = this.config.get<string>("razorpayKeyId");
     const keySecret = this.config.get<string>("razorpayKeySecret");
     const configured = Boolean(keyId && keySecret);
@@ -325,28 +369,31 @@ export class ParkingBookingService {
         bookingId: booking._id,
         ...parkingOwnerFields(booking),
         partnerId: booking.partnerId,
-        amount: booking.pricing.totalAmount,
+        amount: gatewayAmount,
+        walletAmount,
         purpose: "booking",
         method: "demo",
         status: "pending",
       });
-      return { demo: true, data: { amount: booking.pricing.totalAmount } };
+      return { demo: true, wallet: walletInfo, data: { amount: gatewayAmount } };
     }
     const open = await this.payments
       .findOne({
         bookingId: booking._id,
         purpose: "booking",
         status: "pending",
-        amount: booking.pricing.totalAmount,
+        amount: gatewayAmount,
+        walletAmount: walletAmount > 0 ? walletAmount : { $in: [0, null] },
         "gateway.orderId": { $type: "string", $ne: "" },
       })
       .sort({ createdAt: -1 });
     if (open)
       return {
         demo: false,
+        wallet: walletInfo,
         data: {
           orderId: open.gateway.orderId,
-          amount: Math.round(booking.pricing.totalAmount * 100),
+          amount: Math.round(gatewayAmount * 100),
           currency: "INR",
           keyId,
         },
@@ -355,16 +402,23 @@ export class ParkingBookingService {
       key_id: keyId!,
       key_secret: keySecret!,
     });
-    const order = await razorpay.orders.create({
-      amount: Math.round(booking.pricing.totalAmount * 100),
-      currency: "INR",
-      receipt: booking.bookingReference,
-    });
+    let order: any;
+    try {
+      order = await razorpay.orders.create({
+        amount: Math.round(gatewayAmount * 100),
+        currency: "INR",
+        receipt: booking.bookingReference,
+      });
+    } catch (error) {
+      await this.wallet.releaseHold("parking", booking._id);
+      throw error;
+    }
     await this.payments.create({
       bookingId: booking._id,
       ...parkingOwnerFields(booking),
       partnerId: booking.partnerId,
-      amount: booking.pricing.totalAmount,
+      amount: gatewayAmount,
+      walletAmount,
       purpose: "booking",
       method: "razorpay",
       status: "pending",
@@ -372,11 +426,99 @@ export class ParkingBookingService {
     });
     return {
       demo: false,
+      wallet: walletInfo,
       data: {
         orderId: order.id,
         amount: order.amount,
         currency: order.currency,
         keyId,
+      },
+    };
+  }
+
+  /** Pays the whole booking from the customer's wallet and confirms it. */
+  private async payWithWallet(
+    actor: BookingActor,
+    id: string,
+    payerId: string,
+  ): Promise<any> {
+    const result = await this.transactions.run(async (session) => {
+      const booking = await this.loadPayableBooking(actor, id, session);
+      const total = roundMoney(Number(booking.pricing.totalAmount));
+      const [payment] = await this.payments.create(
+        [
+          {
+            bookingId: booking._id,
+            ...parkingOwnerFields(booking),
+            partnerId: booking.partnerId,
+            amount: 0,
+            walletAmount: total,
+            purpose: "booking",
+            method: "wallet",
+            status: "pending",
+          },
+        ],
+        { session },
+      );
+      const spent = await this.wallet.spend(
+        {
+          userId: payerId,
+          module: "parking",
+          sourceId: booking._id,
+          amount: total,
+          reference: booking.bookingReference,
+          description: `Paid for parking ${booking.bookingReference}`,
+          actorId: actor.userId,
+        },
+        session,
+      );
+      return this.settlePayment(session, booking, payment, actor, {
+        method: "wallet",
+        transactionId: `WLT-${String(spent._id).slice(-10).toUpperCase()}`,
+        gateway: { orderId: "", paymentId: "", signature: "", provider: "wallet" },
+      });
+    });
+    return {
+      walletPaid: true,
+      wallet: { applied: result.payment.walletAmount, gatewayAmount: 0 },
+      data: await this.withQrImage(result),
+    };
+  }
+
+  /** The actor's own booking, still open for payment, read in `session`. */
+  private async loadPayableBooking(
+    actor: BookingActor,
+    id: string,
+    session: ClientSession,
+  ): Promise<any> {
+    const booking = await this.bookings
+      .findOne({ _id: id, ...bookingOwnerFilter(actor) })
+      .session(session);
+    if (!booking) throw new ParkingException("Booking not found.", 404);
+    if (booking.paymentStatus === "paid")
+      throw new ConflictException("This booking is already paid.");
+    if (
+      booking.status !== "pending" ||
+      (booking.reservationExpiresAt &&
+        booking.reservationExpiresAt < new Date())
+    )
+      throw new ParkingException(
+        "Your reservation hold expired. Please book again.",
+        410,
+      );
+    return booking;
+  }
+
+  private async withQrImage(result: any): Promise<any> {
+    return {
+      ...result,
+      qr: {
+        ...result.pass,
+        image: await QRCode.toDataURL(result.pass.token, {
+          width: 512,
+          margin: 2,
+          errorCorrectionLevel: "M",
+        }),
       },
     };
   }
@@ -497,21 +639,7 @@ export class ParkingBookingService {
       throw new ParkingException("Payment signature verification failed.", 400);
     }
     const result = await this.transactions.run(async (session) => {
-      const booking = await this.bookings
-        .findOne({ _id: id, ...bookingOwnerFilter(actor) })
-        .session(session);
-      if (!booking) throw new ParkingException("Booking not found.", 404);
-      if (booking.paymentStatus === "paid")
-        throw new ConflictException("This booking is already paid.");
-      if (
-        booking.status !== "pending" ||
-        (booking.reservationExpiresAt &&
-          booking.reservationExpiresAt < new Date())
-      )
-        throw new ParkingException(
-          "Your reservation hold expired. Please book again.",
-          410,
-        );
+      const booking = await this.loadPayableBooking(actor, id, session);
       const gatewayConfigured = Boolean(
         this.config.get<string>("razorpayKeySecret"),
       );
@@ -521,14 +649,20 @@ export class ParkingBookingService {
           purpose: "booking",
           status: "pending",
           ...(gatewayConfigured
-            ? {
-                "gateway.orderId": String(dto.razorpay_order_id ?? ""),
-                amount: booking.pricing.totalAmount,
-              }
+            ? { "gateway.orderId": String(dto.razorpay_order_id ?? "") }
             : {}),
         })
         .sort({ createdAt: -1 })
         .session(session);
+      // Gateway share plus wallet share must make up the booking total.
+      const totalPaise = Math.round(Number(booking.pricing.totalAmount) * 100);
+      if (
+        payment &&
+        Math.round(Number(payment.amount) * 100) +
+          Math.round(Number(payment.walletAmount ?? 0) * 100) !==
+          totalPaise
+      )
+        payment = null;
       if (!payment && gatewayConfigured)
         throw new ParkingException(
           "This payment does not belong to this booking.",
@@ -549,109 +683,134 @@ export class ParkingBookingService {
           ],
           { session },
         );
-      payment.status = "paid";
-      payment.method = this.config.get<string>("razorpayKeySecret")
-        ? "razorpay"
-        : dto.method || "demo";
-      payment.paidAt = new Date();
-      payment.transactionId = dto.razorpay_payment_id || `PKTXN-${Date.now()}`;
-      payment.gateway = {
-        orderId: dto.razorpay_order_id || "",
-        paymentId: dto.razorpay_payment_id || "",
-        signature: dto.razorpay_signature || "",
-        provider: "razorpay",
-      };
-      await payment.save({ session });
-      const location = await this.locations
-        .findById(booking.locationId)
-        .session(session);
-      const commission = await this.pricingService.commission(
-        location,
-        booking.pricing.totalAmount,
-      );
-      booking.status = "upcoming";
-      booking.paymentStatus = "paid";
-      booking.pricing.amountPaid = booking.pricing.totalAmount;
-      booking.commission = commission;
-      booking.reservationExpiresAt = null;
-      booking.history.push({
-        status: "upcoming",
-        note: "Payment confirmed",
-        updatedBy: actor.userId,
+      if (Number(payment.walletAmount ?? 0) > 0)
+        await this.wallet.spend(
+          {
+            userId: String(booking.customerId),
+            module: "parking",
+            sourceId: booking._id,
+            amount: Number(payment.walletAmount),
+            reference: booking.bookingReference,
+            description: `Paid for parking ${booking.bookingReference}`,
+            actorId: actor.userId,
+          },
+          session,
+        );
+      return this.settlePayment(session, booking, payment, actor, {
+        method: this.config.get<string>("razorpayKeySecret")
+          ? "razorpay"
+          : dto.method || "demo",
+        transactionId: dto.razorpay_payment_id || `PKTXN-${Date.now()}`,
+        gateway: {
+          orderId: dto.razorpay_order_id || "",
+          paymentId: dto.razorpay_payment_id || "",
+          signature: dto.razorpay_signature || "",
+          provider: "razorpay",
+        },
       });
-      await booking.save({ session });
-      await this.commissions.updateOne(
-        { bookingId: booking._id },
+    });
+    return this.withQrImage(result);
+  }
+
+  /**
+   * Confirms a booking whose payment is verified — by Razorpay or by the
+   * wallet — issuing its pass, commission and ledger rows exactly once.
+   */
+  private async settlePayment(
+    session: ClientSession,
+    booking: any,
+    payment: any,
+    actor: BookingActor,
+    proof: {
+      method: string;
+      transactionId: string;
+      gateway: Record<string, string>;
+    },
+  ): Promise<any> {
+    payment.status = "paid";
+    payment.method = proof.method;
+    payment.paidAt = new Date();
+    payment.transactionId = proof.transactionId;
+    payment.gateway = proof.gateway;
+    await payment.save({ session });
+    const location = await this.locations
+      .findById(booking.locationId)
+      .session(session);
+    const commission = await this.pricingService.commission(
+      location,
+      booking.pricing.totalAmount,
+    );
+    booking.status = "upcoming";
+    booking.paymentStatus = "paid";
+    booking.pricing.amountPaid = booking.pricing.totalAmount;
+    booking.commission = commission;
+    booking.reservationExpiresAt = null;
+    booking.history.push({
+      status: "upcoming",
+      note: "Payment confirmed",
+      updatedBy: actor.userId,
+    });
+    await booking.save({ session });
+    await this.commissions.updateOne(
+      { bookingId: booking._id },
+      {
+        $set: {
+          partnerId: booking.partnerId,
+          locationId: booking.locationId,
+          grossAmount: booking.pricing.totalAmount,
+          commissionPercent: commission.percent,
+          commissionAmount: commission.amount,
+          partnerEarning: commission.partnerEarning,
+          settlementStatus: "pending",
+        },
+        $setOnInsert: { bookingId: booking._id },
+      },
+      { upsert: true, session },
+    );
+    await this.ledger.create(
+      [
         {
-          $set: {
-            partnerId: booking.partnerId,
-            locationId: booking.locationId,
-            grossAmount: booking.pricing.totalAmount,
+          bookingId: booking._id,
+          paymentId: payment._id,
+          partnerId: booking.partnerId,
+          locationId: booking.locationId,
+          type: "booking",
+          direction: "credit",
+          amount: booking.pricing.totalAmount,
+          description: `Parking booking ${booking.bookingReference}`,
+          reference: parkingTransactionReference(),
+          meta: {
             commissionPercent: commission.percent,
             commissionAmount: commission.amount,
-            partnerEarning: commission.partnerEarning,
-            settlementStatus: "pending",
           },
-          $setOnInsert: { bookingId: booking._id },
+          recordedBy: actor.userId,
         },
-        { upsert: true, session },
-      );
-      await this.ledger.create(
-        [
-          {
-            bookingId: booking._id,
-            paymentId: payment._id,
-            partnerId: booking.partnerId,
-            locationId: booking.locationId,
-            type: "booking",
-            direction: "credit",
-            amount: booking.pricing.totalAmount,
-            description: `Parking booking ${booking.bookingReference}`,
-            reference: parkingTransactionReference(),
-            meta: {
-              commissionPercent: commission.percent,
-              commissionAmount: commission.amount,
-            },
-            recordedBy: actor.userId,
+      ],
+      { session },
+    );
+    const pass = await this.issueQr(booking, session);
+    await this.notifications.create(
+      [
+        {
+          ...parkingOwnerFields(booking),
+          bookingId: booking._id,
+          event: "booking_confirmed",
+          title: "Parking Confirmed",
+          message: `Your parking booking ${booking.bookingReference} is confirmed. Scan this gate code at the entrance.`,
+          channel: "in_app",
+          status: "queued",
+          recipientPhone: booking.driverPhone || "",
+          pushEnabled: true,
+          data: { displayCode: String(pass.displayCode) },
+          meta: {
+            bookingReference: booking.bookingReference,
+            displayCode: pass.displayCode,
           },
-        ],
-        { session },
-      );
-      const pass = await this.issueQr(booking, session);
-      await this.notifications.create(
-        [
-          {
-            ...parkingOwnerFields(booking),
-            bookingId: booking._id,
-            event: "booking_confirmed",
-            title: "Parking Confirmed",
-            message: `Your parking booking ${booking.bookingReference} is confirmed. Scan this gate code at the entrance.`,
-            channel: "in_app",
-            status: "queued",
-            recipientPhone: booking.driverPhone || "",
-            pushEnabled: true,
-            data: { displayCode: String(pass.displayCode) },
-            meta: {
-              bookingReference: booking.bookingReference,
-              displayCode: pass.displayCode,
-            },
-          },
-        ],
-        { session },
-      );
-      return { booking, payment, pass };
-    });
-    return {
-      ...result,
-      qr: {
-        ...result.pass,
-        image: await QRCode.toDataURL(result.pass.token, {
-          width: 512,
-          margin: 2,
-          errorCorrectionLevel: "M",
-        }),
-      },
-    };
+        },
+      ],
+      { session },
+    );
+    return { booking, payment, pass };
   }
 
   private async renderPass(
@@ -801,6 +960,7 @@ export class ParkingBookingService {
     const location = await this.locations.findById(existing.locationId);
     const refund = await this.pricingService.refundQuote(existing, location);
     if (!refund.allowed) throw new ParkingException(refund.message, 400);
+    let toWallet = false;
     const booking = await this.transactions.run(async (session) => {
       const row = await this.bookings
         .findOne({
@@ -815,6 +975,8 @@ export class ParkingBookingService {
           "A vehicle already inside cannot be cancelled. Please check out instead.",
           400,
         );
+      // A website customer's refund goes straight to their Tirvona wallet.
+      toWallet = Boolean(refund.refundAmount) && Boolean(row.customerId);
       row.status = "cancelled";
       row.cancellation = {
         reason: dto.reason || "Cancelled by user",
@@ -824,6 +986,7 @@ export class ParkingBookingService {
         refundReference: refund.refundAmount
           ? `PKREF-${Date.now().toString().slice(-8)}`
           : "",
+        ...(toWallet ? { refundMethod: "wallet" } : {}),
       };
       row.pricing.refundAmount = refund.refundAmount;
       if (refund.refundAmount) row.paymentStatus = "refunded";
@@ -852,6 +1015,23 @@ export class ParkingBookingService {
         { $set: { status: "revoked", revokedReason: "Booking cancelled" } },
         { session },
       );
+      await this.wallet.releaseHold("parking", row._id, session);
+      if (toWallet)
+        await this.wallet.credit(
+          {
+            userId: String(row.customerId),
+            amount: refund.refundAmount,
+            module: "parking",
+            category: "refund",
+            sourceId: row._id,
+            reference: row.bookingReference,
+            description: `Refund for cancelled parking ${row.bookingReference}`,
+            idempotencyKey: `refund:parking:${String(row._id)}`,
+            actorId: actor.userId,
+            actorRole: actor.role,
+          },
+          session,
+        );
       if (refund.refundAmount) {
         await this.ledger.create(
           [
@@ -890,7 +1070,9 @@ export class ParkingBookingService {
             event: refund.refundAmount ? "refund" : "cancellation",
             title: "Parking Booking Cancelled",
             message: refund.refundAmount
-              ? `Parking booking ${row.bookingReference} was cancelled. ₹${refund.refundAmount} will be refunded.`
+              ? toWallet
+                ? `Parking booking ${row.bookingReference} was cancelled. ₹${refund.refundAmount} has been added to your Tirvona wallet.`
+                : `Parking booking ${row.bookingReference} was cancelled. ₹${refund.refundAmount} will be refunded.`
               : `Parking booking ${row.bookingReference} was cancelled.`,
             channel: "in_app",
             status: "queued",
@@ -905,7 +1087,11 @@ export class ParkingBookingService {
       );
       return row;
     });
-    return { booking, refund };
+    return {
+      booking,
+      refund,
+      refundMethod: toWallet ? "wallet" : refund.refundAmount ? "gateway" : null,
+    };
   }
 
   async review(

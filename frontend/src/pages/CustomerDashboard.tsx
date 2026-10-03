@@ -16,6 +16,7 @@ import {
   Trash2,
   AlertCircle,
 } from "lucide-react";
+import { notifyWalletChanged, walletRefundText } from "../services/wallet.service";
 
 export const CustomerDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -96,9 +97,10 @@ export const CustomerDashboard: React.FC = () => {
       const res = await bookingService.cancel(cancelBookingId, cancelReason);
       if (res.data.success) {
         setCancelBookingId(null);
+        notifyWalletChanged();
         addNotification(
           "Stay Cancelled",
-          "Your reservation was successfully cancelled. Refund initiated.",
+          `Your reservation was successfully cancelled.${walletRefundText(res.data.data) || " Refund initiated."}`,
           "success",
         );
         fetchHistory();

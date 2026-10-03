@@ -30,6 +30,7 @@ import {
   ManualConfirmBookingDto,
   UpdateBookingStatusDto,
 } from "./dtos/booking.dto";
+import { UseWalletDto } from "../../wallet/presentation/use-wallet.dto";
 
 @Controller("bookings")
 export class BookingsController {
@@ -67,10 +68,17 @@ export class BookingsController {
   async order(
     @Param("id") id: string,
     @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: UseWalletDto,
   ) {
+    const result = await this.service.paymentOrder(id, actorFromUser(user), {
+      useWallet: dto?.useWallet,
+    });
     return {
       success: true,
-      ...(await this.service.paymentOrder(id, actorFromUser(user))),
+      ...(result.walletPaid
+        ? { message: "Paid from your Tirvona wallet. Booking confirmed." }
+        : {}),
+      ...result,
     };
   }
   @Post(":id/payment")
@@ -346,10 +354,14 @@ export class BookingsController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CancelBookingDto,
   ) {
+    const data = await this.service.cancel(id, actorFromUser(user), dto);
     return {
       success: true,
-      message: "Booking cancelled successfully",
-      data: await this.service.cancel(id, actorFromUser(user), dto),
+      message:
+        data.refundMethod === "wallet"
+          ? `Booking cancelled. ₹${data.refundAmount} has been added to the pilgrim's Tirvona wallet.`
+          : "Booking cancelled successfully",
+      data,
     };
   }
 }

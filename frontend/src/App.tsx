@@ -11,6 +11,7 @@ import { NotificationProvider } from "./contexts/NotificationContext";
 import { UserMemoryProvider } from "./contexts/UserMemoryContext";
 import { BookingSearchProvider } from "./contexts/BookingSearchContext";
 import { CartProvider } from "./contexts/CartContext";
+import { WalletProvider } from "./contexts/WalletContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import { CurrencyProvider, useCurrency } from "./contexts/CurrencyContext";
 import { LanguageProvider, useLanguage } from "./contexts/LanguageContext";
@@ -244,6 +245,12 @@ const RefundRequestDetailPage = lazy(
 const RefundPoliciesPage = lazy(
   () => import("./admin/refunds/pages/RefundPoliciesPage"),
 );
+const AdminWalletsPage = lazy(
+  () => import("./admin/wallets/pages/AdminWalletsPage"),
+);
+const AdminWithdrawalsPage = lazy(
+  () => import("./admin/wallets/pages/AdminWithdrawalsPage"),
+);
 
 const LeadCollectionPage = lazy(
   () => import("./admin/leads/pages/LeadCollectionPage"),
@@ -420,6 +427,16 @@ const ProtectedRoute: React.FC<{
   }
 
   return <>{children}</>;
+};
+
+/**
+ * The wallet lives in the profile now. `/wallet` stays a working address,
+ * because notifications and older links point at it, and keeps its query
+ * (`?transfer=1` opens the transfer form).
+ */
+const WalletRedirect: React.FC = () => {
+  const { search } = useLocation();
+  return <Navigate to={`/profile/wallet${search}`} replace />;
 };
 
 const ScrollToTop: React.FC = () => {
@@ -692,6 +709,8 @@ const AppContent: React.FC = () => {
               element={<MarketplaceCheckoutPage />}
             />
             <Route path="/profile" element={<ProfileMainPage />} />
+            <Route path="/wallet" element={<WalletRedirect />} />
+            <Route path="/profile/wallet" element={<ProfileMainPage />} />
             <Route path="/profile/bookings" element={<ProfileMainPage />} />
             <Route path="/profile/history" element={<ProfileMainPage />} />
             <Route path="/profile/volunteer" element={<ProfileMainPage />} />
@@ -1249,6 +1268,22 @@ const AppContent: React.FC = () => {
             />
           </Route>
 
+          <Route
+            element={
+              <ProtectedRoute
+                allowedRoles={["super_admin", "national_admin", "finance_manager"]}
+              >
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/admin/wallets" element={<AdminWalletsPage />} />
+            <Route
+              path="/admin/wallets/withdrawals"
+              element={<AdminWithdrawalsPage />}
+            />
+          </Route>
+
           {/* Seller console: any signed-in user; the backend scopes every call to the caller's own store. */}
           <Route
             element={
@@ -1442,7 +1477,9 @@ export const App: React.FC = () => {
               <UserMemoryProvider>
                 <BookingSearchProvider>
                   <CartProvider>
-                    <AppContent />
+                    <WalletProvider>
+                      <AppContent />
+                    </WalletProvider>
                   </CartProvider>
                 </BookingSearchProvider>
               </UserMemoryProvider>

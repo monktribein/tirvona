@@ -18,7 +18,9 @@ export const AartiPaymentSchema = new Schema(
     bookingId: id("AartiBooking", true),
     userId: { ...id("User", true), index: true },
     ashramId: id("Ashram"),
+    // Gateway share; any share paid from the Tirvona wallet is `walletAmount`.
     amount: { type: Number, required: true, min: 0 },
+    walletAmount: { type: Number, default: 0, min: 0 },
     currency: { type: String, default: "INR" },
     purpose: {
       type: String,

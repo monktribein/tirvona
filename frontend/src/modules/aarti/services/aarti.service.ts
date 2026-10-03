@@ -89,8 +89,8 @@ export const aartiBookingService = {
 
   get: (id: string) => api.get(`/aarti/bookings/${id}`),
 
-  createPaymentOrder: (id: string) =>
-    api.post(`/aarti/bookings/${id}/payment/order`, {}),
+  createPaymentOrder: (id: string, useWallet = false) =>
+    api.post(`/aarti/bookings/${id}/payment/order`, useWallet ? { useWallet } : {}),
 
   confirmPayment: (
     id: string,

@@ -6,6 +6,7 @@ import {
   UserSchema,
 } from "../users/infrastructure/persistence/user.schema";
 import { PARKING_MODEL } from "./domain/parking.constants";
+import { WalletModule } from "../wallet/wallet.module";
 import { PARKING_REPOSITORY } from "./domain/parking.repository";
 import { ParkingAccessService } from "./application/parking-access.service";
 import { ParkingBookingService } from "./application/parking-booking.service";
@@ -76,7 +77,10 @@ const tenantSchemas = [
 ];
 
 @Module({
-  imports: [MongooseModule.forFeature([...schemas, ...tenantSchemas])],
+  imports: [
+    MongooseModule.forFeature([...schemas, ...tenantSchemas]),
+    WalletModule,
+  ],
   controllers: [
     ParkingPublicController,
     ParkingBookingController,

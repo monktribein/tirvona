@@ -26,7 +26,10 @@ export const BookingPaymentSchema = new Schema(
       index: true,
     },
     collectedBy: id("User"),
+    // What the gateway collects. Any share paid from the pilgrim's Tirvona
+    // wallet is `walletAmount`; the two always add up to the booking total.
     amount: { type: Number, required: true, min: 0 },
+    walletAmount: { type: Number, default: 0, min: 0 },
     currency: { type: String, default: "INR" },
     purpose: {
       type: String,
@@ -35,7 +38,7 @@ export const BookingPaymentSchema = new Schema(
     },
     method: {
       type: String,
-      enum: ["razorpay", "upi", "cards", "net_banking", "cash", "demo"],
+      enum: ["razorpay", "upi", "cards", "net_banking", "cash", "demo", "wallet"],
       required: true,
     },
     status: {
@@ -214,6 +217,8 @@ export const BookingRefundSchema = new Schema(
       enum: ["pending", "processing", "success", "failed", "cancelled"],
       default: "pending",
     },
+    // `wallet`: credited to the pilgrim's Tirvona wallet at cancellation.
+    method: { type: String, enum: ["gateway", "wallet"], default: "gateway" },
     gatewayRefundId: String,
     processedAt: Date,
     failureReason: String,

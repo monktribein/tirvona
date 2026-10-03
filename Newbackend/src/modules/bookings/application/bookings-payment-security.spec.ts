@@ -77,6 +77,13 @@ const createService = (
   const paymentFindOne = jest.fn(() => query("payment" in opts ? opts.payment : pendingPayment()));
   const sentinel = new Error("REACHED_CONFIRMATION");
   Object.assign(service, {
+    wallet: {
+      planSplit: jest.fn(async (_userId: unknown, total: number) => ({ walletAmount: 0, gatewayAmount: total })),
+      placeHold: jest.fn(),
+      releaseHold: jest.fn(),
+      spend: jest.fn(),
+      credit: jest.fn(),
+    },
     logger: { warn: jest.fn(), log: jest.fn() },
     config: {
       get: (key: string) => (key === "razorpayKeySecret" ? KEY_SECRET : undefined),
@@ -339,6 +346,13 @@ describe("BookingsService.paymentOrder", () => {
   const withOrders = (open: any, b = booking()) => {
     const service = Object.create(BookingsService.prototype) as any;
     Object.assign(service, {
+    wallet: {
+      planSplit: jest.fn(async (_userId: unknown, total: number) => ({ walletAmount: 0, gatewayAmount: total })),
+      placeHold: jest.fn(),
+      releaseHold: jest.fn(),
+      spend: jest.fn(),
+      credit: jest.fn(),
+    },
       config: {
         get: (key: string) =>
           key === "razorpayKeyId"

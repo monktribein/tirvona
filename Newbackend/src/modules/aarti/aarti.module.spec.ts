@@ -7,6 +7,7 @@ import { TransactionService } from "../../common/database/transaction.service";
 import { AartiModule } from "./aarti.module";
 import { AARTI_MODEL } from "./domain/aarti.constants";
 import { AARTI_REPOSITORY } from "./domain/aarti.repository";
+import { WALLET_MODELS } from "../wallet/infrastructure/wallet.schemas";
 import { AartiAccessService } from "./application/aarti-access.service";
 import { AartiBookingService } from "./application/aarti-booking.service";
 import { AartiDiscoveryService } from "./application/aarti-discovery.service";
@@ -50,6 +51,9 @@ const compile = async () => {
   });
 
   for (const name of Object.values(AARTI_MODEL)) {
+    builder.overrideProvider(getModelToken(name)).useValue({});
+  }
+  for (const { name } of WALLET_MODELS) {
     builder.overrideProvider(getModelToken(name)).useValue({});
   }
   return builder.compile();
