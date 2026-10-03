@@ -44,8 +44,11 @@ export interface VendorProfile {
   missingDocuments?: string[];
 }
 
-/** The caller's own store (404 = no store yet). */
-export const useVendorProfile = () => useRemote<VendorProfile>(() => vendorApi.profile(), []);
+/** The caller's own store; state is "missing" when they have no store yet (API returns null). */
+export const useVendorProfile = () => {
+  const remote = useRemote<VendorProfile>(() => vendorApi.profile(), []);
+  return remote.state === "ready" && !remote.data ? { ...remote, state: "missing" as const } : remote;
+};
 
 /** Renders children only when the caller has a store; otherwise sends them to onboarding. */
 export const RequireStore: React.FC<{ children: (vendor: VendorProfile, reload: () => void) => React.ReactNode }> = ({

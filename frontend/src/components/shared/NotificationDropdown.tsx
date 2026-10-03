@@ -14,12 +14,14 @@ import {
   useNotifications,
   type Notification,
 } from "../../contexts/NotificationContext";
+import { useAuth } from "../../contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { formatIndianNumber, getFormattingLocale } from "../../utils/format";
 
 export const NotificationDropdown: React.FC = () => {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const {
     notifications,
     unreadCount,
@@ -29,6 +31,26 @@ export const NotificationDropdown: React.FC = () => {
   } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const isAdmin = Boolean(
+    user &&
+      [
+        "super_admin",
+        "admin",
+        "ashram_admin",
+        "stay_admin",
+        "owner",
+        "manager",
+        "national_admin",
+        "state_admin",
+        "government_admin",
+        "govt_admin",
+      ].includes(user.role),
+  );
+
+  const notificationCenterPath = isAdmin
+    ? "/admin/enterprise-notifications"
+    : "/profile/notifications";
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -173,11 +195,13 @@ export const NotificationDropdown: React.FC = () => {
 
           <div className="p-2.5 bg-gray-50 dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 text-center">
             <Link
-              to="/profile/notifications"
+              to={notificationCenterPath}
               onClick={() => setIsOpen(false)}
               className="text-[11px] font-extrabold text-[#F28C28] dark:text-[#E58C28] hover:underline block"
             >
-              {t("View All Notifications Center →")}
+              {isAdmin
+                ? t("View Enterprise Notification Center →")
+                : t("View All Notifications Center →")}
             </Link>
           </div>
         </div>

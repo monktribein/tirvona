@@ -6,6 +6,8 @@ import { useNotifications } from "../contexts/NotificationContext";
 import NotificationDropdown from "../components/shared/NotificationDropdown";
 import CartDrawer, { CartButton } from "../components/shared/CartDrawer";
 import WalletButton from "../components/wallet/WalletButton";
+import FloatingDealBox from "../components/shared/FloatingDealBox";
+import FloatingSupportBox from "../components/shared/FloatingSupportBox";
 import { setGuestPendingIntent } from "../utils/guestGate";
 import { getRoleDefaultDashboard, isParkingRole } from "../utils/roleRedirect";
 import { vendorApi } from "../services/marketplace.service";
@@ -946,6 +948,8 @@ export const PublicLayout: React.FC = () => {
       </div>
 
       <CartDrawer />
+      <FloatingDealBox />
+      <FloatingSupportBox />
 
       <main className="flex-grow">
         <Outlet />

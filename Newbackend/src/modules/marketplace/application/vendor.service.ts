@@ -85,8 +85,13 @@ export class VendorService {
     return this.withoutPrivate(vendor);
   }
 
+  /**
+   * The caller's own store, or null when they have none. Not a 404: the site
+   * header asks this for every signed-in user, and most of them are not sellers.
+   */
   async getOwnProfile(user: AuthenticatedUser): Promise<any> {
-    const vendor = await this.requireOwnVendor(user);
+    const vendor = await this.vendors.findOne({ userId: user.id, deletedAt: null });
+    if (!vendor) return null;
     const [documents, bankAccounts] = await Promise.all([
       this.documents.find({ vendorId: vendor._id, deletedAt: null }).sort({ createdAt: -1 }).lean(),
       this.bankAccounts.find({ vendorId: vendor._id, deletedAt: null }).lean(),

@@ -20,7 +20,7 @@ import {
 } from "../../bookings/domain/booking.utils";
 import type { DayStayHoldDto, DayStayConfirmPaymentDto } from "../presentation/dtos/day-stay.dto";
 import { DayStayInventoryService } from "./day-stay-inventory.service";
-import { hhmmToMinutes, istDateString, istInstant, istTimeString } from "../domain/day-stay-time";
+import { addDays, hhmmToMinutes, istDateString, istInstant, istTimeString } from "../domain/day-stay-time";
 import { WalletService } from "../../wallet/application/wallet.service";
 
 @Injectable()
@@ -34,6 +34,7 @@ export class DayStayBookingService {
     @InjectModel("Room") private readonly roomModel: Model<any>,
     @InjectModel("BookingStatusHistory") private readonly historyModel: Model<any>,
     @InjectModel("BookingNotification") private readonly notificationModel: Model<any>,
+    @InjectModel("BookingInventory") private readonly ledgerModel: Model<any>,
     private readonly inventoryService: DayStayInventoryService,
     private readonly transactions: TransactionService,
     private readonly config: ConfigService,
@@ -76,6 +77,9 @@ export class DayStayBookingService {
     const room = await this.roomModel.findOne({ _id: dto.roomId, ashramId: dto.ashramId }).lean();
     if (!room || !room.dayStayConfig?.enabled) {
       throw new BadRequestException("Room is not available for Day Stay");
+    }
+    if (room.capacity && dto.guestsCount > room.capacity) {
+      throw new BadRequestException(`This room fits at most ${room.capacity} guests`);
     }
 
     const lockToken = randomBytes(12).toString("hex");
@@ -279,6 +283,38 @@ export class DayStayBookingService {
         );
         return doc;
       });
+      if (!(await this.stillFreeAfterLedgerTouch(dto, room, confirmed._id))) {
+        // Paid from the wallet but an overnight guest took the room at the
+        // same instant: give the money straight back and cancel.
+        await this.wallet.credit({
+          userId: customerId,
+          amount: totalAmount,
+          module: "day_stay",
+          category: "refund",
+          sourceId: confirmed._id,
+          reference: bId,
+          description: `Refund for day stay ${bId}: slot no longer available`,
+          idempotencyKey: `refund:day_stay:${String(confirmed._id)}`,
+        });
+        await this.bookingModel.updateOne(
+          { _id: confirmed._id },
+          {
+            $set: {
+              status: "cancelled",
+              paymentStatus: "refunded",
+              cancellation: {
+                reason: "Room was booked overnight at the same moment.",
+                date: new Date(),
+                refundAmount: totalAmount,
+                refundMethod: "wallet",
+              },
+            },
+          },
+        );
+        throw new ConflictException(
+          "Sorry, this time slot was just booked. The amount has been returned to your Tirvona wallet.",
+        );
+      }
       return {
         ...holdSummary,
         walletPaid: true,
@@ -365,6 +401,15 @@ export class DayStayBookingService {
       throw error;
     }
 
+    if (!(await this.stillFreeAfterLedgerTouch(dto, room, bookingDoc._id))) {
+      await this.bookingModel.updateOne(
+        { _id: bookingDoc._id },
+        { $set: { status: "cancelled", reservationExpiresAt: new Date() } },
+      );
+      await this.wallet.releaseHold("day_stay", bookingObjectId);
+      throw new ConflictException("Sorry, this time slot was just booked. Please choose another time.");
+    }
+
     await this.historyModel.create({
       bookingId: bookingDoc._id,
       fromStatus: "none",
@@ -382,6 +427,48 @@ export class DayStayBookingService {
       razorpayOrderId: rzpOrderId,
       reservationExpiresAt: holdExpiresAt,
     };
+  }
+
+  /**
+   * Closes the race with an overnight booking for the same room made at the
+   * same moment. The room lock only serialises Short Stay holds; overnight
+   * holds run in a Mongo transaction on the nightly ledger rows. Touching
+   * those rows after our pending booking exists means an overnight
+   * transaction still in flight hits a write conflict and retries (and then
+   * sees this booking), while one that already committed shows up in the
+   * re-check below — false means the caller must undo its booking.
+   */
+  private async stillFreeAfterLedgerTouch(dto: DayStayHoldDto, room: any, bookingId: unknown): Promise<boolean> {
+    for (const night of [addDays(dto.date, -1), dto.date]) {
+      const date = new Date(`${night}T00:00:00.000Z`);
+      const touch = () =>
+        this.ledgerModel.updateOne(
+          { roomId: dto.roomId, date },
+          {
+            $setOnInsert: {
+              ashramId: dto.ashramId,
+              totalInventory: Math.max(0, Number(room.totalInventory) || 0),
+              heldCount: 0,
+              bookedCount: 0,
+              maintenanceCount: 0,
+            },
+            $set: { dayStayTouchedAt: new Date() },
+          },
+          { upsert: true },
+        );
+      // Two first-time upserts of the same row can collide on the unique index.
+      await touch().catch((err: any) => (err?.code === 11000 ? touch() : Promise.reject(err)));
+    }
+
+    const slots = await this.inventoryService.getRoomSlots(
+      dto.ashramId,
+      dto.roomId,
+      dto.date,
+      dto.productCode,
+      String(bookingId),
+    );
+    const slot = slots.find((s) => s.startTime === dto.startTime);
+    return Boolean(slot && slot.availableUnits > 0);
   }
 
   private isProduction(): boolean {
@@ -414,6 +501,19 @@ export class DayStayBookingService {
     const actual = Buffer.from(dto.razorpaySignature);
     if (expected.length !== actual.length || !timingSafeEqual(expected, actual))
       throw new BadRequestException("Invalid payment signature");
+  }
+
+  /**
+   * A cancelled booking (slot lost and refunded, or cancelled by the guest)
+   * must never be revived by a late checkout callback or webhook retry —
+   * otherwise a refunded guest would end up holding a confirmed room.
+   */
+  private assertNotCancelled(booking: any): void {
+    if (booking.status === "cancelled" || booking.paymentStatus === "refunded") {
+      throw new ConflictException(
+        "This booking was cancelled. If you were charged, the refund has been initiated or is under review.",
+      );
+    }
   }
 
   private confirmedResponse(booking: any): any {
@@ -452,8 +552,8 @@ export class DayStayBookingService {
     });
     if (!booking) throw new NotFoundException("Booking not found");
 
-    if (booking.status === "confirmed" || booking.paymentStatus === "fully_paid")
-      return this.confirmedResponse(booking);
+    if (booking.status === "confirmed") return this.confirmedResponse(booking);
+    this.assertNotCancelled(booking);
 
     const openedOrder = booking.paymentSummary?.razorpayOrderId;
     if (!openedOrder || dto.razorpayOrderId !== openedOrder)
@@ -473,8 +573,8 @@ export class DayStayBookingService {
     customerId?: string,
     capturedAmountPaise?: number,
   ): Promise<any> {
-    if (booking.status === "confirmed" || booking.paymentStatus === "fully_paid")
-      return this.confirmedResponse(booking);
+    if (booking.status === "confirmed") return this.confirmedResponse(booking);
+    this.assertNotCancelled(booking);
 
     // Razorpay collects only the gateway share; the rest comes from the wallet.
     const walletAmount = Number(booking.paymentSummary?.walletAmount ?? 0);

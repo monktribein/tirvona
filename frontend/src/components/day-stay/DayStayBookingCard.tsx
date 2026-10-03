@@ -6,9 +6,7 @@ import {
   ShieldCheck,
   Droplets,
   CheckCircle2,
-  Calendar,
   AlertCircle,
-  Users,
   ChevronRight,
   ChevronDown,
   Info,
@@ -49,6 +47,44 @@ const format12H = (time24: string): string => {
   return `${h}:${m} ${ampm}`;
 };
 
+// Same defaults the backend prices catalog packages with (resolveRoomProducts).
+const FALLBACK_PRICES: Record<string, number> = { DAY_REST_4H: 699, DAY_REST_6H: 1199 };
+
+type Package = { productCode: string; durationMinutes: number; price: number };
+
+/** Packages a room sells: its own enabled ones, else the platform catalog — mirrors the backend. */
+const roomPackages = (room: any, catalog: any[]): Package[] => {
+  const own = (room?.dayStayConfig?.products ?? []).filter((p: any) => p.enabled !== false);
+  if (own.length) {
+    return own.map((p: any) => ({
+      productCode: p.productCode,
+      durationMinutes: p.durationMinutes,
+      price: p.discountPrice || p.price,
+    }));
+  }
+  return catalog.map((p) => ({
+    productCode: p.productCode,
+    durationMinutes: p.durationMinutes,
+    price: FALLBACK_PRICES[p.productCode] ?? 699,
+  }));
+};
+
+/** Cheapest package price for a room, for "From ₹…" labels outside the card. */
+export const shortStayFromPrice = (room: any): number => {
+  const prices = roomPackages(room, []).map((p) => p.price);
+  return prices.length ? Math.min(...prices) : FALLBACK_PRICES.DAY_REST_4H;
+};
+
+const durationLabel = (mins: number): string => {
+  if (!mins) return "";
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (!m) return `${h} ${h === 1 ? "Hour" : "Hours"}`;
+  return h ? `${h}h ${m}m` : `${m} min`;
+};
+
+const toMoney = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+
 export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
   ashram,
   rooms,
@@ -74,6 +110,7 @@ export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
   const [restoredDraft, setRestoredDraft] = useState<boolean>(false);
   const [roomDropdownOpen, setRoomDropdownOpen] = useState<boolean>(false);
   const [timeFilter, setTimeFilter] = useState<"all" | "morning" | "afternoon" | "evening">("all");
+  const [confirmedBooking, setConfirmedBooking] = useState<any | null>(null);
 
   // Eligible day stay rooms: only rooms the owner has explicitly opted into
   // Day Stay. A missing dayStayConfig (legacy rooms created before this
@@ -84,7 +121,17 @@ export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
   );
   const activeRooms = eligibleRooms;
 
-  const selectedRoomId = externalSelectedRoomId || internalRoomId || (activeRooms[0] ? String(activeRooms[0]._id) : "");
+  const isActiveRoom = (rId?: string) => Boolean(rId) && activeRooms.some((r) => String(r._id) === rId);
+  // Only rooms that actually offer Short Stay can be selected; anything else
+  // would load an empty slot list.
+  const selectedRoomId =
+    (isActiveRoom(externalSelectedRoomId) && externalSelectedRoomId) ||
+    (isActiveRoom(internalRoomId) && internalRoomId) ||
+    (activeRooms[0] ? String(activeRooms[0]._id) : "");
+  const selectedRoomObj = activeRooms.find((r) => String(r._id) === selectedRoomId) || activeRooms[0];
+  const packages = roomPackages(selectedRoomObj, products);
+  const packageKey = packages.map((p) => p.productCode).join(",");
+  const graceMinutes = ashram?.dayStayConfig?.defaultGraceMinutes ?? 15;
 
   const handleRoomChange = (rId: string) => {
     setInternalRoomId(rId);
@@ -123,6 +170,18 @@ export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
     };
     fetchProducts();
   }, []);
+
+  // A room may sell its own packages; keep the selection to one it offers.
+  useEffect(() => {
+    if (packages.length && !packages.some((p) => p.productCode === selectedProduct)) {
+      setSelectedProduct(packages[0].productCode);
+    }
+  }, [packageKey]);
+
+  useEffect(() => {
+    const cap = selectedRoomObj?.capacity;
+    if (cap && guestsCount > cap) setGuestsCount(cap);
+  }, [selectedRoomObj?.capacity]);
 
   useEffect(() => {
     if (activeRooms.length > 0 && !selectedRoomId) {
@@ -176,16 +235,12 @@ export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
     );
   }
 
-  const selectedRoomObj = activeRooms.find((r) => String(r._id) === selectedRoomId) || activeRooms[0];
-  const activeProductDef = products.find((p) => p.productCode === selectedProduct);
-  const defaultProductPrice = selectedProduct === "DAY_REST_4H" ? 699 : 1199;
-  const roomProductPricing = selectedRoomObj?.dayStayConfig?.pricingByProduct?.[selectedProduct] || selectedRoomObj?.dayStayConfig?.products?.find(
-    (p: any) => p.productCode === selectedProduct
-  )?.price;
-
-  const price = selectedSlot?.price || roomProductPricing || defaultProductPrice;
-  const gstAmount = Math.round(price * 0.18);
-  const totalAmount = price + gstAmount;
+  const selectedPackage = packages.find((p) => p.productCode === selectedProduct);
+  // What the backend charges: the slot's offer price when set, else its price.
+  const price = selectedSlot ? selectedSlot.discountPrice || selectedSlot.price : selectedPackage?.price ?? 0;
+  const gstAmount = toMoney(price * 0.18);
+  const totalAmount = toMoney(price + gstAmount);
+  const fromPrice = packages.length ? Math.min(...packages.map((p) => p.price)) : price;
 
   const handleBookingHold = async () => {
     if (!selectedSlot) {
@@ -247,6 +302,7 @@ export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
       if (holdData.walletPaid) {
         clearBookingDraft();
         setRestoredDraft(false);
+        setConfirmedBooking(holdData.confirmation);
         if (onSuccess) onSuccess(holdData.confirmation);
         return;
       }
@@ -285,6 +341,7 @@ export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
       if (confirmRes.data?.success) {
         clearBookingDraft();
         setRestoredDraft(false);
+        setConfirmedBooking(confirmRes.data);
         if (onSuccess) onSuccess(confirmRes.data);
       } else {
         throw new Error("Payment verification was not completed.");
@@ -295,6 +352,54 @@ export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
       setSubmitting(false);
     }
   };
+
+  if (confirmedBooking) {
+    const slotStart = confirmedBooking.slotStartTime ? new Date(confirmedBooking.slotStartTime) : null;
+    const slotEnd = confirmedBooking.slotEndTime ? new Date(confirmedBooking.slotEndTime) : null;
+    const istFmt = (d: Date, opts: Intl.DateTimeFormatOptions) =>
+      d.toLocaleString("en-IN", { timeZone: "Asia/Kolkata", ...opts });
+    return (
+      <div id="day-stay-card" className="bg-white dark:bg-[#0B192C] rounded-2xl border border-gray-100 dark:border-slate-800 shadow-xl p-5 sm:p-6 space-y-4 scroll-mt-24">
+        <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl space-y-1">
+          <div className="flex items-center gap-2 font-black text-sm text-emerald-700 dark:text-emerald-400">
+            <CheckCircle2 size={18} className="shrink-0" />
+            <span>Payment Successful — Short Stay Confirmed!</span>
+          </div>
+          <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+            Show the check-in code at the reception when you arrive.
+          </p>
+        </div>
+        <div className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl p-4 space-y-2.5 text-xs font-semibold">
+          <Row label="Booking ID" value={confirmedBooking.bookingId} mono />
+          {confirmedBooking.reservationNumber && <Row label="Reservation No" value={confirmedBooking.reservationNumber} mono />}
+          <Row label="Check-In Code" value={confirmedBooking.checkInCode} mono highlight />
+          {slotStart && slotEnd && (
+            <Row
+              label="Slot"
+              value={`${istFmt(slotStart, { day: "numeric", month: "short" })}, ${istFmt(slotStart, { hour: "numeric", minute: "2-digit" })} – ${istFmt(slotEnd, { hour: "numeric", minute: "2-digit" })}`}
+            />
+          )}
+          <Row label="Amount Paid" value={`₹${confirmedBooking.pricing?.totalAmount ?? totalAmount}`} />
+        </div>
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => navigate("/profile/bookings")}
+            className="w-full py-3 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold flex items-center justify-center gap-2 cursor-pointer"
+          >
+            Go to My Bookings <ChevronRight size={14} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setConfirmedBooking(null)}
+            className="w-full py-2 rounded-full bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 text-xs font-bold cursor-pointer"
+          >
+            Book Another Short Stay
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div id="day-stay-card" className="bg-white dark:bg-[#0B192C] rounded-2xl border border-gray-100 dark:border-slate-800 shadow-xl p-5 sm:p-6 space-y-5 scroll-mt-24">
@@ -310,7 +415,7 @@ export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
             From
           </span>
           <span className="text-xl font-extrabold text-[#F28C28] dark:text-amber-400">
-            ₹{price}
+            ₹{fromPrice}
           </span>
         </div>
       </div>
@@ -371,34 +476,25 @@ export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
         <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center justify-between">
           <span>Stay Duration</span>
           <span className="text-[10px] text-[#F28C28] dark:text-amber-400 font-extrabold">
-            {selectedProduct === "DAY_REST_4H" ? "4 Hours" : "6 Hours"}
+            {durationLabel(selectedPackage?.durationMinutes ?? 0)}
           </span>
         </label>
         <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-gray-100 dark:bg-slate-900 border border-gray-200/60 dark:border-slate-800">
-          <button
-            type="button"
-            onClick={() => setSelectedProduct("DAY_REST_4H")}
-            className={`py-2.5 px-3 rounded-lg text-xs font-extrabold transition-all cursor-pointer text-center flex items-center justify-center gap-1.5 ${
-              selectedProduct === "DAY_REST_4H"
-                ? "bg-[#F28C28] text-white shadow-md"
-                : "text-gray-600 dark:text-gray-400 hover:text-[#0B192C] dark:hover:text-white"
-            }`}
-          >
-            <Clock size={13} />
-            <span>4 Hours Stay</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedProduct("DAY_REST_6H")}
-            className={`py-2.5 px-3 rounded-lg text-xs font-extrabold transition-all cursor-pointer text-center flex items-center justify-center gap-1.5 ${
-              selectedProduct === "DAY_REST_6H"
-                ? "bg-[#F28C28] text-white shadow-md"
-                : "text-gray-600 dark:text-gray-400 hover:text-[#0B192C] dark:hover:text-white"
-            }`}
-          >
-            <Clock size={13} />
-            <span>6 Hours Stay</span>
-          </button>
+          {packages.map((pkg) => (
+            <button
+              key={pkg.productCode}
+              type="button"
+              onClick={() => setSelectedProduct(pkg.productCode)}
+              className={`py-2.5 px-3 rounded-lg text-xs font-extrabold transition-all cursor-pointer text-center flex items-center justify-center gap-1.5 ${
+                selectedProduct === pkg.productCode
+                  ? "bg-[#F28C28] text-white shadow-md"
+                  : "text-gray-600 dark:text-gray-400 hover:text-[#0B192C] dark:hover:text-white"
+              }`}
+            >
+              <Clock size={13} />
+              <span>{durationLabel(pkg.durationMinutes)} Stay</span>
+            </button>
+          ))}
         </div>
       </div>
 
@@ -443,9 +539,10 @@ export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
           <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 rounded-xl shadow-2xl z-30 p-1.5 space-y-1 max-h-56 overflow-y-auto">
             {activeRooms.map((r) => {
               const isSelected = String(r._id) === selectedRoomId;
+              const rPackages = roomPackages(r, products);
               const rPricing =
-                r.dayStayConfig?.pricingByProduct?.[selectedProduct] ||
-                (selectedProduct === "DAY_REST_4H" ? 699 : 1199);
+                rPackages.find((p) => p.productCode === selectedProduct)?.price ??
+                (rPackages.length ? Math.min(...rPackages.map((p) => p.price)) : "—");
               return (
                 <button
                   key={r._id}
@@ -526,7 +623,7 @@ export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
             <span>Select Arrival Time Window</span>
           </label>
           <span className="text-[11px] text-gray-400 font-bold">
-            15m Grace Included
+            {graceMinutes}m Grace Included
           </span>
         </div>
 
@@ -635,7 +732,7 @@ export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
                 Arrival: <strong>{format12H(selectedSlot.startTime)}</strong> → Departure: <strong>{format12H(selectedSlot.endTime)}</strong>
               </span>
             </div>
-            <span className="text-[10px] opacity-75 font-semibold">+15m Grace</span>
+            <span className="text-[10px] opacity-75 font-semibold">+{graceMinutes}m Grace</span>
           </div>
         )}
       </div>
@@ -648,7 +745,7 @@ export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
         </div>
         <p>
           • <strong>Arrival Window:</strong> Access begins promptly at slot start time.
-          <br />• <strong>15-Minute Grace:</strong> Check out within 15 minutes of completion to ensure seamless housekeeping.
+          <br />• <strong>{graceMinutes}-Minute Grace:</strong> Check out within {graceMinutes} minutes of completion to ensure seamless housekeeping.
         </p>
       </div>
 
@@ -693,3 +790,21 @@ export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
     </div>
   );
 };
+
+const Row: React.FC<{ label: string; value?: React.ReactNode; mono?: boolean; highlight?: boolean }> = ({
+  label,
+  value,
+  mono,
+  highlight,
+}) => (
+  <div className="flex justify-between items-center gap-3">
+    <span className="text-gray-400">{label}:</span>
+    <span
+      className={`${mono ? "font-mono" : ""} font-bold text-right ${
+        highlight ? "text-emerald-600 dark:text-emerald-400" : "text-[#0B192C] dark:text-white"
+      }`}
+    >
+      {value}
+    </span>
+  </div>
+);

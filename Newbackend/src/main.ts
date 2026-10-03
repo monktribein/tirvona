@@ -102,8 +102,8 @@ async function bootstrap(): Promise<void> {
   await app.listen(port, config.get<string>("host") ?? "0.0.0.0");
   const server = app.getHttpServer();
   server.keepAliveTimeout = 65_000;
-  server.headersTimeout = 66_000;
-  server.requestTimeout = 30_000;
+  server.headersTimeout = 185_000;
+  server.requestTimeout = 180_000;
   if (!isProduction)
     process.stdout.write(
       `Tirvona API ready: http://localhost:${port}/api\n` +

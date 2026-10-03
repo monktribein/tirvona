@@ -186,7 +186,7 @@ export const bookingService = {
   createPaymentOrder: (id: string, useWallet = false) =>
     api.post(`/bookings/${id}/payment/order`, useWallet ? { useWallet } : {}),
   pay: (id: string, data: unknown) => api.post(`/bookings/${id}/payment`, data),
-  history: () => api.get("/bookings/history"),
+  history: () => api.get("/bookings/history", { skipToast: true }),
   dashboard: (params: Record<string, string> = {}) =>
     api.get("/bookings/dashboard", { params }),
   frontdeskSummary: (paramsOrAshramId: string | Record<string, string> = {}) =>
@@ -400,32 +400,107 @@ export const housekeepingService = {
 const UPLOAD_IMAGE_LIMIT_BYTES = 10 * 1024 * 1024;
 const UPLOAD_MAX_BYTES = 100 * 1024 * 1024;
 
+async function optimizeImageForUpload(file: File): Promise<File> {
+  const isCompressible =
+    (file.type === "image/jpeg" ||
+      file.type === "image/png" ||
+      file.type === "image/webp" ||
+      /\.(jpe?g|png|webp)$/i.test(file.name)) &&
+    file.size > 1.5 * 1024 * 1024;
+
+  if (!isCompressible || typeof window === "undefined" || !window.createImageBitmap) {
+    return file;
+  }
+
+  try {
+    const bitmap = await createImageBitmap(file);
+    const maxDim = 2560;
+    let { width, height } = bitmap;
+    if (width > maxDim || height > maxDim) {
+      if (width > height) {
+        height = Math.round((height * maxDim) / width);
+        width = maxDim;
+      } else {
+        width = Math.round((width * maxDim) / height);
+        height = maxDim;
+      }
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      bitmap.close();
+      return file;
+    }
+    ctx.drawImage(bitmap, 0, 0, width, height);
+    bitmap.close();
+
+    const outputType =
+      file.type === "image/png" && file.size < 4 * 1024 * 1024
+        ? "image/png"
+        : "image/jpeg";
+    const blob: Blob | null = await new Promise((resolve) =>
+      canvas.toBlob(resolve, outputType, 0.88),
+    );
+
+    if (blob && blob.size < file.size) {
+      const newName = file.name.replace(
+        /\.[^.]+$/,
+        outputType === "image/jpeg" ? ".jpg" : ".png",
+      );
+      return new File([blob], newName, {
+        type: outputType,
+        lastModified: Date.now(),
+      });
+    }
+  } catch {
+    // If client-side compression fails, upload original file safely
+  }
+  return file;
+}
+
 export const uploadService = {
   file: async (file: File, folder = "uploads"): Promise<string> => {
     const megabytes = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-    const isImage = file.type.startsWith("image/");
+    const isImage =
+      file.type.startsWith("image/") ||
+      /\.(jpe?g|png|webp|gif|avif|heic|heif|bmp|tiff|svg)$/i.test(file.name);
     const limit = isImage ? UPLOAD_IMAGE_LIMIT_BYTES : UPLOAD_MAX_BYTES;
-    if (file.size > limit)
+
+    if (file.size > limit) {
       throw new Error(
         `That ${isImage ? "image" : "file"} is ${megabytes(file.size)}. The limit is ${megabytes(limit)}.`,
       );
+    }
+
+    const fileToUpload = isImage ? await optimizeImageForUpload(file) : file;
 
     const form = new FormData();
-    form.append("file", file);
+    form.append("file", fileToUpload);
     form.append("folder", folder);
+
     try {
-      const res = await api.post("/uploads", form);
+      const res = await api.post("/uploads", form, {
+        timeout: 180_000,
+      });
       if (!res.data?.success) {
         throw new Error(res.data?.message || "Upload failed");
       }
       return res.data.data.url as string;
     } catch (err: any) {
       const status = err?.response?.status;
-      if (status === 413 || (!status && err?.message === "Network Error"))
+      const serverMessage = err?.response?.data?.message;
+      if (serverMessage && typeof serverMessage === "string") {
+        throw new Error(serverMessage);
+      }
+      if (status === 413 || (!status && (err?.message === "Network Error" || err?.code === "ECONNABORTED"))) {
         throw new Error(
-          `Upload rejected — the file may be too large for the server to accept (${megabytes(file.size)}). ` +
-            "If it is well under the limit, check your connection and try again.",
+          `Upload timed out or was rejected by the server (${megabytes(file.size)}). ` +
+            "Please check your internet connection or try a slightly smaller image.",
         );
+      }
       throw err;
     }
   },

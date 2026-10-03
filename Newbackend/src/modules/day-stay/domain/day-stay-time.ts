@@ -14,6 +14,21 @@ export function hhmmToMinutes(hhmm: string): number {
   return h * 60 + m;
 }
 
+/**
+ * Minutes from midnight for a free-text policy clock ("11:00", "11 AM",
+ * "10:30 pm"); `fallback` when it can't be read.
+ */
+export function parseClockMinutes(value: unknown, fallback: number): number {
+  const m = /^\s*(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?)?\s*$/i.exec(String(value ?? ""));
+  if (!m) return fallback;
+  let h = Number(m[1]);
+  const min = Number(m[2] ?? 0);
+  const ampm = m[3]?.toLowerCase().replace(/\./g, "");
+  if (ampm === "pm" && h < 12) h += 12;
+  if (ampm === "am" && h === 12) h = 0;
+  return h > 23 || min > 59 ? fallback : h * 60 + min;
+}
+
 export function minutesToHhmm(mins: number): string {
   return `${Math.floor(mins / 60).toString().padStart(2, "0")}:${(mins % 60).toString().padStart(2, "0")}`;
 }

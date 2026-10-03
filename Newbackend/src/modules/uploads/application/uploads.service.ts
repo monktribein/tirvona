@@ -39,7 +39,11 @@ export class UploadsService {
       throw new BadRequestException(
         'No file provided (expected form field "file")',
       );
-    const detected = this.detectType(file.buffer);
+    const detected = this.detectType(
+      file.buffer,
+      file.mimetype,
+      file.originalname,
+    );
     if (!detected)
       throw new BadRequestException(
         `That file type is not supported. Allowed: JPG, PNG, WEBP, GIF, AVIF, HEIC, PDF, MP3, WAV, OGG, M4A, AAC, FLAC, MP4, WEBM, MOV${
@@ -85,7 +89,7 @@ export class UploadsService {
                 ? "raw"
                 : detected.kind === "audio" || detected.kind === "video"
                   ? "video"
-                  : "image",
+                  : "auto",
           },
           (error, value) => (error ? reject(error) : resolve(value)),
         );
@@ -118,67 +122,188 @@ export class UploadsService {
 
   private detectType(
     bytes: Buffer,
+    fallbackMime?: string,
+    originalFilename?: string,
   ): { mime: string; kind: "image" | "pdf" | "audio" | "video" } | null {
     const ascii = (start: number, end: number): string =>
       bytes.subarray(start, end).toString("ascii");
 
-    if (
-      bytes.length >= 3 &&
-      bytes[0] === 0xff &&
-      bytes[1] === 0xd8 &&
-      bytes[2] === 0xff
-    )
+    // JPEG (SOI marker 0xFF, 0xD8)
+    if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xd8) {
       return { mime: "image/jpeg", kind: "image" };
-    if (bytes.subarray(0, 8).equals(Buffer.from("89504e470d0a1a0a", "hex")))
+    }
+    // PNG
+    if (bytes.length >= 8 && bytes.subarray(0, 8).equals(Buffer.from("89504e470d0a1a0a", "hex"))) {
       return { mime: "image/png", kind: "image" };
-    if (["GIF87a", "GIF89a"].includes(ascii(0, 6)))
+    }
+    // GIF
+    if (bytes.length >= 6 && ["GIF87a", "GIF89a"].includes(ascii(0, 6))) {
       return { mime: "image/gif", kind: "image" };
-    if (ascii(0, 4) === "RIFF") {
-      const form = ascii(8, 12);
+    }
+    // WEBP / WAVE
+    if (bytes.length >= 12 && ascii(0, 4) === "RIFF") {
+      const form = ascii(8, 12).toUpperCase();
       if (form === "WEBP") return { mime: "image/webp", kind: "image" };
       if (form === "WAVE") return { mime: "audio/wav", kind: "audio" };
     }
-    if (ascii(0, 5) === "%PDF-")
-      return { mime: "application/pdf", kind: "pdf" };
-    if (bytes.subarray(0, 4).equals(Buffer.from("1a45dfa3", "hex")))
-      return { mime: "video/webm", kind: "video" };
-    if (ascii(0, 4) === "OggS") return { mime: "audio/ogg", kind: "audio" };
-    if (ascii(0, 4) === "fLaC") return { mime: "audio/flac", kind: "audio" };
-    if (ascii(0, 3) === "ID3") return { mime: "audio/mpeg", kind: "audio" };
+    // BMP
+    if (bytes.length >= 2 && bytes[0] === 0x42 && bytes[1] === 0x4d) {
+      return { mime: "image/bmp", kind: "image" };
+    }
+    // TIFF
     if (
-      bytes.length >= 2 &&
-      bytes[0] === 0xff &&
-      (bytes[1] & 0xe0) === 0xe0 &&
-      bytes[1] !== 0xf1 &&
-      bytes[1] !== 0xf9
-    )
+      bytes.length >= 4 &&
+      ((bytes[0] === 0x49 && bytes[1] === 0x49 && bytes[2] === 0x2a && bytes[3] === 0x00) ||
+        (bytes[0] === 0x4d && bytes[1] === 0x4d && bytes[2] === 0x00 && bytes[3] === 0x2a))
+    ) {
+      return { mime: "image/tiff", kind: "image" };
+    }
+    // SVG
+    if (
+      bytes.length >= 4 &&
+      (ascii(0, 5) === "<?xml" ||
+        ascii(0, 4) === "<svg" ||
+        ascii(0, Math.min(bytes.length, 512)).toLowerCase().includes("<svg"))
+    ) {
+      return { mime: "image/svg+xml", kind: "image" };
+    }
+    // PDF
+    if (bytes.length >= 5 && ascii(0, 5) === "%PDF-") {
+      return { mime: "application/pdf", kind: "pdf" };
+    }
+    // WebM
+    if (bytes.length >= 4 && bytes.subarray(0, 4).equals(Buffer.from("1a45dfa3", "hex"))) {
+      return { mime: "video/webm", kind: "video" };
+    }
+    // OGG
+    if (bytes.length >= 4 && ascii(0, 4) === "OggS") {
+      return { mime: "audio/ogg", kind: "audio" };
+    }
+    // FLAC
+    if (bytes.length >= 4 && ascii(0, 4) === "fLaC") {
+      return { mime: "audio/flac", kind: "audio" };
+    }
+    // MP3
+    if (
+      (bytes.length >= 3 && ascii(0, 3) === "ID3") ||
+      (bytes.length >= 2 &&
+        bytes[0] === 0xff &&
+        (bytes[1] & 0xe0) === 0xe0 &&
+        bytes[1] !== 0xf1 &&
+        bytes[1] !== 0xf9)
+    ) {
       return { mime: "audio/mpeg", kind: "audio" };
+    }
+    // AAC
     if (
       bytes.length >= 2 &&
       bytes[0] === 0xff &&
       (bytes[1] === 0xf1 || bytes[1] === 0xf9)
-    )
+    ) {
       return { mime: "audio/aac", kind: "audio" };
-    if (bytes.length >= 12 && ascii(4, 8) === "ftyp") {
-      const brand = ascii(8, 12).toLowerCase();
-      if (brand.startsWith("avi")) return { mime: "image/avif", kind: "image" };
-      if (
-        ["heic", "heix", "hevc", "heim", "heis", "hevm", "hevs", "mif1", "msf1"]
-          .includes(brand)
-      )
-        return { mime: "image/heic", kind: "image" };
-      if (brand.startsWith("m4a") || brand.startsWith("m4b"))
-        return { mime: "audio/mp4", kind: "audio" };
-      if (brand === "qt  ") return { mime: "video/quicktime", kind: "video" };
-      if (
-        brand.startsWith("mp4") ||
-        brand.startsWith("iso") ||
-        brand.startsWith("avc") ||
-        brand.startsWith("dash") ||
-        brand === "m4v "
-      )
-        return { mime: "video/mp4", kind: "video" };
     }
+    // ISOBMFF / ftyp container (HEIC, HEIF, AVIF, MP4, MOV, M4A)
+    if (bytes.length >= 12 && ascii(4, 8) === "ftyp") {
+      const ftypChunk = ascii(8, Math.min(bytes.length, 64)).toLowerCase();
+      if (ftypChunk.startsWith("avi") || ftypChunk.includes("avif") || ftypChunk.includes("avis")) {
+        return { mime: "image/avif", kind: "image" };
+      }
+      if (
+        [
+          "heic",
+          "heix",
+          "hevc",
+          "heim",
+          "heis",
+          "hevm",
+          "hevs",
+          "heif",
+          "mif1",
+          "msf1",
+        ].some((b) => ftypChunk.includes(b))
+      ) {
+        return { mime: "image/heic", kind: "image" };
+      }
+      if (ftypChunk.startsWith("m4a") || ftypChunk.startsWith("m4b")) {
+        return { mime: "audio/mp4", kind: "audio" };
+      }
+      if (ftypChunk.startsWith("qt  ")) {
+        return { mime: "video/quicktime", kind: "video" };
+      }
+      if (
+        ftypChunk.startsWith("mp4") ||
+        ftypChunk.startsWith("iso") ||
+        ftypChunk.startsWith("avc") ||
+        ftypChunk.startsWith("dash") ||
+        ftypChunk.startsWith("m4v ")
+      ) {
+        return { mime: "video/mp4", kind: "video" };
+      }
+    }
+
+    // Resilient fallback based on browser MIME and original extension
+    const mime = (fallbackMime || "").toLowerCase().trim();
+    const ext = (originalFilename || "")
+      .split(".")
+      .pop()
+      ?.toLowerCase()
+      .trim();
+
+    if (
+      mime.startsWith("image/") ||
+      [
+        "jpg",
+        "jpeg",
+        "png",
+        "webp",
+        "gif",
+        "avif",
+        "heic",
+        "heif",
+        "bmp",
+        "tiff",
+        "svg",
+      ].includes(ext || "")
+    ) {
+      const resolvedMime =
+        mime.startsWith("image/")
+          ? mime
+          : ext === "png"
+            ? "image/png"
+            : ext === "webp"
+              ? "image/webp"
+              : ext === "heic" || ext === "heif"
+                ? "image/heic"
+                : ext === "gif"
+                  ? "image/gif"
+                  : ext === "avif"
+                    ? "image/avif"
+                    : ext === "bmp"
+                      ? "image/bmp"
+                      : ext === "svg"
+                        ? "image/svg+xml"
+                        : "image/jpeg";
+      return { mime: resolvedMime, kind: "image" };
+    }
+
+    if (
+      mime.startsWith("video/") ||
+      ["mp4", "webm", "mov", "m4v", "mkv"].includes(ext || "")
+    ) {
+      return { mime: mime.startsWith("video/") ? mime : "video/mp4", kind: "video" };
+    }
+
+    if (
+      mime.startsWith("audio/") ||
+      ["mp3", "wav", "ogg", "m4a", "aac", "flac"].includes(ext || "")
+    ) {
+      return { mime: mime.startsWith("audio/") ? mime : "audio/mpeg", kind: "audio" };
+    }
+
+    if (mime === "application/pdf" || ext === "pdf") {
+      return { mime: "application/pdf", kind: "pdf" };
+    }
+
     return null;
   }
 }

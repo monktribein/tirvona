@@ -93,7 +93,7 @@ export class DayStayHoldDto {
   @IsNotEmpty()
   startTime: string; // e.g. "09:30"
 
-  @IsNumber()
+  @IsInt()
   @Min(1)
   guestsCount: number;
 

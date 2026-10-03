@@ -48,7 +48,7 @@ import {
 } from "../contexts/BookingSearchContext";
 import TirvonaMap from "../components/TirvonaMap";
 import { DateRangePicker } from "../components/DateRangePicker";
-import { DayStayBookingCard } from "../components/day-stay/DayStayBookingCard";
+import { DayStayBookingCard, shortStayFromPrice } from "../components/day-stay/DayStayBookingCard";
 import { hasValidCoordinates } from "../utils/geo";
 import { useAutoScroll } from "../hooks/useAutoScroll";
 import { VRINDAVAN_DUMMY_STAYS } from "../data/vrindavanStaysData";
@@ -402,6 +402,9 @@ export const AshramDetailPage: React.FC = () => {
   const [showOvernightBooking, setShowOvernightBooking] = useState<boolean | null>(
     qMode === "daystay" ? false : true
   );
+  // "No, … is fine" on the switch-mode question card hides it until the mode changes.
+  const [modePromptDismissed, setModePromptDismissed] = useState(false);
+  useEffect(() => setModePromptDismissed(false), [showOvernightBooking]);
   const touchStartX = useRef(0);
 
   useEffect(() => {
@@ -1944,18 +1947,24 @@ export const AshramDetailPage: React.FC = () => {
                           </button>
                         </div>
 
-                        {ashram?.dayStayConfig?.enabled && (
+                        {ashram?.dayStayConfig?.enabled && r.dayStayConfig?.enabled === true && (
                           <button
                             type="button"
                             onClick={() => {
                               setSelectedDayStayRoomId(String(r._id));
-                              const el = document.getElementById("day-stay-card");
-                              if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                              // The short stay card is only rendered in short stay mode,
+                              // so switch first and scroll once it has mounted.
+                              setShowOvernightBooking(false);
+                              setTimeout(() => {
+                                document
+                                  .getElementById("day-stay-card")
+                                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                              }, 50);
                             }}
                             className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-200 dark:text-black text-[11px] font-bold transition-all cursor-pointer border border-black dark:border-white shadow-2xs"
                           >
                             <Clock size={11} />
-                            <span>Short Stay (From ₹{r.dayStayConfig?.pricingByProduct?.DAY_REST_4H || r.dayStayConfig?.pricingByProduct?.DAY_REST_6H || 499})</span>
+                            <span>Short Stay (From ₹{shortStayFromPrice(r)})</span>
                           </button>
                         )}
                       </div>
@@ -2193,14 +2202,11 @@ export const AshramDetailPage: React.FC = () => {
               rooms={rooms}
               selectedRoomId={selectedDayStayRoomId}
               onSelectRoom={setSelectedDayStayRoomId}
-              onSuccess={(res) => {
-                setBookingSuccess(res);
-              }}
             />
           )}
 
           {/* Question card: switch to overnight (shown below short stay) */}
-          {ashram?.dayStayConfig?.enabled && showOvernightBooking === false && (
+          {ashram?.dayStayConfig?.enabled && showOvernightBooking === false && !modePromptDismissed && (
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-5 shadow-sm space-y-4 relative overflow-hidden">
               <div className="absolute top-0 inset-x-0 h-1 bg-[#F28C28]/40 rounded-t-[28px]" />
               <div className="flex flex-col gap-3">
@@ -2228,7 +2234,7 @@ export const AshramDetailPage: React.FC = () => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => {}}
+                    onClick={() => setModePromptDismissed(true)}
                     className="flex-1 py-2.5 rounded-2xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 text-gray-600 dark:text-slate-300 text-xs font-extrabold hover:bg-gray-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
                   >
                     No, short stay is enough
@@ -2911,7 +2917,7 @@ export const AshramDetailPage: React.FC = () => {
           )}
 
           {/* Question card: switch to short stay (shown below overnight panel) */}
-          {ashram?.dayStayConfig?.enabled && showOvernightBooking === true && (
+          {ashram?.dayStayConfig?.enabled && showOvernightBooking === true && !modePromptDismissed && (
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-5 shadow-sm space-y-4 relative overflow-hidden">
               <div className="absolute top-0 inset-x-0 h-1 bg-[#F28C28]/40 rounded-t-[28px]" />
               <div className="flex flex-col gap-3">
@@ -2939,7 +2945,7 @@ export const AshramDetailPage: React.FC = () => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => {}}
+                    onClick={() => setModePromptDismissed(true)}
                     className="flex-1 py-2.5 rounded-2xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 text-gray-600 dark:text-slate-300 text-xs font-extrabold hover:bg-gray-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
                   >
                     No, overnight is fine

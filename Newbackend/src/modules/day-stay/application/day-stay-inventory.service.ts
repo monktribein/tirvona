@@ -10,6 +10,7 @@ import {
   istInstant,
   minutesToHhmm,
 } from "../domain/day-stay-time";
+import { overnightOccupancy, policyClockMinutes } from "../domain/day-stay-occupancy";
 
 export interface TimeSlotAvailability {
   startTime: string; // HH:mm (IST)
@@ -78,7 +79,9 @@ export class DayStayInventoryService {
     const room = await this.roomModel.findOne({ _id: roomId, ashramId }).lean();
     if (!room) throw new NotFoundException("Room not found");
 
-    if (room.dayStayConfig?.enabled === false) {
+    // Same rule as holdSlot: only rooms the owner explicitly opted in. A
+    // legacy room with no flag must not show slots that hold then rejects.
+    if (!room.dayStayConfig?.enabled) {
       return [];
     }
 
@@ -138,6 +141,11 @@ export class DayStayInventoryService {
       ],
     }).lean();
 
+    // Overnight bookings store plain dates (midnight UTC = 05:30 IST), but the
+    // guest holds the room from the check-in time to the check-out time —
+    // the same window overnight holds use when counting Short Stay guests.
+    const clocks = policyClockMinutes(ashram.policies);
+
     const slots: TimeSlotAvailability[] = [];
 
     // Generate slots in 30-minute stepping increments
@@ -156,7 +164,8 @@ export class DayStayInventoryService {
         for (const bk of existingBookings) {
           if (bk.bookingType === "overnight") {
             // Overnight guests hold the room from check-in to check-out.
-            if (slotStartUtc < new Date(bk.checkOutDate) && turnaroundEndUtc > new Date(bk.checkInDate)) {
+            const stay = overnightOccupancy(bk, clocks, bufferMinutes);
+            if (slotStartUtc < stay.end && turnaroundEndUtc > stay.start) {
               overlappingUnits += (bk.roomsBookedCount || 1);
             }
           } else if (bk.dayStayDetails?.slotStartTime && bk.dayStayDetails?.slotEndTime) {

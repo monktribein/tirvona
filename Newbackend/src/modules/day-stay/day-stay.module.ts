@@ -3,7 +3,11 @@ import { MongooseModule } from "@nestjs/mongoose";
 import { ConfigModule } from "@nestjs/config";
 import { CommonModule } from "../../common/common.module";
 import { DayStayProductSchema } from "./infrastructure/persistence/day-stay-product.schemas";
-import { AshramSchema, RoomSchema } from "../ashrams/infrastructure/persistence/ashram.schemas";
+import {
+  AshramSchema,
+  BookingInventorySchema,
+  RoomSchema,
+} from "../ashrams/infrastructure/persistence/ashram.schemas";
 import { BookingSchema, BookingStatusHistorySchema } from "../bookings/infrastructure/persistence/booking.schemas";
 import { BookingNotificationSchema } from "../bookings/infrastructure/persistence/booking-support.schemas";
 import { DayStayProductsService } from "./application/day-stay-products.service";
@@ -25,6 +29,7 @@ import { WalletModule } from "../wallet/wallet.module";
       { name: "Booking", schema: BookingSchema },
       { name: "BookingStatusHistory", schema: BookingStatusHistorySchema },
       { name: "BookingNotification", schema: BookingNotificationSchema },
+      { name: "BookingInventory", schema: BookingInventorySchema },
     ]),
   ],
   controllers: [DayStayController],
