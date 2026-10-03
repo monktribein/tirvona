@@ -183,8 +183,8 @@ export const bookingService = {
     api.post("/bookings/quote", data, { skipToast: true }),
   create: (data: unknown) => api.post("/bookings/create", data),
   getById: (id: string) => api.get(`/bookings/${id}`),
-  createPaymentOrder: (id: string) =>
-    api.post(`/bookings/${id}/payment/order`, {}),
+  createPaymentOrder: (id: string, useWallet = false) =>
+    api.post(`/bookings/${id}/payment/order`, useWallet ? { useWallet } : {}),
   pay: (id: string, data: unknown) => api.post(`/bookings/${id}/payment`, data),
   history: () => api.get("/bookings/history"),
   dashboard: (params: Record<string, string> = {}) =>
@@ -467,6 +467,7 @@ export const dayStayService = {
     startTime: string;
     guestsCount: number;
     specialRequests?: string;
+    useWallet?: boolean;
   }) => api.post("/day-stay/hold", data),
   confirmPayment: (data: {
     bookingId: string;

@@ -16,6 +16,7 @@ import {
   PassFormatDto,
   ReviewAartiDto,
 } from "../dtos/aarti.dto";
+import { UseWalletDto } from "../../../wallet/presentation/use-wallet.dto";
 
 @ApiTags("Aarti Bookings")
 @ApiBearerAuth()
@@ -96,8 +97,14 @@ export class AartiBookingController {
   @Post(":id/payment/order") async order(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
+    @Body() dto: UseWalletDto,
   ) {
-    return { success: true, ...(await this.service.createPaymentOrder(id, user)) };
+    return {
+      success: true,
+      ...(await this.service.createPaymentOrder(id, user, {
+        useWallet: dto?.useWallet,
+      })),
+    };
   }
 
   @Post(":id/payment") async payment(
@@ -150,10 +157,14 @@ export class AartiBookingController {
     @Param("id") id: string,
     @Body() dto: CancelAartiDto,
   ) {
+    const data = await this.service.cancel(id, user, dto);
     return {
       success: true,
-      message: "Your aarti booking has been cancelled.",
-      data: await this.service.cancel(id, user, dto),
+      message:
+        data.refundMethod === "wallet"
+          ? `Your aarti booking has been cancelled. ₹${data.refund.refundAmount} has been added to your Tirvona wallet.`
+          : "Your aarti booking has been cancelled.",
+      data,
     };
   }
 

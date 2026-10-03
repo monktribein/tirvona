@@ -24,6 +24,7 @@ import {
   formatDateTime,
 } from "../utils/aartiFormat";
 import AartiStatusBadge from "../components/AartiStatusBadge";
+import { notifyWalletChanged } from "../../../services/wallet.service";
 
 export const AartiBookingDetailPage: React.FC = () => {
   const { bookingReference, id: legacyId } = useParams();
@@ -92,6 +93,7 @@ export const AartiBookingDetailPage: React.FC = () => {
     setBusy(true);
     try {
       await aartiBookingService.cancel(id, reason || undefined);
+      notifyWalletChanged();
       await load();
     } catch {
       // Handled by the toast interceptor.

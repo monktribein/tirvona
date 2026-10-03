@@ -5,6 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useNotifications } from "../contexts/NotificationContext";
 import NotificationDropdown from "../components/shared/NotificationDropdown";
 import CartDrawer, { CartButton } from "../components/shared/CartDrawer";
+import WalletButton from "../components/wallet/WalletButton";
 import { setGuestPendingIntent } from "../utils/guestGate";
 import { getRoleDefaultDashboard, isParkingRole } from "../utils/roleRedirect";
 import { vendorApi } from "../services/marketplace.service";
@@ -34,6 +35,7 @@ import {
   Package,
   MessageSquare,
   LifeBuoy,
+  Wallet,
 } from "lucide-react";
 
 const FooterAccordion: React.FC<{
@@ -478,6 +480,8 @@ export const PublicLayout: React.FC = () => {
 
               {user ? (
                 <div className="flex items-center gap-2">
+                  {!hasOperationalDashboard() && <WalletButton />}
+
                   {!hasOperationalDashboard() && <CartButton />}
 
                   <NotificationDropdown />
@@ -577,6 +581,19 @@ export const PublicLayout: React.FC = () => {
                                 </div>
                                 <span className="text-xs font-bold">
                                   My Bookings &amp; Stays
+                                </span>
+                              </Link>
+
+                              <Link
+                                to="/profile/wallet"
+                                onClick={() => setProfileDropdownOpen(false)}
+                                className="px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                              >
+                                <div className="w-6 h-6 rounded-md bg-orange-100/60 dark:bg-orange-950/60 text-[#F28C28] dark:text-amber-400 flex items-center justify-center shrink-0">
+                                  <Wallet size={13} />
+                                </div>
+                                <span className="text-xs font-bold">
+                                  My Wallet
                                 </span>
                               </Link>
 
@@ -787,6 +804,19 @@ export const PublicLayout: React.FC = () => {
                   {hasOperationalDashboard()
                     ? getDashboardLabel()
                     : "My Profile"}
+                </span>
+                <ChevronRight size={14} className="text-primary/50" />
+              </Link>
+            )}
+
+            {user && !hasOperationalDashboard() && (
+              <Link
+                to="/profile/wallet"
+                onClick={() => setDrawerOpen(false)}
+                className="flex items-center justify-between py-3.5 px-3 rounded-xl text-sm font-bold text-primary hover:bg-primary/5 transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  <Wallet size={15} /> My Wallet
                 </span>
                 <ChevronRight size={14} className="text-primary/50" />
               </Link>

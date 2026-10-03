@@ -52,6 +52,7 @@ describe("parking pass display is idempotent", () => {
       {} as never,
       {} as never,
       {} as never,
+      { planSplit: jest.fn(), placeHold: jest.fn(), releaseHold: jest.fn(), spend: jest.fn(), credit: jest.fn() } as any,
     );
     (service as any).issueQr = issueQr;
     return { service, issueQr, qrCodes };

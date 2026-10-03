@@ -12,6 +12,8 @@ import { useNotifications } from "../contexts/NotificationContext";
 import { formatCurrency } from "../utils/format";
 import { getErrorMessage } from "../lib/api";
 import { openRazorpayCheckout } from "../lib/razorpay";
+import WalletPayOption from "../components/wallet/WalletPayOption";
+import { notifyWalletChanged } from "../services/wallet.service";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -94,6 +96,7 @@ export const MarketplaceCheckoutPage: React.FC = () => {
   const [quoteError, setQuoteError] = useState("");
   const [loadingQuote, setLoadingQuote] = useState(true);
   const [placing, setPlacing] = useState(false);
+  const [payFromWallet, setPayFromWallet] = useState(false);
   const [placed, setPlaced] = useState<{
     orderNumber: string;
     stores: number;
@@ -210,11 +213,23 @@ export const MarketplaceCheckoutPage: React.FC = () => {
         items: cartPayload,
         ...(addressId ? { addressId } : { address }),
         idempotencyKey,
+        ...(payFromWallet ? { useWallet: true } : {}),
       });
       const order = res.data?.data?.order;
       const payment = res.data?.data?.payment;
       if (!order?._id || !payment?.razorpayOrderId)
         throw new Error("Order could not be created");
+      if (payFromWallet) notifyWalletChanged();
+
+      // Paid in full from the Tirvona wallet: the order is already confirmed.
+      if (res.data?.data?.walletPaid) {
+        clear();
+        setPlaced({
+          orderNumber: order.orderNumber,
+          stores: order.vendorOrderIds?.length ?? 1,
+        });
+        return;
+      }
 
       let confirmation: Record<string, string>;
       if (payment.demo) {
@@ -547,6 +562,13 @@ export const MarketplaceCheckoutPage: React.FC = () => {
                     </dd>
                   </div>
                 </dl>
+
+                <WalletPayOption
+                  total={quote.pricing.totalAmount}
+                  checked={payFromWallet}
+                  onChange={setPayFromWallet}
+                  disabled={placing}
+                />
 
                 <button
                   onClick={placeOrder}

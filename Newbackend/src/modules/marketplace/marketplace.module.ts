@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { MongooseModule } from "@nestjs/mongoose";
 import { AuditModule } from "../audit/audit.module";
+import { WalletModule } from "../wallet/wallet.module";
 import { MarketplaceAddressSchema } from "../commerce/infrastructure/persistence/marketplace-order.schemas";
 import { payoutConfig } from "../payouts/config/payout.config";
 import { BankAccountCrypto } from "../payouts/infrastructure/bank-account.crypto";
@@ -35,6 +36,7 @@ import { MarketplaceVendorController } from "./presentation/marketplace-vendor.c
   imports: [
     ConfigModule.forFeature(payoutConfig),
     AuditModule,
+    WalletModule,
     MongooseModule.forFeature([
       ...MARKETPLACE_MODELS,
       { name: "MarketplaceAddress", schema: MarketplaceAddressSchema },

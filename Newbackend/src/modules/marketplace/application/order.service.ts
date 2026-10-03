@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpException,
 
   ForbiddenException,
   Injectable,
@@ -36,6 +37,7 @@ import { LedgerService } from "./ledger.service";
 import { MarketplaceAuditService } from "./marketplace-audit.service";
 import { MarketplaceSettingsService } from "./marketplace-settings.service";
 import { VendorService } from "./vendor.service";
+import { WalletService } from "../../wallet/application/wallet.service";
 
 const CANCELLABLE: FulfillmentStatus[] = ["pending_payment", "confirmed", "processing"];
 
@@ -57,6 +59,7 @@ export class OrderService {
     private readonly audit: MarketplaceAuditService,
     private readonly transactions: TransactionService,
     private readonly config: ConfigService,
+    private readonly wallet: WalletService,
   ) {
     const keyId = this.config.get<string>("razorpayKeyId");
     const keySecret = this.config.get<string>("razorpayKeySecret");
@@ -209,11 +212,42 @@ export class OrderService {
       throw err;
     }
 
-    // 3. Gateway order through Tirvona's existing Razorpay account.
+    // 3. Wallet first: the buyer's Tirvona balance covers what it can.
+    const { walletAmount, gatewayAmount } = await this.wallet.planSplit(
+      user.id,
+      master.pricing.totalAmount,
+      dto.useWallet,
+    );
+    master.pricing.walletAmount = walletAmount;
+    master.pricing.gatewayAmount = gatewayAmount;
+    if (walletAmount > 0 && gatewayAmount <= 0) {
+      master.gateway = { provider: "wallet", orderId: `wallet_mp_${master._id}`, demo: false };
+      await master.save();
+      try {
+        await this.spendWalletShare(master);
+      } catch (err) {
+        await this.expireOrder(master, "Wallet payment could not be completed");
+        throw err;
+      }
+      await this.markPaid(master, `wallet_${master._id}`, user);
+      await this.audit.log(user, "order.created", "MpMasterOrder", master._id, { total: master.pricing.totalAmount, wallet: walletAmount });
+      return { ...this.withPayment(await this.masterOrders.findById(master._id)), walletPaid: true };
+    }
+
+    // 4. Gateway order through Tirvona's existing Razorpay account.
     try {
+      if (walletAmount > 0)
+        await this.wallet.placeHold({
+          userId: user.id,
+          module: "marketplace",
+          sourceId: master._id,
+          amount: walletAmount,
+          reference: master.orderNumber,
+          expiresAt: master.reservationExpiresAt,
+        });
       if (this.razorpay) {
         const gatewayOrder = await this.razorpay.orders.create({
-          amount: toPaise(master.pricing.totalAmount),
+          amount: toPaise(gatewayAmount),
           currency: "INR",
           receipt: master.orderNumber,
           notes: { module: "marketplace", masterOrderId: String(master._id) },
@@ -227,7 +261,8 @@ export class OrderService {
       await master.save();
     } catch (err: any) {
       await this.expireOrder(master, "Payment gateway unavailable at checkout");
-      if (err instanceof ServiceUnavailableException) throw err;
+      // Wallet refusals (balance changed, checkout already open) speak for themselves.
+      if (err instanceof HttpException) throw err;
       this.logger.error(`Razorpay order creation failed: ${err?.message}`);
       throw new ServiceUnavailableException("Payment gateway is unavailable. Please try again shortly.");
     }
@@ -238,15 +273,21 @@ export class OrderService {
   private withPayment(master: any) {
     const keyId = this.config.get<string>("razorpayKeyId") ?? "";
     const o = typeof master.toObject === "function" ? master.toObject() : master;
+    const gatewayAmount = o.pricing.gatewayAmount ?? o.pricing.totalAmount;
     return {
       order: o,
       payment: {
         provider: o.gateway?.provider,
         razorpayOrderId: o.gateway?.orderId,
-        amount: toPaise(o.pricing.totalAmount),
+        amount: toPaise(gatewayAmount),
         currency: "INR",
         keyId,
         demo: Boolean(o.gateway?.demo),
+      },
+      wallet: {
+        applied: Number(o.pricing.walletAmount ?? 0),
+        gatewayAmount,
+        total: o.pricing.totalAmount,
       },
     };
   }
@@ -289,7 +330,8 @@ export class OrderService {
     const master = await this.masterOrders.findOne({ "gateway.orderId": gatewayOrderId });
     if (!master) return false;
     if (master.paymentStatus === "paid") return true;
-    if (captured?.amountPaise !== undefined && Math.round(captured.amountPaise) !== toPaise(master.pricing.totalAmount)) {
+    const gatewayAmount = master.pricing.gatewayAmount ?? master.pricing.totalAmount;
+    if (captured?.amountPaise !== undefined && Math.round(captured.amountPaise) !== toPaise(gatewayAmount)) {
       master.reconciliationNote = `AMOUNT_MISMATCH captured=${captured.amountPaise}`;
       await master.save();
       this.logger.error(`Marketplace ${master.orderNumber}: amount mismatch (${captured.amountPaise} paise)`);
@@ -318,6 +360,26 @@ export class OrderService {
       { new: true },
     );
     if (!flipped) return; // someone else already confirmed (or it was cancelled)
+
+    // The wallet share is spent once the order is ours to confirm. If it can
+    // no longer be taken, the confirmation is undone for manual review.
+    try {
+      await this.spendWalletShare(flipped);
+    } catch (err) {
+      await this.masterOrders.updateOne(
+        { _id: master._id },
+        {
+          $set: {
+            paymentStatus: "pending",
+            status: wasExpired ? "expired" : "pending_payment",
+            "pricing.amountPaid": 0,
+            reconciliationNote: `WALLET_SHARE_UNAVAILABLE gateway=${paymentId}`,
+          },
+        },
+      );
+      this.logger.error(`Marketplace ${master.orderNumber}: wallet share could not be taken after payment ${paymentId}`);
+      throw err;
+    }
 
     const vos = await this.vendorOrders.find({ masterOrderId: master._id });
     const lines = vos.flatMap((vo: any) => this.stockLines(vo));
@@ -362,6 +424,21 @@ export class OrderService {
     return n;
   }
 
+  /** Spends the order's wallet share; idempotent per order. */
+  private async spendWalletShare(master: any): Promise<void> {
+    const walletAmount = Number(master.pricing?.walletAmount ?? 0);
+    if (walletAmount <= 0) return;
+    await this.wallet.spend({
+      userId: String(master.customerId),
+      module: "marketplace",
+      sourceId: master._id,
+      amount: walletAmount,
+      reference: master.orderNumber,
+      description: `Paid for marketplace order ${master.orderNumber}`,
+      actorId: String(master.customerId),
+    });
+  }
+
   /** Releases an unpaid order's stock exactly once. */
   private async expireOrder(master: any, reason: string): Promise<boolean> {
     const flipped = await this.masterOrders.findOneAndUpdate(
@@ -370,6 +447,7 @@ export class OrderService {
       { new: true },
     );
     if (!flipped) return false;
+    await this.wallet.releaseHold("marketplace", master._id);
     const vos = await this.vendorOrders.find({ masterOrderId: master._id });
     await this.inventory.releaseAll(vos.flatMap((vo: any) => this.stockLines(vo)));
     await this.vendorOrders.updateMany(
@@ -572,9 +650,10 @@ export class OrderService {
   }
 
   /**
-   * Refunds one vendor order through Razorpay. Only marks it refunded when the
-   * gateway accepted the refund; otherwise it stays cancelled/returned with
-   * `refundError` set for an admin to retry.
+   * Refunds one vendor order to the buyer's Tirvona wallet, from where it can
+   * pay for the next order or be transferred out on request. Only marks it
+   * refunded once the wallet was credited; otherwise it stays
+   * cancelled/returned with `refundError` set for an admin to retry.
    */
   private async refundVendorOrder(
     vo: any,
@@ -584,21 +663,21 @@ export class OrderService {
     opts: { restock: boolean; alreadyPaidLedger: boolean },
   ): Promise<void> {
     if (vo.refundId) return; // already refunded
-    const paymentId = master?.gateway?.paymentId;
     let refundId: string | undefined;
     try {
-      if (master?.gateway?.demo) {
-        if (!this.demoPaymentsAllowed()) throw new Error("Demo refunds are not allowed");
-        refundId = `demo_refund_${vo._id}`;
-      } else {
-        if (!this.razorpay || !paymentId) throw new Error("Payment gateway not configured or payment id missing");
-        const res: any = await this.razorpay.payments.refund(paymentId, {
-          amount: toPaise(vo.total),
-          speed: "normal",
-          notes: { vendorOrder: vo.vendorOrderNumber, reason: reason.slice(0, 200) },
-        });
-        refundId = res?.id;
-      }
+      const credit = await this.wallet.credit({
+        userId: String(vo.customerId ?? master?.customerId),
+        amount: vo.total,
+        module: "marketplace",
+        category: "refund",
+        sourceId: vo._id,
+        reference: vo.vendorOrderNumber,
+        description: `Refund for marketplace order ${vo.vendorOrderNumber}`,
+        idempotencyKey: `refund:marketplace:${String(vo._id)}`,
+        actorId: actor?.id ?? null,
+        actorRole: actor?.role,
+      });
+      refundId = `wallet_${String(credit?._id ?? vo._id)}`;
     } catch (err: any) {
       vo.refundError = String(err?.error?.description ?? err?.message ?? "Refund failed");
       await vo.save();

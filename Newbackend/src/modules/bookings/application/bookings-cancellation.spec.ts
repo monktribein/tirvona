@@ -50,6 +50,7 @@ const paidBooking = (extra: Record<string, unknown> = {}) => {
 const build = (row: any) => {
   const service = Object.create(BookingsService.prototype) as any;
   const refundCreate = jest.fn().mockResolvedValue([{}]);
+  const walletCredit = jest.fn().mockResolvedValue({ _id: "wtx-1" });
   Object.assign(service, {
     logger: { log: jest.fn(), warn: jest.fn() },
     transactions: { run: jest.fn(async (work: any) => work({})) },
@@ -59,8 +60,14 @@ const build = (row: any) => {
       findOne: jest.fn(() => ({
         session: async () => ({ _id: "pay-1" }),
       })),
+      updateOne: jest.fn(),
     },
     refunds: { create: refundCreate },
+    wallet: { releaseHold: jest.fn(), credit: walletCredit },
+    financialTransactions: {
+      create: jest.fn().mockResolvedValue([{ _id: "txn-1", reference: "BKTXN-1" }]),
+    },
+    ledger: { create: jest.fn() },
     commissions: { updateOne: jest.fn() },
     coupons: { updateOne: jest.fn() },
     redemptions: { updateOne: jest.fn() },
@@ -70,7 +77,7 @@ const build = (row: any) => {
     repository: { releaseInventory: jest.fn() },
     roomUnits: () => [{ roomId: "room-1", units: 1 }],
   });
-  return { service, refundCreate };
+  return { service, refundCreate, walletCredit };
 };
 
 describe("BookingsService cancellation refund", () => {
@@ -87,6 +94,40 @@ describe("BookingsService cancellation refund", () => {
     expect(result.refundAmount).toBe(preview.refundAmount);
     expect(refundCreate).toHaveBeenCalledWith(
       [expect.objectContaining({ amount: preview.refundAmount, percentage: 80 })],
+      expect.anything(),
+    );
+  });
+
+  it("credits a website pilgrim's refund to their Tirvona wallet, settled at once", async () => {
+    const row = paidBooking();
+    const { service, refundCreate, walletCredit } = build(row);
+    const result = await service.cancel("booking-1", website, {
+      reason: "Change of plan",
+    });
+    expect(result.refundMethod).toBe("wallet");
+    expect(walletCredit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "user-1",
+        amount: 1600,
+        category: "refund",
+        idempotencyKey: "refund:ashram_booking:booking-1",
+      }),
+      expect.anything(),
+    );
+    expect(refundCreate).toHaveBeenCalledWith(
+      [expect.objectContaining({ method: "wallet", status: "success" })],
+      expect.anything(),
+    );
+    expect(row.cancellation.refundMethod).toBe("wallet");
+  });
+
+  it("keeps a WhatsApp guest's refund in the gateway queue (no wallet)", async () => {
+    const row = paidBooking({ customerId: undefined, whatsappCustomerId: "wa-1" });
+    const { service, refundCreate, walletCredit } = build(row);
+    await service.cancel("booking-1", guest, { reason: "Nahi aa sakte" });
+    expect(walletCredit).not.toHaveBeenCalled();
+    expect(refundCreate).toHaveBeenCalledWith(
+      [expect.objectContaining({ method: "gateway", status: "pending" })],
       expect.anything(),
     );
   });

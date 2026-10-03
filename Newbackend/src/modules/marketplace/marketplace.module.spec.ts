@@ -12,6 +12,7 @@ import { MarketplaceModule } from "./marketplace.module";
 import { OrderService } from "./application/order.service";
 import { MarketplaceAdminController } from "./presentation/marketplace-admin.controller";
 import { MARKETPLACE_MODELS } from "./infrastructure/marketplace.schemas";
+import { WalletService } from "../wallet/application/wallet.service";
 
 describe("MarketplaceModule wiring", () => {
   it("constructs every provider and controller", async () => {
@@ -26,6 +27,7 @@ describe("MarketplaceModule wiring", () => {
         { provide: ConfigService, useValue: { get: () => undefined } },
         { provide: TransactionService, useValue: { run: (w: any) => w() } },
         { provide: payoutConfig.KEY, useValue: { enabled: false } },
+        { provide: WalletService, useValue: {} },
       ],
     }).compile();
     expect(moduleRef.get(OrderService)).toBeDefined();

@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { AARTI_MODEL } from "./domain/aarti.constants";
+import { WalletModule } from "../wallet/wallet.module";
 import { AARTI_REPOSITORY } from "./domain/aarti.repository";
 import { AartiAccessService } from "./application/aarti-access.service";
 import { AartiBookingService } from "./application/aarti-booking.service";
@@ -62,7 +63,7 @@ const schemas = [
 ].map(([name, schema]) => ({ name: name as string, schema: schema as any }));
 
 @Module({
-  imports: [MongooseModule.forFeature(schemas)],
+  imports: [MongooseModule.forFeature(schemas), WalletModule],
   controllers: [
     AartiPublicController,
     AartiBookingController,

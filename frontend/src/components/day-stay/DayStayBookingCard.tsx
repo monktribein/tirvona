@@ -21,6 +21,8 @@ import {
 import { useAuth } from "../../contexts/AuthContext";
 import { dayStayService } from "../../services";
 import { openRazorpayCheckout } from "../../lib/razorpay";
+import WalletPayOption from "../wallet/WalletPayOption";
+import { notifyWalletChanged } from "../../services/wallet.service";
 import {
   saveBookingDraft,
   getBookingDraft,
@@ -67,6 +69,7 @@ export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
   const [specialRequests, setSpecialRequests] = useState<string>("");
   const [loadingSlots, setLoadingSlots] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
+  const [payFromWallet, setPayFromWallet] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [restoredDraft, setRestoredDraft] = useState<boolean>(false);
   const [roomDropdownOpen, setRoomDropdownOpen] = useState<boolean>(false);
@@ -234,16 +237,29 @@ export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
         startTime: selectedSlot.startTime,
         guestsCount,
         specialRequests,
+        ...(payFromWallet ? { useWallet: true } : {}),
       });
 
       const holdData = holdRes.data;
+      if (payFromWallet) notifyWalletChanged();
+
+      // Paid in full from the Tirvona wallet: already confirmed, no gateway.
+      if (holdData.walletPaid) {
+        clearBookingDraft();
+        setRestoredDraft(false);
+        if (onSuccess) onSuccess(holdData.confirmation);
+        return;
+      }
 
       // 3. Open Official Razorpay Checkout Modal
       const paymentResult = await openRazorpayCheckout(
         {
           orderId: holdData.razorpayOrderId,
-          // Charge exactly what the server priced into the order.
-          amount: Math.round((holdData.pricing?.totalAmount ?? totalAmount) * 100),
+          // Charge exactly what the server priced into the order: the part
+          // the wallet did not cover.
+          amount: Math.round(
+            (holdData.wallet?.gatewayAmount ?? holdData.pricing?.totalAmount ?? totalAmount) * 100,
+          ),
           currency: "INR",
           keyId: holdData.razorpayKeyId || holdData.keyId,
         },
@@ -641,6 +657,15 @@ export const DayStayBookingCard: React.FC<DayStayBookingCardProps> = ({
           <AlertCircle size={14} className="shrink-0" />
           <span>{error}</span>
         </div>
+      )}
+
+      {user && selectedSlot && (
+        <WalletPayOption
+          total={totalAmount}
+          checked={payFromWallet}
+          onChange={setPayFromWallet}
+          disabled={submitting}
+        />
       )}
 
       {/* Booking / Payment Action CTA */}

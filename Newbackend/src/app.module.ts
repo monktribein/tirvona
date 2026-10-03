@@ -46,6 +46,7 @@ import { MarketplaceModule } from "./modules/marketplace/marketplace.module";
 // WhatsApp as a second customer frontend over the existing services. Inbound
 // conversation only; outbound transactional delivery stays in WhatsAppModule.
 import { WhatsAppChannelModule } from "./modules/whatsapp-channel/whatsapp-channel.module";
+import { WalletApiModule } from "./modules/wallet/wallet-api.module";
 import {
   hybridRateLimitTracker,
   ipRateLimitTracker,
@@ -161,6 +162,7 @@ import {
     DayStayModule,
     MarketplaceModule,
     WhatsAppChannelModule,
+    WalletApiModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

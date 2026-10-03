@@ -15,6 +15,8 @@ import {
 import { getErrorMessage } from "../../../lib/api";
 import { useAuth } from "../../../contexts/AuthContext";
 import { openRazorpayCheckout } from "../../../lib/razorpay";
+import WalletPayOption from "../../../components/wallet/WalletPayOption";
+import { notifyWalletChanged } from "../../../services/wallet.service";
 import {
   parkingDiscoveryService,
   parkingBookingService,
@@ -58,6 +60,7 @@ export const ParkingCheckoutPage: React.FC = () => {
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [payFromWallet, setPayFromWallet] = useState(false);
   const [error, setError] = useState("");
   const [fieldError, setFieldError] = useState("");
 
@@ -142,11 +145,20 @@ export const ParkingCheckoutPage: React.FC = () => {
 
       const bookingId = createRes.data.data.booking._id;
 
-      const orderRes =
-        await parkingBookingService.createPaymentOrder(bookingId);
+      const orderRes = await parkingBookingService.createPaymentOrder(
+        bookingId,
+        payFromWallet,
+      );
       if (!orderRes.data?.success) {
         setError(orderRes.data?.message || "Could not start the payment.");
         setSubmitting(false);
+        return;
+      }
+      if (payFromWallet) notifyWalletChanged();
+
+      // Paid in full from the Tirvona wallet: the pass is already issued.
+      if (orderRes.data.walletPaid) {
+        navigate(`/parking/booking/${bookingId}?justBooked=1`, { replace: true });
         return;
       }
 
@@ -320,6 +332,15 @@ export const ParkingCheckoutPage: React.FC = () => {
                 </div>
               </div>
             </section>
+
+            {quote && (
+              <WalletPayOption
+                total={quote.totalAmount}
+                checked={payFromWallet}
+                onChange={setPayFromWallet}
+                disabled={submitting}
+              />
+            )}
 
             <button
               type="submit"

@@ -84,8 +84,8 @@ export const parkingBookingService = {
 
   get: (id: string) => api.get(`/parking/bookings/${id}`),
 
-  createPaymentOrder: (id: string) =>
-    api.post(`/parking/bookings/${id}/payment/order`, {}),
+  createPaymentOrder: (id: string, useWallet = false) =>
+    api.post(`/parking/bookings/${id}/payment/order`, useWallet ? { useWallet } : {}),
 
   confirmPayment: (
     id: string,

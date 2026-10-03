@@ -92,6 +92,7 @@ describe("parking booking service: dual identity", () => {
       {} as any,
       {} as any,
       {} as any,
+      { planSplit: jest.fn(), placeHold: jest.fn(), releaseHold: jest.fn(), spend: jest.fn(), credit: jest.fn() } as any,
     );
     return { service, repository, bookings, created };
   };
@@ -189,6 +190,7 @@ describe("parking booking service: payment order binding", () => {
       notifications,
       {} as any,
       locations,
+      { planSplit: jest.fn(), placeHold: jest.fn(), releaseHold: jest.fn(), spend: jest.fn(), credit: jest.fn() } as any,
     );
     (service as any).verifyRazorpay = jest.fn().mockReturnValue(true);
     (service as any).issueQr = jest.fn().mockResolvedValue({ displayCode: "X", token: "TVNPK1.tok" });
@@ -242,6 +244,7 @@ describe("parking booking service: payment order binding", () => {
     const payment = {
       _id: "pay-1",
       status: "pending",
+      amount: 100,
       save: jest.fn(),
       gateway: { orderId: "order_1" },
     };

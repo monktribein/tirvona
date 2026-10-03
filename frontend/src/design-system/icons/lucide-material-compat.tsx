@@ -112,6 +112,7 @@ export const ChevronRight = materialIcon("chevron_right");
 export const ChevronUp = materialIcon("expand_less");
 export const CircleCheck = materialIcon("check_circle");
 export const CircleParking = materialIcon("local_parking");
+export const CirclePlus = materialIcon("add_circle");
 export const ClipboardCheck = materialIcon("assignment_turned_in");
 export const ClipboardList = materialIcon("assignment");
 export const Clock = materialIcon("schedule");

@@ -228,6 +228,8 @@ export const BookingSchema = new Schema(
       date: Date,
       refundAmount: Number,
       refundTransactionId: String,
+      // "wallet" when the refund was credited to the pilgrim's Tirvona wallet.
+      refundMethod: String,
     },
     deletedAt: { type: Date, default: null, index: true },
     deletedBy: id("User"),

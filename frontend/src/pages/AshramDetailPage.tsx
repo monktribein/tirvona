@@ -21,6 +21,8 @@ import {
 } from "../services";
 import { getErrorMessage } from "../lib/api";
 import { openRazorpayCheckout } from "../lib/razorpay";
+import WalletPayOption from "../components/wallet/WalletPayOption";
+import { notifyWalletChanged } from "../services/wallet.service";
 import {
   saveBookingDraft,
   getBookingDraft,
@@ -1108,6 +1110,7 @@ export const AshramDetailPage: React.FC = () => {
   ]);
 
   const [paying, setPaying] = useState(false);
+  const [payFromWallet, setPayFromWallet] = useState(false);
 
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1214,19 +1217,28 @@ export const AshramDetailPage: React.FC = () => {
         currency: "INR",
       });
 
-      const orderRes = await bookingService.createPaymentOrder(heldBooking._id);
-      if (orderRes.data.demo)
-        throw new Error("Razorpay is not configured. Real payment is required.");
+      const orderRes = await bookingService.createPaymentOrder(
+        heldBooking._id,
+        payFromWallet,
+      );
+      let confirmedBooking;
+      if (orderRes.data.walletPaid) {
+        // The wallet covered the whole stay; the booking is already confirmed.
+        confirmedBooking = orderRes.data.data;
+      } else {
+        if (orderRes.data.demo)
+          throw new Error("Razorpay is not configured. Real payment is required.");
 
-      const paymentResult = await openRazorpayCheckout(orderRes.data.data, {
-        name: user.name,
-        email: user.email,
-        contact: user.phone,
-      });
-      const paymentRes = await bookingService.pay(heldBooking._id, paymentResult);
-      if (!paymentRes.data.success) throw new Error("Payment verification failed.");
-
-      const confirmedBooking = paymentRes.data.data;
+        const paymentResult = await openRazorpayCheckout(orderRes.data.data, {
+          name: user.name,
+          email: user.email,
+          contact: user.phone,
+        });
+        const paymentRes = await bookingService.pay(heldBooking._id, paymentResult);
+        if (!paymentRes.data.success) throw new Error("Payment verification failed.");
+        confirmedBooking = paymentRes.data.data;
+      }
+      if (payFromWallet) notifyWalletChanged();
       clearBookingDraft();
       setBookingSuccess(confirmedBooking);
 
@@ -1255,6 +1267,7 @@ export const AshramDetailPage: React.FC = () => {
       setBookingError(
         getErrorMessage(err, "Payment could not be completed. Your booking was not confirmed."),
       );
+      if (payFromWallet) notifyWalletChanged();
     } finally {
       setPaying(false);
     }
@@ -1267,19 +1280,23 @@ export const AshramDetailPage: React.FC = () => {
     try {
       const orderRes = await bookingService.createPaymentOrder(
         bookingSuccess._id,
+        payFromWallet,
       );
 
-      if (orderRes.data.demo) {
-        throw new Error("Razorpay is not configured. Real payment is required.");
+      if (!orderRes.data.walletPaid) {
+        if (orderRes.data.demo) {
+          throw new Error("Razorpay is not configured. Real payment is required.");
+        }
+
+        const result = await openRazorpayCheckout(orderRes.data.data, {
+          name: user?.name,
+          email: user?.email,
+          contact: user?.phone,
+        });
+
+        await bookingService.pay(bookingSuccess._id, result);
       }
-
-      const result = await openRazorpayCheckout(orderRes.data.data, {
-        name: user?.name,
-        email: user?.email,
-        contact: user?.phone,
-      });
-
-      await bookingService.pay(bookingSuccess._id, result);
+      if (payFromWallet) notifyWalletChanged();
       navigate("/dashboard");
     } catch (err) {
       setBookingError(
@@ -2787,6 +2804,15 @@ export const AshramDetailPage: React.FC = () => {
                   </span>
                 </div>
 
+                {checkAshramBookingAvailable(ashram) && (
+                  <WalletPayOption
+                    total={finalPayableCalc}
+                    checked={payFromWallet}
+                    onChange={setPayFromWallet}
+                    disabled={paying}
+                  />
+                )}
+
                 <button
                   type="submit"
                   disabled={paying || quoting || !checkAshramBookingAvailable(ashram)}
@@ -2816,7 +2842,7 @@ export const AshramDetailPage: React.FC = () => {
                     <span>Payment Successful — Booking Confirmed!</span>
                   </div>
                   <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                    Razorpay verified your payment and your room is confirmed.
+                    Your payment is verified and your room is confirmed.
                   </p>
                 </div>
 

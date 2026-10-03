@@ -24,6 +24,7 @@ import useMyBookings, {
   type UnifiedBooking,
 } from "../../hooks/useMyBookings";
 import { useNotifications } from "../../contexts/NotificationContext";
+import { notifyWalletChanged, walletRefundText } from "../../services/wallet.service";
 
 const TABS: { key: BookingCategory; label: string }[] = [
   { key: "upcoming", label: "Upcoming" },
@@ -106,8 +107,9 @@ export const ProfileBookingsPage: React.FC = () => {
           : await bookingService.cancel(booking.id, "Cancelled from profile");
 
       if (res.data?.success) {
+        notifyWalletChanged();
         await refresh();
-        addNotification("Booking Cancelled", `${booking.reference} was cancelled.`, "success");
+        addNotification("Booking Cancelled", `${booking.reference} was cancelled.${walletRefundText(res.data.data)}`, "success");
       } else {
         setActionError(res.data?.message || "Could not cancel this booking.");
         addNotification("Cancellation Failed", res.data?.message || "Could not cancel this booking.", "error");

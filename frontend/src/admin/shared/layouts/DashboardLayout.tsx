@@ -22,6 +22,7 @@ import {
   Building,
   Building2,
   Undo2,
+  Wallet,
   Heart,
   ChevronDown,
   ChevronRight,
@@ -760,6 +761,14 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
+      groupName: "Pilgrim Wallets",
+      icon: <Wallet size={15} />,
+      links: [
+        { label: "All Wallets", path: "/admin/wallets" },
+        { label: "Transfer Requests", path: "/admin/wallets/withdrawals" },
+      ],
+    },
+    {
       groupName: "Support Management",
       icon: <LifeBuoy size={15} />,
       links: SUPPORT_ADMIN_LINKS,
@@ -1169,6 +1178,14 @@ export const DashboardLayout: React.FC = () => {
             groupName: "Marketplace Finance",
             icon: <DollarSign size={15} />,
             links: [{ label: "Marketplace Payouts & Commission", path: "/admin/manage/marketplace/payouts" }],
+          },
+          {
+            groupName: "Pilgrim Wallets",
+            icon: <Wallet size={15} />,
+            links: [
+              { label: "All Wallets", path: "/admin/wallets" },
+              { label: "Transfer Requests", path: "/admin/wallets/withdrawals" },
+            ],
           },
           SUPPORT_HANDLER_GROUP,
         ],

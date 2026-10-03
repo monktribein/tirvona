@@ -33,6 +33,7 @@ import {
 } from "../utils/parkingFormat";
 import ParkingQrTicket from "../components/ParkingQrTicket";
 import ParkingStatusBadge from "../components/ParkingStatusBadge";
+import { notifyWalletChanged } from "../../../services/wallet.service";
 
 export const ParkingBookingDetailPage: React.FC = () => {
   const { bookingReference, id: legacyId } = useParams<{
@@ -125,6 +126,7 @@ export const ParkingBookingDetailPage: React.FC = () => {
         "Cancelled by visitor",
       );
       if (res.data?.success) {
+        notifyWalletChanged();
         setNotice(res.data.message);
         setShowCancel(false);
         await load();

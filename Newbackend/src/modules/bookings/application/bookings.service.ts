@@ -58,6 +58,7 @@ import { BookingPricingService } from "./booking-pricing.service";
 import { bookingConfirmedOutboxEvent } from "./booking-notification.factory";
 import { normalizeWhatsAppNumber } from "../../../integrations/whatsapp/utils/whatsapp-phone.util";
 import { isTestPromoCode } from "../domain/test-coupon.constants";
+import { WalletService } from "../../wallet/application/wallet.service";
 
 /**
  * Matches a coupon redemption to the identity that made it. A redemption row
@@ -111,6 +112,7 @@ export class BookingsService {
     @InjectModel("PlatformSettings") private readonly settings: Model<any>,
     @InjectModel("User") private readonly userModel: Model<any>,
     @InjectModel("Room") private readonly roomModel: Model<any>,
+    private readonly wallet: WalletService,
   ) {}
 
   private async scopedAshrams(
@@ -544,7 +546,30 @@ export class BookingsService {
     await this.assertCanManage(actor.principal, booking);
   }
 
-  async paymentOrder(id: string, actor: BookingActor): Promise<any> {
+  /** Wallet ledger bucket for a booking row: day stays share this collection. */
+  private walletModuleFor(booking: any): "day_stay" | "ashram_booking" {
+    return ["day_rest", "freshen_up"].includes(booking?.bookingType)
+      ? "day_stay"
+      : "ashram_booking";
+  }
+
+  /**
+   * The account whose wallet may pay for this booking: only the website
+   * customer who owns it, paying for themselves. Staff paying on a guest's
+   * behalf, and WhatsApp guests (who have no wallet), never touch a wallet.
+   */
+  private walletPayer(actor: BookingActor, booking: any): string | null {
+    if (!actor.userId || !booking?.customerId) return null;
+    return String(booking.customerId) === String(actor.userId)
+      ? String(actor.userId)
+      : null;
+  }
+
+  async paymentOrder(
+    id: string,
+    actor: BookingActor,
+    options: { useWallet?: boolean } = {},
+  ): Promise<any> {
     const booking = await this.bookings.findOne({ _id: id });
     if (!booking) throw new NotFoundException("Booking not found");
     await this.assertCanPayFor(actor, booking);
@@ -555,13 +580,39 @@ export class BookingsService {
       booking.reservationExpiresAt < new Date()
     )
       throw new BadRequestException("Reservation hold has expired");
+    const total = roundMoney(Number(booking.pricing.totalAmount));
+    const payerId = this.walletPayer(actor, booking);
+    const walletModule = this.walletModuleFor(booking);
+    const { walletAmount, gatewayAmount } = await this.wallet.planSplit(
+      payerId,
+      total,
+      options.useWallet,
+      { module: walletModule, sourceId: booking._id },
+    );
+    // The wallet covers everything: no gateway involved at all.
+    if (payerId && walletAmount > 0 && gatewayAmount <= 0)
+      return this.payWithWallet(String(booking._id), actor, payerId);
+
     const keyId = this.config.get<string>("razorpayKeyId");
     const keySecret = this.config.get<string>("razorpayKeySecret");
     if (!keyId || !keySecret)
       throw new ServiceUnavailableException(
         "Razorpay is not configured. Real payment is required for booking confirmation.",
       );
-    const amountPaise = Math.round(booking.pricing.totalAmount * 100);
+    // Park the wallet share for this checkout, or give back a share parked by
+    // an earlier attempt that chose not to use the wallet.
+    if (payerId && walletAmount > 0)
+      await this.wallet.placeHold({
+        userId: payerId,
+        module: walletModule,
+        sourceId: booking._id,
+        amount: walletAmount,
+        reference: booking.bookingId,
+        expiresAt: booking.reservationExpiresAt,
+      });
+    else await this.wallet.releaseHold(walletModule, booking._id);
+    const walletInfo = { applied: walletAmount, gatewayAmount, total };
+    const amountPaise = Math.round(gatewayAmount * 100);
     // One open order per booking. A Razorpay order can be paid only once, so
     // handing the same order back on a repeat call (a re-opened payment page,
     // a retried tap) means a guest can never end up paying two different
@@ -572,13 +623,15 @@ export class BookingsService {
         status: "pending",
         "gateway.provider": "razorpay",
         "gateway.orderId": { $exists: true, $ne: null },
-        amount: booking.pricing.totalAmount,
+        amount: gatewayAmount,
+        walletAmount: walletAmount > 0 ? walletAmount : { $in: [0, null] },
       })
       .sort({ createdAt: -1 })
       .lean();
     if (openOrder?.gateway?.orderId)
       return {
         demo: false,
+        wallet: walletInfo,
         data: {
           orderId: openOrder.gateway.orderId,
           amount: amountPaise,
@@ -590,18 +643,25 @@ export class BookingsService {
       key_id: keyId,
       key_secret: keySecret,
     });
-    const order = await gateway.orders.create({
-      amount: amountPaise,
-      currency: "INR",
-      receipt: booking.bookingId,
-    });
+    let order: any;
+    try {
+      order = await gateway.orders.create({
+        amount: amountPaise,
+        currency: "INR",
+        receipt: booking.bookingId,
+      });
+    } catch (error) {
+      await this.wallet.releaseHold(walletModule, booking._id);
+      throw error;
+    }
     await this.payments.create({
       bookingId: booking._id,
       // The payment is recorded against the identity that is paying, which
       // for a WhatsApp guest is their WhatsApp customer record.
       ...actorOwnerFields(actor),
       ashramId: booking.ashramId,
-      amount: booking.pricing.totalAmount,
+      amount: gatewayAmount,
+      walletAmount,
       method: "razorpay",
       status: "pending",
       gateway: { orderId: order.id, provider: "razorpay" },
@@ -612,12 +672,78 @@ export class BookingsService {
     );
     return {
       demo: false,
+      wallet: walletInfo,
       data: {
         orderId: order.id,
         amount: order.amount,
         currency: order.currency,
         keyId,
       },
+    };
+  }
+
+  /**
+   * Pays the whole booking from the customer's wallet and confirms it in one
+   * transaction — the same confirmation a verified Razorpay payment gets.
+   */
+  private async payWithWallet(
+    id: string,
+    actor: BookingActor,
+    payerId: string,
+  ): Promise<any> {
+    const result = await this.transactions.run(async (session) => {
+      const booking = await this.bookings.findOne({ _id: id }).session(session);
+      if (!booking) throw new NotFoundException("Booking not found");
+      if (booking.paymentStatus === "fully_paid")
+        throw new ConflictException("Booking is already paid");
+      if (
+        booking.status !== "pending" ||
+        (booking.reservationExpiresAt &&
+          booking.reservationExpiresAt < new Date())
+      )
+        throw new BadRequestException("Reservation hold has expired");
+      const total = roundMoney(Number(booking.pricing.totalAmount));
+      const [payment] = await this.payments.create(
+        [
+          {
+            bookingId: booking._id,
+            ...actorOwnerFields(actor),
+            ashramId: booking.ashramId,
+            amount: 0,
+            walletAmount: total,
+            method: "wallet",
+            status: "pending",
+            gateway: { provider: "wallet" },
+          },
+        ],
+        { session },
+      );
+      const spent = await this.wallet.spend(
+        {
+          userId: payerId,
+          module: this.walletModuleFor(booking),
+          sourceId: booking._id,
+          amount: total,
+          reference: booking.bookingId,
+          description: `Paid for stay booking ${booking.bookingId}`,
+          actorId: actor.userId,
+        },
+        session,
+      );
+      const transactionId = `WLT-${String(spent._id).slice(-10).toUpperCase()}`;
+      return this.settleVerifiedPayment(session, booking, payment, actor, {
+        transactionId,
+        provider: "wallet",
+        gateway: { provider: "wallet" },
+        payload: { walletTransactionId: String(spent._id), amount: total },
+      });
+    });
+    return {
+      walletPaid: true,
+      wallet: { applied: result.payment.walletAmount, gatewayAmount: 0 },
+      data: result.booking,
+      payment: result.payment,
+      invoice: result.invoice,
     };
   }
 
@@ -673,20 +799,24 @@ export class BookingsService {
     const expectedPaise = Math.round(
       Number(booking.pricing?.totalAmount) * 100,
     );
+    // The gateway share plus any wallet share must make up the whole total;
+    // Razorpay itself only ever collects the gateway share.
+    const gatewayPaise = Math.round(Number(payment.amount) * 100);
+    const walletPaise = Math.round(Number(payment.walletAmount ?? 0) * 100);
     if (
       !Number.isFinite(expectedPaise) ||
       expectedPaise <= 0 ||
-      Math.round(Number(payment.amount) * 100) !== expectedPaise
+      gatewayPaise + walletPaise !== expectedPaise
     )
       throw new BadRequestException(
         "The payment amount does not match this booking",
       );
     // The webhook carries what Razorpay actually captured; the client
     // callback does not, and is covered by the order having been created for
-    // exactly `expectedPaise`.
+    // exactly the gateway share.
     if (
       gateway?.amountPaise !== undefined &&
-      Math.round(Number(gateway.amountPaise)) !== expectedPaise
+      Math.round(Number(gateway.amountPaise)) !== gatewayPaise
     )
       throw new BadRequestException(
         "The captured amount does not match this booking",
@@ -821,318 +951,363 @@ export class BookingsService {
         throw error;
       }
 
-      const holdLapsed =
-        booking.status !== "pending" ||
-        (booking.reservationExpiresAt &&
-          booking.reservationExpiresAt < new Date());
-
-      if (holdLapsed) {
-        if (["cancelled", "refunded"].includes(booking.status))
+      // The wallet share was parked when this order was opened; it is spent
+      // here, in the same transaction that confirms the booking, so a booking
+      // is never confirmed without its wallet money, nor the reverse.
+      if (Number(payment.walletAmount ?? 0) > 0) {
+        if (!booking.customerId)
           throw new BadRequestException(
-            "This booking was cancelled; the payment will be refunded",
+            "This payment does not belong to this booking",
           );
-        for (const room of this.roomUnits(booking))
-          await this.repository.holdInventory({
-            ashramId: String(booking.ashramId),
-            roomId: room.roomId,
-            dates: booking.occupiedDates,
-            count: room.units,
-            capacity: room.units,
-            session,
-          });
-        booking.status = "pending";
-        booking.reservationExpiresAt = new Date(Date.now() + 15 * 60_000);
-        await this.audits.create(
-          [
-            {
-              userId: actor.userId,
-              action: "BOOKING_HOLD_RECOVERED_ON_PAYMENT",
-              bookingId: booking._id,
-              ashramId: booking.ashramId,
-              details: {
-                note: "Payment verified after the hold lapsed; inventory re-acquired",
-              },
-            },
-          ],
-          { session },
+        await this.wallet.spend(
+          {
+            userId: String(booking.customerId),
+            module: this.walletModuleFor(booking),
+            sourceId: booking._id,
+            amount: Number(payment.walletAmount),
+            reference: booking.bookingId,
+            description: `Paid for stay booking ${booking.bookingId}`,
+            actorId: actor.userId,
+          },
+          session,
         );
       }
+      const provider = this.config.get<string>("razorpayKeySecret")
+        ? "razorpay"
+        : "demo";
+      return this.settleVerifiedPayment(session, booking, payment, actor, {
+        transactionId:
+          dto.razorpay_payment_id ??
+          dto.transactionId ??
+          financialReference("BKPAY"),
+        idempotencyKey: dto.idempotencyKey,
+        provider,
+        gateway: {
+          orderId: dto.razorpay_order_id,
+          paymentId: dto.razorpay_payment_id,
+          signature: dto.razorpay_signature,
+          provider,
+        },
+        payload: dto,
+      });
+    });
+  }
 
+  /**
+   * Confirms a booking whose payment has been verified — by a Razorpay
+   * signature, or by the wallet debit in `payWithWallet`. Everything from
+   * inventory to invoice happens here once, whichever way the money came.
+   */
+  private async settleVerifiedPayment(
+    session: any,
+    booking: any,
+    payment: any,
+    actor: BookingActor,
+    proof: {
+      transactionId: string;
+      idempotencyKey?: string;
+      provider: string;
+      gateway: Record<string, unknown>;
+      payload: unknown;
+    },
+  ): Promise<any> {
+    const holdLapsed =
+      booking.status !== "pending" ||
+      (booking.reservationExpiresAt &&
+        booking.reservationExpiresAt < new Date());
+
+    if (holdLapsed) {
+      if (["cancelled", "refunded"].includes(booking.status))
+        throw new BadRequestException(
+          "This booking was cancelled; the payment will be refunded",
+        );
       for (const room of this.roomUnits(booking))
-        await this.repository.confirmInventory({
+        await this.repository.holdInventory({
+          ashramId: String(booking.ashramId),
           roomId: room.roomId,
           dates: booking.occupiedDates,
           count: room.units,
+          capacity: room.units,
           session,
         });
-      await this.inventoryHolds.updateMany(
-        { bookingId: booking._id, state: "held" },
-        {
-          $set: {
-            state: "confirmed",
-            confirmedAt: new Date(),
-            expiresAt: null,
-          },
-        },
-        { session },
-      );
-      payment.status = "success";
-      payment.paidAt = new Date();
-      payment.transactionId =
-        dto.razorpay_payment_id ??
-        dto.transactionId ??
-        financialReference("BKPAY");
-      payment.idempotencyKey = dto.idempotencyKey;
-      payment.gateway = {
-        orderId: dto.razorpay_order_id,
-        paymentId: dto.razorpay_payment_id,
-        signature: dto.razorpay_signature,
-        provider: this.config.get<string>("razorpayKeySecret")
-          ? "razorpay"
-          : "demo",
-      };
-      await payment.save({ session });
-      await this.paymentEvents.updateOne(
-        {
-          provider: this.config.get<string>("razorpayKeySecret")
-            ? "razorpay"
-            : "demo",
-          eventId: payment.transactionId,
-        },
-        {
-          $setOnInsert: {
-            provider: this.config.get<string>("razorpayKeySecret")
-              ? "razorpay"
-              : "demo",
-            eventType: "payment_verified",
-            bookingId: booking._id,
-            paymentId: payment._id,
-            signatureVerified: true,
-            payload: dto,
-            status: "processed",
-            processedAt: new Date(),
-          },
-        },
-        { upsert: true, session },
-      );
-      const ashram = await this.ashrams
-        .findById(booking.ashramId)
-        .session(session);
-      const policy = await this.pricing["policies"]
-        .findOne({
-          $or: [
-            { scope: "ashram", ashramId: booking.ashramId },
-            { scope: "platform" },
-          ],
-          isActive: true,
-        })
-        .sort({ scope: 1 })
-        .lean();
-      const platform = await this.settings.findOne({ key: "main" }).lean();
-      const percent = Number(
-        policy?.platformCommissionPercent ??
-          platform?.bookingCommissionPercent ??
-          10,
-      );
-      const commissionAmount =
-        Math.round(((booking.pricing.totalAmount * percent) / 100) * 100) / 100;
-      booking.status = "confirmed";
-      booking.paymentStatus = "fully_paid";
-      booking.gatewayStatus = "success";
-      booking.paymentMode = "online";
-      booking.pricing.amountPaid = booking.pricing.totalAmount;
-      booking.reservationExpiresAt = null;
-      await booking.save({ session });
-      const confirmedNotification = bookingConfirmedOutboxEvent({
-        ...actorOwnerFields(actor),
-        customerPhone: actor.phone,
-        booking,
-        payment,
-      });
-      const [transaction] = await this.financialTransactions.create(
+      booking.status = "pending";
+      booking.reservationExpiresAt = new Date(Date.now() + 15 * 60_000);
+      await this.audits.create(
         [
           {
+            userId: actor.userId,
+            action: "BOOKING_HOLD_RECOVERED_ON_PAYMENT",
             bookingId: booking._id,
-            paymentId: payment._id,
+            ashramId: booking.ashramId,
+            details: {
+              note: "Payment verified after the hold lapsed; inventory re-acquired",
+            },
+          },
+        ],
+        { session },
+      );
+    }
+
+    for (const room of this.roomUnits(booking))
+      await this.repository.confirmInventory({
+        roomId: room.roomId,
+        dates: booking.occupiedDates,
+        count: room.units,
+        session,
+      });
+    await this.inventoryHolds.updateMany(
+      { bookingId: booking._id, state: "held" },
+      {
+        $set: {
+          state: "confirmed",
+          confirmedAt: new Date(),
+          expiresAt: null,
+        },
+      },
+      { session },
+    );
+    payment.status = "success";
+    payment.paidAt = new Date();
+    payment.transactionId = proof.transactionId;
+    if (proof.idempotencyKey) payment.idempotencyKey = proof.idempotencyKey;
+    payment.gateway = proof.gateway;
+    await payment.save({ session });
+    await this.paymentEvents.updateOne(
+      {
+        provider: proof.provider,
+        eventId: payment.transactionId,
+      },
+      {
+        $setOnInsert: {
+          provider: proof.provider,
+          eventType: "payment_verified",
+          bookingId: booking._id,
+          paymentId: payment._id,
+          signatureVerified: true,
+          payload: proof.payload,
+          status: "processed",
+          processedAt: new Date(),
+        },
+      },
+      { upsert: true, session },
+    );
+    const ashram = await this.ashrams
+      .findById(booking.ashramId)
+      .session(session);
+    const policy = await this.pricing["policies"]
+      .findOne({
+        $or: [
+          { scope: "ashram", ashramId: booking.ashramId },
+          { scope: "platform" },
+        ],
+        isActive: true,
+      })
+      .sort({ scope: 1 })
+      .lean();
+    const platform = await this.settings.findOne({ key: "main" }).lean();
+    const percent = Number(
+      policy?.platformCommissionPercent ??
+        platform?.bookingCommissionPercent ??
+        10,
+    );
+    const commissionAmount =
+      Math.round(((booking.pricing.totalAmount * percent) / 100) * 100) / 100;
+    booking.status = "confirmed";
+    booking.paymentStatus = "fully_paid";
+    booking.gatewayStatus = "success";
+    booking.paymentMode = "online";
+    booking.pricing.amountPaid = booking.pricing.totalAmount;
+    booking.reservationExpiresAt = null;
+    await booking.save({ session });
+    const confirmedNotification = bookingConfirmedOutboxEvent({
+      ...actorOwnerFields(actor),
+      customerPhone: actor.phone,
+      booking,
+      payment,
+    });
+    const [transaction] = await this.financialTransactions.create(
+      [
+        {
+          bookingId: booking._id,
+          paymentId: payment._id,
+          ashramId: booking.ashramId,
+          ownerId: ashram.ownerId,
+          type: "booking",
+          direction: "credit",
+          amount: booking.pricing.totalAmount,
+          reference: financialReference("BKTXN"),
+          description: `Ashram booking ${booking.bookingId}`,
+          recordedBy: actor.userId,
+        },
+      ],
+      { session },
+    );
+    await Promise.all([
+      this.ledger.create(
+        [
+          {
+            account: "booking_clearing",
+            bookingId: booking._id,
             ashramId: booking.ashramId,
             ownerId: ashram.ownerId,
-            type: "booking",
-            direction: "credit",
-            amount: booking.pricing.totalAmount,
-            reference: financialReference("BKTXN"),
-            description: `Ashram booking ${booking.bookingId}`,
-            recordedBy: actor.userId,
+            transactionId: transaction._id,
+            debit: 0,
+            credit: booking.pricing.totalAmount,
+            reference: transaction.reference,
           },
         ],
         { session },
-      );
-      await Promise.all([
-        this.ledger.create(
-          [
-            {
-              account: "booking_clearing",
-              bookingId: booking._id,
-              ashramId: booking.ashramId,
-              ownerId: ashram.ownerId,
-              transactionId: transaction._id,
-              debit: 0,
-              credit: booking.pricing.totalAmount,
-              reference: transaction.reference,
-            },
-          ],
-          { session },
-        ),
-        this.commissions.create(
-          [
-            {
-              bookingId: booking._id,
-              ashramId: booking.ashramId,
-              ownerId: ashram.ownerId,
-              grossAmount: booking.pricing.totalAmount,
-              commissionPercent: percent,
-              commissionAmount,
-              ownerEarning: booking.pricing.totalAmount - commissionAmount,
-              settlementStatus: "pending",
-            },
-          ],
-          { session },
-        ),
-        this.history.create(
-          [
-            {
-              bookingId: booking._id,
-              fromStatus: "pending",
-              toStatus: "confirmed",
-              note: "Payment verified",
-              actorId: actor.userId,
-              actorRole: actor.role,
-            },
-          ],
-          { session },
-        ),
-        this.notifications.create(
-          [confirmedNotification],
-          { session },
-        ),
-        this.audits.create(
-          [
-            {
-              userId: actor.userId,
-              action: "BOOKING_PAYMENT_SUCCESS",
-              bookingId: booking._id,
-              ashramId: booking.ashramId,
-              details: {
-                paymentId: payment._id,
-                transactionId: payment.transactionId,
-              },
-            },
-          ],
-          { session },
-        ),
-        this.redemptions.updateOne(
-          { bookingId: booking._id, status: "reserved" },
-          { $set: { status: "redeemed", redeemedAt: new Date() } },
-          { session },
-        ),
-      ]);
-      this.logger.log(
-        JSON.stringify({
-          event: "booking.outbox_event_staged",
-          eventType: confirmedNotification.event,
-          bookingId: String(booking._id),
-          correlationId: confirmedNotification.meta.correlationId,
-          hasRecipientPhone: Boolean(confirmedNotification.recipientPhone),
-        }),
-      );
-      const gstPercent = Number(
-        booking.pricing.gstPercent ?? PLATFORM_FEE_GST_PERCENT,
-      );
-      const invoiceNo = financialReference("INV");
-      const [invoice] = await this.invoices.create(
+      ),
+      this.commissions.create(
         [
           {
-            invoiceNumber: invoiceNo,
             bookingId: booking._id,
-            ...actorIdentityFields(actor),
             ashramId: booking.ashramId,
-            lineItems: [
-              {
-                description: "Ashram stay and selected services",
-                quantity: 1,
-                unitAmount: booking.pricing.originalAmount,
-                totalAmount: booking.pricing.originalAmount,
-                taxRate: 0,
-                taxAmount: 0,
-              },
-              ...(booking.pricing.platformFee > 0
-                ? [
-                    {
-                      description: "Tirvona platform fee",
-                      quantity: 1,
-                      unitAmount: booking.pricing.platformFee,
-                      totalAmount: booking.pricing.platformFee,
-                      taxRate: gstPercent,
-                      taxAmount: booking.pricing.gstAmount,
-                    },
-                  ]
-                : []),
-            ],
-            subtotal: roundMoney(
-              booking.pricing.originalAmount + booking.pricing.platformFee,
-            ),
-            taxAmount: booking.pricing.gstAmount,
-            discountAmount: booking.pricing.discountAmount,
-            donationAmount: booking.pricing.donationAmount,
-            totalAmount: booking.pricing.totalAmount,
+            ownerId: ashram.ownerId,
+            grossAmount: booking.pricing.totalAmount,
+            commissionPercent: percent,
+            commissionAmount,
+            ownerEarning: booking.pricing.totalAmount - commissionAmount,
+            settlementStatus: "pending",
           },
         ],
         { session },
-      );
-      await Promise.all([
-        this.receipts.create(
-          [
-            {
-              receiptNumber: financialReference("RCT"),
-              bookingId: booking._id,
+      ),
+      this.history.create(
+        [
+          {
+            bookingId: booking._id,
+            fromStatus: "pending",
+            toStatus: "confirmed",
+            note: "Payment verified",
+            actorId: actor.userId,
+            actorRole: actor.role,
+          },
+        ],
+        { session },
+      ),
+      this.notifications.create(
+        [confirmedNotification],
+        { session },
+      ),
+      this.audits.create(
+        [
+          {
+            userId: actor.userId,
+            action: "BOOKING_PAYMENT_SUCCESS",
+            bookingId: booking._id,
+            ashramId: booking.ashramId,
+            details: {
               paymentId: payment._id,
-              amount: payment.amount,
-              method: payment.method,
+              transactionId: payment.transactionId,
             },
-          ],
-          { session },
-        ),
-        this.taxes.create(
-          [
+          },
+        ],
+        { session },
+      ),
+      this.redemptions.updateOne(
+        { bookingId: booking._id, status: "reserved" },
+        { $set: { status: "redeemed", redeemedAt: new Date() } },
+        { session },
+      ),
+    ]);
+    this.logger.log(
+      JSON.stringify({
+        event: "booking.outbox_event_staged",
+        eventType: confirmedNotification.event,
+        bookingId: String(booking._id),
+        correlationId: confirmedNotification.meta.correlationId,
+        hasRecipientPhone: Boolean(confirmedNotification.recipientPhone),
+      }),
+    );
+    const gstPercent = Number(
+      booking.pricing.gstPercent ?? PLATFORM_FEE_GST_PERCENT,
+    );
+    const invoiceNo = financialReference("INV");
+    const [invoice] = await this.invoices.create(
+      [
+        {
+          invoiceNumber: invoiceNo,
+          bookingId: booking._id,
+          ...actorIdentityFields(actor),
+          ashramId: booking.ashramId,
+          lineItems: [
             {
-              bookingId: booking._id,
-              invoiceId: invoice._id,
-              ashramId: booking.ashramId,
-              taxableAmount:
-                booking.pricing.gstTaxableAmount ??
-                booking.pricing.platformFee ??
-                0,
-              gstPercent,
-              cgst: roundMoney(booking.pricing.gstAmount / 2),
-              sgst: roundMoney(
-                booking.pricing.gstAmount - roundMoney(booking.pricing.gstAmount / 2),
-              ),
-              igst: 0,
-              totalTax: booking.pricing.gstAmount,
-              taxPeriod: new Date().toISOString().slice(0, 7),
+              description: "Ashram stay and selected services",
+              quantity: 1,
+              unitAmount: booking.pricing.originalAmount,
+              totalAmount: booking.pricing.originalAmount,
+              taxRate: 0,
+              taxAmount: 0,
             },
+            ...(booking.pricing.platformFee > 0
+              ? [
+                  {
+                    description: "Tirvona platform fee",
+                    quantity: 1,
+                    unitAmount: booking.pricing.platformFee,
+                    totalAmount: booking.pricing.platformFee,
+                    taxRate: gstPercent,
+                    taxAmount: booking.pricing.gstAmount,
+                  },
+                ]
+              : []),
           ],
-          { session },
-        ),
-      ]);
-      void this.publishEnterpriseNotification(
-        "Booking confirmed",
-        `Payment verified for ${booking.bookingId}. Room inventory confirmed.`,
-        "success",
-        "BOOKINGS",
-        { bookingId: booking._id, ashramId: booking.ashramId },
-      );
-      return { booking, payment, invoice };
-    });
+          subtotal: roundMoney(
+            booking.pricing.originalAmount + booking.pricing.platformFee,
+          ),
+          taxAmount: booking.pricing.gstAmount,
+          discountAmount: booking.pricing.discountAmount,
+          donationAmount: booking.pricing.donationAmount,
+          totalAmount: booking.pricing.totalAmount,
+        },
+      ],
+      { session },
+    );
+    await Promise.all([
+      this.receipts.create(
+        [
+          {
+            receiptNumber: financialReference("RCT"),
+            bookingId: booking._id,
+            paymentId: payment._id,
+            amount: payment.amount,
+            method: payment.method,
+          },
+        ],
+        { session },
+      ),
+      this.taxes.create(
+        [
+          {
+            bookingId: booking._id,
+            invoiceId: invoice._id,
+            ashramId: booking.ashramId,
+            taxableAmount:
+              booking.pricing.gstTaxableAmount ??
+              booking.pricing.platformFee ??
+              0,
+            gstPercent,
+            cgst: roundMoney(booking.pricing.gstAmount / 2),
+            sgst: roundMoney(
+              booking.pricing.gstAmount - roundMoney(booking.pricing.gstAmount / 2),
+            ),
+            igst: 0,
+            totalTax: booking.pricing.gstAmount,
+            taxPeriod: new Date().toISOString().slice(0, 7),
+          },
+        ],
+        { session },
+      ),
+    ]);
+    void this.publishEnterpriseNotification(
+      "Booking confirmed",
+      `Payment verified for ${booking.bookingId}. Room inventory confirmed.`,
+      "success",
+      "BOOKINGS",
+      { bookingId: booking._id, ashramId: booking.ashramId },
+    );
+    return { booking, payment, invoice };
   }
 
   async manualConfirm(
@@ -2463,21 +2638,45 @@ export class BookingsService {
         { session },
       );
       const refundAmount = decision.refundAmount;
+      const walletModule = this.walletModuleFor(existing);
+      // A website pilgrim's refund is credited to their Tirvona wallet right
+      // away, to spend on the next booking or transfer out on request. A
+      // WhatsApp guest has no wallet and keeps the gateway refund queue.
+      const toWallet = refundAmount > 0 && Boolean(existing.customerId);
       existing.status = "cancelled";
       existing.cancellation = {
         reason: dto.reason,
         date: new Date(),
         refundAmount,
+        ...(toWallet ? { refundMethod: "wallet" } : {}),
       };
       existing.reservationExpiresAt = null;
       if (refundAmount) existing.paymentStatus = "refunded";
       await existing.save({ session });
+      // An unpaid booking may still have wallet money parked for its checkout.
+      await this.wallet.releaseHold(walletModule, existing._id, session);
       if (refundAmount) {
         const payment = await this.payments
           .findOne({ bookingId: existing._id, status: "success" })
           .session(session);
-        if (payment)
-          await this.refunds.create(
+        if (toWallet)
+          await this.wallet.credit(
+            {
+              userId: String(existing.customerId),
+              amount: refundAmount,
+              module: walletModule,
+              category: "refund",
+              sourceId: existing._id,
+              reference: existing.bookingId,
+              description: `Refund for cancelled booking ${existing.bookingId}`,
+              idempotencyKey: `refund:${walletModule}:${String(existing._id)}`,
+              actorId: actor.userId,
+              actorRole: actor.role,
+            },
+            session,
+          );
+        if (payment) {
+          const [refund] = await this.refunds.create(
             [
               {
                 refundReference: financialReference("REF"),
@@ -2489,11 +2688,50 @@ export class BookingsService {
                 percentage: refundPercent,
                 reason: dto.reason,
                 policySnapshot: decision.policySnapshot,
-                status: "pending",
+                status: toWallet ? "success" : "pending",
+                method: toWallet ? "wallet" : "gateway",
+                ...(toWallet ? { processedAt: new Date() } : {}),
               },
             ],
             { session },
           );
+          // Settled on the spot, so record it the way a processed refund is.
+          if (toWallet) {
+            await this.payments.updateOne(
+              { _id: payment._id },
+              { $set: { status: "refunded" } },
+              { session },
+            );
+            const [transaction] = await this.financialTransactions.create(
+              [
+                {
+                  bookingId: existing._id,
+                  paymentId: payment._id,
+                  type: "refund",
+                  direction: "debit",
+                  amount: refundAmount,
+                  reference: financialReference("BKTXN"),
+                  description: `Wallet refund ${refund.refundReference}`,
+                  recordedBy: actor.userId,
+                },
+              ],
+              { session },
+            );
+            await this.ledger.create(
+              [
+                {
+                  account: "booking_clearing",
+                  bookingId: existing._id,
+                  transactionId: transaction._id,
+                  debit: refundAmount,
+                  credit: 0,
+                  reference: transaction.reference,
+                },
+              ],
+              { session },
+            );
+          }
+        }
         await this.commissions.updateOne(
           { bookingId: existing._id },
           {
@@ -2545,9 +2783,14 @@ export class BookingsService {
               ashramId: existing.ashramId,
               event: "booking_cancelled",
               title: "Booking cancelled",
-              message: `${existing.bookingId} was cancelled. Refund due: ₹${refundAmount}.`,
+              message: toWallet
+                ? `${existing.bookingId} was cancelled. ₹${refundAmount} has been added to your Tirvona wallet.`
+                : `${existing.bookingId} was cancelled. Refund due: ₹${refundAmount}.`,
               pushEnabled: true,
-              data: { refundAmount: String(refundAmount) },
+              data: {
+                refundAmount: String(refundAmount),
+                refundMethod: toWallet ? "wallet" : "gateway",
+              },
             },
           ],
           { session },
@@ -2560,7 +2803,11 @@ export class BookingsService {
         "BOOKINGS",
         { bookingId: existing._id, ashramId: existing.ashramId },
       );
-      return { booking: existing, refundAmount };
+      return {
+        booking: existing,
+        refundAmount,
+        refundMethod: toWallet ? "wallet" : refundAmount ? "gateway" : null,
+      };
     });
   }
 

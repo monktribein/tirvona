@@ -12,6 +12,8 @@ import {
   Users,
 } from "lucide-react";
 import { openRazorpayCheckout } from "../../../lib/razorpay";
+import WalletPayOption from "../../../components/wallet/WalletPayOption";
+import { notifyWalletChanged } from "../../../services/wallet.service";
 import { useAuth } from "../../../contexts/AuthContext";
 import { aartiBookingService } from "../services/aarti.service";
 import type { AartiQuote } from "../types/aarti.types";
@@ -91,6 +93,7 @@ export const AartiCheckoutPage: React.FC = () => {
   const [devotees, setDevotees] = useState<string[]>([]);
   const [agreed, setAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [payFromWallet, setPayFromWallet] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -133,9 +136,15 @@ export const AartiCheckoutPage: React.FC = () => {
           "The stay held your seats but did not return a booking reference. Check My Aarti Bookings before paying again.",
         );
 
-      const order = await aartiBookingService.createPaymentOrder(bookingId);
+      const order = await aartiBookingService.createPaymentOrder(
+        bookingId,
+        payFromWallet,
+      );
+      if (payFromWallet) notifyWalletChanged();
 
-      if (order.data?.demo) {
+      if (order.data?.walletPaid) {
+        // Paid in full from the Tirvona wallet: the pass is already issued.
+      } else if (order.data?.demo) {
         await aartiBookingService.confirmPayment(bookingId, { method: "demo" });
       } else {
         const result = await openRazorpayCheckout(order.data.data, {
@@ -422,6 +431,13 @@ export const AartiCheckoutPage: React.FC = () => {
                 </p>
               </div>
             ) : null}
+
+            <WalletPayOption
+              total={total}
+              checked={payFromWallet}
+              onChange={setPayFromWallet}
+              disabled={submitting}
+            />
 
             <button
               type="button"

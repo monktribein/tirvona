@@ -497,6 +497,13 @@ describe("a WhatsApp guest paying through the link, with no login", () => {
     });
     Object.assign(bookingsService, {
       logger: { warn: jest.fn(), log: jest.fn() },
+      wallet: {
+        planSplit: jest.fn(async (_userId: unknown, total: number) => ({ walletAmount: 0, gatewayAmount: total })),
+        placeHold: jest.fn(),
+        releaseHold: jest.fn(),
+        spend: jest.fn(),
+        credit: jest.fn(),
+      },
       config: {
         get: (key: string) =>
           ({ razorpayKeyId: "rzp_key", razorpayKeySecret: KEY_SECRET } as any)[key],
