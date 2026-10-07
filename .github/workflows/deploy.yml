@@ -28,9 +28,14 @@ jobs:
             cd /var/www/tirvona
 
             echo "=== Ensuring directory permissions ==="
-            sudo chown -R $(whoami):$(whoami) /var/www/tirvona
-            sudo chmod -R u+rwX,go+rX /var/www/tirvona
-            sudo chown -R $(whoami):$(whoami) ~/.npm 2>/dev/null || true
+            if sudo -n true 2>/dev/null; then
+              echo "Passwordless sudo is available. Ensuring directory permissions..."
+              sudo chown -R $(whoami):$(whoami) /var/www/tirvona
+              sudo chmod -R u+rwX,go+rX /var/www/tirvona
+              sudo chown -R $(whoami):$(whoami) ~/.npm 2>/dev/null || true
+            else
+              echo "Passwordless sudo not configured for $(whoami). Proceeding with standard user permissions."
+            fi
 
             echo "=== Updating repository ==="
             git fetch origin
@@ -39,6 +44,12 @@ jobs:
 
             echo "=== Backend ==="
             cd /var/www/tirvona/Newbackend
+            if [ -d "node_modules" ]; then
+              if ! rm -rf node_modules/.bin 2>/dev/null; then
+                echo "Notice: node_modules contains protected files. Moving aside for clean install..."
+                mv node_modules node_modules_old_$(date +%s) || true
+              fi
+            fi
             npm ci
             npx tsc -p tsconfig.build.json --outDir dist-vps
             mkdir -p dist-vps/modules/smart-contact/assets
@@ -46,9 +57,17 @@ jobs:
 
             echo "=== Frontend ==="
             cd /var/www/tirvona/frontend
+            if [ -d "node_modules" ]; then
+              if ! rm -rf node_modules/.bin 2>/dev/null; then
+                echo "Notice: frontend node_modules contains protected files. Moving aside for clean install..."
+                mv node_modules node_modules_old_$(date +%s) || true
+              fi
+            fi
             npm ci
             npm run build
-            sudo chmod -R go+rX /var/www/tirvona/frontend/dist 2>/dev/null || true
+            if sudo -n true 2>/dev/null; then
+              sudo chmod -R go+rX /var/www/tirvona/frontend/dist 2>/dev/null || true
+            fi
 
             echo "=== Restarting API ==="
             pm2 delete tirvona-api || true
@@ -57,73 +76,78 @@ jobs:
             pm2 logs tirvona-api --lines 80 --nostream
 
             echo "=== Installing Nginx routing ==="
-            # Smart Contact profiles live at /c/{slug} and /{slug} on the main
-            # host. Vercel and Render expressed that routing in their own
-            # config; nginx reads neither, so moving to this VPS silently sent
-            # every scanned QR to the SPA and rendered the homepage. The rules
-            # now ship with the repo and are installed on each deploy.
-            sudo install -D -m 0644 \
-              /var/www/tirvona/deploy/nginx/tirvona-web.conf \
-              /etc/nginx/snippets/tirvona-web.conf
+            if sudo -n true 2>/dev/null; then
+              # Smart Contact profiles live at /c/{slug} and /{slug} on the main
+              # host. Vercel and Render expressed that routing in their own
+              # config; nginx reads neither, so moving to this VPS silently sent
+              # every scanned QR to the SPA and rendered the homepage. The rules
+              # now ship with the repo and are installed on each deploy.
+              sudo install -D -m 0644 \
+                /var/www/tirvona/deploy/nginx/tirvona-web.conf \
+                /etc/nginx/snippets/tirvona-web.conf
 
-            # Canonical non-WWW to WWW 301 permanent redirect configuration snippet
-            sudo install -D -m 0644 \
-              /var/www/tirvona/deploy/nginx/tirvona-redirect-nonwww.conf \
-              /etc/nginx/snippets/tirvona-redirect-nonwww.conf
+              # Canonical non-WWW to WWW 301 permanent redirect configuration snippet
+              sudo install -D -m 0644 \
+                /var/www/tirvona/deploy/nginx/tirvona-redirect-nonwww.conf \
+                /etc/nginx/snippets/tirvona-redirect-nonwww.conf
 
-            # Raises the request-body cap on api.tirvona.com. nginx defaults to
-            # 1 MB, while the API accepts 10 MB images and 100 MB video, so
-            # every upload over 1 MB was rejected with a 413 before reaching
-            # Node — which is why uploads worked locally and failed here.
-            sudo install -D -m 0644 \
-              /var/www/tirvona/deploy/nginx/tirvona-api.conf \
-              /etc/nginx/snippets/tirvona-api.conf
+              # Raises the request-body cap on api.tirvona.com. nginx defaults to
+              # 1 MB, while the API accepts 10 MB images and 100 MB video, so
+              # every upload over 1 MB was rejected with a 413 before reaching
+              # Node — which is why uploads worked locally and failed here.
+              sudo install -D -m 0644 \
+                /var/www/tirvona/deploy/nginx/tirvona-api.conf \
+                /etc/nginx/snippets/tirvona-api.conf
 
-            # The snippet only takes effect once the server block includes it.
-            # That include is a one-time manual edit — this deploy cannot make
-            # it safely without rewriting a config holding the TLS certificate
-            # and the api.tirvona.com proxy.
-            # Matches a real `include` directive anywhere under /etc/nginx, so
-            # this works on both sites-enabled and conf.d layouts. Anchored on
-            # the directive rather than the filename, because the snippet's own
-            # header comment shows the include line and would match otherwise.
-            if ! sudo grep -rEq '^[[:space:]]*include[[:space:]].*tirvona-web\.conf' /etc/nginx/; then
-              echo ""
-              echo "############################################################"
-              echo "# WARNING: Smart Contact routing is NOT active yet."
-              echo "#"
-              echo "# Add this line inside the server block for www.tirvona.com"
-              echo "# (usually /etc/nginx/sites-available/tirvona), then reload:"
-              echo "#"
-              echo "#     include /etc/nginx/snippets/tirvona-web.conf;"
-              echo "#"
-              echo "# Until then https://www.tirvona.com/c/{slug} keeps serving"
-              echo "# the homepage instead of the identity card."
-              echo "############################################################"
-              echo ""
+              # The snippet only takes effect once the server block includes it.
+              # That include is a one-time manual edit — this deploy cannot make
+              # it safely without rewriting a config holding the TLS certificate
+              # and the api.tirvona.com proxy.
+              # Matches a real `include` directive anywhere under /etc/nginx, so
+              # this works on both sites-enabled and conf.d layouts. Anchored on
+              # the directive rather than the filename, because the snippet's own
+              # header comment shows the include line and would match otherwise.
+              if ! sudo grep -rEq '^[[:space:]]*include[[:space:]].*tirvona-web\.conf' /etc/nginx/; then
+                echo ""
+                echo "############################################################"
+                echo "# WARNING: Smart Contact routing is NOT active yet."
+                echo "#"
+                echo "# Add this line inside the server block for www.tirvona.com"
+                echo "# (usually /etc/nginx/sites-available/tirvona), then reload:"
+                echo "#"
+                echo "#     include /etc/nginx/snippets/tirvona-web.conf;"
+                echo "#"
+                echo "# Until then https://www.tirvona.com/c/{slug} keeps serving"
+                echo "# the homepage instead of the identity card."
+                echo "############################################################"
+                echo ""
+              fi
+
+              if ! sudo grep -rEq '^[[:space:]]*include[[:space:]].*tirvona-api\.conf' /etc/nginx/; then
+                echo ""
+                echo "############################################################"
+                echo "# WARNING: API upload limit is NOT raised yet."
+                echo "#"
+                echo "# Add this line inside the server block for api.tirvona.com,"
+                echo "# then reload:"
+                echo "#"
+                echo "#     include /etc/nginx/snippets/tirvona-api.conf;"
+                echo "#"
+                echo "# Until then any upload over 1 MB fails with a 413 that the"
+                echo "# browser reports only as 'Network Error'."
+                echo "############################################################"
+                echo ""
+              fi
+
+              echo "=== Validating Nginx ==="
+              sudo nginx -t
+
+              echo "=== Reloading Nginx ==="
+              sudo systemctl reload nginx
+            else
+              echo "INFO: Passwordless sudo is not configured for $(whoami). Skipping sudo Nginx operations."
+              echo "Note: If Nginx configs were modified, run 'sudo nginx -t && sudo systemctl reload nginx' directly on the VPS."
             fi
-
-            if ! sudo grep -rEq '^[[:space:]]*include[[:space:]].*tirvona-api\.conf' /etc/nginx/; then
-              echo ""
-              echo "############################################################"
-              echo "# WARNING: API upload limit is NOT raised yet."
-              echo "#"
-              echo "# Add this line inside the server block for api.tirvona.com,"
-              echo "# then reload:"
-              echo "#"
-              echo "#     include /etc/nginx/snippets/tirvona-api.conf;"
-              echo "#"
-              echo "# Until then any upload over 1 MB fails with a 413 that the"
-              echo "# browser reports only as 'Network Error'."
-              echo "############################################################"
-              echo ""
-            fi
-
-            echo "=== Validating Nginx ==="
-            sudo nginx -t
-
-            echo "=== Reloading Nginx ==="
-            sudo systemctl reload nginx
 
             echo "=== Health Check ==="
 
