@@ -89,7 +89,7 @@ export function peakDayStayUnits(bookings: any[], window: { start: Date; end: Da
   return peak;
 }
 
-/** Mongo filter for Day Stay bookings that currently occupy a room. */
+/** Query filter for Day Stay bookings that currently occupy a room. */
 export function activeDayStayFilter(roomId: unknown, from: Date, to: Date, now = new Date()): any {
   return {
     "rooms.roomId": roomId,

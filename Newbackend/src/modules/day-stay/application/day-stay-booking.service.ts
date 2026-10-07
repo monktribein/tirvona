@@ -63,7 +63,7 @@ export class DayStayBookingService {
    * (`dayStayLockToken`/`dayStayLockExpiresAt`), claimed with a single
    * atomic `findOneAndUpdate`. This serializes the "check availability,
    * then create a pending booking" critical section per room, which a
-   * plain read-then-write (or even a bare Mongo transaction, since two
+   * plain read-then-write (or even a bare database transaction, since two
    * concurrent transactions can both read 0 competing bookings before
    * either inserts) does not prevent.
    */
@@ -432,7 +432,7 @@ export class DayStayBookingService {
   /**
    * Closes the race with an overnight booking for the same room made at the
    * same moment. The room lock only serialises Short Stay holds; overnight
-   * holds run in a Mongo transaction on the nightly ledger rows. Touching
+   * holds run in a database transaction on the nightly ledger rows. Touching
    * those rows after our pending booking exists means an overnight
    * transaction still in flight hits a write conflict and retries (and then
    * sees this booking), while one that already committed shows up in the

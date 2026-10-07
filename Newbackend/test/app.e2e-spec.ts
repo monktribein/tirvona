@@ -24,7 +24,7 @@ describe("production API smoke checks", () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    if (app) await app.close();
   });
 
   it("reports all required dependencies as ready", async () => {

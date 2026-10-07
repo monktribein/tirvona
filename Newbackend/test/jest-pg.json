@@ -1,0 +1,21 @@
+{
+  "moduleFileExtensions": [
+    "js",
+    "json",
+    "ts"
+  ],
+  "rootDir": "..",
+  "testEnvironment": "node",
+  "testRegex": "\\.pg-spec\\.ts$",
+  "testTimeout": 120000,
+  "globalSetup": "<rootDir>/test/pg/global-setup.js",
+  "globalTeardown": "<rootDir>/test/pg/global-teardown.js",
+  "transform": {
+    "^.+\\.ts$": [
+      "ts-jest",
+      {
+        "tsconfig": "tsconfig.json"
+      }
+    ]
+  }
+}

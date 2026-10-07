@@ -25,7 +25,7 @@ export const isStaff = (user: AuthenticatedUser): boolean =>
   (SUPPORT_HANDLER_ROLES as readonly string[]).includes(user.role);
 
 /**
- * Mongo filter limiting tickets to what this staff member may see.
+ * Query filter limiting tickets to what this staff member may see.
  * `handledCategories` are the category keys whose handlerRoles include the
  * user's role (only relevant for non-support handler roles).
  */

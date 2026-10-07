@@ -4,9 +4,11 @@ import bcrypt from "bcryptjs";
 import type { Model } from "mongoose";
 import { AppModule } from "../app.module";
 import { applyDnsServersFromEnvironment } from "../config/environment";
+import { configureDatabase } from "../database/database";
 
 async function main() {
   applyDnsServersFromEnvironment();
+  configureDatabase();
 
   console.log("Initializing Nest application context...");
   const app = await NestFactory.createApplicationContext(AppModule, {

@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { smartContactConfig } from "../config/smart-contact.config";
+import { DRIVER_URI, SMART_CONTACT_DATABASE, configureDatabase } from "../../../database/database";
 import {
   SMART_CONTACT_AUDIT_MODEL,
   SMART_CONTACT_CONNECTION,
@@ -18,6 +19,18 @@ import { SmartContactQrCodeSchema } from "./persistence/smart-contact-qr-code.sc
     MongooseModule.forRootAsync({
       connectionName: SMART_CONTACT_CONNECTION,
       useFactory: () => {
+        const dataBackend =
+          process.env.DATA_BACKEND ??
+          (process.env.SUPABASE_DB_URL ? "supabase" : "mongo");
+
+        if (dataBackend === "supabase") {
+          configureDatabase();
+          return {
+            uri: DRIVER_URI,
+            dbName: SMART_CONTACT_DATABASE,
+          };
+        }
+
         const config = smartContactConfig();
         return {
           uri: config.mongoUri,

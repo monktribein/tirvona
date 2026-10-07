@@ -6,6 +6,7 @@ import { LoggerModule } from "nestjs-pino";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { ScheduleModule } from "@nestjs/schedule";
 import { environment, validateEnvironment } from "./config/environment";
+import { DRIVER_URI, MAIN_DATABASE, configureDatabase } from "./database/database";
 import { CommonModule } from "./common/common.module";
 import { RolesGuard } from "./common/guards/roles.guard";
 import { PermissionsGuard } from "./common/guards/permissions.guard";
@@ -62,7 +63,22 @@ import {
     MongooseModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
-        const uri = config.getOrThrow<string>("mongoUri");
+        const dataBackend =
+          process.env.DATA_BACKEND ??
+          (process.env.SUPABASE_DB_URL ? "supabase" : "mongo");
+
+        if (dataBackend === "supabase") {
+          configureDatabase();
+          return {
+            uri: DRIVER_URI,
+            dbName: MAIN_DATABASE,
+          };
+        }
+
+        const uri =
+          config.get<string>("mongoUri") ||
+          process.env.MONGODB_URI ||
+          "mongodb://127.0.0.1:27017/tirvona";
         const credentialsAreInUri = /^mongodb(?:\+srv)?:\/\/[^/@]+@/i.test(uri);
         return {
           uri,
@@ -74,12 +90,12 @@ import {
             ? undefined
             : config.get<string>("mongoPassword") || undefined,
           autoIndex: config.get<string>("nodeEnv") !== "production",
-          minPoolSize: config.get<number>("mongoMinPoolSize"),
-          maxPoolSize: config.get<number>("mongoMaxPoolSize"),
-          serverSelectionTimeoutMS: config.get<number>(
-            "mongoServerSelectionTimeoutMs",
-          ),
-          socketTimeoutMS: config.get<number>("mongoSocketTimeoutMs"),
+          minPoolSize: config.get<number>("mongoMinPoolSize") ?? 1,
+          maxPoolSize: config.get<number>("mongoMaxPoolSize") ?? 20,
+          serverSelectionTimeoutMS:
+            config.get<number>("mongoServerSelectionTimeoutMs") ?? 10_000,
+          socketTimeoutMS:
+            config.get<number>("mongoSocketTimeoutMs") ?? 45_000,
         };
       },
     }),

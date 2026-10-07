@@ -28,6 +28,7 @@ export interface Environment {
   throttleLimit: number;
   throttleIpAbuseTtlMs: number;
   throttleIpAbuseLimit: number;
+  dataBackend: string;
   mongoUri: string;
   mongoDbName: string;
   mongoUsername: string;
@@ -36,6 +37,9 @@ export interface Environment {
   mongoMaxPoolSize: number;
   mongoServerSelectionTimeoutMs: number;
   mongoSocketTimeoutMs: number;
+  supabaseDbUrl: string;
+  supabasePoolMax: number;
+  supabaseTtlSweep: boolean;
   redisUrl: string;
   queuePrefix: string;
   jwtSecret: string;
@@ -148,6 +152,9 @@ export const environment = (): Environment => ({
     process.env.THROTTLE_IP_ABUSE_LIMIT,
     30_000,
   ),
+  dataBackend:
+    process.env.DATA_BACKEND ??
+    (process.env.SUPABASE_DB_URL ? "supabase" : "mongo"),
   mongoUri: process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017/tirvona",
   mongoDbName: process.env.MONGODB_DB_NAME ?? "",
   mongoUsername: process.env.MONGODB_USERNAME ?? "",
@@ -159,6 +166,9 @@ export const environment = (): Environment => ({
     10_000,
   ),
   mongoSocketTimeoutMs: integer(process.env.MONGODB_SOCKET_TIMEOUT_MS, 45_000),
+  supabaseDbUrl: process.env.SUPABASE_DB_URL ?? "",
+  supabasePoolMax: integer(process.env.SUPABASE_POOL_MAX, 10),
+  supabaseTtlSweep: process.env.SUPABASE_TTL_SWEEP !== "false",
   redisUrl: process.env.REDIS_URL ?? "redis://127.0.0.1:6379",
   queuePrefix: process.env.QUEUE_PREFIX ?? "tirvona",
   jwtSecret: process.env.JWT_SECRET ?? "",
@@ -229,6 +239,7 @@ export function validateEnvironment(
     "MONGODB_MAX_POOL_SIZE",
     "MONGODB_SERVER_SELECTION_TIMEOUT_MS",
     "MONGODB_SOCKET_TIMEOUT_MS",
+    "SUPABASE_POOL_MAX",
     "THROTTLE_TTL_MS",
     "THROTTLE_LIMIT",
     "THROTTLE_IP_ABUSE_TTL_MS",
@@ -259,6 +270,7 @@ export function validateEnvironment(
     throw new Error("OTP_LENGTH must be between 1 and 8");
 
   for (const name of [
+    "SUPABASE_DB_URL",
     "MONGODB_URI",
     "REDIS_URL",
     "FRONTEND_URL",
@@ -294,7 +306,6 @@ export function validateEnvironment(
     if (key.length !== 32)
       throw new Error("PAYOUT_ENCRYPTION_KEY must be a base64-encoded 32-byte key");
   }
-  requireTogether(input, ["MONGODB_USERNAME", "MONGODB_PASSWORD"]);
   requireTogether(input, [
     "WHATSAPP_ACCESS_TOKEN",
     "WHATSAPP_PHONE_NUMBER_ID",
@@ -363,8 +374,16 @@ export function validateEnvironment(
           `${name} is required in production — payments cannot run in demo mode with real customers`,
         );
     }
-    if (!input.MONGODB_URI)
-      throw new Error("MONGODB_URI is required in production");
+    const backend =
+      input.DATA_BACKEND ??
+      (input.SUPABASE_DB_URL ? "supabase" : (input.MONGODB_URI ? "mongo" : "supabase"));
+    if (backend === "mongo") {
+      if (!input.MONGODB_URI)
+        throw new Error("MONGODB_URI is required in production");
+    } else {
+      if (!input.SUPABASE_DB_URL)
+        throw new Error("SUPABASE_DB_URL is required in production");
+    }
     if (!input.REDIS_URL)
       throw new Error("REDIS_URL is required in production");
     if (!String(input.CORS_ORIGINS ?? "").trim())

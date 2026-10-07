@@ -23,7 +23,7 @@ phone number, an email or a designation. Cards outlive the details on them, so:
 
 | Concern | How it is isolated |
 | --- | --- |
-| Data | Own Mongoose connection (`SMART_CONTACT_CONNECTION`) and own database. Models registered against it cannot be resolved from platform modules, and vice versa. |
+| Data | Own Mongoose connection (`SMART_CONTACT_CONNECTION`) and own Postgres schema (`smart_contact`). Models registered against it cannot be resolved from platform modules, and vice versa. |
 | Config | `SMART_CONTACT_*` read straight from `process.env`, not from `environment()`. |
 | Audit | Local `smart_contact_audit_logs`, not the platform audit module — an extracted service carries its own history. |
 | Analytics | Local `smart_contact_events`. |
@@ -36,8 +36,8 @@ the upload/scanning path entirely.
 
 ### Extraction checklist
 
-Move the folder, point `SMART_CONTACT_MONGODB_URI` at its own cluster, and swap
-the `@Roles` / `@CurrentUser` imports for the new host's equivalents. Nothing
+Move the folder, copy the `smart_contact` schema to the new host's database, and
+swap the `@Roles` / `@CurrentUser` imports for the new host's equivalents. Nothing
 else in the platform references it.
 
 ## Layout
@@ -127,8 +127,6 @@ checkout. See `config/smart-contact.config.ts`.
 
 | Variable | Default |
 | --- | --- |
-| `SMART_CONTACT_MONGODB_URI` | falls back to `MONGODB_URI` |
-| `SMART_CONTACT_MONGODB_DB_NAME` | `tirvona_smart_contact` |
 | `SMART_CONTACT_PUBLIC_BASE_URL` | `https://www.tirvona.com` |
 | `SMART_CONTACT_PUBLIC_PATH_PREFIX` | `c` |
 | `SMART_CONTACT_API_BASE_URL` | `http://localhost:5000` |

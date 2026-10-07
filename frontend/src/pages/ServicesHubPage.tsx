@@ -174,7 +174,7 @@ export const ServicesHubPage: React.FC = () => {
       console.error("Fetch services error:", err);
       addNotification(
         "Load Failed",
-        "Could not fetch service providers from MongoDB.",
+        "Could not load service providers.",
         "error",
       );
     } finally {

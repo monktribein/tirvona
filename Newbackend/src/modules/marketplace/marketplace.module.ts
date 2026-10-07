@@ -13,7 +13,6 @@ import { InventoryService } from "./application/inventory.service";
 import { LedgerService } from "./application/ledger.service";
 import { MarketplaceAuditService } from "./application/marketplace-audit.service";
 import { MarketplaceSettingsService } from "./application/marketplace-settings.service";
-import { MarketplaceIndexService } from "./application/marketplace-index.service";
 import { OrderService } from "./application/order.service";
 import { MARKETPLACE_PAYOUT_PROVIDER, PayoutService } from "./application/payout.service";
 import { ProductService } from "./application/product.service";
@@ -62,9 +61,8 @@ import { MarketplaceVendorController } from "./presentation/marketplace-vendor.c
     OrderService,
     PayoutService,
     ReviewService,
-    MarketplaceIndexService,
     DashboardService,
   ],
-  exports: [OrderService, MarketplaceIndexService],
+  exports: [OrderService],
 })
 export class MarketplaceModule {}

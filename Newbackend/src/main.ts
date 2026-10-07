@@ -13,10 +13,18 @@ import { AppModule } from "./app.module";
 import { applyDnsServersFromEnvironment } from "./config/environment";
 import { ApiExceptionFilter } from "./common/filters/api-exception.filter";
 import { RequestIdInterceptor } from "./common/interceptors/request-id.interceptor";
+import { configureDatabase } from "./database/database";
 
 async function bootstrap(): Promise<void> {
   const isProduction = process.env.NODE_ENV === "production";
   applyDnsServersFromEnvironment();
+  const dataBackend =
+    process.env.DATA_BACKEND ??
+    (process.env.SUPABASE_DB_URL ? "supabase" : "mongo");
+  if (dataBackend === "supabase") {
+    // Must run before any Mongoose connection exists.
+    configureDatabase();
+  }
 
   const app = await NestFactory.create(AppModule, {
     rawBody: true,
@@ -106,7 +114,7 @@ async function bootstrap(): Promise<void> {
   server.requestTimeout = 180_000;
   if (!isProduction)
     process.stdout.write(
-      `Tirvona API ready: http://localhost:${port}/api\n` +
+      `Tirvona API ready: http://localhost:${port}/api (database: Supabase Postgres)\n` +
         `Health check: http://localhost:${port}/api/health\n`,
     );
 }

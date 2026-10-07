@@ -21,7 +21,7 @@ import type { ReplyLanguage } from "./language";
  * goes in here: no OTP, no payment credential, no QR token, no access token,
  * and no more personal data than the flow actually needs. The store is
  * ephemeral by design — if it is lost the guest is greeted afresh and nothing
- * is corrupted, because every authoritative fact lives in Mongo.
+ * is corrupted, because every authoritative fact lives in the database.
  */
 export interface WhatsAppSession {
   phone: string;

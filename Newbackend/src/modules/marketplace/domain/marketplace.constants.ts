@@ -25,14 +25,19 @@ export type VendorStatus = (typeof VENDOR_STATUSES)[number];
 export const AWAITING_APPROVAL_FILTER = "awaiting";
 export const AWAITING_APPROVAL_STATUSES: VendorStatus[] = ["draft", "pending_verification", "under_review"];
 
+/**
+ * A Super Admin can approve a shop from any waiting state and it goes live
+ * ("active") straight away. Documents, address and bank details are optional
+ * at signup; a bank account is only needed later to request a payout.
+ */
 export const VENDOR_TRANSITIONS: Record<VendorStatus, VendorStatus[]> = {
-  draft: ["pending_verification", "deactivated"],
-  pending_verification: ["under_review", "approved", "rejected", "deactivated"],
-  under_review: ["approved", "rejected"],
-  approved: ["active", "suspended", "deactivated"],
+  draft: ["pending_verification", "active", "rejected", "deactivated"],
+  pending_verification: ["under_review", "active", "rejected", "deactivated"],
+  under_review: ["active", "rejected"],
+  approved: ["active", "suspended", "deactivated"], // legacy: stores approved before direct activation
   active: ["suspended", "deactivated"],
   suspended: ["active", "deactivated"],
-  rejected: ["pending_verification", "deactivated"],
+  rejected: ["pending_verification", "active", "deactivated"],
   deactivated: [],
 };
 

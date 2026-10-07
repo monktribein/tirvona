@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import type { Model } from "mongoose";
 import { AppModule } from "../app.module";
 import { applyDnsServersFromEnvironment } from "../config/environment";
+import { configureDatabase } from "../database/database";
 import { PARKING_MODEL } from "../modules/parking/domain/parking.constants";
 
 const readPassword = (): string | undefined => {
@@ -20,6 +21,7 @@ const readPassword = (): string | undefined => {
 async function main(): Promise<void> {
   const password = readPassword();
   applyDnsServersFromEnvironment();
+  configureDatabase();
   const app = await NestFactory.createApplicationContext(AppModule, {
     logger: ["error", "warn"],
   });

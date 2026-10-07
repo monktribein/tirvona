@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { leadCollectionConfig } from "../config/lead-collection.config";
+import { DRIVER_URI, LEAD_DATABASE, configureDatabase } from "../../../database/database";
 import {
   LEAD_ATTENDANCE_MODEL,
   LEAD_CONNECTION,
@@ -20,6 +21,18 @@ import { LeadLocationPingSchema } from "./persistence/lead-location-ping.schema"
     MongooseModule.forRootAsync({
       connectionName: LEAD_CONNECTION,
       useFactory: () => {
+        const dataBackend =
+          process.env.DATA_BACKEND ??
+          (process.env.SUPABASE_DB_URL ? "supabase" : "mongo");
+
+        if (dataBackend === "supabase") {
+          configureDatabase();
+          return {
+            uri: DRIVER_URI,
+            dbName: LEAD_DATABASE,
+          };
+        }
+
         const config = leadCollectionConfig();
         return {
           uri: config.mongoUri,

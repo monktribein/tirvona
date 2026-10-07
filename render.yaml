@@ -13,10 +13,11 @@ services:
       - key: NODE_ENV
         value: production
       # Render injects PORT automatically; the app reads process.env.PORT.
-      - key: MONGODB_URI
+      # Supabase → Connect → Session pooler URI (port 5432).
+      - key: SUPABASE_DB_URL
         sync: false
-      - key: MONGODB_DB_NAME
-        value: tirvona
+      - key: SUPABASE_POOL_MAX
+        value: 10
       - key: REDIS_URL
         sync: false
       - key: JWT_SECRET
@@ -213,13 +214,6 @@ services:
       - key: EMAIL_REPLY_TO
         value: support@tirvona.com
       # ── Smart Contact QR ────────────────────────────────────────────────
-      # Its own database, so the module can later move to its own cluster
-      # without a migration. Leave the URI unset to reuse the platform
-      # cluster; the dbName below still keeps the collections separate.
-      - key: SMART_CONTACT_MONGODB_URI
-        sync: false
-      - key: SMART_CONTACT_MONGODB_DB_NAME
-        value: tirvona_smart_contact
       # The origin printed QR codes encode. Deliberately NOT derived from
       # CLIENT_URL: this value is baked into physical visiting cards and can
       # never change afterwards, so moving the marketing site must not be able
