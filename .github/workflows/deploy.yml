@@ -27,6 +27,11 @@ jobs:
 
             cd /var/www/tirvona
 
+            echo "=== Ensuring directory permissions ==="
+            sudo chown -R $(whoami):$(whoami) /var/www/tirvona
+            sudo chmod -R u+rwX,go+rX /var/www/tirvona
+            sudo chown -R $(whoami):$(whoami) ~/.npm 2>/dev/null || true
+
             echo "=== Updating repository ==="
             git fetch origin
             git checkout main
@@ -43,6 +48,7 @@ jobs:
             cd /var/www/tirvona/frontend
             npm ci
             npm run build
+            sudo chmod -R go+rX /var/www/tirvona/frontend/dist 2>/dev/null || true
 
             echo "=== Restarting API ==="
             pm2 delete tirvona-api || true
