@@ -124,14 +124,7 @@ export class VendorService {
   async submitForVerification(user: AuthenticatedUser): Promise<any> {
     const vendor = await this.requireOwnVendor(user);
     assertTransition(VENDOR_TRANSITIONS, vendor.status as VendorStatus, "pending_verification", "Vendor");
-    const docs = await this.documents.find({ vendorId: vendor._id, deletedAt: null }).lean();
-    const missing = this.missingDocuments(docs);
-    if (missing.length) {
-      throw new BadRequestException(`Upload these documents first: ${missing.join(", ")}`);
-    }
-    if (!vendor.address?.city || !vendor.address?.pincode || !vendor.contactPhone) {
-      throw new BadRequestException("Add your store address (city, pincode) and contact phone first");
-    }
+    // Documents, address and phone are optional; sellers can add them later.
     vendor.status = "pending_verification";
     vendor.verificationStatus = "pending";
     vendor.submittedAt = new Date();
@@ -141,14 +134,11 @@ export class VendorService {
     return this.withoutPrivate(vendor);
   }
 
-  /** An approved vendor goes live once it has a bank account for payouts. */
+  /** Legacy path for stores left in "approved": go live. A bank account is only needed for payouts. */
   async activate(user: AuthenticatedUser): Promise<any> {
     const vendor = await this.requireOwnVendor(user);
     if (vendor.status !== "approved") {
       throw new BadRequestException("Only an approved store can be activated");
-    }
-    if (!(await this.bankAccounts.exists({ vendorId: vendor._id, deletedAt: null }))) {
-      throw new BadRequestException("Add a bank account for payouts before going live");
     }
     vendor.status = "active";
     await vendor.save();
@@ -319,11 +309,15 @@ export class VendorService {
     const from = vendor.status as VendorStatus;
     const to: VendorStatus = {
       start_review: "under_review",
-      approve: "approved",
+      approve: "active", // approval puts the shop live immediately
       reject: "rejected",
       suspend: "suspended",
       reactivate: "active",
     }[action] as VendorStatus;
+    // "approve" targets "active", which suspended/active stores can also reach; those use "reactivate".
+    if (action === "approve" && ["active", "suspended", "deactivated"].includes(from)) {
+      throw new BadRequestException(`Vendor cannot move from ${from} to approved`);
+    }
     assertTransition(VENDOR_TRANSITIONS, from, to, "Vendor");
     if ((action === "reject" || action === "suspend") && !reason?.trim()) {
       throw new BadRequestException("A reason is required");
@@ -349,7 +343,7 @@ export class VendorService {
     await vendor.save();
 
     if (action === "suspend") await this.hideAllProducts(vendor._id);
-    if (action === "reactivate") await this.restoreProductVisibility(vendor._id);
+    if (action === "reactivate" || action === "approve") await this.restoreProductVisibility(vendor._id);
 
     await this.audit.log(actor, `vendor.${action}`, "MpVendor", vendor._id, { from, to, reason });
     return this.withoutPrivate(vendor);

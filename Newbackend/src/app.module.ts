@@ -6,6 +6,7 @@ import { LoggerModule } from "nestjs-pino";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { ScheduleModule } from "@nestjs/schedule";
 import { environment, validateEnvironment } from "./config/environment";
+import { DRIVER_URI, MAIN_DATABASE } from "./database/database";
 import { CommonModule } from "./common/common.module";
 import { RolesGuard } from "./common/guards/roles.guard";
 import { PermissionsGuard } from "./common/guards/permissions.guard";
@@ -59,30 +60,9 @@ import {
       load: [environment],
       validate: validateEnvironment,
     }),
-    MongooseModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => {
-        const uri = config.getOrThrow<string>("mongoUri");
-        const credentialsAreInUri = /^mongodb(?:\+srv)?:\/\/[^/@]+@/i.test(uri);
-        return {
-          uri,
-          dbName: config.get<string>("mongoDbName") || undefined,
-          user: credentialsAreInUri
-            ? undefined
-            : config.get<string>("mongoUsername") || undefined,
-          pass: credentialsAreInUri
-            ? undefined
-            : config.get<string>("mongoPassword") || undefined,
-          autoIndex: config.get<string>("nodeEnv") !== "production",
-          minPoolSize: config.get<number>("mongoMinPoolSize"),
-          maxPoolSize: config.get<number>("mongoMaxPoolSize"),
-          serverSelectionTimeoutMS: config.get<number>(
-            "mongoServerSelectionTimeoutMs",
-          ),
-          socketTimeoutMS: config.get<number>("mongoSocketTimeoutMs"),
-        };
-      },
-    }),
+    // Supabase Postgres via the storage driver (src/database); the URI is a
+    // placeholder, the pool comes from SUPABASE_DB_URL.
+    MongooseModule.forRoot(DRIVER_URI, { dbName: MAIN_DATABASE }),
     ...(process.env.NODE_ENV === "production"
       ? [
           LoggerModule.forRootAsync({

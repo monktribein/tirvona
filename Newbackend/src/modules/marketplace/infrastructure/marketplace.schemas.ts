@@ -1,5 +1,5 @@
 /**
- * Marketplace persistence. Everything lives in the main Tirvona MongoDB.
+ * Marketplace persistence. Everything lives in the main Tirvona database.
  *
  * Reused collections (shared with the legacy CommerceModule, never duplicated):
  *  - `marketplaceproducts`   -> MpProduct   (legacy Prasad products + vendor listings)

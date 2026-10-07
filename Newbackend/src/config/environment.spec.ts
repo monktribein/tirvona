@@ -7,8 +7,7 @@ import {
 
 const productionEnvironment = (): Record<string, unknown> => ({
   NODE_ENV: "production",
-  MONGODB_URI: "mongodb://database.example.test:27017",
-  MONGODB_DB_NAME: "tirvona",
+  SUPABASE_DB_URL: "postgresql://postgres.example:secret@pooler.example.test:5432/postgres",
   REDIS_URL: "rediss://redis.example.test:6380",
   JWT_SECRET: "a-production-jwt-secret-longer-than-32-characters",
   PARKING_QR_SECRET: "a-parking-qr-secret-longer-than-32-characters",
@@ -18,14 +17,19 @@ const productionEnvironment = (): Record<string, unknown> => ({
 });
 
 describe("production environment validation", () => {
-  it("accepts an explicit database and HTTPS CORS origin", () => {
+  it("accepts a Supabase database URL and HTTPS CORS origin", () => {
     expect(validateEnvironment(productionEnvironment())).toBeDefined();
   });
 
-  it("temporarily accepts MongoDB's default database", () => {
+  it("refuses to boot production without SUPABASE_DB_URL", () => {
     const input = productionEnvironment();
-    delete input.MONGODB_DB_NAME;
-    expect(validateEnvironment(input)).toBeDefined();
+    delete input.SUPABASE_DB_URL;
+    expect(() => validateEnvironment(input)).toThrow("SUPABASE_DB_URL");
+  });
+
+  it("rejects a malformed SUPABASE_DB_URL and pool size", () => {
+    expect(() => validateEnvironment({ ...productionEnvironment(), SUPABASE_DB_URL: "not a url" })).toThrow("SUPABASE_DB_URL");
+    expect(() => validateEnvironment({ ...productionEnvironment(), SUPABASE_POOL_MAX: "0" })).toThrow("SUPABASE_POOL_MAX");
   });
 
   it.each(["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"])(

@@ -77,7 +77,7 @@ ashram lead/
     - Click "Approve & Convert to Ashram" on any pending lead card to convert `status` → `"approved"`.
 
 11. **🔁 Approved Ashram Simulation (`approved_ashrams`)**:
-    - Converts approved leads into standard Tirvona Ashram MongoDB GeoJSON point documents (`[lng, lat]`) and persists them under `localStorage` key `"approved_ashrams"`.
+    - Converts approved leads into standard Tirvona Ashram GeoJSON point documents (`[lng, lat]`) and persists them under `localStorage` key `"approved_ashrams"`.
 
 ---
 

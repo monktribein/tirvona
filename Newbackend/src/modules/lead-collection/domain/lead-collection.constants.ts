@@ -66,6 +66,6 @@ export const LEAD_TRACKING = {
   maxGapMinutes: 45,
   /** Points accepted in one batch upload. */
   maxBatchSize: 100,
-  /** How long raw points are retained before Mongo expires them. */
+  /** How long raw points are retained before the TTL sweep deletes them. */
   retentionDays: 180,
 } as const;

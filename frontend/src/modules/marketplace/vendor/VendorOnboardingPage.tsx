@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle2, ExternalLink, FileCheck, Landmark, Store, Trash2, XCircle } from "lucide-react";
+import { CheckCircle2, ExternalLink, FileCheck, Landmark, Store, Trash2 } from "lucide-react";
 import { vendorApi } from "../../../services/marketplace.service";
 import { EnterprisePageHeader } from "../../../admin/shared/components/EnterprisePageHeader";
 import { EnterpriseButton } from "../../../admin/shared/components/EnterpriseButton";
@@ -75,7 +75,7 @@ const DocumentsStep: React.FC<{ vendor: VendorProfile; onChange: () => void }> =
     <div className="space-y-4">
       {vendor.missingDocuments && vendor.missingDocuments.length > 0 && (
         <p className="text-xs text-amber-700 dark:text-amber-400 font-bold">
-          Still required: {vendor.missingDocuments.map(docLabel).join(", ")}
+          Optional, you can add later: {vendor.missingDocuments.map(docLabel).join(", ")}
         </p>
       )}
       <ul className="divide-y divide-gray-100 dark:divide-slate-800">
@@ -163,16 +163,15 @@ export const VendorOnboardingPage: React.FC = () => {
   const docsDone = Boolean(hasStore && !vendor.missingDocuments?.length);
   const submitted = Boolean(hasStore && !["draft", "rejected"].includes(vendor.status));
   const live = vendor?.status === "active";
-  const hasBank = Boolean(vendor?.bankAccounts?.length);
-  // Same requirements the backend enforces on submit, shown so the seller knows what is missing.
+  // Nothing here blocks the seller: Tirvona can approve the shop as soon as the profile exists.
+  // These are recommendations only and can be completed any time later.
   const missing = vendor?.missingDocuments ?? [];
   const checklist = [
-    { label: "Identity proof uploaded", done: !missing.includes("identity"), fix: "upload it in step 2" },
-    { label: "Address proof uploaded", done: !missing.includes("address_proof"), fix: "upload it in step 2" },
-    { label: "Store city and pincode", done: Boolean(vendor?.address?.city && vendor?.address?.pincode), fix: "add them in step 1 and save" },
-    { label: "Contact phone", done: Boolean(vendor?.contactPhone), fix: "add it in step 1 and save" },
+    { label: "Identity proof uploaded", done: !missing.includes("identity"), fix: "step 2" },
+    { label: "Address proof uploaded", done: !missing.includes("address_proof"), fix: "step 2" },
+    { label: "Store city and pincode", done: Boolean(vendor?.address?.city && vendor?.address?.pincode), fix: "step 1" },
+    { label: "Contact phone", done: Boolean(vendor?.contactPhone), fix: "step 1" },
   ];
-  const readyToSubmit = checklist.every((item) => item.done);
 
   return (
     <div className="space-y-5 max-w-4xl">
@@ -194,11 +193,11 @@ export const VendorOnboardingPage: React.FC = () => {
 
       {hasStore && (
         <>
-          <Step n={2} title="Verification documents" done={docsDone} icon={<FileCheck size={14} />}>
+          <Step n={2} title="Verification documents (optional)" done={docsDone} icon={<FileCheck size={14} />}>
             <DocumentsStep vendor={vendor} onChange={reload} />
           </Step>
 
-          <Step n={3} title="Submit for verification" done={submitted} icon={<CheckCircle2 size={14} />}>
+          <Step n={3} title="Request approval" done={submitted} icon={<CheckCircle2 size={14} />}>
             {submitted ? (
               <p className="text-xs text-gray-600 dark:text-gray-300">
                 Submitted. Current status: <Pill status={vendor.status} />
@@ -206,8 +205,8 @@ export const VendorOnboardingPage: React.FC = () => {
             ) : (
               <div className="space-y-3 text-xs text-gray-600 dark:text-gray-300">
                 <p>
-                  A verified document is not the same as a verified shop: Tirvona approves the whole shop once you
-                  submit it. Complete everything below to unlock the button.
+                  Tirvona can approve your shop right away. The items below are optional and help build trust with
+                  customers. You can add them now or later.
                 </p>
                 <ul className="space-y-1.5">
                   {checklist.map((item) => (
@@ -215,35 +214,34 @@ export const VendorOnboardingPage: React.FC = () => {
                       {item.done ? (
                         <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
                       ) : (
-                        <XCircle size={15} className="text-rose-500 shrink-0" />
+                        <span className="w-3.5 h-3.5 rounded-full border border-gray-400 dark:border-gray-500 shrink-0 inline-block" />
                       )}
-                      <span className={item.done ? "" : "font-bold text-rose-700 dark:text-rose-400"}>
+                      <span className={item.done ? "" : "text-gray-500"}>
                         {item.label}
-                        {!item.done && ` · ${item.fix}`}
+                        {!item.done && ` · optional, ${item.fix}`}
                       </span>
                     </li>
                   ))}
                 </ul>
                 <EnterpriseButton
-                  disabled={!readyToSubmit}
                   loading={busy === "submit"}
-                  onClick={() => run("submit", () => vendorApi.submit(), reload, "Submitted for verification")}
+                  onClick={() => run("submit", () => vendorApi.submit(), reload, "Approval requested")}
                 >
-                  {vendor.status === "rejected" ? "Resubmit for verification" : "Submit for verification"}
+                  {vendor.status === "rejected" ? "Request approval again" : "Request approval"}
                 </EnterpriseButton>
               </div>
             )}
           </Step>
 
-          <Step n={4} title="Payout account and go live" done={live} icon={<Landmark size={14} />}>
+          <Step n={4} title="Payout account (optional)" done={live} icon={<Landmark size={14} />}>
             <div className="space-y-4">
+              <p className="text-xs text-gray-500">You only need a bank account when you request a payout. You can add it any time.</p>
               <BankAccountList onChange={reload} />
-              {!live && <BankAccountForm onSaved={reload} />}
+              <BankAccountForm onSaved={reload} />
               {vendor.status === "approved" && (
                 <div className="flex flex-wrap items-center gap-3 border-t border-gray-100 dark:border-slate-800 pt-4">
                   <EnterpriseButton
                     variant="success"
-                    disabled={!hasBank}
                     loading={busy === "activate"}
                     onClick={() =>
                       run("activate", () => vendorApi.activate(), () => navigate("/vendor/dashboard"), "Your store is live")
@@ -251,11 +249,10 @@ export const VendorOnboardingPage: React.FC = () => {
                   >
                     Activate my store
                   </EnterpriseButton>
-                  {!hasBank && <span className="text-xs text-gray-500">Add a bank account first.</span>}
                 </div>
               )}
               {!["approved", "active"].includes(vendor.status) && (
-                <p className="text-xs text-gray-500">You can activate your store once Tirvona approves it.</p>
+                <p className="text-xs text-gray-500">Your store goes live as soon as Tirvona approves it.</p>
               )}
             </div>
           </Step>

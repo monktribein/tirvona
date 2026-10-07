@@ -16,7 +16,7 @@ import { randomUUID } from "node:crypto";
  *     another for a different number.
  *
  * The code is immutable once issued (`immutable: true` on the schema field)
- * and the MongoDB `_id` behind the document is untouched by any of this — it
+ * and the `_id` behind the document is untouched by any of this — it
  * remains an ordinary auto-generated ObjectId, exactly as for every other
  * collection in this codebase.
  *

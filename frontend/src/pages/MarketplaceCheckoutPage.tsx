@@ -450,18 +450,18 @@ export const MarketplaceCheckoutPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                  {field("fullName", "Full name", "Satyam Pandey")}
-                  {field("phone", "Phone number", "9936968762")}
+                  {field("fullName", "Full name", "Enter your full name")}
+                  {field("phone", "Phone number", "10-digit mobile number")}
                   <div className="sm:col-span-2">
-                    {field("line1", "Flat, House no., Building, Apartment", "002, Nagrik Niwas")}
+                    {field("line1", "Flat, House no., Building, Apartment", "e.g. Flat 101, Shanti Apartments")}
                   </div>
                   <div className="sm:col-span-2">
-                    {field("line2", "Area, Street, Sector, Village", "Moregaon, Nalasopara East", false)}
+                    {field("line2", "Area, Street, Sector, Village", "e.g. MG Road, Sector 5", false)}
                   </div>
-                  {field("landmark", "Landmark", "Near Durga Devi Mandir", false)}
-                  {field("city", "City", "Palghar")}
-                  {field("state", "State", "Maharashtra")}
-                  {field("pincode", "Pincode", "401209")}
+                  {field("landmark", "Landmark", "e.g. Near City Temple", false)}
+                  {field("city", "City", "Enter city")}
+                  {field("state", "State", "Enter state")}
+                  {field("pincode", "Pincode", "6-digit pincode")}
                   <div className="sm:col-span-2">
                     {field("label", "Save address as", "Home / Office", false)}
                   </div>

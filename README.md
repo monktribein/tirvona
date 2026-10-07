@@ -8,7 +8,7 @@
 ## 📂 Project Structure
 
 The project is structured as a monorepo containing two main modules:
-*   **`/Newbackend`**: NestJS REST API and Socket.IO server integrated with MongoDB Atlas using Mongoose.
+*   **`/Newbackend`**: NestJS REST API and Socket.IO server backed by Supabase (PostgreSQL).
 *   **`/frontend`**: React 19 SPA styled with TailwindCSS v4 and Framer Motion for smooth micro-animations.
 
 ---
@@ -25,7 +25,7 @@ The project is structured as a monorepo containing two main modules:
 ### Backend
 *   **Core**: Node.js, NestJS, TypeScript
 *   **Real-time Update**: Socket.io (live booking lifecycle events to customer & owner)
-*   **Database**: MongoDB Atlas via Mongoose
+*   **Database**: Supabase PostgreSQL (Mongoose models on a Postgres storage driver; see `Newbackend/README.md`)
 *   **Authentication**: JWT (JSON Web Tokens), bcryptjs
 *   **Payments**: Razorpay (order create + server-side signature verification; demo fallback when keys absent)
 *   **File Uploads**: Multer + Cloudinary (`POST /api/uploads`; returns secure URLs)
@@ -55,7 +55,7 @@ The project is structured as a monorepo containing two main modules:
 ### Prerequisites
 *   Node.js (v18+)
 *   NPM (v9+)
-*   MongoDB Atlas Cluster
+*   Supabase project (PostgreSQL 17)
 
 ### 1. Clone the repository
 ```bash
@@ -76,15 +76,15 @@ cd tirvona
     ```env
     PORT=5000
     NODE_ENV=development
-    MONGODB_URI="your_mongodb_atlas_connection_string"
-    MONGODB_DB_NAME="tirvona"
+    SUPABASE_DB_URL="your_supabase_session_pooler_url"   # Supabase → Connect → Session pooler (port 5432)
+    SUPABASE_POOL_MAX=10
     REDIS_URL="your_redis_connection_string"
     JWT_SECRET="a_long_random_secret"   # generate: node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
     JWT_EXPIRES_IN="30d"
     CLIENT_URL="http://localhost:5173"
     CORS_ORIGINS="http://localhost:5173" # comma-separated allowed origins
     ```
-    > **Security:** The server refuses to boot in production if `MONGODB_URI` or `JWT_SECRET` are missing, and never falls back to a hardcoded secret. Use a dedicated least-privilege DB user and rotate any credential that has ever been shared or committed.
+    > **Security:** The server refuses to boot in production if `SUPABASE_DB_URL` or `JWT_SECRET` are missing, and never falls back to a hardcoded secret. Use a dedicated least-privilege DB user and rotate any credential that has ever been shared or committed.
 4.  Start the development server:
     ```bash
     npm run start:dev

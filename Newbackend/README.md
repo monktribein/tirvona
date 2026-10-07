@@ -5,7 +5,7 @@ This directory is the replacement backend for Tirvona. It is deliberately indepe
 ## Runtime
 
 - Node.js 20+
-- MongoDB replica set (transactions are required for inventory and finance correctness)
+- Supabase PostgreSQL 17 (Session pooler URL in `SUPABASE_DB_URL`; see [Database](#database))
 - Redis 7+ (BullMQ notification delivery)
 - Optional Razorpay, Cloudinary, Resend, MSG91, and Google credentials
 - Optional provider-neutral WhatsApp integration using the AK NEXUS text API.
@@ -22,11 +22,49 @@ npm run start:prod
 
 Development uses `npm run start:dev`. All frontend-compatible routes remain under `/api`. Swagger is available at `/api/docs` in development and is disabled by default in production; set `SWAGGER_ENABLED=true` only for a deliberately protected environment.
 
-Production startup accepts MongoDB's default database when neither `MONGODB_DB_NAME` nor a URI pathname is supplied, matching the temporary legacy deployment behavior. Set an explicit database name as soon as the existing database is identified. Production still requires non-wildcard `CORS_ORIGINS`, Redis, JWT and parking QR secrets, and production upload storage. Use `/api/health/live` for process liveness and `/api/health/ready` for deployment readiness. The readiness endpoint returns 503 until MongoDB and Redis both respond.
+Production requires `SUPABASE_DB_URL`, non-wildcard `CORS_ORIGINS`, Redis, JWT and parking QR secrets, and production upload storage. Use `/api/health/live` for process liveness and `/api/health/ready` for deployment readiness. The readiness endpoint returns 503 until the database and Redis both respond.
+
+## Database
+
+All data lives in Supabase PostgreSQL. Models are written with Mongoose; a
+storage driver (`src/database/pg`) stores them in Postgres, so services keep
+their query/update style while every read and write goes to SQL.
+`configureDatabase()` (`src/database/database.ts`) installs it at startup.
+
+```env
+SUPABASE_DB_URL=<Supabase → Connect → Session pooler URI, port 5432>
+SUPABASE_POOL_MAX=10        # connections per API process; keep total well under the plan limit (60)
+SUPABASE_TTL_SWEEP=true     # deletes expired OTPs, holds, sessions (TTL indexes) every 60 s
+```
+
+Use the Session pooler (5432), not the transaction pooler (6543): the driver
+uses real transactions with row locks.
+
+Layout: one table per model collection in the schemas `public`, `leads`
+(lead collection) and `smart_contact`; `id` is the document `_id`, one typed
+column per field, `_nulls` and `_extra` keep explicit nulls and values that do
+not fit their column. Text columns use `COLLATE "C"`. The table map is
+`src/database/pg/registry.generated.ts`; a typed Drizzle view is in
+`src/database/drizzle/schema.generated.ts`. On startup the API refuses to run
+against a database whose tables/columns do not match the code.
+
+Changing models:
+
+```bash
+npm run db:generate -- add_xyz   # writes database/migrations/NNNN_add_xyz.sql + registry + Drizzle
+npm run db:migrate -- --plan     # list pending migrations
+npm run db:migrate               # apply them to SUPABASE_DB_URL (each in a transaction)
+npm run db:verify                # read-only: schema matches the code, nothing pending
+```
+
+New fields become new columns and new models become new tables; existing
+columns are never changed or dropped. Deploy the code after the migration.
+`npm run test:pg` runs the driver suite against a real Postgres 17 (embedded,
+or `PG_TEST_URL`).
 
 ## Architecture
 
-The request path is controller → validated DTO → authentication/role/capability guard → application service → repository → MongoDB. Multi-document inventory, payment, commission, ledger, settlement, coupon, and status changes execute in MongoDB transactions.
+The request path is controller → validated DTO → authentication/role/capability guard → application service → repository → Postgres. Multi-document inventory, payment, commission, ledger, settlement, coupon, and status changes execute in database transactions.
 
 Parking owns only `parking_*` collections. Ashram booking owns `booking_*` collections, including daily availability, inventory holds, bookings, payment events, transactions, ledger entries, commissions, settlements, refunds, invoices, receipts, taxes, notifications, reviews, operations, reports, and audit history. Neither domain reads or writes the other domain's financial records.
 
@@ -110,7 +148,7 @@ Configure the RazorpayX webhook URL as
 `POST /api/payouts/webhooks/razorpayx` and subscribe to payout status events.
 RazorpayX requires the production server's outbound IP to be allowlisted. A
 payout must not be enabled until that IP allowlist and webhook signature test
-both pass. Payout requests reserve one ashram's eligible commissions in a MongoDB
+both pass. Payout requests reserve one ashram's eligible commissions in a database
 transaction; provider retries reuse the same `X-Payout-Idempotency` value, and
 terminal status reconciliation updates the payout and commission balance in one
 transaction.
@@ -121,9 +159,11 @@ transaction.
 npm run lint
 npm run typecheck
 npm test -- --runInBand
+npm run test:pg
 npm run test:e2e -- --runInBand
 npm run build
 npm audit --omit=dev --audit-level=critical
 ```
 
-The end-to-end suite requires MongoDB and Redis. Before first production traffic, run `npm run db:indexes` from the built release to create all declared indexes without dropping data.
+The end-to-end suite requires the database and Redis. Indexes are part of the
+SQL migrations (`npm run db:migrate`); nothing is created at runtime.

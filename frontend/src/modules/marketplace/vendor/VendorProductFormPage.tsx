@@ -136,18 +136,22 @@ const ProductForm: React.FC<{ id?: string; vendorStatus: string }> = ({ id, vend
       return;
     }
     setSaving(submit ? "submit" : "draft");
+    let saved: any = null;
     try {
       const payload = toPayload(form);
       const res = isNew ? await vendorApi.createProduct(payload) : await vendorApi.updateProduct(id!, payload);
-      const saved = res.data?.data;
+      saved = res.data?.data;
       if (submit && saved?._id) await vendorApi.submitProduct(saved._id);
       toast.success(submit ? "Saved and sent to Tirvona for approval" : isNew ? "Draft saved" : "Product saved");
-      if (isNew && saved?._id) navigate(`/vendor/products/${saved._id}`, { replace: true });
-      else product.reload();
     } catch {
       // The API client shows the backend's validation message.
+      if (saved?._id) toast.error("Your changes were saved as a draft, but the product was not submitted for approval.");
     } finally {
       setSaving("");
+      // Leave the "new" URL once the product exists, even if submit failed, so a retry
+      // updates this product instead of creating a duplicate (and hitting the SKU check).
+      if (isNew && saved?._id) navigate(`/vendor/products/${saved._id}`, { replace: true });
+      else if (saved?._id) product.reload();
     }
   };
 
@@ -362,7 +366,10 @@ const ProductForm: React.FC<{ id?: string; vendorStatus: string }> = ({ id, vend
         </div>
       )}
       {vendorStatus !== "active" && !locked && (
-        <p className="text-[11px] text-gray-500 text-right">You can save drafts now and submit them once your store is active.</p>
+        <p className="text-[11px] text-amber-700 dark:text-amber-400 font-semibold text-right">
+          "Submit for approval" is turned off because your store status is "{vendorStatus}". A Super Admin must approve your store
+          (Marketplace → Vendors) before products can be submitted. You can keep saving drafts until then.
+        </p>
       )}
     </div>
   );

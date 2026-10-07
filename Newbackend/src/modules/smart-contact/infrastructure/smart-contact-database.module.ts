@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
-import { smartContactConfig } from "../config/smart-contact.config";
+import { DRIVER_URI, SMART_CONTACT_DATABASE } from "../../../database/database";
 import {
   SMART_CONTACT_AUDIT_MODEL,
   SMART_CONTACT_CONNECTION,
@@ -15,20 +15,10 @@ import { SmartContactQrCodeSchema } from "./persistence/smart-contact-qr-code.sc
 
 @Module({
   imports: [
-    MongooseModule.forRootAsync({
+    // Postgres schema "smart_contact" (see src/database).
+    MongooseModule.forRoot(DRIVER_URI, {
       connectionName: SMART_CONTACT_CONNECTION,
-      useFactory: () => {
-        const config = smartContactConfig();
-        return {
-          uri: config.mongoUri,
-          dbName: config.mongoDbName,
-          autoIndex: process.env.NODE_ENV !== "production",
-          minPoolSize: 1,
-          maxPoolSize: 5,
-          serverSelectionTimeoutMS: 10_000,
-          socketTimeoutMS: 45_000,
-        };
-      },
+      dbName: SMART_CONTACT_DATABASE,
     }),
     MongooseModule.forFeature(
       [

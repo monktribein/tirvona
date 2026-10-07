@@ -130,9 +130,8 @@ export function buildMarketplace(opts: { razorpay?: boolean; nodeEnv?: string } 
     await vendorService.addDocument(user, { type: "address_proof", fileUrl: "https://files.example.com/addr.pdf" });
     await vendorService.submitForVerification(user);
     const v = await vendorService.requireOwnVendor(user);
-    await vendorService.adminSetStatus(admin, String(v._id), "approve");
+    await vendorService.adminSetStatus(admin, String(v._id), "approve"); // approval makes the store active
     await vendorService.addBankAccount(user, { accountHolderName: storeName, accountNumber: "123456789012", ifsc: "SBIN0001234" });
-    await vendorService.activate(user);
     return { user, vendor: await vendorService.requireOwnVendor(user) };
   }
 

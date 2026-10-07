@@ -24,10 +24,13 @@ const FILTERS = [
 ];
 
 /** Admin actions allowed from each status (mirrors the backend VENDOR_TRANSITIONS). */
+/** "Approve" puts the shop live immediately; documents and bank details are optional. */
 const ACTIONS: Record<string, Array<"start_review" | "approve" | "reject" | "suspend" | "reactivate">> = {
+  draft: ["approve", "reject"],
   pending_verification: ["start_review", "approve", "reject"],
   under_review: ["approve", "reject"],
-  approved: ["suspend"],
+  rejected: ["approve"],
+  approved: ["approve", "suspend"],
   active: ["suspend"],
   suspended: ["reactivate"],
 };

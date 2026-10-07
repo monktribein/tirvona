@@ -1009,7 +1009,7 @@ describe("error handling", () => {
     const { service, reply } = build({
       actions: {
         searchStays: jest.fn(async () => {
-          throw new Error("ECONNREFUSED mongodb://prod");
+          throw new Error("ECONNREFUSED postgres://prod");
         }),
       },
     });

@@ -130,7 +130,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
       await onSave(payload);
       addNotification(
         "Enterprise Manager Saved",
-        `All 7 sections updated in MongoDB for ${payload.title || "Service Item"}.`,
+        `All 7 sections saved for ${payload.title || "Service Item"}.`,
         "success",
       );
       onClose();
@@ -196,7 +196,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
             >
               <Save size={15} />
               <span>
-                {isSaving ? "Saving to MongoDB..." : "Save All Changes"}
+                {isSaving ? "Saving..." : "Save All Changes"}
               </span>
             </button>
           </div>
@@ -724,7 +724,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
 
         <div className="p-4 bg-gray-50/80 dark:bg-slate-900/80 border-t border-gray-100 dark:border-slate-800 flex justify-between items-center shrink-0">
           <p className="text-[11px] font-bold text-gray-400">
-            Changes will update MongoDB Atlas immediately.
+            Changes are saved immediately.
           </p>
 
           <div className="flex items-center gap-3">
@@ -743,7 +743,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
             >
               <Save size={15} />
               <span>
-                {isSaving ? "Saving to MongoDB..." : "Save All Changes"}
+                {isSaving ? "Saving..." : "Save All Changes"}
               </span>
             </button>
           </div>

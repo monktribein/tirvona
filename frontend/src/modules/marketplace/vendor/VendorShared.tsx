@@ -63,13 +63,13 @@ export const RequireStore: React.FC<{ children: (vendor: VendorProfile, reload: 
 const STATUS_COPY: Record<string, { tone: "info" | "warn" | "bad" | "ok"; title: string; text: string }> = {
   draft: {
     tone: "info",
-    title: "Finish your seller application",
-    text: "Complete your store profile, upload your identity and address documents, then submit for verification.",
+    title: "Waiting for Tirvona to approve your shop",
+    text: "You can add products as drafts now. Documents, address and bank details are optional and can be added any time.",
   },
   pending_verification: {
     tone: "warn",
     title: "Your vendor application is under review",
-    text: "Tirvona is verifying your documents. You can prepare products as drafts meanwhile.",
+    text: "Tirvona is reviewing your shop. You can prepare products as drafts meanwhile.",
   },
   under_review: {
     tone: "warn",
@@ -79,7 +79,7 @@ const STATUS_COPY: Record<string, { tone: "info" | "warn" | "bad" | "ok"; title:
   approved: {
     tone: "ok",
     title: "Approved! One step left",
-    text: "Add a bank account for payouts and activate your store to start selling.",
+    text: "Activate your store to start selling. You can add a bank account later, before requesting a payout.",
   },
   suspended: {
     tone: "bad",

@@ -22,7 +22,7 @@ const openings = [
     location: "Remote / Noida",
     type: "Full Time",
     dept: "Engineering",
-    desc: "Build and maintain the Tirvona web platform. Experience with TypeScript, React, MongoDB and REST APIs required.",
+    desc: "Build and maintain the Tirvona web platform. Experience with TypeScript, React, PostgreSQL and REST APIs required.",
   },
   {
     title: "Digital Marketing Manager",

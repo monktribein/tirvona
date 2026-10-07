@@ -224,7 +224,7 @@ export class LeadTrackingService {
   }
 
   /**
-   * Per-day totals across a range, for the history picker. Summing in Mongo
+   * Per-day totals across a range, for the history picker. Summing in the database
    * keeps the whole range off the wire; only the chosen day loads its route.
    */
   async history(

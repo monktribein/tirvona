@@ -21,21 +21,17 @@ describe("Marketplace end-to-end flow", () => {
     expect(created.status).toBe("draft");
     expect(created.slug).toBe("banke-bihari-prasad");
 
-    // KYC
-    await expect(h.vendorService.submitForVerification(seller)).rejects.toThrow(/Upload these documents/);
-    await h.vendorService.addDocument(seller, { type: "identity", fileUrl: "https://f.example.com/id.pdf" });
-    await h.vendorService.addDocument(seller, { type: "address_proof", fileUrl: "https://f.example.com/a.pdf" });
+    // KYC documents are optional: the seller can request approval without them
     expect((await h.vendorService.submitForVerification(seller)).status).toBe("pending_verification");
+    await h.vendorService.addDocument(seller, { type: "identity", fileUrl: "https://f.example.com/id.pdf" });
 
-    // Super admin approves; vendor adds a bank account and goes live
+    // Super admin approves and the store is live immediately, no bank account needed yet
     const vendorId = String(created._id);
     await h.vendorService.adminSetStatus(h.admin, vendorId, "start_review");
-    expect((await h.vendorService.adminSetStatus(h.admin, vendorId, "approve")).status).toBe("approved");
-    await expect(h.vendorService.activate(seller)).rejects.toThrow(/bank account/);
+    expect((await h.vendorService.adminSetStatus(h.admin, vendorId, "approve")).status).toBe("active");
     const bank = await h.vendorService.addBankAccount(seller, { accountHolderName: "Banke Bihari Prasad", accountNumber: "001122334455", ifsc: "HDFC0001234" });
     expect(bank.accountNumberMasked).toBe("XXXXXX4455");
     expect(bank.accountNumberEncrypted).toBeUndefined();
-    expect((await h.vendorService.activate(seller)).status).toBe("active");
 
     // Product: create -> submit -> approve -> public
     const cat = await h.category("Prasad");

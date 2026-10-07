@@ -71,8 +71,8 @@ export class MongooseBookingRepository implements BookingRepository {
       const shortStayUnits = dayStayUnits.get(dateKey) ?? 0;
       const units = Number(capacity);
       const validCapacity = Number.isFinite(units) ? Math.max(0, units) : 0;
-      // $setOnInsert and $max can't target the same path in one update (Mongo
-      // rejects it as a conflicting update operator), so the insert-default and
+      // $setOnInsert and $max can't target the same path in one update (it is
+      // rejected as a conflicting update operator), so the insert-default and
       // the heal-stale-value steps have to run as two separate updates.
       await this.inventory.updateOne(
         { roomId, date },
