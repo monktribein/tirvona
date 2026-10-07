@@ -374,9 +374,9 @@ export function validateEnvironment(
           `${name} is required in production — payments cannot run in demo mode with real customers`,
         );
     }
-    const backend =
-      input.DATA_BACKEND ??
-      (input.SUPABASE_DB_URL ? "supabase" : (input.MONGODB_URI ? "mongo" : "supabase"));
+    // Production is Supabase unless DATA_BACKEND=mongo is set explicitly. A
+    // leftover MONGODB_URI must never silently route live writes to MongoDB.
+    const backend = input.DATA_BACKEND ?? "supabase";
     if (backend === "mongo") {
       if (!input.MONGODB_URI)
         throw new Error("MONGODB_URI is required in production");
