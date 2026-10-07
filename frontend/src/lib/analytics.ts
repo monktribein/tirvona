@@ -3,7 +3,7 @@
  */
 
 export const GOOGLE_ADS_ID: string = "AW-18454245978";
-export const GA4_MEASUREMENT_ID: string = "G-57XM8N389";
+export const GA4_MEASUREMENT_ID: string = "G-5S7XM8N389";
 
 declare global {
   interface Window {
