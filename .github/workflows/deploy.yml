@@ -51,9 +51,21 @@ jobs:
               fi
             fi
             npm ci
-            npx tsc -p tsconfig.build.json --outDir dist-vps
-            mkdir -p dist-vps/modules/smart-contact/assets
-            cp -R src/modules/smart-contact/assets/* dist-vps/modules/smart-contact/assets/ || true
+            # The compiled API lives in the deploy user's home, not in the
+            # repo: a dist-vps left owned by root (a manual `sudo` build)
+            # cannot be overwritten without sudo. Build into a fresh directory
+            # and swap it in, so a failed build leaves the running one intact.
+            # node_modules is linked in so the build resolves its packages;
+            # .env is still read from the --cwd given to pm2 below.
+            API_BUILD_ROOT="$HOME/tirvona-build"
+            mkdir -p "$API_BUILD_ROOT"
+            ln -sfn /var/www/tirvona/Newbackend/node_modules "$API_BUILD_ROOT/node_modules"
+            rm -rf "$API_BUILD_ROOT/api-next"
+            npx tsc -p tsconfig.build.json --outDir "$API_BUILD_ROOT/api-next"
+            mkdir -p "$API_BUILD_ROOT/api-next/modules/smart-contact/assets"
+            cp -R src/modules/smart-contact/assets/* "$API_BUILD_ROOT/api-next/modules/smart-contact/assets/" || true
+            rm -rf "$API_BUILD_ROOT/api"
+            mv "$API_BUILD_ROOT/api-next" "$API_BUILD_ROOT/api"
 
             echo "=== Frontend ==="
             cd /var/www/tirvona/frontend
@@ -64,6 +76,11 @@ jobs:
               fi
             fi
             npm ci
+            # Vite empties dist before writing; root-owned files would fail it.
+            if [ -d "dist" ] && ! rm -rf dist 2>/dev/null; then
+              echo "Notice: frontend dist contains protected files. Moving aside..."
+              mv dist dist_old_$(date +%s)
+            fi
             npm run build
             if sudo -n true 2>/dev/null; then
               sudo chmod -R go+rX /var/www/tirvona/frontend/dist 2>/dev/null || true
@@ -71,7 +88,7 @@ jobs:
 
             echo "=== Restarting API ==="
             pm2 delete tirvona-api || true
-            pm2 start /var/www/tirvona/Newbackend/dist-vps/main.js --name tirvona-api --cwd /var/www/tirvona/Newbackend --update-env
+            pm2 start "$HOME/tirvona-build/api/main.js" --name tirvona-api --cwd /var/www/tirvona/Newbackend --update-env
             sleep 5
             pm2 logs tirvona-api --lines 80 --nostream
 
