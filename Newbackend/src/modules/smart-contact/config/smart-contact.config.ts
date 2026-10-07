@@ -1,5 +1,7 @@
 
 export interface SmartContactConfig {
+  mongoUri: string;
+  mongoDbName: string;
   publicBaseUrl: string;
   publicPathPrefix: string;
   apiBaseUrl: string;
@@ -14,6 +16,8 @@ export interface SmartContactConfig {
   sessionHashSalt: string;
 }
 
+const DEFAULT_DB_NAME = "tirvona_smart_contact";
+
 const trimSlashes = (value: string): string => value.replace(/\/+$/, "");
 
 const positiveInt = (raw: string | undefined, fallback: number): number => {
@@ -27,6 +31,11 @@ const normalisePrefix = (raw: string | undefined): string => {
 };
 
 export const smartContactConfig = (): SmartContactConfig => ({
+  mongoUri:
+    process.env.SMART_CONTACT_MONGODB_URI ||
+    process.env.MONGODB_URI ||
+    "mongodb://127.0.0.1:27017/tirvona",
+  mongoDbName: process.env.SMART_CONTACT_MONGODB_DB_NAME || DEFAULT_DB_NAME,
   publicBaseUrl: trimSlashes(
     process.env.SMART_CONTACT_PUBLIC_BASE_URL || "https://www.tirvona.com",
   ),

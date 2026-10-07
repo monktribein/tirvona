@@ -6,7 +6,7 @@ import { LoggerModule } from "nestjs-pino";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { ScheduleModule } from "@nestjs/schedule";
 import { environment, validateEnvironment } from "./config/environment";
-import { DRIVER_URI, MAIN_DATABASE } from "./database/database";
+import { DRIVER_URI, MAIN_DATABASE, configureDatabase } from "./database/database";
 import { CommonModule } from "./common/common.module";
 import { RolesGuard } from "./common/guards/roles.guard";
 import { PermissionsGuard } from "./common/guards/permissions.guard";
@@ -60,9 +60,45 @@ import {
       load: [environment],
       validate: validateEnvironment,
     }),
-    // Supabase Postgres via the storage driver (src/database); the URI is a
-    // placeholder, the pool comes from SUPABASE_DB_URL.
-    MongooseModule.forRoot(DRIVER_URI, { dbName: MAIN_DATABASE }),
+    MongooseModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const dataBackend =
+          process.env.DATA_BACKEND ??
+          (process.env.SUPABASE_DB_URL ? "supabase" : "mongo");
+
+        if (dataBackend === "supabase") {
+          configureDatabase();
+          return {
+            uri: DRIVER_URI,
+            dbName: MAIN_DATABASE,
+          };
+        }
+
+        const uri =
+          config.get<string>("mongoUri") ||
+          process.env.MONGODB_URI ||
+          "mongodb://127.0.0.1:27017/tirvona";
+        const credentialsAreInUri = /^mongodb(?:\+srv)?:\/\/[^/@]+@/i.test(uri);
+        return {
+          uri,
+          dbName: config.get<string>("mongoDbName") || undefined,
+          user: credentialsAreInUri
+            ? undefined
+            : config.get<string>("mongoUsername") || undefined,
+          pass: credentialsAreInUri
+            ? undefined
+            : config.get<string>("mongoPassword") || undefined,
+          autoIndex: config.get<string>("nodeEnv") !== "production",
+          minPoolSize: config.get<number>("mongoMinPoolSize") ?? 1,
+          maxPoolSize: config.get<number>("mongoMaxPoolSize") ?? 20,
+          serverSelectionTimeoutMS:
+            config.get<number>("mongoServerSelectionTimeoutMs") ?? 10_000,
+          socketTimeoutMS:
+            config.get<number>("mongoSocketTimeoutMs") ?? 45_000,
+        };
+      },
+    }),
     ...(process.env.NODE_ENV === "production"
       ? [
           LoggerModule.forRootAsync({

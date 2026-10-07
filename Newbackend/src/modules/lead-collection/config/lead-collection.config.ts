@@ -1,5 +1,7 @@
 
 export interface LeadCollectionConfig {
+  mongoUri: string;
+  mongoDbName: string;
   jwtSecret: string;
   jwtExpiresIn: string;
   jwtIssuer: string;
@@ -7,7 +9,14 @@ export interface LeadCollectionConfig {
   bcryptRounds: number;
 }
 
+const DEFAULT_DB_NAME = "tirvona_leads";
+
 export const leadCollectionConfig = (): LeadCollectionConfig => ({
+  mongoUri:
+    process.env.LEAD_MONGODB_URI ||
+    process.env.MONGODB_URI ||
+    "mongodb://127.0.0.1:27017/tirvona",
+  mongoDbName: process.env.LEAD_MONGODB_DB_NAME || DEFAULT_DB_NAME,
   jwtSecret:
     process.env.LEAD_JWT_SECRET ||
     process.env.JWT_SECRET ||

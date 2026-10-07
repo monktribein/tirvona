@@ -38,6 +38,7 @@ export function activePostgresStore(): PgStore | null {
 }
 
 export function enablePostgresDriver(options: PostgresDriverOptions, instance: typeof mongoose = mongoose): PgStore {
+  if (activeStore) return activeStore;
   const pool = options.pool ?? nodePgPool(requireString(options.connectionString), { max: options.poolMax });
   const store = new PgStore(pool, options.registry);
   activeStore = store;

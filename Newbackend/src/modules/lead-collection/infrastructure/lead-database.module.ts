@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
-import { DRIVER_URI, LEAD_DATABASE } from "../../../database/database";
+import { leadCollectionConfig } from "../config/lead-collection.config";
+import { DRIVER_URI, LEAD_DATABASE, configureDatabase } from "../../../database/database";
 import {
   LEAD_ATTENDANCE_MODEL,
   LEAD_CONNECTION,
@@ -17,10 +18,32 @@ import { LeadLocationPingSchema } from "./persistence/lead-location-ping.schema"
 
 @Module({
   imports: [
-    // Postgres schema "leads" (see src/database).
-    MongooseModule.forRoot(DRIVER_URI, {
+    MongooseModule.forRootAsync({
       connectionName: LEAD_CONNECTION,
-      dbName: LEAD_DATABASE,
+      useFactory: () => {
+        const dataBackend =
+          process.env.DATA_BACKEND ??
+          (process.env.SUPABASE_DB_URL ? "supabase" : "mongo");
+
+        if (dataBackend === "supabase") {
+          configureDatabase();
+          return {
+            uri: DRIVER_URI,
+            dbName: LEAD_DATABASE,
+          };
+        }
+
+        const config = leadCollectionConfig();
+        return {
+          uri: config.mongoUri,
+          dbName: config.mongoDbName,
+          autoIndex: process.env.NODE_ENV !== "production",
+          minPoolSize: 1,
+          maxPoolSize: 5,
+          serverSelectionTimeoutMS: 10_000,
+          socketTimeoutMS: 45_000,
+        };
+      },
     }),
     MongooseModule.forFeature(
       [
