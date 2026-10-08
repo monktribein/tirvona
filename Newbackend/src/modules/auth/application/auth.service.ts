@@ -43,6 +43,7 @@ import {
 import { WhatsAppOtpService } from "../../../integrations/whatsapp/services/whatsapp-otp.service";
 import { WhatsAppIntegrationError } from "../../../integrations/whatsapp/errors/whatsapp.errors";
 import { normalizeWhatsAppNumber } from "../../../integrations/whatsapp/utils/whatsapp-phone.util";
+import { canonicalPhone, phoneCandidates } from "../../../common/phone/phone.util";
 import { realEmail } from "../../users/domain/placeholder-email";
 
 @Injectable()
@@ -448,10 +449,7 @@ export class AuthService {
    * The signup forms send "+<country><number>" for every country.
    */
   canonicalPhone(phone: string): string {
-    const normalized = normalizeWhatsAppNumber(phone);
-    if (!normalized) return phone.trim();
-    if (/^91[6-9]\d{9}$/.test(normalized)) return normalized.slice(2);
-    return `+${normalized}`;
+    return canonicalPhone(phone);
   }
 
   /**
@@ -472,16 +470,7 @@ export class AuthService {
   }
 
   private async findUserByPhoneInput(phone: string): Promise<UserDocument | null> {
-    const normalized = normalizeWhatsAppNumber(phone);
-    const candidates = [
-      phone.trim(),
-      normalized,
-      normalized?.startsWith("91") && normalized.length === 12
-        ? normalized.slice(2)
-        : undefined,
-      normalized ? `+${normalized}` : undefined,
-    ].filter((value): value is string => Boolean(value));
-    for (const candidate of new Set(candidates)) {
+    for (const candidate of phoneCandidates(phone)) {
       const user = await this.users.findByPhone(candidate);
       if (user) return user;
     }
@@ -711,14 +700,14 @@ export class AuthService {
     this.master(actor);
     if (await this.users.findByEmail(dto.email))
       throw new ConflictException("A user with this email already exists.");
-    if (await this.users.findByPhone(dto.phone))
+    if (await this.findUserByPhoneInput(dto.phone))
       throw new ConflictException(
         "A user with this phone number already exists.",
       );
     const user = await this.users.create({
       name: dto.name,
       email: dto.email.toLowerCase(),
-      phone: dto.phone,
+      phone: this.canonicalPhone(dto.phone),
       passwordHash: await bcrypt.hash(dto.password, 12),
       role: dto.role === "owner" ? ASHRAM_OWNER_ROLE : dto.role,
       status: "active",

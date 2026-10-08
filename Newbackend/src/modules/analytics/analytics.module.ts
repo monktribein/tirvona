@@ -6,7 +6,7 @@ import { AuditModule } from "../audit/audit.module";
 import { ParkingModule } from "../parking/parking.module";
 import { AartiModule } from "../aarti/aarti.module";
 import { EventsModule } from "../events/events.module";
-import { CommerceModule } from "../commerce/commerce.module";
+import { MarketplaceModule } from "../marketplace/marketplace.module";
 import { AnalyticsService } from "./application/analytics.service";
 import { SectionSummaryService } from "./application/section-summary.service";
 import { AnalyticsController } from "./presentation/analytics.controller";
@@ -19,7 +19,7 @@ import { AnalyticsController } from "./presentation/analytics.controller";
     ParkingModule,
     AartiModule,
     EventsModule,
-    CommerceModule,
+    MarketplaceModule,
   ],
   controllers: [AnalyticsController],
   providers: [AnalyticsService, SectionSummaryService],

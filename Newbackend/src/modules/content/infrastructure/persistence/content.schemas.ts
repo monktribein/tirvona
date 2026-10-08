@@ -39,7 +39,6 @@ export const CONTENT_MODELS = [
   },
   { name: "Banner", schema: schema("banners") },
   { name: "FeaturedBanner", schema: sluggedSchema("featured_banners") },
-  { name: "ContentAuditLog", schema: schema("auditlogs") },
   { name: "PilgrimageCircuit", schema: schema("pilgrimagecircuits") },
   // Registered under a content-specific model name while pointing at the same
   // `temples` collection. The strict, indexed `Temple` model owned by
@@ -57,6 +56,8 @@ export const CONTENT_MODELS = [
 CONTENT_MODELS[0].schema.index({ status: 1, category: 1, createdAt: -1 });
 CONTENT_MODELS[2].schema.index({ postId: 1, status: 1, createdAt: -1 });
 CONTENT_MODELS[3].schema.index({ status: 1, userId: 1, createdAt: -1 });
-CONTENT_MODELS[7].schema.index({ status: 1, circuitType: 1 });
-CONTENT_MODELS[8].schema.index({ status: 1, city: 1, rating: -1 });
-CONTENT_MODELS[13].schema.index({ status: 1, city: 1, category: 1 });
+const modelSchema = (name: string): Schema =>
+  CONTENT_MODELS.find((model) => model.name === name)!.schema;
+modelSchema("PilgrimageCircuit").index({ status: 1, circuitType: 1 });
+modelSchema("ContentTemple").index({ status: 1, city: 1, rating: -1 });
+modelSchema("LocalServiceItem").index({ status: 1, city: 1, category: 1 });

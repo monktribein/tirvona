@@ -12,6 +12,7 @@ import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { canManageAllAshrams } from "../../../common/auth/ashram-access";
+import { canonicalPhone, phoneCandidates } from "../../../common/phone/phone.util";
 import { citySlug, slugify } from "../../../common/slug/slug.util";
 import { isObjectIdLike } from "../../urls/application/url-resolver.service";
 import { AshramSlugService } from "./ashram-slug.service";
@@ -1008,10 +1009,14 @@ export class AshramsService {
           payload.contact?.phone ||
           `+91${Math.floor(1000000000 + Math.random() * 9000000000)}`;
 
+        if (await this.userModel.exists({ phone: { $in: phoneCandidates(phone) } }))
+          throw new ConflictException(
+            "An account with this phone number already exists.",
+          );
         const createdUser = await this.userModel.create({
           name,
           email,
-          phone,
+          phone: canonicalPhone(phone),
           passwordHash: await bcrypt.hash(String(ownerPassword).trim(), 12),
           role: "ashram_owner",
           status: "active",

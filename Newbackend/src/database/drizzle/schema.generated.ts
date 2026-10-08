@@ -558,23 +558,6 @@ export const auditLogs = pgTable("audit_logs", {
   _extra: jsonb("_extra"),
 });
 
-/** public.auditlogs */
-export const auditlogs = pgTable("auditlogs", {
-  id: text("id").primaryKey(), // model: _id
-  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
-  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
-  "version": doublePrecision("version"), // model: __v
-  "action": text("action"), // model: action
-  "details": jsonb("details"), // model: details
-  "ipAddress": text("ip_address"), // model: ipAddress
-  "module": text("module"), // model: module
-  "timestamp": timestamp("timestamp", { withTimezone: true, mode: "date" }), // model: timestamp
-  "userAgent": text("user_agent"), // model: userAgent
-  "userId": jsonb("user_id"), // model: userId
-  _nulls: text("_nulls").array(),
-  _extra: jsonb("_extra"),
-});
-
 /** public.auth_challenges */
 export const authChallenges = pgTable("auth_challenges", {
   id: text("id").primaryKey(), // model: _id
@@ -1427,41 +1410,6 @@ export const bookingTransactions = pgTable("booking_transactions", {
   _extra: jsonb("_extra"),
 });
 
-/** public.bookings */
-export const bookings = pgTable("bookings", {
-  id: text("id").primaryKey(), // model: _id
-  "customerId": text("customer_id"), // model: customerId
-  "ashramId": text("ashram_id"), // model: ashramId
-  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
-  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
-  "version": doublePrecision("version"), // model: __v
-  "assignedRoomNumber": text("assigned_room_number"), // model: assignedRoomNumber
-  "bookingId": text("booking_id"), // model: bookingId
-  "cancellation": jsonb("cancellation"), // model: cancellation
-  "checkInCode": text("check_in_code"), // model: checkInCode
-  "checkInDate": timestamp("check_in_date", { withTimezone: true, mode: "date" }), // model: checkInDate
-  "checkOutDate": timestamp("check_out_date", { withTimezone: true, mode: "date" }), // model: checkOutDate
-  "discountPercentage": doublePrecision("discount_percentage"), // model: discountPercentage
-  "gatewayStatus": text("gateway_status"), // model: gatewayStatus
-  "guestsCount": doublePrecision("guests_count"), // model: guestsCount
-  "history": jsonb("history"), // model: history
-  "paymentMode": text("payment_mode"), // model: paymentMode
-  "paymentStatus": text("payment_status"), // model: paymentStatus
-  "paymentSummary": jsonb("payment_summary"), // model: paymentSummary
-  "pricing": jsonb("pricing"), // model: pricing
-  "reservationExpiresAt": timestamp("reservation_expires_at", { withTimezone: true, mode: "date" }), // model: reservationExpiresAt
-  "reservationNumber": text("reservation_number"), // model: reservationNumber
-  "rewardPointsEarned": doublePrecision("reward_points_earned"), // model: rewardPointsEarned
-  "rewardPointsUsed": doublePrecision("reward_points_used"), // model: rewardPointsUsed
-  "roomId": text("room_id"), // model: roomId
-  "roomsBookedCount": doublePrecision("rooms_booked_count"), // model: roomsBookedCount
-  "services": jsonb("services"), // model: services
-  "specialRequests": text("special_requests"), // model: specialRequests
-  "status": text("status"), // model: status
-  _nulls: text("_nulls").array(),
-  _extra: jsonb("_extra"),
-});
-
 /** public.contentchangerequests */
 export const contentchangerequests = pgTable("contentchangerequests", {
   id: text("id").primaryKey(), // model: _id
@@ -1897,43 +1845,6 @@ export const marketplaceAddresses = pgTable("marketplace_addresses", {
   _extra: jsonb("_extra"),
 });
 
-/** public.marketplace_categories */
-export const marketplaceCategories = pgTable("marketplace_categories", {
-  id: text("id").primaryKey(), // model: _id
-  "version": doublePrecision("version"), // model: __v
-  "bannerImage": text("banner_image"), // model: bannerImage
-  "coverImage": text("cover_image"), // model: coverImage
-  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
-  "deliveryDays": doublePrecision("delivery_days"), // model: deliveryDays
-  "description": text("description"), // model: description
-  "devoteeUsage": text("devotee_usage"), // model: devoteeUsage
-  "displayOrder": doublePrecision("display_order"), // model: displayOrder
-  "featured": boolean("featured"), // model: featured
-  "festivalInfo": text("festival_info"), // model: festivalInfo
-  "gallery": jsonb("gallery"), // model: gallery
-  "history": text("history"), // model: history
-  "icon": text("icon"), // model: icon
-  "importance": text("importance"), // model: importance
-  "itemCount": doublePrecision("item_count"), // model: itemCount
-  "name": text("name"), // model: name
-  "originCity": text("origin_city"), // model: originCity
-  "originState": text("origin_state"), // model: originState
-  "rating": doublePrecision("rating"), // model: rating
-  "sellerCount": doublePrecision("seller_count"), // model: sellerCount
-  "seoDescription": text("seo_description"), // model: seoDescription
-  "seoTitle": text("seo_title"), // model: seoTitle
-  "slug": text("slug"), // model: slug
-  "status": text("status"), // model: status
-  "templeName": text("temple_name"), // model: templeName
-  "thumbnail": text("thumbnail"), // model: thumbnail
-  "totalOrders": doublePrecision("total_orders"), // model: totalOrders
-  "trendingBadge": text("trending_badge"), // model: trendingBadge
-  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
-  "whyFamous": text("why_famous"), // model: whyFamous
-  _nulls: text("_nulls").array(),
-  _extra: jsonb("_extra"),
-});
-
 /** public.marketplace_ledger_entries */
 export const marketplaceLedgerEntries = pgTable("marketplace_ledger_entries", {
   id: text("id").primaryKey(), // model: _id
@@ -1976,49 +1887,6 @@ export const marketplaceMasterOrders = pgTable("marketplace_master_orders", {
   _extra: jsonb("_extra"),
 });
 
-/** public.marketplace_orders */
-export const marketplaceOrders = pgTable("marketplace_orders", {
-  id: text("id").primaryKey(), // model: _id
-  "orderNumber": text("order_number"), // model: orderNumber
-  "customerId": text("customer_id"), // model: customerId
-  "items": jsonb("items"), // model: items
-  "shippingAddress": jsonb("shipping_address"), // model: shippingAddress
-  "addressId": text("address_id"), // model: addressId
-  "pricing": jsonb("pricing"), // model: pricing
-  "orderStatus": text("order_status"), // model: orderStatus
-  "paymentStatus": text("payment_status"), // model: paymentStatus
-  "paymentMode": text("payment_mode"), // model: paymentMode
-  "gateway": jsonb("gateway"), // model: gateway
-  "notes": text("notes"), // model: notes
-  "cancelledAt": timestamp("cancelled_at", { withTimezone: true, mode: "date" }), // model: cancelledAt
-  "cancelReason": text("cancel_reason"), // model: cancelReason
-  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
-  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
-  "version": doublePrecision("version"), // model: __v
-  _nulls: text("_nulls").array(),
-  _extra: jsonb("_extra"),
-});
-
-/** public.marketplace_payments */
-export const marketplacePayments = pgTable("marketplace_payments", {
-  id: text("id").primaryKey(), // model: _id
-  "orderId": text("order_id"), // model: orderId
-  "customerId": text("customer_id"), // model: customerId
-  "eventId": text("event_id"), // model: eventId
-  "provider": text("provider"), // model: provider
-  "gatewayOrderId": text("gateway_order_id"), // model: gatewayOrderId
-  "gatewayPaymentId": text("gateway_payment_id"), // model: gatewayPaymentId
-  "amount": doublePrecision("amount"), // model: amount
-  "currency": text("currency"), // model: currency
-  "status": text("status"), // model: status
-  "rawStatus": text("raw_status"), // model: rawStatus
-  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
-  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
-  "version": doublePrecision("version"), // model: __v
-  _nulls: text("_nulls").array(),
-  _extra: jsonb("_extra"),
-});
-
 /** public.marketplace_payouts */
 export const marketplacePayouts = pgTable("marketplace_payouts", {
   id: text("id").primaryKey(), // model: _id
@@ -2039,35 +1907,6 @@ export const marketplacePayouts = pgTable("marketplace_payouts", {
   "statusHistory": jsonb("status_history"), // model: statusHistory
   "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
   "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
-  _nulls: text("_nulls").array(),
-  _extra: jsonb("_extra"),
-});
-
-/** public.marketplace_products */
-export const marketplaceProducts = pgTable("marketplace_products", {
-  id: text("id").primaryKey(), // model: _id
-  "version": doublePrecision("version"), // model: __v
-  "categoryId": text("category_id"), // model: categoryId
-  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
-  "deliveryDays": doublePrecision("delivery_days"), // model: deliveryDays
-  "description": text("description"), // model: description
-  "discountPrice": doublePrecision("discount_price"), // model: discountPrice
-  "featured": boolean("featured"), // model: featured
-  "festivalSpecial": boolean("festival_special"), // model: festivalSpecial
-  "images": text("images").array(), // model: images
-  "organic": boolean("organic"), // model: organic
-  "price": doublePrecision("price"), // model: price
-  "productName": text("product_name"), // model: productName
-  "rating": doublePrecision("rating"), // model: rating
-  "reviewsCount": doublePrecision("reviews_count"), // model: reviewsCount
-  "slug": text("slug"), // model: slug
-  "status": text("status"), // model: status
-  "stock": doublePrecision("stock"), // model: stock
-  "storeName": text("store_name"), // model: storeName
-  "templeName": text("temple_name"), // model: templeName
-  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
-  "vegetarian": boolean("vegetarian"), // model: vegetarian
-  "weight": text("weight"), // model: weight
   _nulls: text("_nulls").array(),
   _extra: jsonb("_extra"),
 });
@@ -2316,37 +2155,6 @@ export const marketplacewaitlists = pgTable("marketplacewaitlists", {
   _extra: jsonb("_extra"),
 });
 
-/** public.notification_campaigns */
-export const notificationCampaigns = pgTable("notification_campaigns", {
-  id: text("id").primaryKey(), // model: _id
-  "version": doublePrecision("version"), // model: __v
-  "audienceType": text("audience_type"), // model: audienceType
-  "body": text("body"), // model: body
-  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
-  "deepLink": text("deep_link"), // model: deepLink
-  "failureCount": doublePrecision("failure_count"), // model: failureCount
-  "failureReason": text("failure_reason"), // model: failureReason
-  "imageUrl": text("image_url"), // model: imageUrl
-  "recipientCount": doublePrecision("recipient_count"), // model: recipientCount
-  "sentAt": timestamp("sent_at", { withTimezone: true, mode: "date" }), // model: sentAt
-  "sentBy": text("sent_by"), // model: sentBy
-  "status": text("status"), // model: status
-  "successCount": doublePrecision("success_count"), // model: successCount
-  "targetRoles": jsonb("target_roles"), // model: targetRoles
-  "targetUserIds": jsonb("target_user_ids"), // model: targetUserIds
-  "title": text("title"), // model: title
-  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
-  _nulls: text("_nulls").array(),
-  _extra: jsonb("_extra"),
-});
-
-/** public.notificationpreferences */
-export const notificationpreferences = pgTable("notificationpreferences", {
-  id: text("id").primaryKey(), // model: _id
-  _nulls: text("_nulls").array(),
-  _extra: jsonb("_extra"),
-});
-
 /** public.notifications */
 export const notifications = pgTable("notifications", {
   id: text("id").primaryKey(), // model: _id
@@ -2375,57 +2183,6 @@ export const notifications = pgTable("notifications", {
   "status": text("status"), // model: status
   "title": text("title"), // model: title
   "type": text("type"), // model: type
-  _nulls: text("_nulls").array(),
-  _extra: jsonb("_extra"),
-});
-
-/** public.notificationtemplates */
-export const notificationtemplates = pgTable("notificationtemplates", {
-  id: text("id").primaryKey(), // model: _id
-  _nulls: text("_nulls").array(),
-  _extra: jsonb("_extra"),
-});
-
-/** public.offers */
-export const offers = pgTable("offers", {
-  id: text("id").primaryKey(), // model: _id
-  "version": doublePrecision("version"), // model: __v
-  "applicableAshrams": text("applicable_ashrams").array(), // model: applicableAshrams
-  "applicableCities": text("applicable_cities").array(), // model: applicableCities
-  "applicableRoomCategories": jsonb("applicable_room_categories"), // model: applicableRoomCategories
-  "applicableStates": jsonb("applicable_states"), // model: applicableStates
-  "ashramId": text("ashram_id"), // model: ashramId
-  "bannerImage": text("banner_image"), // model: bannerImage
-  "clicksCount": doublePrecision("clicks_count"), // model: clicksCount
-  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
-  "description": text("description"), // model: description
-  "discountType": text("discount_type"), // model: discountType
-  "discountValue": doublePrecision("discount_value"), // model: discountValue
-  "featured": boolean("featured"), // model: featured
-  "galleryImages": jsonb("gallery_images"), // model: galleryImages
-  "highlights": text("highlights").array(), // model: highlights
-  "maximumDiscount": doublePrecision("maximum_discount"), // model: maximumDiscount
-  "maximumRedemptions": doublePrecision("maximum_redemptions"), // model: maximumRedemptions
-  "minimumBookingAmount": doublePrecision("minimum_booking_amount"), // model: minimumBookingAmount
-  "offerTitle": text("offer_title"), // model: offerTitle
-  "offerType": text("offer_type"), // model: offerType
-  "ownerId": text("owner_id"), // model: ownerId
-  "perUserLimit": doublePrecision("per_user_limit"), // model: perUserLimit
-  "priority": doublePrecision("priority"), // model: priority
-  "promoCode": text("promo_code"), // model: promoCode
-  "redemptionsCount": doublePrecision("redemptions_count"), // model: redemptionsCount
-  "remainingRedemptions": doublePrecision("remaining_redemptions"), // model: remainingRedemptions
-  "revenueGenerated": doublePrecision("revenue_generated"), // model: revenueGenerated
-  "shortTitle": text("short_title"), // model: shortTitle
-  "status": text("status"), // model: status
-  "subtitle": text("subtitle"), // model: subtitle
-  "termsAndConditions": text("terms_and_conditions").array(), // model: termsAndConditions
-  "thumbnailImage": text("thumbnail_image"), // model: thumbnailImage
-  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
-  "updatedBy": text("updated_by"), // model: updatedBy
-  "validFrom": timestamp("valid_from", { withTimezone: true, mode: "date" }), // model: validFrom
-  "validTill": timestamp("valid_till", { withTimezone: true, mode: "date" }), // model: validTill
-  "viewsCount": doublePrecision("views_count"), // model: viewsCount
   _nulls: text("_nulls").array(),
   _extra: jsonb("_extra"),
 });
@@ -2470,13 +2227,6 @@ export const offlineRooms = pgTable("offline_rooms", {
   "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
   "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
   "version": doublePrecision("version"), // model: __v
-  _nulls: text("_nulls").array(),
-  _extra: jsonb("_extra"),
-});
-
-/** public.otps */
-export const otps = pgTable("otps", {
-  id: text("id").primaryKey(), // model: _id
   _nulls: text("_nulls").array(),
   _extra: jsonb("_extra"),
 });
@@ -2966,22 +2716,6 @@ export const paymentWebhookEvents = pgTable("payment_webhook_events", {
   _extra: jsonb("_extra"),
 });
 
-/** public.payments */
-export const payments = pgTable("payments", {
-  id: text("id").primaryKey(), // model: _id
-  "version": doublePrecision("version"), // model: __v
-  "amount": doublePrecision("amount"), // model: amount
-  "bookingId": text("booking_id"), // model: bookingId
-  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
-  "method": text("method"), // model: method
-  "status": text("status"), // model: status
-  "transactionId": text("transaction_id"), // model: transactionId
-  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
-  "userId": text("user_id"), // model: userId
-  _nulls: text("_nulls").array(),
-  _extra: jsonb("_extra"),
-});
-
 /** public.payout_audit_logs */
 export const payoutAuditLogs = pgTable("payout_audit_logs", {
   id: text("id").primaryKey(), // model: _id
@@ -3350,19 +3084,6 @@ export const platformSettings = pgTable("platform_settings", {
   _extra: jsonb("_extra"),
 });
 
-/** public.platformsettings */
-export const platformsettings = pgTable("platformsettings", {
-  id: text("id").primaryKey(), // model: _id
-  "version": doublePrecision("version"), // model: __v
-  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
-  "gstRate": doublePrecision("gst_rate"), // model: gstRate
-  "key": text("key"), // model: key
-  "platformFee": jsonb("platform_fee"), // model: platformFee
-  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
-  _nulls: text("_nulls").array(),
-  _extra: jsonb("_extra"),
-});
-
 /** public.push_campaigns */
 export const pushCampaigns = pgTable("push_campaigns", {
   id: text("id").primaryKey(), // model: _id
@@ -3571,22 +3292,6 @@ export const refundWebhooks = pgTable("refund_webhooks", {
   _extra: jsonb("_extra"),
 });
 
-/** public.reviews */
-export const reviews = pgTable("reviews", {
-  id: text("id").primaryKey(), // model: _id
-  "version": doublePrecision("version"), // model: __v
-  "ashramId": text("ashram_id"), // model: ashramId
-  "bookingId": text("booking_id"), // model: bookingId
-  "comment": text("comment"), // model: comment
-  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
-  "customerId": text("customer_id"), // model: customerId
-  "rating": jsonb("rating"), // model: rating
-  "status": text("status"), // model: status
-  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
-  _nulls: text("_nulls").array(),
-  _extra: jsonb("_extra"),
-});
-
 /** public.room_category_requests */
 export const roomCategoryRequests = pgTable("room_category_requests", {
   id: text("id").primaryKey(), // model: _id
@@ -3625,20 +3330,6 @@ export const roomRates = pgTable("room_rates", {
   _extra: jsonb("_extra"),
 });
 
-/** public.roomavailabilities */
-export const roomavailabilities = pgTable("roomavailabilities", {
-  id: text("id").primaryKey(), // model: _id
-  "version": doublePrecision("version"), // model: __v
-  "bookedCount": doublePrecision("booked_count"), // model: bookedCount
-  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
-  "date": timestamp("date", { withTimezone: true, mode: "date" }), // model: date
-  "maintenanceCount": doublePrecision("maintenance_count"), // model: maintenanceCount
-  "roomId": text("room_id"), // model: roomId
-  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
-  _nulls: text("_nulls").array(),
-  _extra: jsonb("_extra"),
-});
-
 /** public.rooms */
 export const rooms = pgTable("rooms", {
   id: text("id").primaryKey(), // model: _id
@@ -3673,21 +3364,6 @@ export const rooms = pgTable("rooms", {
   "maxGuests": doublePrecision("max_guests"), // model: maxGuests
   "pricePerNight": doublePrecision("price_per_night"), // model: pricePerNight
   "rating": text("rating"), // model: rating
-  _nulls: text("_nulls").array(),
-  _extra: jsonb("_extra"),
-});
-
-/** public.roomunits */
-export const roomunits = pgTable("roomunits", {
-  id: text("id").primaryKey(), // model: _id
-  "version": doublePrecision("version"), // model: __v
-  "ashramId": text("ashram_id"), // model: ashramId
-  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
-  "notes": text("notes"), // model: notes
-  "roomId": text("room_id"), // model: roomId
-  "status": text("status"), // model: status
-  "unitNumber": text("unit_number"), // model: unitNumber
-  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
   _nulls: text("_nulls").array(),
   _extra: jsonb("_extra"),
 });
@@ -3838,24 +3514,6 @@ export const supportTicketMessages = pgTable("support_ticket_messages", {
   "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
   "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
   "version": doublePrecision("version"), // model: __v
-  _nulls: text("_nulls").array(),
-  _extra: jsonb("_extra"),
-});
-
-/** public.supporttickets */
-export const supporttickets = pgTable("supporttickets", {
-  id: text("id").primaryKey(), // model: _id
-  "version": doublePrecision("version"), // model: __v
-  "assignedTo": text("assigned_to"), // model: assignedTo
-  "category": text("category"), // model: category
-  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
-  "description": text("description"), // model: description
-  "messages": jsonb("messages"), // model: messages
-  "priority": text("priority"), // model: priority
-  "status": text("status"), // model: status
-  "title": text("title"), // model: title
-  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
-  "userId": text("user_id"), // model: userId
   _nulls: text("_nulls").array(),
   _extra: jsonb("_extra"),
 });
@@ -4276,13 +3934,6 @@ export const whatsappInboundEvents = pgTable("whatsapp_inbound_events", {
   "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
   "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
   "version": doublePrecision("version"), // model: __v
-  _nulls: text("_nulls").array(),
-  _extra: jsonb("_extra"),
-});
-
-/** leads.lead_attendance */
-export const leadsLeadAttendance = leadsSchema.table("lead_attendance", {
-  id: text("id").primaryKey(), // model: _id
   _nulls: text("_nulls").array(),
   _extra: jsonb("_extra"),
 });

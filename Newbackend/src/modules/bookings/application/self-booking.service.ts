@@ -9,6 +9,7 @@ import {
 import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
 import { TransactionService } from "../../../common/database/transaction.service";
+import { canonicalPhone, phoneCandidates } from "../../../common/phone/phone.util";
 import {
   assertAshramInScope,
   isUnrestricted,
@@ -262,8 +263,10 @@ export class SelfBookingService {
     dto: CreateSelfBookingDto,
     session: any,
   ): Promise<any> {
-    const phone = dto.guestPhone.trim();
-    const existing = await this.users.findOne({ phone }).session(session);
+    const phone = canonicalPhone(dto.guestPhone);
+    const existing = await this.users
+      .findOne({ phone: { $in: phoneCandidates(dto.guestPhone) } })
+      .session(session);
     if (existing) return existing;
     const [created] = await this.users.create(
       [

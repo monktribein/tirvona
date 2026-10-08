@@ -5,7 +5,6 @@ import type { Model } from "mongoose";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { BookingsService } from "../../bookings/application/bookings.service";
 import { ParkingBookingService } from "../../parking/application/parking-booking.service";
-import { MarketplaceOrderService } from "../../commerce/application/marketplace-order.service";
 import { AartiBookingService } from "../../aarti/application/aarti-booking.service";
 import { DayStayBookingService } from "../../day-stay/application/day-stay-booking.service";
 import { OrderService as VendorMarketplaceOrderService } from "../../marketplace/application/order.service";
@@ -31,7 +30,6 @@ export class PaymentsWebhookService {
     @InjectModel("PaymentWebhookEvent") private readonly events: Model<any>,
     private readonly bookings: BookingsService,
     private readonly parking: ParkingBookingService,
-    private readonly marketplace: MarketplaceOrderService,
     private readonly aarti: AartiBookingService,
     private readonly dayStay: DayStayBookingService,
     private readonly vendorMarketplace: VendorMarketplaceOrderService,
@@ -137,8 +135,6 @@ export class PaymentsWebhookService {
       return "bookings";
     if (await this.parking.confirmPaymentFromWebhook(orderId, paymentId))
       return "parking";
-    if (await this.marketplace.confirmPaymentFromWebhook(orderId, paymentId))
-      return "marketplace";
     if (await this.aarti.confirmPaymentFromWebhook(orderId, paymentId))
       return "aarti";
     if (await this.vendorMarketplace.confirmPaymentFromWebhook(orderId, paymentId, captured))
