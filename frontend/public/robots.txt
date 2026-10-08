@@ -41,6 +41,7 @@ Allow: /faq
 Allow: /help
 Allow: /terms
 Allow: /privacy
+Allow: /delete-account
 Allow: /refund-policy
 Allow: /cancellation-policy
 Allow: /stay-policies

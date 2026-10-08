@@ -13,6 +13,7 @@ import { PermissionsGuard } from "./common/guards/permissions.guard";
 import { AuthModule } from "./modules/auth/auth.module";
 import { JwtAuthGuard } from "./modules/auth/guards/jwt-auth.guard";
 import { UsersModule } from "./modules/users/users.module";
+import { AccountDeletionModule } from "./modules/account-deletion/account-deletion.module";
 import { ParkingModule } from "./modules/parking/parking.module";
 import { UrlsModule } from "./modules/urls/urls.module";
 import { LegacyUrlModule } from "./modules/urls/legacy-url.module";
@@ -148,6 +149,7 @@ import {
     ScheduleModule.forRoot(),
     CommonModule,
     UsersModule,
+    AccountDeletionModule,
     AuthModule,
     ParkingModule,
     UrlsModule,
