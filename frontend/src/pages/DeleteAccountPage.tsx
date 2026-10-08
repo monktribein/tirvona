@@ -237,7 +237,7 @@ export const DeleteAccountPage: React.FC = () => {
               app and on this website.
             </p>
             <Link
-              to={`/login?redirect=${encodeURIComponent("/delete-account")}`}
+              to={`/login?redirect=${encodeURIComponent("/privacy/delete-account")}`}
               className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#0A4DA6] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#00377D]"
             >
               <Lock className="h-4 w-4" aria-hidden /> Sign in to continue

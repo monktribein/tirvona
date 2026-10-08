@@ -560,7 +560,16 @@ const AppContent: React.FC = () => {
             <Route path="/stay-policies" element={<StayPoliciesPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
-            <Route path="/delete-account" element={<DeleteAccountPage />} />
+            <Route
+              path="/privacy/delete-account"
+              element={<DeleteAccountPage />}
+            />
+            {/* Short alias; the canonical URL sits under /privacy so it is
+                routed by hosts that predate this page. */}
+            <Route
+              path="/delete-account"
+              element={<Navigate to="/privacy/delete-account" replace />}
+            />
             <Route path="/refund-policy" element={<RefundPolicyPage />} />
             <Route path="/cookie-policy" element={<CookiePolicyPage />} />
             <Route path="/offers" element={<OffersPage />} />
