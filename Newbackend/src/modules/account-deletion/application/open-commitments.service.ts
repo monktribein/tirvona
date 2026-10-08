@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException } from "@nestjs/common";
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from "@nestjs/common";
 import { ModuleRef } from "@nestjs/core";
 import { getModelToken } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
@@ -95,6 +99,8 @@ const COMMITMENTS: Commitment[] = [
 
 @Injectable()
 export class OpenCommitmentsService {
+  private readonly logger = new Logger(OpenCommitmentsService.name);
+
   constructor(private readonly modules: ModuleRef) {}
 
   /**
@@ -106,7 +112,10 @@ export class OpenCommitmentsService {
   private model(name: string): Model<any> {
     try {
       return this.modules.get(getModelToken(name), { strict: false });
-    } catch {
+    } catch (error) {
+      this.logger.error(
+        `Model "${name}" could not be resolved: ${(error as Error).message}`,
+      );
       throw new InternalServerErrorException(
         "Account deletion is temporarily unavailable. Please try again later.",
       );
@@ -115,19 +124,20 @@ export class OpenCommitmentsService {
 
   async blockers(userId: string): Promise<DeletionBlocker[]> {
     const found: DeletionBlocker[] = [];
-    const counts = await Promise.all(
-      COMMITMENTS.map((c) =>
-        this.model(c.model).countDocuments({
+    // One query at a time, on purpose. Firing them together takes a pooled
+    // database connection each, and the Supabase session pooler only allows 15
+    // in total across every server — a burst here starves the rest of the API
+    // (EMAXCONNSESSION). Deleting an account is rare, so the latency is fine.
+    for (const c of COMMITMENTS) {
+      const count = Number(
+        await this.model(c.model).countDocuments({
           [c.userField]: userId,
           [c.statusField]: { $in: c.openStatuses },
         }),
-      ),
-    );
-    COMMITMENTS.forEach((c, index) => {
-      const count = Number(counts[index] ?? 0);
+      );
       if (count > 0)
         found.push({ code: c.code, message: c.message(count), count });
-    });
+    }
 
     const wallet = await this.model("PilgrimWallet")
       .findOne({ userId })
