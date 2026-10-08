@@ -1,34 +1,34 @@
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { CommerceService } from "./application/commerce.service";
-import { MarketplaceOrderService } from "./application/marketplace-order.service";
+import { MarketplaceAddressService } from "./application/marketplace-address.service";
 import { COMMERCE_REPOSITORY } from "./domain/commerce.repository";
 import { COMMERCE_MODELS } from "./infrastructure/persistence/commerce.schemas";
-import { MARKETPLACE_ORDER_MODELS } from "./infrastructure/persistence/marketplace-order.schemas";
+import { MARKETPLACE_ADDRESS_MODELS } from "./infrastructure/persistence/marketplace-address.schemas";
 import { MongooseCommerceRepository } from "./infrastructure/persistence/mongoose-commerce.repository";
 import {
   EnterpriseServicesController,
   MarketplaceHubController,
 } from "./presentation/commerce.controllers";
-import { MarketplaceOrderController } from "./presentation/marketplace-order.controller";
+import { MarketplaceAddressController } from "./presentation/marketplace-address.controller";
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       ...COMMERCE_MODELS,
-      ...MARKETPLACE_ORDER_MODELS,
+      ...MARKETPLACE_ADDRESS_MODELS,
     ]),
   ],
   controllers: [
-    MarketplaceOrderController,
+    MarketplaceAddressController,
     MarketplaceHubController,
     EnterpriseServicesController,
   ],
   providers: [
     CommerceService,
-    MarketplaceOrderService,
+    MarketplaceAddressService,
     { provide: COMMERCE_REPOSITORY, useClass: MongooseCommerceRepository },
   ],
-  exports: [MongooseModule, MarketplaceOrderService],
+  exports: [MongooseModule, MarketplaceAddressService],
 })
 export class CommerceModule {}

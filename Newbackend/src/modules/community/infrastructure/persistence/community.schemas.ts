@@ -85,7 +85,8 @@ export const COMMUNITY_MODELS = [
   },
   {
     name: "CommunityBooking",
-    schema: loose("bookings", {
+    // The canonical stay bookings (verified-stay articles read them).
+    schema: loose("booking_bookings", {
       customerId: { type: SchemaTypes.ObjectId, ref: "User", index: true },
       ashramId: { type: SchemaTypes.ObjectId, ref: "CommunityAshram" },
     }),

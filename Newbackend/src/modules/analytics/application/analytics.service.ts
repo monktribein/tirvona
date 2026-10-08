@@ -81,7 +81,7 @@ export class AnalyticsService {
     private readonly aartiBookings: Model<any>,
     @InjectModel(EVENT_MODEL.Registration)
     private readonly eventRegistrations: Model<any>,
-    @InjectModel("MarketplaceOrderRecord")
+    @InjectModel("MpMasterOrder")
     private readonly marketplaceOrders: Model<any>,
   ) {}
 
@@ -717,9 +717,12 @@ export class AnalyticsService {
         unitField: "seats",
       }),
       withParking
-        ? this.moduleWindow(this.marketplaceOrders, {}, windowStart, {
-            revenueField: "pricing.amountPaid",
-          })
+        ? this.moduleWindow(
+            this.marketplaceOrders,
+            { paymentStatus: { $nin: ["pending", "failed"] } },
+            windowStart,
+            { revenueField: "pricing.amountPaid" },
+          )
         : Promise.resolve({ bookings: 0, revenue: 0, units: 0 }),
     ]);
 

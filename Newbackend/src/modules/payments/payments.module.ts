@@ -2,7 +2,6 @@ import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { BookingsModule } from "../bookings/bookings.module";
 import { ParkingModule } from "../parking/parking.module";
-import { CommerceModule } from "../commerce/commerce.module";
 import { AartiModule } from "../aarti/aarti.module";
 import { DayStayModule } from "../day-stay/day-stay.module";
 import { MarketplaceModule } from "../marketplace/marketplace.module";
@@ -23,7 +22,6 @@ import { PaymentsWebhookController } from "./presentation/payments-webhook.contr
     ]),
     BookingsModule,
     ParkingModule,
-    CommerceModule,
     AartiModule,
     DayStayModule,
     MarketplaceModule,

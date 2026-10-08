@@ -11,6 +11,7 @@ import { Interval } from "@nestjs/schedule";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
 import { TransactionService } from "../../../common/database/transaction.service";
+import { canonicalPhone, phoneCandidates } from "../../../common/phone/phone.util";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import {
   PARKING_AMENITIES,
@@ -364,7 +365,7 @@ export class ParkingManagementService {
       throw new NotFoundException("The selected ashram no longer exists.");
 
     const duplicate = await this.users.exists({
-      $or: [{ email }, { phone }],
+      $or: [{ email }, { phone: { $in: phoneCandidates(phone) } }],
       isDeleted: { $ne: true },
     });
     if (duplicate)
@@ -385,7 +386,7 @@ export class ParkingManagementService {
             {
               name,
               email,
-              phone,
+              phone: canonicalPhone(phone),
               passwordHash,
               role: "staff",
               status: requiresApproval ? "pending_approval" : "active",

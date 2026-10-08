@@ -14,7 +14,7 @@ export class MongooseContentRepository implements ContentRepository {
     @InjectModel("ContentChangeRequest") requests: Model<any>,
     @InjectModel("Banner") banners: Model<any>,
     @InjectModel("FeaturedBanner") featuredBanners: Model<any>,
-    @InjectModel("ContentAuditLog") audits: Model<any>,
+    @InjectModel("AuditLog") audits: Model<any>,
     @InjectModel("PilgrimageCircuit") circuits: Model<any>,
     @InjectModel("ContentTemple") temples: Model<any>,
     @InjectModel("EventFestival") events: Model<any>,

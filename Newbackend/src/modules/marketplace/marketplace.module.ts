@@ -3,7 +3,7 @@ import { ConfigModule } from "@nestjs/config";
 import { MongooseModule } from "@nestjs/mongoose";
 import { AuditModule } from "../audit/audit.module";
 import { WalletModule } from "../wallet/wallet.module";
-import { MarketplaceAddressSchema } from "../commerce/infrastructure/persistence/marketplace-order.schemas";
+import { MarketplaceAddressSchema } from "../commerce/infrastructure/persistence/marketplace-address.schemas";
 import { payoutConfig } from "../payouts/config/payout.config";
 import { BankAccountCrypto } from "../payouts/infrastructure/bank-account.crypto";
 import { RazorpayXPayoutProvider } from "../payouts/providers/razorpayx-payout.provider";
@@ -63,6 +63,6 @@ import { MarketplaceVendorController } from "./presentation/marketplace-vendor.c
     ReviewService,
     DashboardService,
   ],
-  exports: [OrderService],
+  exports: [OrderService, MongooseModule],
 })
 export class MarketplaceModule {}

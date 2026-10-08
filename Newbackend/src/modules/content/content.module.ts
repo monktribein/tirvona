@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
+import { AuditModule } from "../audit/audit.module";
 import { ContentService } from "./application/content.service";
 import { CONTENT_REPOSITORY } from "./domain/content.repository";
 import { MongooseContentRepository } from "./infrastructure/persistence/mongoose-content.repository";
@@ -13,7 +14,7 @@ import {
 } from "./presentation/content.controllers";
 
 @Module({
-  imports: [MongooseModule.forFeature(CONTENT_MODELS)],
+  imports: [MongooseModule.forFeature(CONTENT_MODELS), AuditModule],
   controllers: [
     BlogController,
     CmsController,

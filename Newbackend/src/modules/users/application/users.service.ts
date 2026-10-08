@@ -19,6 +19,10 @@ import type {
 } from "../presentation/user.dto";
 import { ASHRAM_OWNER_ROLE } from "../../../common/auth/ashram-access";
 import {
+  canonicalPhone,
+  phoneCandidates,
+} from "../../../common/phone/phone.util";
+import {
   isUnrestricted,
   resolveAshramScope,
 } from "../../../common/auth/ashram-scope";
@@ -119,7 +123,10 @@ export class UsersService {
     if (!ashram) throw new NotFoundException("Ashram not found");
     if (
       await this.users.exists({
-        $or: [{ email: dto.email.toLowerCase() }, { phone: dto.phone }],
+        $or: [
+          { email: dto.email.toLowerCase() },
+          { phone: { $in: phoneCandidates(dto.phone) } },
+        ],
       })
     )
       throw new ConflictException(
@@ -128,7 +135,7 @@ export class UsersService {
     const user = await this.users.create({
       name: dto.name,
       email: dto.email.toLowerCase(),
-      phone: dto.phone,
+      phone: canonicalPhone(dto.phone),
       passwordHash: await bcrypt.hash(dto.password, 12),
       role: dto.role,
       status: "active",
@@ -166,7 +173,9 @@ export class UsersService {
   ): Promise<{ user: any }> {
     if (await this.users.exists({ email: dto.email.toLowerCase() }))
       throw new ConflictException("Email address already registered");
-    if (await this.users.exists({ phone: dto.phone.trim() }))
+    if (
+      await this.users.exists({ phone: { $in: phoneCandidates(dto.phone) } })
+    )
       throw new ConflictException("Phone number already registered");
     const isPilgrim = dto.role === "customer";
     if (
@@ -186,7 +195,7 @@ export class UsersService {
       aadhaarCardUrl: dto.aadhaarCardUrl,
       panCardUrl: dto.panCardUrl,
       email: dto.email.toLowerCase(),
-      phone: dto.phone.trim(),
+      phone: canonicalPhone(dto.phone),
       passwordHash: await bcrypt.hash(dto.password, 12),
       status: "active",
       permissions:

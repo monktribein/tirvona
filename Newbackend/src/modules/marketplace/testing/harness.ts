@@ -7,7 +7,7 @@ import { createHmac, randomBytes } from "node:crypto";
 import { Types } from "mongoose";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { AuditLogSchema } from "../../audit/audit.module";
-import { MarketplaceAddressSchema } from "../../commerce/infrastructure/persistence/marketplace-order.schemas";
+import { MarketplaceAddressSchema } from "../../commerce/infrastructure/persistence/marketplace-address.schemas";
 import { BankAccountCrypto } from "../../payouts/infrastructure/bank-account.crypto";
 import type { PayoutProvider } from "../../payouts/domain/payout.types";
 import { CategoryService } from "../application/category.service";

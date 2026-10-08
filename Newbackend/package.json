@@ -20,7 +20,8 @@
     "test:pg": "jest --config ./test/jest-pg.json --runInBand",
     "db:generate": "node database/generate.js",
     "db:migrate": "node database/migrate.js",
-    "db:verify": "node database/verify.js"
+    "db:verify": "node database/verify.js",
+    "db:duplicates": "node database/duplicates.js"
   },
   "jest": {
     "moduleFileExtensions": [
@@ -30,6 +31,11 @@
     ],
     "rootDir": ".",
     "testRegex": ".*\\.spec\\.ts$",
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/dist/",
+      "/retired-source/"
+    ],
     "transform": {
       "^.+\\.(t|j)s$": [
         "ts-jest",

@@ -23,7 +23,7 @@ export const PushCampaignSchema = new Schema(
     deepLink: String,
     audienceType: {
       type: String,
-      enum: ["users", "role", "ashram"],
+      enum: ["all", "users", "role", "ashram"],
       required: true,
     },
     targetRoles: { type: [String], default: [] },
