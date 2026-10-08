@@ -587,7 +587,636 @@ export const TermsPage: React.FC = () => (
   </div>
 );
 
-export const PrivacyPage: React.FC = () => null;
+type PolicyBlock =
+  | { p: string; strong?: boolean }
+  | { ul: string[] }
+  | { ol: string[] }
+  | { h3: string };
+
+const PRIVACY_SECTIONS: { title: string; blocks: PolicyBlock[] }[] = [
+  {
+    title: "1. Introduction",
+    blocks: [
+      { p: "Welcome to Tirvona." },
+      {
+        p: "Tirvona is a digital infrastructure platform designed to connect India's religious and spiritual destinations with pilgrims, religious institutions, accommodation providers, local service providers, and communities.",
+      },
+      {
+        p: "We respect your privacy and are committed to handling your personal information responsibly, transparently, and securely.",
+      },
+      {
+        p: "This Privacy Policy explains how we collect, use, store, share, protect, and manage personal information when you access or use Tirvona's website, mobile applications, dashboards, booking facilities, institutional management solutions, and associated digital services.",
+      },
+      {
+        p: "By using our services, you acknowledge this Privacy Policy. Where consent is required under applicable law, we will seek it separately.",
+      },
+    ],
+  },
+  {
+    title: "2. Scope of This Policy",
+    blocks: [
+      { p: "This Privacy Policy applies to individuals interacting with Tirvona through:" },
+      {
+        ul: [
+          "Tirvona.com and related websites.",
+          "Tirvona mobile applications.",
+          "Pilgrim and guest accounts.",
+          "Stay-owner and accommodation management dashboards.",
+          "Ashram, temple, and institutional profiles.",
+          "Accommodation discovery and booking services.",
+          "Spiritual programs, experiences, and event registrations.",
+          "Mobility, parking, transportation, and local services.",
+          "Seva, workforce, and community participation services.",
+          "Marketplace and institutional technology services.",
+          "Customer support, WhatsApp communications, and promotional campaigns.",
+        ],
+      },
+      { p: "Some services may be subject to additional privacy notices or terms." },
+    ],
+  },
+  {
+    title: "3. Information We Collect",
+    blocks: [
+      {
+        p: "Depending on the services you use, Tirvona may collect the following categories of information.",
+      },
+      { h3: "3.1 Personal Identification Information" },
+      {
+        ul: [
+          "Full name.",
+          "Mobile number.",
+          "Email address.",
+          "Residential or correspondence address.",
+          "Age or date of birth, where necessary.",
+          "Account credentials and authentication information.",
+          "Profile photographs, where voluntarily provided.",
+          "Identity verification information, where legally or operationally necessary.",
+        ],
+      },
+      { h3: "3.2 Booking and Travel Information" },
+      {
+        ul: [
+          "Selected destination and accommodation.",
+          "Arrival and departure dates.",
+          "Number of guests and room preferences.",
+          "Booking reference numbers and transaction history.",
+          "Guest information required for accommodation registration.",
+          "Special service requests voluntarily submitted by users.",
+          "Cancellation, refund, and customer-support records.",
+        ],
+      },
+      {
+        p: "Government identification details may be collected where required by applicable law or accommodation verification procedures. We seek to limit such collection to what is necessary.",
+      },
+      { h3: "3.3 Stay Owners and Institutional Information" },
+      {
+        p: "For accommodation providers, ashrams, temples, and other institutional partners, we may collect:",
+      },
+      {
+        ul: [
+          "Owner, manager, trustee, or authorized representative details.",
+          "Institution or business name and address.",
+          "Contact information.",
+          "Registration and verification documents.",
+          "Property photographs and descriptions.",
+          "Room inventory, pricing, and availability.",
+          "Bank and settlement details, where applicable.",
+          "Authorized staff and operational user information.",
+        ],
+      },
+      { h3: "3.4 Payment and Transaction Information" },
+      {
+        p: "When users make payments through Tirvona, transaction-related information may be processed, including:",
+      },
+      {
+        ul: [
+          "Booking or service amount.",
+          "Platform fees and applicable taxes.",
+          "Payment status and transaction reference.",
+          "Refund and settlement information.",
+          "Payment method category.",
+        ],
+      },
+      {
+        p: "Payments may be processed through authorized third-party payment service providers.",
+      },
+      {
+        p: "Tirvona does not need to store complete payment card numbers, CVV values, or UPI PINs to provide its booking services.",
+      },
+      { h3: "3.5 Device, Usage, and Technical Information" },
+      { p: "We may collect technical information such as:" },
+      {
+        ul: [
+          "IP address.",
+          "Browser and device type.",
+          "Operating system and application version.",
+          "Device identifiers, where permitted.",
+          "Pages viewed and features accessed.",
+          "Login activity and session information.",
+          "Error logs, diagnostic data, and performance information.",
+          "Cookies and similar technologies.",
+        ],
+      },
+      { h3: "3.6 Location Information" },
+      {
+        p: "With appropriate permissions, Tirvona may process location information to support:",
+      },
+      {
+        ul: [
+          "Nearby religious destinations and services.",
+          "Accommodation and local-service discovery.",
+          "Route and mobility assistance.",
+          "Parking and transportation information.",
+          "Location-based search results.",
+        ],
+      },
+      {
+        p: "Users may manage device-level location permissions through their device settings. Certain location-based features may not function fully when permissions are disabled.",
+      },
+      { h3: "3.7 Communication Information" },
+      { p: "We may retain communications relating to:" },
+      {
+        ul: [
+          "Booking enquiries.",
+          "Customer support.",
+          "WhatsApp conversations.",
+          "Feedback and complaints.",
+          "Institutional onboarding.",
+          "Service notifications.",
+          "Promotional communication preferences.",
+        ],
+      },
+      { h3: "3.8 Spiritual and Religious Service Information" },
+      {
+        p: "Certain Tirvona services may involve voluntarily submitted information relating to religious programs, puja arrangements, spiritual experiences, or other personal preferences.",
+      },
+      {
+        p: "Such information will be used for the relevant requested service and handled with appropriate confidentiality.",
+      },
+      {
+        p: "We will not use information revealing religious beliefs for unrelated advertising or profiling without an appropriate lawful basis.",
+      },
+    ],
+  },
+  {
+    title: "4. How We Use Personal Information",
+    blocks: [
+      { p: "Tirvona processes personal information for the following purposes:" },
+      {
+        ul: [
+          "Account Management: To register users, authenticate accounts, manage profiles, and provide access to authorized services.",
+          "Accommodation and Service Bookings: To facilitate reservations, communicate booking details, coordinate with service providers, and manage booking-related requests.",
+          "Institutional Onboarding: To register, verify, and support accommodation providers, religious institutions, and local service partners.",
+          "Payment Processing: To facilitate transactions, generate receipts, process eligible refunds, maintain financial records, and support settlements.",
+          "Customer Support: To respond to enquiries, investigate complaints, resolve service issues, and provide assistance.",
+          "Service Communication: To deliver booking confirmations, reminders, operational alerts, service updates, and other necessary notifications.",
+          "Platform Improvement: To evaluate service performance, resolve technical issues, improve navigation, and enhance the user experience.",
+          "Security and Fraud Prevention: To protect accounts, identify suspicious activity, prevent misuse, and maintain platform integrity.",
+          "Marketing and Promotions: To send promotional information where permitted by law and applicable user preferences or consent.",
+          "Legal Compliance: To comply with applicable statutory obligations, lawful requests, and regulatory requirements.",
+        ],
+      },
+    ],
+  },
+  {
+    title: "5. Consent and Lawful Processing",
+    blocks: [
+      {
+        p: "Where required by applicable law, Tirvona will obtain clear and informed consent before processing personal data for specified purposes.",
+      },
+      { p: "We aim to explain what information is requested and why it is needed." },
+      {
+        p: "Users may withdraw consent through available account settings or by contacting Tirvona, subject to applicable legal requirements.",
+      },
+      {
+        p: "Withdrawal of consent will not automatically invalidate processing lawfully completed before withdrawal.",
+      },
+      {
+        p: "Certain services may become unavailable if the information necessary to provide them can no longer be processed.",
+      },
+    ],
+  },
+  {
+    title: "6. Sharing of Information",
+    blocks: [
+      {
+        p: "Tirvona may share relevant personal information with the following categories of recipients when necessary:",
+      },
+      { h3: "6.1 Accommodation and Institutional Partners" },
+      {
+        p: "Information required to manage reservations, guest arrivals, services, and operational requests may be shared with the selected accommodation provider or institution.",
+      },
+      { h3: "6.2 Local Service Providers" },
+      {
+        p: "Where a user requests transportation, mobility, experiences, or another local service, relevant information may be shared with the provider responsible for fulfilling that request.",
+      },
+      { h3: "6.3 Payment Service Providers" },
+      {
+        p: "Payment-related information may be processed by authorized payment gateways, banking partners, and financial service providers.",
+      },
+      { h3: "6.4 Technology and Communication Providers" },
+      {
+        p: "We may engage hosting providers, cloud infrastructure services, analytics providers, SMS gateways, email delivery providers, WhatsApp business communication services, and technical support vendors.",
+      },
+      { h3: "6.5 Legal and Regulatory Authorities" },
+      {
+        p: "We may disclose information when required under applicable law, valid legal process, or lawful governmental direction.",
+      },
+      { h3: "6.6 Corporate Transactions" },
+      {
+        p: "Where permitted by law, relevant information may be transferred as part of a merger, acquisition, restructuring, or transfer of business, subject to applicable safeguards.",
+      },
+      {
+        p: "Tirvona does not sell users' personal information to third parties for independent commercial marketing.",
+        strong: true,
+      },
+      {
+        p: "Service partners receiving personal information are expected to use it only for legitimate, authorized purposes and to maintain appropriate safeguards.",
+      },
+    ],
+  },
+  {
+    title: "7. Cookies and Analytics",
+    blocks: [
+      { p: "Tirvona may use cookies and similar technologies to:" },
+      {
+        ul: [
+          "Maintain login sessions.",
+          "Remember user preferences.",
+          "Support website functionality.",
+          "Understand platform usage.",
+          "Measure performance and troubleshoot errors.",
+          "Support marketing measurement where permitted.",
+        ],
+      },
+      {
+        p: "Users may manage cookies through browser settings and any consent controls made available by Tirvona.",
+      },
+      { p: "Disabling essential cookies may affect certain website functions." },
+    ],
+  },
+  {
+    title: "8. Data Security",
+    blocks: [
+      {
+        p: "Tirvona is committed to implementing reasonable technical and organizational safeguards appropriate to the nature of the information processed.",
+      },
+      { p: "These may include:" },
+      {
+        ul: [
+          "Secure communication protocols.",
+          "Access controls and role-based permissions.",
+          "Authentication and account security mechanisms.",
+          "Encryption where appropriate.",
+          "Monitoring and security logging.",
+          "Restricted administrative access.",
+          "Backup and recovery procedures.",
+          "Security reviews and vulnerability remediation.",
+        ],
+      },
+      {
+        p: "Although we work to protect personal information, no internet-based system can guarantee absolute security.",
+      },
+      {
+        p: "Users are responsible for keeping their account credentials confidential and reporting suspected unauthorized account activity.",
+      },
+    ],
+  },
+  {
+    title: "9. Data Retention",
+    blocks: [
+      {
+        p: "Tirvona retains personal information only for as long as reasonably necessary for the purposes for which it was collected, subject to applicable legal, accounting, security, and regulatory requirements.",
+      },
+      {
+        p: "Retention periods may vary depending on the information category, including:",
+      },
+      {
+        ul: [
+          "Account and profile information.",
+          "Booking and transaction records.",
+          "Tax and financial documentation.",
+          "Customer support records.",
+          "Institutional verification records.",
+          "Technical and security logs.",
+        ],
+      },
+      {
+        p: "When information is no longer required, Tirvona will delete, anonymize, or securely archive it as appropriate and legally permissible.",
+      },
+      {
+        p: "Account deletion does not necessarily require immediate deletion of records that must be retained under applicable law.",
+      },
+    ],
+  },
+  {
+    title: "10. User Rights and Choices",
+    blocks: [
+      { p: "Subject to applicable law, users may have rights to:" },
+      {
+        ol: [
+          "Request information about the processing of their personal data.",
+          "Request correction or updating of inaccurate or incomplete information.",
+          "Request erasure of personal data where applicable.",
+          "Withdraw consent for consent-based processing.",
+          "Raise complaints or grievances regarding personal data.",
+          "Nominate another individual to exercise applicable rights in circumstances recognized by law.",
+        ],
+      },
+      {
+        p: "Requests may be submitted through the privacy contact details published by Tirvona.",
+      },
+      {
+        p: "We may require reasonable verification of identity before processing a request.",
+      },
+    ],
+  },
+  {
+    title: "11. Account Deletion",
+    blocks: [
+      {
+        p: "Users may request deletion of their Tirvona account through an available in-app account deletion function or through the designated support or privacy contact channel.",
+      },
+      {
+        p: "Following a valid deletion request, Tirvona will process account deletion and associated personal information in accordance with applicable law and legitimate retention obligations.",
+      },
+      {
+        p: "Certain booking, payment, compliance, or dispute-related records may need to be retained for legally required periods.",
+      },
+    ],
+  },
+  {
+    title: "12. Children's Privacy",
+    blocks: [
+      {
+        p: "Tirvona's general account services are intended for individuals legally capable of using the relevant services.",
+      },
+      {
+        p: "Where children's personal information is necessary for a booking, family travel arrangement, or other permitted service, it should be provided by a parent or lawful guardian as appropriate.",
+      },
+      {
+        p: "Where required by applicable law, Tirvona will obtain verifiable parental consent before processing a child's personal data.",
+      },
+      {
+        p: "Tirvona does not intend to engage in targeted advertising directed at children or tracking or behavioural monitoring of children in violation of applicable law.",
+      },
+    ],
+  },
+  {
+    title: "13. Third-Party Websites and Services",
+    blocks: [
+      {
+        p: "Tirvona may contain links to external websites, payment gateways, maps, accommodation providers, and other third-party services.",
+      },
+      { p: "Such services may operate under their own privacy policies and terms." },
+      {
+        p: "Tirvona encourages users to review the relevant third-party policies before sharing personal information.",
+      },
+      {
+        p: "This Privacy Policy does not govern independently operated third-party services.",
+      },
+    ],
+  },
+  {
+    title: "14. WhatsApp, SMS, Email, and Notifications",
+    blocks: [
+      {
+        p: "Tirvona may communicate with users through WhatsApp, SMS, email, telephone, and mobile application notifications for legitimate service purposes.",
+      },
+      { p: "Communications may include:" },
+      {
+        ul: [
+          "Registration and verification messages.",
+          "Booking confirmations.",
+          "Payment and transaction updates.",
+          "Arrival and departure reminders.",
+          "Service-related support.",
+          "Institutional onboarding information.",
+          "Promotional offers where permitted.",
+        ],
+      },
+      {
+        p: "Users may opt out of non-essential promotional communications through available unsubscribe mechanisms or by contacting Tirvona.",
+      },
+      {
+        p: "Operational communications necessary to complete an active booking or service may continue where legally permitted.",
+      },
+    ],
+  },
+  {
+    title: "15. International Data Processing",
+    blocks: [
+      {
+        p: "Some technology vendors and service providers may process information using infrastructure located outside India.",
+      },
+      {
+        p: "Where cross-border processing or transfer occurs, Tirvona will seek to ensure that it is conducted in accordance with applicable Indian laws, restrictions, and appropriate contractual or technical safeguards.",
+      },
+    ],
+  },
+  {
+    title: "16. Data Accuracy and User Responsibilities",
+    blocks: [
+      { p: "Users are requested to provide accurate and updated information." },
+      {
+        p: "Accommodation providers and institutional partners are responsible for ensuring that information submitted through their accounts is accurate and that they have appropriate authority to provide personal information relating to their staff, representatives, or guests.",
+      },
+      {
+        p: "Users should not submit unnecessary sensitive documents or third-party personal information unless required for a legitimate service.",
+      },
+    ],
+  },
+  {
+    title: "17. Privacy Incident Management",
+    blocks: [
+      {
+        p: "If Tirvona becomes aware of a personal data breach, it will assess the incident, take appropriate containment and remediation measures, and provide notifications to affected individuals and relevant authorities where required by applicable law.",
+      },
+    ],
+  },
+  {
+    title: "18. Changes to This Privacy Policy",
+    blocks: [
+      {
+        p: "Tirvona may update this Privacy Policy to reflect changes in services, technology, business operations, or applicable legal requirements.",
+      },
+      {
+        p: "The latest version will be published on the Tirvona website with an updated effective or revision date.",
+      },
+      {
+        p: "Where required by law, material changes will be communicated through appropriate channels or accompanied by a request for fresh consent.",
+      },
+    ],
+  },
+  {
+    title: "19. Governing Law",
+    blocks: [
+      {
+        p: "This Privacy Policy is governed by the applicable laws of India, including relevant provisions of the Information Technology Act, 2000, the Digital Personal Data Protection Act, 2023, and associated rules, to the extent in force and applicable.",
+      },
+      {
+        p: "Nothing in this Privacy Policy limits rights or remedies available to individuals under mandatory applicable law.",
+      },
+    ],
+  },
+];
+
+const PolicyBlocks: React.FC<{ blocks: PolicyBlock[] }> = ({ blocks }) => (
+  <>
+    {blocks.map((b, i) => {
+      if ("h3" in b)
+        return (
+          <h3
+            key={i}
+            className="font-extrabold text-[#0B192C] dark:text-white text-sm pt-2"
+          >
+            {b.h3}
+          </h3>
+        );
+      if ("ul" in b)
+        return (
+          <ul key={i} className="list-disc pl-5 space-y-1.5">
+            {b.ul.map((li, j) => (
+              <li key={j}>{li}</li>
+            ))}
+          </ul>
+        );
+      if ("ol" in b)
+        return (
+          <ol key={i} className="list-decimal pl-5 space-y-1.5">
+            {b.ol.map((li, j) => (
+              <li key={j}>{li}</li>
+            ))}
+          </ol>
+        );
+      return b.strong ? (
+        <p key={i} className="font-bold text-[#0B192C] dark:text-white">
+          {b.p}
+        </p>
+      ) : (
+        <p key={i}>{b.p}</p>
+      );
+    })}
+  </>
+);
+
+export const PrivacyPage: React.FC = () => (
+  <div className="pb-20">
+    <section className="bg-[#0B192C] text-white py-14 px-4 sm:px-6">
+      <div className="max-w-3xl mx-auto text-center space-y-3">
+        <span className="inline-block text-[10px] font-extrabold tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
+          Legal
+        </span>
+        <h1
+          className="font-extrabold text-white"
+          style={{ fontSize: "clamp(1.8rem, 6vw, 2.8rem)" }}
+        >
+          Privacy Policy
+        </h1>
+        <p className="text-sm text-[#D4AF37] font-bold">
+          Connecting Sacred Destinations. Empowering Communities.
+        </p>
+        <p className="text-sm text-gray-400">
+          Effective Date: 08 October 2026 · Last Updated: 08 October 2026
+        </p>
+      </div>
+    </section>
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12 space-y-8">
+      <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+        Website:{" "}
+        <a
+          href="https://www.tirvona.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[#F28C28] font-bold"
+        >
+          https://www.tirvona.com
+        </a>
+        <br />
+        Operated by: Tirvona Services Private Limited ("Tirvona", "we", "us", or
+        "our")
+      </p>
+      {PRIVACY_SECTIONS.map((s) => (
+        <StaticSection key={s.title} title={s.title}>
+          <PolicyBlocks blocks={s.blocks} />
+        </StaticSection>
+      ))}
+      <StaticSection title="20. Contact Information and Grievance Redressal">
+        <p>
+          For questions, privacy requests, data correction, account deletion, or
+          grievances, please contact:
+        </p>
+        <p className="font-bold text-[#0B192C] dark:text-white">
+          Tirvona Services Private Limited
+        </p>
+        <ul className="space-y-1.5">
+          <li>
+            <strong className="text-[#0B192C] dark:text-white">Website:</strong>{" "}
+            <a
+              href="https://www.tirvona.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#F28C28] font-bold"
+            >
+              https://www.tirvona.com
+            </a>
+          </li>
+          <li>
+            <strong className="text-[#0B192C] dark:text-white">Phone:</strong>{" "}
+            <a href="tel:+917836055511" className="text-[#F28C28] font-bold">
+              +91 7836055511
+            </a>
+          </li>
+          <li>
+            <strong className="text-[#0B192C] dark:text-white">
+              Privacy/Grievance Email:
+            </strong>{" "}
+            <a
+              href="mailto:tirvonaofficial@gmail.com"
+              className="text-[#F28C28] font-bold"
+            >
+              tirvonaofficial@gmail.com
+            </a>
+          </li>
+          <li>
+            <strong className="text-[#0B192C] dark:text-white">
+              Registered Office:
+            </strong>{" "}
+            307 B, 3rd Floor, iThum Tower-A, Sector 62, Noida, Uttar Pradesh,
+            201301
+          </li>
+          <li>
+            <strong className="text-[#0B192C] dark:text-white">
+              Grievance Officer/Contact Person:
+            </strong>{" "}
+            Khushi
+          </li>
+        </ul>
+        <p>
+          We will acknowledge and address privacy-related requests and
+          grievances in accordance with applicable legal requirements.
+        </p>
+        <p>
+          Where applicable, individuals may also exercise their statutory right
+          to approach the competent data protection authority after following
+          the required grievance process.
+        </p>
+      </StaticSection>
+      <div className="text-center pt-4 space-y-1">
+        <p className="font-extrabold text-[#0B192C] dark:text-white text-sm">
+          TIRVONA™
+        </p>
+        <p className="text-xs text-gray-500 italic">
+          Building trusted digital infrastructure for India's religious
+          destinations, institutions, pilgrims, and communities.
+        </p>
+        <p className="text-xs text-gray-500">
+          © 2026 Tirvona Services Private Limited. All rights reserved.
+        </p>
+      </div>
+    </div>
+  </div>
+);
 
 export const RefundPolicyPage: React.FC = () => (
   <div className="pb-20">

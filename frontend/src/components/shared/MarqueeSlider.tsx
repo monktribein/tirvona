@@ -1,30 +1,26 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 
-const ensureLoopItems = <T,>(arr: T[], minCount = 6): T[] => {
-  if (!arr || arr.length === 0) return [];
-  let base = [...arr];
-  while (base.length < minCount) {
-    base = [...base, ...arr];
-  }
-  return base;
-};
-
 export interface MarqueeSliderProps<T> {
   items: T[];
   renderItem: (item: T, index: number) => React.ReactNode;
   speed?: number;
   className?: string;
   gapClass?: string;
+  /** @deprecated No longer used: cards are never repeated to pad the row. */
   minItems?: number;
 }
 
+/**
+ * Horizontal card row. When the cards fit inside the available width they are
+ * shown as-is, left aligned, without animation. Only when they overflow does
+ * the row start rotating (and become draggable) in an endless loop.
+ */
 export function MarqueeSlider<T>({
   items,
   renderItem,
   speed = 30,
   className = "",
   gapClass = "gap-4 sm:gap-6",
-  minItems = 6,
 }: MarqueeSliderProps<T>) {
   const containerRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -37,12 +33,25 @@ export function MarqueeSlider<T>({
   const lastPointerRef = useRef({ x: 0, time: 0 });
   const isVisibleRef = useRef(false);
   const [isGrabbing, setIsGrabbing] = useState(false);
+  const [looping, setLooping] = useState(false);
 
-  const baseList = useMemo(() => ensureLoopItems(items, minItems), [items, minItems]);
-  const loopList = useMemo(() => {
-    if (baseList.length === 0) return [];
-    return [...baseList, ...baseList];
-  }, [baseList]);
+  const uniqueItems = useMemo(() => {
+    if (!items || items.length === 0) return [];
+    const seen = new Set<string>();
+    return items.filter((item: any) => {
+      const key = String(
+        item?._id || item?.id || item?.slug || item?.name || JSON.stringify(item),
+      );
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [items]);
+
+  const loopList = useMemo(
+    () => (looping ? [...uniqueItems, ...uniqueItems] : uniqueItems),
+    [looping, uniqueItems],
+  );
 
   useEffect(() => {
     const container = containerRef.current;
@@ -52,49 +61,61 @@ export function MarqueeSlider<T>({
       ([entry]) => {
         isVisibleRef.current = entry.isIntersecting;
       },
-      { threshold: 0 }
+      { threshold: 0 },
     );
     observer.observe(container);
 
     return () => {
       observer.disconnect();
     };
-  }, []);
+  }, [uniqueItems.length]);
 
+  // Decide static vs. rotating by comparing one copy of the cards to the row.
   useEffect(() => {
-    if (loopList.length === 0) return;
+    const container = containerRef.current;
     const track = trackRef.current;
-    if (!track) return;
+    if (!container || !track || uniqueItems.length === 0) return;
 
     const measure = () => {
-      const kids = track.children;
-      const halfIdx = baseList.length;
-      if (kids.length >= halfIdx * 2 && halfIdx > 0) {
-        const firstChild = kids[0] as HTMLElement;
-        const halfChild = kids[halfIdx] as HTMLElement;
-        if (firstChild && halfChild) {
-          halfWidthRef.current = halfChild.offsetLeft - firstChild.offsetLeft;
-        }
+      const style = getComputedStyle(track);
+      const gap = parseFloat(style.columnGap) || 0;
+      const pad =
+        (parseFloat(style.paddingLeft) || 0) +
+        (parseFloat(style.paddingRight) || 0);
+      const n = uniqueItems.length;
+
+      let copyWidth: number;
+      if (looping && track.children.length >= n * 2) {
+        const first = track.children[0] as HTMLElement;
+        const second = track.children[n] as HTMLElement;
+        halfWidthRef.current = second.offsetLeft - first.offsetLeft;
+        copyWidth = halfWidthRef.current - gap;
+      } else {
+        halfWidthRef.current = 0;
+        copyWidth = track.offsetWidth - pad;
+      }
+
+      const fits = copyWidth <= container.clientWidth - pad + 0.5;
+      if (fits === looping) {
+        posRef.current = 0;
+        track.style.transform = "translate3d(0, 0, 0)";
+        setLooping(!fits);
       }
     };
 
     measure();
     const ro = new ResizeObserver(measure);
+    ro.observe(container);
     ro.observe(track);
     for (const kid of Array.from(track.children)) {
       ro.observe(kid);
     }
-    const mo = new MutationObserver(measure);
-    mo.observe(track, { childList: true, subtree: true });
 
-    return () => {
-      ro.disconnect();
-      mo.disconnect();
-    };
-  }, [baseList, loopList]);
+    return () => ro.disconnect();
+  }, [uniqueItems, looping]);
 
   useEffect(() => {
-    if (loopList.length === 0) return;
+    if (!looping || loopList.length === 0) return;
     const track = trackRef.current;
     if (!track) return;
 
@@ -130,7 +151,7 @@ export function MarqueeSlider<T>({
 
     animId = requestAnimationFrame(step);
     return () => cancelAnimationFrame(animId);
-  }, [loopList, speed]);
+  }, [looping, loopList, speed]);
 
   const handleMouseEnter = () => {
     if (!isDraggingRef.current) isPausedRef.current = true;
@@ -143,10 +164,15 @@ export function MarqueeSlider<T>({
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!container || !looping) return;
 
     const handleWheel = (e: WheelEvent) => {
-      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : (e.shiftKey ? e.deltaY : 0);
+      const delta =
+        Math.abs(e.deltaX) > Math.abs(e.deltaY)
+          ? e.deltaX
+          : e.shiftKey
+            ? e.deltaY
+            : 0;
       if (Math.abs(delta) > 1) {
         posRef.current += delta;
         const W = halfWidthRef.current;
@@ -171,9 +197,10 @@ export function MarqueeSlider<T>({
       container.removeEventListener("wheel", handleWheel);
       if (wheelTimerRef.current) clearTimeout(wheelTimerRef.current);
     };
-  }, []);
+  }, [looping]);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!looping) return;
     if (e.pointerType === "mouse" && e.button !== 0) return;
     isDraggingRef.current = true;
     setIsGrabbing(true);
@@ -216,7 +243,10 @@ export function MarqueeSlider<T>({
       if (elapsed > 60) {
         momentumVelRef.current = 0;
       } else {
-        momentumVelRef.current = Math.max(-1800, Math.min(1800, momentumVelRef.current));
+        momentumVelRef.current = Math.max(
+          -1800,
+          Math.min(1800, momentumVelRef.current),
+        );
       }
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", cleanupPointer);
@@ -241,7 +271,7 @@ export function MarqueeSlider<T>({
   return (
     <div
       ref={containerRef}
-      className={`overflow-hidden w-full relative select-none touch-pan-y py-4 -my-2 ${isGrabbing ? "cursor-grabbing" : "cursor-grab"} ${className}`}
+      className={`overflow-hidden w-full relative select-none touch-pan-y py-4 -my-2 ${looping ? (isGrabbing ? "cursor-grabbing" : "cursor-grab") : ""} ${className}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onPointerDown={handlePointerDown}
@@ -254,9 +284,7 @@ export function MarqueeSlider<T>({
         style={{ transform: "translate3d(0, 0, 0)" }}
       >
         {loopList.map((item, idx) => (
-          <React.Fragment key={idx}>
-            {renderItem(item, idx)}
-          </React.Fragment>
+          <React.Fragment key={idx}>{renderItem(item, idx)}</React.Fragment>
         ))}
       </div>
     </div>

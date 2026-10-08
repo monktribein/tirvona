@@ -224,32 +224,61 @@ export const ProfileMainPage: React.FC = () => {
     },
   ]);
 
-  const transactions = [
-    {
-      id: "TXN-902181",
-      date: "Jul 26, 2026",
-      title: "Swarg Stay Booking",
-      amount: 4800,
-      method: "UPI / GPay",
-      status: "Paid",
-    },
-    {
-      id: "TXN-718293",
-      date: "Jul 15, 2026",
-      title: "Parmarth Niketan Booking",
-      amount: 2400,
-      method: "Credit Card",
-      status: "Paid",
-    },
-    {
-      id: "TXN-610294",
-      date: "Jun 05, 2026",
-      title: "Kashi Guest House Cancellation Refund",
-      amount: 6200,
-      method: "UPI Refund",
-      status: "Refunded",
-    },
-  ];
+  // Receipts are derived from the signed-in user's own stay and parking
+  // bookings: one "Paid" row per booking with money collected, plus one
+  // "Refunded" row for each cancellation that returned money.
+  const transactions = useMemo(() => {
+    const rows: {
+      id: string;
+      key: string;
+      date: string;
+      sortTime: number;
+      title: string;
+      amount: number;
+      method: string;
+      status: "Paid" | "Refunded";
+      href: string;
+    }[] = [];
+
+    bookings.forEach((b) => {
+      const href =
+        b.detailHref ||
+        (b.kind === "parking" ? `/parking/booking/${b.id}` : `/booking/${b.id}`);
+
+      if (b.amountPaid > 0) {
+        const paidAt = b.createdAt;
+        rows.push({
+          id: b.reference,
+          key: `${b.kind}-${b.id}-paid`,
+          date: paidAt ? formatDate(paidAt) : "",
+          sortTime: paidAt ? new Date(paidAt).getTime() : 0,
+          title: `${b.title} ${b.kind === "parking" ? "Parking" : "Booking"}`,
+          amount: b.amountPaid,
+          method: b.paymentMode === "offline" ? "Offline" : "Online payment",
+          status: "Paid",
+          href,
+        });
+      }
+
+      if ((b.refundAmount ?? 0) > 0) {
+        const refundedAt = b.rawBooking?.cancellation?.date || b.createdAt;
+        const refundMethod = b.rawBooking?.cancellation?.refundMethod;
+        rows.push({
+          id: b.rawBooking?.cancellation?.refundTransactionId || b.reference,
+          key: `${b.kind}-${b.id}-refund`,
+          date: refundedAt ? formatDate(refundedAt) : "",
+          sortTime: refundedAt ? new Date(refundedAt).getTime() : 0,
+          title: `${b.title} Cancellation Refund`,
+          amount: b.refundAmount as number,
+          method: refundMethod === "wallet" ? "Tirvona Wallet" : "Refund",
+          status: "Refunded",
+          href,
+        });
+      }
+    });
+
+    return rows.sort((a, b) => b.sortTime - a.sortTime);
+  }, [bookings]);
 
   useEffect(() => {
     if (user) {
@@ -1107,9 +1136,19 @@ export const ProfileMainPage: React.FC = () => {
                   </h3>
 
                   <div className="divide-y divide-gray-100 dark:divide-slate-800">
+                    {bookingsLoading ? (
+                      <p className="py-6 text-center text-xs text-gray-400 font-medium">
+                        Loading your transactions...
+                      </p>
+                    ) : transactions.length === 0 ? (
+                      <p className="py-6 text-center text-xs text-gray-400 font-medium">
+                        No payments yet. Your receipts will appear here after
+                        you make a payment.
+                      </p>
+                    ) : null}
                     {transactions.map((t) => (
                       <div
-                        key={t.id}
+                        key={t.key}
                         className="py-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs"
                       >
                         <div className="space-y-1">
@@ -1132,18 +1171,12 @@ export const ProfileMainPage: React.FC = () => {
                           <span className="text-sm font-black text-[#F28C28] dark:text-white">
                             {formatCurrency(t.amount)}
                           </span>
-                          <button
-                            onClick={() =>
-                              addNotification(
-                                "Invoice Downloaded",
-                                `Receipt for ${t.id} requested.`,
-                                "info",
-                              )
-                            }
+                          <Link
+                            to={t.href}
                             className="px-3 py-1.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-100 text-xs font-bold text-gray-700 dark:text-gray-200 rounded-full transition-all flex items-center gap-1.5 cursor-pointer"
                           >
                             <Download size={13} /> Receipt
-                          </button>
+                          </Link>
                         </div>
                       </div>
                     ))}
