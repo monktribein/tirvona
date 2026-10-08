@@ -34,6 +34,7 @@ const FaqPage = lazy(() => import("./pages/FaqPage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const RegisterPage = lazy(() => import("./pages/RegisterPage"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
+const DeleteAccountPage = lazy(() => import("./pages/DeleteAccountPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
 const CareersPage = lazy(() => import("./pages/CareersPage"));
 const PartnerPage = lazy(() => import("./pages/PartnerPage"));
@@ -559,6 +560,7 @@ const AppContent: React.FC = () => {
             <Route path="/stay-policies" element={<StayPoliciesPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/delete-account" element={<DeleteAccountPage />} />
             <Route path="/refund-policy" element={<RefundPolicyPage />} />
             <Route path="/cookie-policy" element={<CookiePolicyPage />} />
             <Route path="/offers" element={<OffersPage />} />

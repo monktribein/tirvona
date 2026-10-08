@@ -31,6 +31,18 @@ export const authService = {
     api.post("/auth/me/email/verify", { otpToken, otp }),
   changePassword: (currentPassword: string, newPassword: string) =>
     api.put("/auth/me/password", { currentPassword, newPassword }),
+  /** What stops the signed-in account from being deleted right now. */
+  deletionCheck: () => api.get("/users/me/deletion-check", { skipToast: true }),
+  /** Permanently erases the signed-in account. */
+  deleteMyAccount: (data: {
+    password?: string;
+    googleCredential?: string;
+    reason?: string;
+  }) =>
+    api.delete("/users/me", {
+      data: { ...data, confirmText: "DELETE" },
+      skipToast: true,
+    }),
 };
 
 export const ashramService = {
