@@ -70,6 +70,7 @@ const SIDEBAR_SEQUENCE = [
   "booking",
   "aarti",
   "live pooja",
+  "pandit",
   "parking",
   "payout",
   "refund",
@@ -102,6 +103,7 @@ const MATERIAL_ICON_BY_SECTION: Array<[string, string]> = [
   ["booking", "event_note"],
   ["aarti", "local_fire_department"],
   ["live pooja", "live_tv"],
+  ["pandit", "self_improvement"],
   ["parking", "local_parking"],
   ["payout", "account_balance_wallet"],
   ["refund", "currency_exchange"],
@@ -783,6 +785,20 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
+      groupName: "Pandit & Acharya",
+      icon: <Flame size={15} />,
+      links: [
+        { label: "Overview", path: "/admin/pandits/overview" },
+        { label: "All Pandits & Acharyas", path: "/admin/pandits" },
+        { label: "Verification & KYC", path: "/admin/verifications/providers" },
+        { label: "Ritual Catalogue", path: "/admin/pandits/rituals" },
+        { label: "Offerings & Puja Services", path: "/admin/pandits/offerings" },
+        { label: "Bookings", path: "/admin/pandits/bookings" },
+        { label: "Consultations", path: "/admin/pandits/consultations" },
+        { label: "Pandit Withdrawals", path: "/admin/pandits/withdrawals" },
+      ],
+    },
+    {
       groupName: "Notification Center",
       icon: <Bell size={15} />,
       links: [
@@ -891,27 +907,34 @@ export const DashboardLayout: React.FC = () => {
   // ── Pandit / Provider sidebar ───────────────────────────────────────────────
   const panditProviderGroups: NavGroup[] = [
     {
-      groupName: "Provider Profile",
+      groupName: "My Profile",
       icon: <Users size={15} />,
-      links: [
-        { label: "Provider Dashboard", path: "/provider/dashboard" },
-        { label: "My Profile", path: "/provider/profile" },
-      ],
+      links: [{ label: "Edit Profile", path: "/provider/profile" }],
     },
     {
-      groupName: "Offerings",
+      groupName: "Offerings & Catalog",
       icon: <BookOpen size={15} />,
       links: [{ label: "My Offerings", path: "/provider/offerings" }],
     },
     {
-      groupName: "Verification",
-      icon: <FileCheck size={15} />,
-      links: [{ label: "Verification Status", path: "/provider/verification" }],
+      groupName: "Bookings & Fulfilment",
+      icon: <Flame size={15} />,
+      links: [{ label: "Puja Bookings & Consultations", path: "/provider/bookings" }],
     },
     {
-      groupName: "Availability",
+      groupName: "Wallet & Payouts",
+      icon: <Wallet size={15} />,
+      links: [{ label: "My Wallet", path: "/provider/wallet" }],
+    },
+    {
+      groupName: "Availability & Calendar",
       icon: <Calendar size={15} />,
       links: [{ label: "Availability & Blocks", path: "/provider/availability" }],
+    },
+    {
+      groupName: "Verification & Lineage",
+      icon: <FileCheck size={15} />,
+      links: [{ label: "Verification Status", path: "/provider/verification" }],
     },
   ];
 
@@ -982,9 +1005,19 @@ export const DashboardLayout: React.FC = () => {
         topLink: {
           label: "Shop Dashboard",
           path: "/vendor/dashboard",
-          icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
+          icon: <LayoutDashboard size={16} className="text-[#F28C28]" />,
         },
         groups: VENDOR_GROUPS,
+      };
+    }
+    if (location.pathname.startsWith("/provider")) {
+      return {
+        topLink: {
+          label: "Provider Dashboard",
+          path: "/provider/dashboard",
+          icon: <LayoutDashboard size={16} className="text-[#F28C28]" />,
+        },
+        groups: panditProviderGroups,
       };
     }
     if (user?.role === "super_admin") {
@@ -992,7 +1025,7 @@ export const DashboardLayout: React.FC = () => {
         topLink: {
           label: "Executive Dashboard",
           path: "/admin/dashboard",
-          icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
+          icon: <LayoutDashboard size={16} className="text-[#F28C28]" />,
         },
         groups: superAdminGroups,
       };
@@ -1005,7 +1038,7 @@ export const DashboardLayout: React.FC = () => {
         topLink: {
           label: "Parking Management",
           path: "/parking/dashboard",
-          icon: <Car size={16} className="text-[#E58C28]" />,
+          icon: <Car size={16} className="text-[#F28C28]" />,
         },
         groups: parkingGroups,
       };
@@ -1015,7 +1048,7 @@ export const DashboardLayout: React.FC = () => {
         topLink: {
           label: "Overview Dashboard",
           path: `${ownerBase}/dashboard`,
-          icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
+          icon: <LayoutDashboard size={16} className="text-[#F28C28]" />,
         },
         groups: ownerGroups,
       };
@@ -1025,7 +1058,7 @@ export const DashboardLayout: React.FC = () => {
         topLink: {
           label: "My Temple",
           path: "/temple-owner/dashboard",
-          icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
+          icon: <LayoutDashboard size={16} className="text-[#F28C28]" />,
         },
         groups: templeOwnerGroups,
       };
@@ -1040,7 +1073,7 @@ export const DashboardLayout: React.FC = () => {
         topLink: {
           label: "Provider Dashboard",
           path: "/provider/dashboard",
-          icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
+          icon: <LayoutDashboard size={16} className="text-[#F28C28]" />,
         },
         groups: panditProviderGroups,
       };
@@ -1048,11 +1081,19 @@ export const DashboardLayout: React.FC = () => {
     if (user?.role === "verification_reviewer") {
       return {
         topLink: {
-          label: "Verification Queue",
-          path: "/admin/verifications",
-          icon: <FileCheck size={16} className="text-[#E58C28]" />,
+          label: "Provider Verification Queue",
+          path: "/admin/verifications/providers",
+          icon: <FileCheck size={16} className="text-[#F28C28]" />,
         },
-        groups: [],
+        groups: [
+          {
+            groupName: "Verification Reviews",
+            icon: <FileCheck size={15} />,
+            links: [
+              { label: "Provider Verification Queue", path: "/admin/verifications/providers" },
+            ],
+          },
+        ],
       };
     }
     if (user?.role === "manager") {
@@ -1060,7 +1101,7 @@ export const DashboardLayout: React.FC = () => {
         topLink: {
           label: "Overview Dashboard",
           path: "/owner/dashboard",
-          icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
+          icon: <LayoutDashboard size={16} className="text-[#F28C28]" />,
         },
         groups: ownerGroups
           .map((group) => ({
@@ -1086,7 +1127,7 @@ export const DashboardLayout: React.FC = () => {
         topLink: {
           label: "Staff Dashboard",
           path: "/owner/dashboard",
-          icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
+          icon: <LayoutDashboard size={16} className="text-[#F28C28]" />,
         },
         groups: [],
       };
@@ -1096,7 +1137,7 @@ export const DashboardLayout: React.FC = () => {
         topLink: {
           label: "Reception Desk",
           path: "/staff/reception",
-          icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
+          icon: <LayoutDashboard size={16} className="text-[#F28C28]" />,
         },
         groups: [
           {
@@ -1134,7 +1175,7 @@ export const DashboardLayout: React.FC = () => {
         topLink: {
           label: "Housekeeping Board",
           path: "/staff/housekeeping",
-          icon: <Bed size={16} className="text-[#E58C28]" />,
+          icon: <Bed size={16} className="text-[#F28C28]" />,
         },
         groups: [],
       };
@@ -1144,7 +1185,7 @@ export const DashboardLayout: React.FC = () => {
         topLink: {
           label: "Offers & Deals",
           path: "/owner/offers",
-          icon: <Tag size={16} className="text-[#E58C28]" />,
+          icon: <Tag size={16} className="text-[#F28C28]" />,
         },
         groups: [],
       };
@@ -1154,7 +1195,7 @@ export const DashboardLayout: React.FC = () => {
         topLink: {
           label: "Marketplace Overview",
           path: "/admin/manage/marketplace",
-          icon: <ShoppingBag size={16} className="text-[#E58C28]" />,
+          icon: <ShoppingBag size={16} className="text-[#F28C28]" />,
         },
         groups: [
           {
@@ -1171,7 +1212,7 @@ export const DashboardLayout: React.FC = () => {
         topLink: {
           label: "Finance & Refunds",
           path: "/admin/manage/bookings/refunds",
-          icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
+          icon: <LayoutDashboard size={16} className="text-[#F28C28]" />,
         },
         groups: [
           {
@@ -1185,6 +1226,7 @@ export const DashboardLayout: React.FC = () => {
             links: [
               { label: "All Wallets", path: "/admin/wallets" },
               { label: "Transfer Requests", path: "/admin/wallets/withdrawals" },
+              { label: "Pandit Withdrawals", path: "/admin/pandits/withdrawals" },
             ],
           },
           SUPPORT_HANDLER_GROUP,
@@ -1221,7 +1263,7 @@ export const DashboardLayout: React.FC = () => {
       return {
         topLink: {
           ...landing,
-          icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
+          icon: <LayoutDashboard size={16} className="text-[#F28C28]" />,
         },
         groups: user!.role === "service_manager" ? [SUPPORT_HANDLER_GROUP] : [],
       };
@@ -1231,7 +1273,7 @@ export const DashboardLayout: React.FC = () => {
         topLink: {
           label: "Support Dashboard",
           path: "/admin/support",
-          icon: <LifeBuoy size={16} className="text-[#E58C28]" />,
+          icon: <LifeBuoy size={16} className="text-[#F28C28]" />,
         },
         groups: [
           {
@@ -1249,7 +1291,7 @@ export const DashboardLayout: React.FC = () => {
         topLink: {
           label: "Verification Queue",
           path: "/admin/verifications",
-          icon: <FileCheck size={16} className="text-[#E58C28]" />,
+          icon: <FileCheck size={16} className="text-[#F28C28]" />,
         },
         groups: [],
       };
@@ -1268,7 +1310,7 @@ export const DashboardLayout: React.FC = () => {
         topLink: {
           label: "Government Dashboard",
           path: "/admin/dashboard",
-          icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
+          icon: <LayoutDashboard size={16} className="text-[#F28C28]" />,
         },
         groups: [
           ...districtAdminGroups.map((group) => ({
@@ -1288,7 +1330,7 @@ export const DashboardLayout: React.FC = () => {
       topLink: {
         label: "Executive Dashboard",
         path: "/admin/dashboard",
-        icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
+        icon: <LayoutDashboard size={16} className="text-[#F28C28]" />,
       },
       groups: standardGroups,
     };
@@ -1339,8 +1381,8 @@ export const DashboardLayout: React.FC = () => {
   const renderSidebarContent = (isMobile = false) => (
     <>
       {isMobile && (
-        <div className="p-4 pt-[max(1rem,env(safe-area-inset-top))] pr-14 border-b border-blue-100 dark:border-slate-800 flex items-center gap-3 bg-[#F8FAFC] dark:bg-[#0B192C]">
-          <div className="p-2 bg-white rounded-xl border border-blue-100 shadow-sm shrink-0">
+        <div className="p-4 pt-[max(1rem,env(safe-area-inset-top))] pr-14 border-b border-gray-200 dark:border-slate-800 flex items-center gap-3 bg-[#FAFAFA] dark:bg-[#0B192C]">
+          <div className="p-2 bg-white rounded-xl border border-gray-200 shadow-sm shrink-0">
             <img
               src="/logo/logo.png"
               alt="Tirvona"
@@ -1413,7 +1455,7 @@ export const DashboardLayout: React.FC = () => {
                   onClick={() => toggleGroup(group.groupName)}
                   className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-left text-xs font-semibold transition-colors ${hasActiveLink
                     ? "bg-[#FFF4E5] text-[#F28C28] dark:bg-white/5"
-                    : "text-slate-600 hover:bg-[#F0F5FA] hover:text-[#F28C28] dark:text-gray-400"
+                    : "text-slate-600 hover:bg-[#FFF4E5] hover:text-[#F28C28] dark:text-gray-400"
                     }`}
                 >
                   <div className="flex items-center gap-2">
@@ -1428,7 +1470,7 @@ export const DashboardLayout: React.FC = () => {
                 </button>
 
                 {isOpen && (
-                  <div className="ml-5 space-y-1 border-l border-blue-100 pl-3 dark:border-slate-800">
+                  <div className="ml-5 space-y-1 border-l border-gray-200 pl-3 dark:border-slate-800">
                     {group.links.map((link) => {
                       const isActive = location.pathname === link.path;
                       return (
@@ -1439,8 +1481,8 @@ export const DashboardLayout: React.FC = () => {
                             isMobile ? () => setSidebarOpen(false) : undefined
                           }
                           className={`flex items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition-all ${isActive
-                            ? "bg-[#E2EDF8] font-semibold text-[#F28C28] shadow-sm dark:bg-[#F28C28] dark:text-white"
-                            : "text-slate-600 hover:bg-[#F0F5FA] hover:text-[#F28C28] dark:text-gray-400"
+                            ? "bg-[#FFF4E5] font-semibold text-[#F28C28] shadow-sm dark:bg-[#F28C28] dark:text-white"
+                            : "text-slate-600 hover:bg-[#FFF4E5] hover:text-[#F28C28] dark:text-gray-400"
                             }`}
                         >
                           <span className="truncate">{t(link.label)}</span>
@@ -1457,8 +1499,8 @@ export const DashboardLayout: React.FC = () => {
 
       {/* Assigned Property Info Card for Reception Staff */}
       {user?.role === "reception" && (user?.employerAshram || selectedOwnerAshram || ownerAshrams[0]) && (
-        <div className="p-3 border-t border-blue-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50">
-          <div className="p-3 bg-white dark:bg-[#0B192C] border border-blue-100 dark:border-slate-800 rounded-2xl shadow-xs space-y-1.5">
+        <div className="p-3 border-t border-gray-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50">
+          <div className="p-3 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-2xl shadow-xs space-y-1.5">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
                 Assigned Stay
@@ -1479,8 +1521,8 @@ export const DashboardLayout: React.FC = () => {
 
       {/* Stay Owner Availability Control Widget in Sidebar */}
       {user?.role !== "reception" && isStayOwnerOrAdmin && ownerAshrams.length > 0 && selectedOwnerAshram && (
-        <div className="p-3 border-t border-blue-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50">
-          <div className="p-3 bg-white dark:bg-[#0B192C] border border-blue-100 dark:border-slate-800 rounded-2xl shadow-xs space-y-2.5">
+        <div className="p-3 border-t border-gray-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50">
+          <div className="p-3 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-2xl shadow-xs space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
                 Booking Status
@@ -1535,7 +1577,7 @@ export const DashboardLayout: React.FC = () => {
 
       {/* Super Admin Availability Requests Quick Widget */}
       {isSuperAdmin && pendingSuperAdminRequests.length > 0 && (
-        <div className="p-3 border-t border-blue-100 dark:border-slate-800 bg-amber-50/50 dark:bg-amber-950/20">
+        <div className="p-3 border-t border-gray-200 dark:border-slate-800 bg-amber-50/50 dark:bg-amber-950/20">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-300 flex items-center gap-1">
               <Clock size={11} /> Owner Requests ({pendingSuperAdminRequests.length})
@@ -1572,13 +1614,13 @@ export const DashboardLayout: React.FC = () => {
   );
 
   return (
-    <div className="dashboard-shell flex min-h-screen min-h-[100dvh] flex-col bg-[#F0F4F9] text-left text-[#0B192C] dark:bg-[#070F1B] dark:text-white">
-      <header className="sticky top-0 z-30 flex min-h-[64px] sm:min-h-[72px] pt-[env(safe-area-inset-top)] w-full items-center justify-between gap-2 sm:gap-3 border-b border-blue-100 bg-white px-3 shadow-sm sm:px-5 lg:gap-6 lg:px-7 dark:border-slate-800 dark:bg-[#0B192C]">
+    <div className="dashboard-shell flex min-h-screen min-h-[100dvh] flex-col bg-[#FAFAFA] text-left text-[#0B192C] dark:bg-[#070F1B] dark:text-white">
+      <header className="sticky top-0 z-30 flex min-h-[64px] sm:min-h-[72px] pt-[env(safe-area-inset-top)] w-full items-center justify-between gap-2 sm:gap-3 border-b border-gray-200 bg-white px-3 shadow-sm sm:px-5 lg:gap-6 lg:px-7 dark:border-slate-800 dark:bg-[#0B192C]">
         <div className="flex items-center gap-3 shrink-0">
           {!isParkingGuardOnly && (
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-full hover:bg-blue-50 text-[#0B192C] dark:text-white transition-colors"
+              className="lg:hidden p-2 rounded-full hover:bg-[#FFF4E5] text-[#0B192C] dark:text-white transition-colors"
               aria-label={t("Open navigation menu")}
             >
               <Menu size={20} />
@@ -1586,7 +1628,7 @@ export const DashboardLayout: React.FC = () => {
           )}
 
           <Link to="/" className="group flex shrink-0 cursor-pointer items-center gap-3">
-            <div className="flex items-center justify-center rounded-xl border border-blue-100 bg-white p-1.5 shadow-sm transition-all group-hover:border-[#F28C28]/60">
+            <div className="flex items-center justify-center rounded-xl border border-gray-200 bg-white p-1.5 shadow-sm transition-all group-hover:border-[#F28C28]/60">
               <img
                 src="/logo/logo.png"
                 alt="Tirvona"
@@ -1613,21 +1655,21 @@ export const DashboardLayout: React.FC = () => {
             <button
               type="button"
               onClick={() => setLanguageOpen((open) => !open)}
-              className="flex h-10 items-center gap-1.5 rounded-full border border-blue-100 bg-white px-3 text-xs font-semibold text-[#F28C28] hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:text-amber-300 dark:hover:bg-slate-800"
+              className="flex h-10 items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 text-xs font-semibold text-[#F28C28] hover:bg-[#FFF4E5] dark:border-slate-700 dark:bg-slate-900 dark:text-amber-300 dark:hover:bg-slate-800"
               aria-label={t("Language")}
             >
               <Globe size={14} /> {language === "hi" ? "हिंदी" : "EN"}
               <ChevronDown size={12} />
             </button>
             {languageOpen && (
-              <div className="absolute right-0 top-full mt-2 w-36 rounded-xl border border-blue-100 dark:border-slate-700 bg-white dark:bg-[#0B192C] shadow-xl overflow-hidden z-50">
+              <div className="absolute right-0 top-full mt-2 w-36 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#0B192C] shadow-xl overflow-hidden z-50">
                 <button
                   type="button"
                   onClick={() => {
                     setLanguage("en");
                     setLanguageOpen(false);
                   }}
-                  className={`w-full px-3 py-2.5 text-left text-xs font-bold ${language === "en" ? "bg-blue-50 text-[#F28C28] dark:bg-slate-800" : "text-slate-600 dark:text-slate-300"}`}
+                  className={`w-full px-3 py-2.5 text-left text-xs font-bold ${language === "en" ? "bg-[#FFF4E5] text-[#F28C28] dark:bg-slate-800" : "text-slate-600 dark:text-slate-300"}`}
                 >
                   English
                 </button>
@@ -1637,7 +1679,7 @@ export const DashboardLayout: React.FC = () => {
                     setLanguage("hi");
                     setLanguageOpen(false);
                   }}
-                  className={`w-full px-3 py-2.5 text-left text-xs font-bold ${language === "hi" ? "bg-blue-50 text-[#F28C28] dark:bg-slate-800" : "text-slate-600 dark:text-slate-300"}`}
+                  className={`w-full px-3 py-2.5 text-left text-xs font-bold ${language === "hi" ? "bg-[#FFF4E5] text-[#F28C28] dark:bg-slate-800" : "text-slate-600 dark:text-slate-300"}`}
                 >
                   हिंदी
                 </button>
@@ -1651,11 +1693,11 @@ export const DashboardLayout: React.FC = () => {
             to="/public"
             className="hidden shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-[#F28C28] px-4 py-2.5 text-xs font-bold text-white shadow-sm shadow-[#F28C28]/20 transition-all hover:bg-[#B45309] xl:flex"
           >
-            <Globe size={14} className="text-[#E58C28]" /> {t("Public Portal")}{" "}
+            <Globe size={14} className="text-white" /> {t("Public Portal")}{" "}
             <ArrowRight size={12} />
           </Link>
 
-          <div className="flex items-center gap-2 rounded-2xl border border-blue-100 bg-[#F8FAFC] p-1.5 pl-2 dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex items-center gap-2 rounded-2xl border border-gray-200 bg-[#FAFAFA] p-1.5 pl-2 dark:border-slate-700 dark:bg-slate-900">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#F28C28] text-xs font-bold text-white shadow-sm">
               {(user.name || user.email || "U").charAt(0).toUpperCase()}
             </div>
@@ -1667,7 +1709,7 @@ export const DashboardLayout: React.FC = () => {
                 {t(roleLabel)}
               </span>
             </div>
-            <span className="hidden h-6 w-px bg-blue-100 xl:block dark:bg-slate-700" />
+            <span className="hidden h-6 w-px bg-gray-200 xl:block dark:bg-slate-700" />
             <button
               type="button"
               onClick={handleLogout}
@@ -1684,7 +1726,7 @@ export const DashboardLayout: React.FC = () => {
 
       <div className="flex flex-row flex-grow min-h-0">
         {!isParkingGuardOnly && (
-          <aside className="sticky top-[72px] hidden h-[calc(100vh-72px)] w-[272px] shrink-0 flex-col border-r border-blue-100 bg-white text-[#0B192C] shadow-sm lg:flex dark:border-slate-800 dark:bg-[#0B192C] dark:text-white">
+          <aside className="sticky top-[72px] hidden h-[calc(100vh-72px)] w-[272px] shrink-0 flex-col border-r border-gray-200 bg-white text-[#0B192C] shadow-sm lg:flex dark:border-slate-800 dark:bg-[#0B192C] dark:text-white">
             {renderSidebarContent(false)}
           </aside>
         )}
@@ -1695,7 +1737,7 @@ export const DashboardLayout: React.FC = () => {
               className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
               onClick={() => setSidebarOpen(false)}
             />
-            <aside className="relative flex flex-col w-72 max-w-[85vw] bg-white dark:bg-[#0B192C] text-[#0B192C] dark:text-white border-r border-blue-100 dark:border-slate-800 shadow-2xl h-[100vh] h-[100dvh] pb-[env(safe-area-inset-bottom)] z-10 overflow-hidden">
+            <aside className="relative flex flex-col w-72 max-w-[85vw] bg-white dark:bg-[#0B192C] text-[#0B192C] dark:text-white border-r border-gray-200 dark:border-slate-800 shadow-2xl h-[100vh] h-[100dvh] pb-[env(safe-area-inset-bottom)] z-10 overflow-hidden">
               <button
                 onClick={() => setSidebarOpen(false)}
                 className="absolute top-[max(0.85rem,calc(0.5rem+env(safe-area-inset-top)))] right-3 p-2 text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors z-20"
@@ -1708,7 +1750,7 @@ export const DashboardLayout: React.FC = () => {
           </div>
         )}
 
-        <main className="flex-grow p-3 sm:p-4 lg:p-6 pb-[calc(3.5rem+env(safe-area-inset-bottom))] lg:pb-16 overflow-y-auto min-w-0 bg-[#F0F4F9] dark:bg-[#070F1B]">
+        <main className="flex-grow p-3 sm:p-4 lg:p-6 pb-[calc(3.5rem+env(safe-area-inset-bottom))] lg:pb-16 overflow-y-auto min-w-0 bg-[#FAFAFA] dark:bg-[#070F1B]">
           <SectionSummaryStrip pathname={location.pathname} />
           <Outlet />
         </main>

@@ -23016,6 +23016,2139 @@ export const REGISTRY: Registry = {
      "enforced": true
     }
    ]
+  },
+  {
+   "database": "test",
+   "collection": "availability_rules",
+   "schema": "public",
+   "table": "availability_rules",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "resourceType",
+     "column": "resource_type",
+     "kind": "string"
+    },
+    {
+     "field": "resourceId",
+     "column": "resource_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "timezone",
+     "column": "timezone",
+     "kind": "string"
+    },
+    {
+     "field": "rrule",
+     "column": "rrule",
+     "kind": "string"
+    },
+    {
+     "field": "window",
+     "column": "window",
+     "kind": "json"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "ix_availability_resource",
+     "keys": {
+      "resourceType": 1,
+      "resourceId": 1,
+      "status": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "calendar_blocks",
+   "schema": "public",
+   "table": "calendar_blocks",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "resourceType",
+     "column": "resource_type",
+     "kind": "string"
+    },
+    {
+     "field": "resourceId",
+     "column": "resource_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "startAt",
+     "column": "start_at",
+     "kind": "date"
+    },
+    {
+     "field": "endAt",
+     "column": "end_at",
+     "kind": "date"
+    },
+    {
+     "field": "blockType",
+     "column": "block_type",
+     "kind": "string"
+    },
+    {
+     "field": "sourceId",
+     "column": "source_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "expiresAt",
+     "column": "expires_at",
+     "kind": "date"
+    },
+    {
+     "field": "reason",
+     "column": "reason",
+     "kind": "string"
+    },
+    {
+     "field": "createdBy",
+     "column": "created_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "releasedAt",
+     "column": "released_at",
+     "kind": "date"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "ix_calendar_conflict",
+     "keys": {
+      "resourceId": 1,
+      "startAt": 1,
+      "endAt": 1,
+      "status": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_calendar_expiry",
+     "keys": {
+      "status": 1,
+      "expiresAt": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_calendar_source",
+     "keys": {
+      "sourceId": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "consultation_messages",
+   "schema": "public",
+   "table": "consultation_messages",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "consultationId",
+     "column": "consultation_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "senderUserId",
+     "column": "sender_user_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "senderRole",
+     "column": "sender_role",
+     "kind": "string"
+    },
+    {
+     "field": "senderName",
+     "column": "sender_name",
+     "kind": "string"
+    },
+    {
+     "field": "content",
+     "column": "content",
+     "kind": "string"
+    },
+    {
+     "field": "attachments",
+     "column": "attachments",
+     "kind": "json"
+    },
+    {
+     "field": "readAt",
+     "column": "read_at",
+     "kind": "date"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "ix_cmessage_thread",
+     "keys": {
+      "consultationId": 1,
+      "createdAt": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_cmessage_unread",
+     "keys": {
+      "consultationId": 1,
+      "readAt": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "expert_consultations",
+   "schema": "public",
+   "table": "expert_consultations",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "consultationType",
+     "column": "consultation_type",
+     "kind": "string"
+    },
+    {
+     "field": "customerUserId",
+     "column": "customer_user_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "expertProviderId",
+     "column": "expert_provider_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "expertUserId",
+     "column": "expert_user_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "expertSnapshot",
+     "column": "expert_snapshot",
+     "kind": "json"
+    },
+    {
+     "field": "customerSnapshot",
+     "column": "customer_snapshot",
+     "kind": "json"
+    },
+    {
+     "field": "channel",
+     "column": "channel",
+     "kind": "string"
+    },
+    {
+     "field": "scheduledStartAt",
+     "column": "scheduled_start_at",
+     "kind": "date"
+    },
+    {
+     "field": "scheduledEndAt",
+     "column": "scheduled_end_at",
+     "kind": "date"
+    },
+    {
+     "field": "timezone",
+     "column": "timezone",
+     "kind": "string"
+    },
+    {
+     "field": "questionSummary",
+     "column": "question_summary",
+     "kind": "string"
+    },
+    {
+     "field": "expertNotes",
+     "column": "expert_notes",
+     "kind": "string"
+    },
+    {
+     "field": "chartAccessGrant",
+     "column": "chart_access_grant",
+     "kind": "json"
+    },
+    {
+     "field": "fee",
+     "column": "fee",
+     "kind": "json"
+    },
+    {
+     "field": "bookingId",
+     "column": "booking_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "stateVersion",
+     "column": "state_version",
+     "kind": "number"
+    },
+    {
+     "field": "holdBlockId",
+     "column": "hold_block_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "holdExpiresAt",
+     "column": "hold_expires_at",
+     "kind": "date"
+    },
+    {
+     "field": "cancelledBy",
+     "column": "cancelled_by",
+     "kind": "string"
+    },
+    {
+     "field": "cancelReasonCode",
+     "column": "cancel_reason_code",
+     "kind": "string"
+    },
+    {
+     "field": "completedAt",
+     "column": "completed_at",
+     "kind": "date"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "ix_consult_customer",
+     "keys": {
+      "customerUserId": 1,
+      "status": 1,
+      "scheduledStartAt": -1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_consult_expert",
+     "keys": {
+      "expertProviderId": 1,
+      "scheduledStartAt": 1,
+      "status": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_consult_hold_expiry",
+     "keys": {
+      "status": 1,
+      "holdExpiresAt": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "idempotency_keys",
+   "schema": "public",
+   "table": "idempotency_keys",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "key",
+     "column": "key",
+     "kind": "string"
+    },
+    {
+     "field": "operation",
+     "column": "operation",
+     "kind": "string"
+    },
+    {
+     "field": "actorId",
+     "column": "actor_id",
+     "kind": "string"
+    },
+    {
+     "field": "requestHash",
+     "column": "request_hash",
+     "kind": "string"
+    },
+    {
+     "field": "state",
+     "column": "state",
+     "kind": "string"
+    },
+    {
+     "field": "responseRef",
+     "column": "response_ref",
+     "kind": "json"
+    },
+    {
+     "field": "expiresAt",
+     "column": "expires_at",
+     "kind": "date"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "ux_idempotency_scope",
+     "keys": {
+      "key": 1,
+      "operation": 1,
+      "actorId": 1
+     },
+     "unique": true,
+     "enforced": true
+    },
+    {
+     "name": "ttl_idempotency",
+     "keys": {
+      "expiresAt": 1
+     },
+     "expireAfterSeconds": 0,
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "provider_booking_state_history",
+   "schema": "public",
+   "table": "provider_booking_state_history",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "bookingId",
+     "column": "booking_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "fromState",
+     "column": "from_state",
+     "kind": "string"
+    },
+    {
+     "field": "toState",
+     "column": "to_state",
+     "kind": "string"
+    },
+    {
+     "field": "command",
+     "column": "command",
+     "kind": "string"
+    },
+    {
+     "field": "reasonCode",
+     "column": "reason_code",
+     "kind": "string"
+    },
+    {
+     "field": "actorType",
+     "column": "actor_type",
+     "kind": "string"
+    },
+    {
+     "field": "actorId",
+     "column": "actor_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "correlationId",
+     "column": "correlation_id",
+     "kind": "string"
+    },
+    {
+     "field": "aggregateVersion",
+     "column": "aggregate_version",
+     "kind": "number"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "ix_pbooking_history",
+     "keys": {
+      "bookingId": 1,
+      "createdAt": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "provider_bookings",
+   "schema": "public",
+   "table": "provider_bookings",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "bookingNumber",
+     "column": "booking_number",
+     "kind": "string"
+    },
+    {
+     "field": "customerUserId",
+     "column": "customer_user_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "providerId",
+     "column": "provider_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "providerUserId",
+     "column": "provider_user_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "offeringId",
+     "column": "offering_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "ritualId",
+     "column": "ritual_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "ritualVariantId",
+     "column": "ritual_variant_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "fulfilmentType",
+     "column": "fulfilment_type",
+     "kind": "string"
+    },
+    {
+     "field": "quoteId",
+     "column": "quote_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "paymentRefs",
+     "column": "payment_refs",
+     "kind": "string[]"
+    },
+    {
+     "field": "paymentOrder",
+     "column": "payment_order",
+     "kind": "json"
+    },
+    {
+     "field": "refund",
+     "column": "refund",
+     "kind": "json"
+    },
+    {
+     "field": "serviceSnapshot",
+     "column": "service_snapshot",
+     "kind": "json"
+    },
+    {
+     "field": "scheduledStartAt",
+     "column": "scheduled_start_at",
+     "kind": "date"
+    },
+    {
+     "field": "scheduledEndAt",
+     "column": "scheduled_end_at",
+     "kind": "date"
+    },
+    {
+     "field": "timezone",
+     "column": "timezone",
+     "kind": "string"
+    },
+    {
+     "field": "customerContact",
+     "column": "customer_contact",
+     "kind": "json"
+    },
+    {
+     "field": "serviceLocation",
+     "column": "service_location",
+     "kind": "json"
+    },
+    {
+     "field": "customerNotes",
+     "column": "customer_notes",
+     "kind": "string"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "stateVersion",
+     "column": "state_version",
+     "kind": "number"
+    },
+    {
+     "field": "holdBlockId",
+     "column": "hold_block_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "holdExpiresAt",
+     "column": "hold_expires_at",
+     "kind": "date"
+    },
+    {
+     "field": "confirmedAt",
+     "column": "confirmed_at",
+     "kind": "date"
+    },
+    {
+     "field": "acceptedAt",
+     "column": "accepted_at",
+     "kind": "date"
+    },
+    {
+     "field": "startedAt",
+     "column": "started_at",
+     "kind": "date"
+    },
+    {
+     "field": "completedAt",
+     "column": "completed_at",
+     "kind": "date"
+    },
+    {
+     "field": "cancelledAt",
+     "column": "cancelled_at",
+     "kind": "date"
+    },
+    {
+     "field": "cancelReasonCode",
+     "column": "cancel_reason_code",
+     "kind": "string"
+    },
+    {
+     "field": "zoomMeeting",
+     "column": "zoom_meeting",
+     "kind": "json"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "ux_pbooking_number",
+     "keys": {
+      "bookingNumber": 1
+     },
+     "unique": true,
+     "enforced": true
+    },
+    {
+     "name": "ix_pbooking_customer",
+     "keys": {
+      "customerUserId": 1,
+      "createdAt": -1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_pbooking_provider",
+     "keys": {
+      "providerId": 1,
+      "status": 1,
+      "scheduledStartAt": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_pbooking_payment_refs",
+     "keys": {
+      "paymentRefs": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_pbooking_hold_expiry",
+     "keys": {
+      "status": 1,
+      "holdExpiresAt": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "provider_offerings",
+   "schema": "public",
+   "table": "provider_offerings",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "providerId",
+     "column": "provider_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "ritualId",
+     "column": "ritual_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "ritualVariantId",
+     "column": "ritual_variant_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "fulfilmentType",
+     "column": "fulfilment_type",
+     "kind": "string"
+    },
+    {
+     "field": "title",
+     "column": "title",
+     "kind": "string"
+    },
+    {
+     "field": "description",
+     "column": "description",
+     "kind": "string"
+    },
+    {
+     "field": "destination",
+     "column": "destination",
+     "kind": "json"
+    },
+    {
+     "field": "durationMinutes",
+     "column": "duration_minutes",
+     "kind": "number"
+    },
+    {
+     "field": "teamSize",
+     "column": "team_size",
+     "kind": "number"
+    },
+    {
+     "field": "minNoticeHours",
+     "column": "min_notice_hours",
+     "kind": "number"
+    },
+    {
+     "field": "baseProfessionalFeeMinor",
+     "column": "base_professional_fee_minor",
+     "kind": "number"
+    },
+    {
+     "field": "currency",
+     "column": "currency",
+     "kind": "string"
+    },
+    {
+     "field": "travelCharge",
+     "column": "travel_charge",
+     "kind": "json"
+    },
+    {
+     "field": "inclusions",
+     "column": "inclusions",
+     "kind": "string[]"
+    },
+    {
+     "field": "exclusions",
+     "column": "exclusions",
+     "kind": "string[]"
+    },
+    {
+     "field": "samagriIncluded",
+     "column": "samagri_included",
+     "kind": "boolean"
+    },
+    {
+     "field": "voluntaryDakshinaAllowed",
+     "column": "voluntary_dakshina_allowed",
+     "kind": "boolean"
+    },
+    {
+     "field": "tags",
+     "column": "tags",
+     "kind": "string[]"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "deletedAt",
+     "column": "deleted_at",
+     "kind": "date"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "ix_offering_provider_status",
+     "keys": {
+      "providerId": 1,
+      "status": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_offering_discovery",
+     "keys": {
+      "ritualVariantId": 1,
+      "fulfilmentType": 1,
+      "status": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ux_offering_live",
+     "keys": {
+      "providerId": 1,
+      "ritualVariantId": 1,
+      "fulfilmentType": 1
+     },
+     "unique": true,
+     "partialFilterExpression": {
+      "status": {
+       "$in": [
+        "ACTIVE",
+        "PAUSED"
+       ]
+      }
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "provider_private_profiles",
+   "schema": "public",
+   "table": "provider_private_profiles",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "providerId",
+     "column": "provider_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "legalName",
+     "column": "legal_name",
+     "kind": "string"
+    },
+    {
+     "field": "mobile",
+     "column": "mobile",
+     "kind": "string"
+    },
+    {
+     "field": "email",
+     "column": "email",
+     "kind": "string"
+    },
+    {
+     "field": "address",
+     "column": "address",
+     "kind": "json"
+    },
+    {
+     "field": "kycRefs",
+     "column": "kyc_refs",
+     "kind": "objectId[]"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "ux_provider_private",
+     "keys": {
+      "providerId": 1
+     },
+     "unique": true,
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "provider_profiles",
+   "schema": "public",
+   "table": "provider_profiles",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "userId",
+     "column": "user_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "slug",
+     "column": "slug",
+     "kind": "string"
+    },
+    {
+     "field": "providerType",
+     "column": "provider_type",
+     "kind": "string"
+    },
+    {
+     "field": "displayName",
+     "column": "display_name",
+     "kind": "string"
+    },
+    {
+     "field": "bio",
+     "column": "bio",
+     "kind": "string"
+    },
+    {
+     "field": "avatarUrl",
+     "column": "avatar_url",
+     "kind": "string"
+    },
+    {
+     "field": "languages",
+     "column": "languages",
+     "kind": "string[]"
+    },
+    {
+     "field": "traditions",
+     "column": "traditions",
+     "kind": "string[]"
+    },
+    {
+     "field": "specializations",
+     "column": "specializations",
+     "kind": "string[]"
+    },
+    {
+     "field": "experienceYears",
+     "column": "experience_years",
+     "kind": "number"
+    },
+    {
+     "field": "homeCity",
+     "column": "home_city",
+     "kind": "string"
+    },
+    {
+     "field": "homeState",
+     "column": "home_state",
+     "kind": "string"
+    },
+    {
+     "field": "serviceAreas",
+     "column": "service_areas",
+     "kind": "json"
+    },
+    {
+     "field": "serviceCities",
+     "column": "service_cities",
+     "kind": "string[]"
+    },
+    {
+     "field": "travelProfile",
+     "column": "travel_profile",
+     "kind": "json"
+    },
+    {
+     "field": "consultation",
+     "column": "consultation",
+     "kind": "json"
+    },
+    {
+     "field": "verificationLevel",
+     "column": "verification_level",
+     "kind": "string"
+    },
+    {
+     "field": "verificationRank",
+     "column": "verification_rank",
+     "kind": "number"
+    },
+    {
+     "field": "verification",
+     "column": "verification",
+     "kind": "json"
+    },
+    {
+     "field": "identityVerifiedUntil",
+     "column": "identity_verified_until",
+     "kind": "date"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "statusReason",
+     "column": "status_reason",
+     "kind": "string"
+    },
+    {
+     "field": "statusChangedAt",
+     "column": "status_changed_at",
+     "kind": "date"
+    },
+    {
+     "field": "statusChangedBy",
+     "column": "status_changed_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "metricsSnapshot",
+     "column": "metrics_snapshot",
+     "kind": "json"
+    },
+    {
+     "field": "calendarSeq",
+     "column": "calendar_seq",
+     "kind": "number"
+    },
+    {
+     "field": "ritualIds",
+     "column": "ritual_ids",
+     "kind": "objectId[]"
+    },
+    {
+     "field": "ritualVariantIds",
+     "column": "ritual_variant_ids",
+     "kind": "objectId[]"
+    },
+    {
+     "field": "fulfilmentTypes",
+     "column": "fulfilment_types",
+     "kind": "string[]"
+    },
+    {
+     "field": "minFeeMinor",
+     "column": "min_fee_minor",
+     "kind": "number"
+    },
+    {
+     "field": "maxFeeMinor",
+     "column": "max_fee_minor",
+     "kind": "number"
+    },
+    {
+     "field": "feeCurrency",
+     "column": "fee_currency",
+     "kind": "string"
+    },
+    {
+     "field": "activeOfferingCount",
+     "column": "active_offering_count",
+     "kind": "number"
+    },
+    {
+     "field": "availableWeekdays",
+     "column": "available_weekdays",
+     "kind": "string[]"
+    },
+    {
+     "field": "isPubliclyListed",
+     "column": "is_publicly_listed",
+     "kind": "boolean"
+    },
+    {
+     "field": "isDevFixture",
+     "column": "is_dev_fixture",
+     "kind": "boolean"
+    },
+    {
+     "field": "deletedAt",
+     "column": "deleted_at",
+     "kind": "date"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "ux_provider_user",
+     "keys": {
+      "userId": 1
+     },
+     "unique": true,
+     "enforced": true
+    },
+    {
+     "name": "ux_provider_slug",
+     "keys": {
+      "slug": 1
+     },
+     "unique": true,
+     "enforced": true
+    },
+    {
+     "name": "ix_provider_type_status",
+     "keys": {
+      "providerType": 1,
+      "status": 1,
+      "verificationLevel": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_provider_public",
+     "keys": {
+      "isPubliclyListed": 1,
+      "verificationRank": -1,
+      "createdAt": -1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_provider_languages",
+     "keys": {
+      "languages": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_provider_service_cities",
+     "keys": {
+      "serviceCities": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_provider_rituals",
+     "keys": {
+      "ritualIds": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "ritual_variants",
+   "schema": "public",
+   "table": "ritual_variants",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "ritualId",
+     "column": "ritual_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "code",
+     "column": "code",
+     "kind": "string"
+    },
+    {
+     "field": "titles",
+     "column": "titles",
+     "kind": "json"
+    },
+    {
+     "field": "scope",
+     "column": "scope",
+     "kind": "json"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "createdBy",
+     "column": "created_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "ritualId_1",
+     "keys": {
+      "ritualId": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ux_ritual_variant",
+     "keys": {
+      "ritualId": 1,
+      "code": 1
+     },
+     "unique": true,
+     "enforced": true
+    },
+    {
+     "name": "ix_variant_status",
+     "keys": {
+      "ritualId": 1,
+      "status": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "rituals",
+   "schema": "public",
+   "table": "rituals",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "slug",
+     "column": "slug",
+     "kind": "string"
+    },
+    {
+     "field": "titles",
+     "column": "titles",
+     "kind": "json"
+    },
+    {
+     "field": "summary",
+     "column": "summary",
+     "kind": "json"
+    },
+    {
+     "field": "category",
+     "column": "category",
+     "kind": "string"
+    },
+    {
+     "field": "aliases",
+     "column": "aliases",
+     "kind": "string[]"
+    },
+    {
+     "field": "applicableFulfilmentTypes",
+     "column": "applicable_fulfilment_types",
+     "kind": "string[]"
+    },
+    {
+     "field": "defaultDurationMinutes",
+     "column": "default_duration_minutes",
+     "kind": "number"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "contentVersion",
+     "column": "content_version",
+     "kind": "number"
+    },
+    {
+     "field": "publishedContent",
+     "column": "published_content",
+     "kind": "json"
+    },
+    {
+     "field": "publishedAt",
+     "column": "published_at",
+     "kind": "date"
+    },
+    {
+     "field": "searchText",
+     "column": "search_text",
+     "kind": "string"
+    },
+    {
+     "field": "isListed",
+     "column": "is_listed",
+     "kind": "boolean"
+    },
+    {
+     "field": "isDevFixture",
+     "column": "is_dev_fixture",
+     "kind": "boolean"
+    },
+    {
+     "field": "createdBy",
+     "column": "created_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "submittedBy",
+     "column": "submitted_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "approvedBy",
+     "column": "approved_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "publishedBy",
+     "column": "published_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "deletedAt",
+     "column": "deleted_at",
+     "kind": "date"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "category_1",
+     "keys": {
+      "category": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ux_ritual_slug",
+     "keys": {
+      "slug": 1
+     },
+     "unique": true,
+     "enforced": true
+    },
+    {
+     "name": "ix_ritual_status",
+     "keys": {
+      "status": 1,
+      "updatedAt": -1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_ritual_listed",
+     "keys": {
+      "isListed": 1,
+      "category": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "verification_cases",
+   "schema": "public",
+   "table": "verification_cases",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "providerId",
+     "column": "provider_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "providerUserId",
+     "column": "provider_user_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "verificationType",
+     "column": "verification_type",
+     "kind": "string"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "evidenceIds",
+     "column": "evidence_ids",
+     "kind": "objectId[]"
+    },
+    {
+     "field": "reviewerUserId",
+     "column": "reviewer_user_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "decisionReasonCode",
+     "column": "decision_reason_code",
+     "kind": "string"
+    },
+    {
+     "field": "providerMessage",
+     "column": "provider_message",
+     "kind": "string"
+    },
+    {
+     "field": "internalNote",
+     "column": "internal_note",
+     "kind": "string"
+    },
+    {
+     "field": "validUntil",
+     "column": "valid_until",
+     "kind": "date"
+    },
+    {
+     "field": "submittedAt",
+     "column": "submitted_at",
+     "kind": "date"
+    },
+    {
+     "field": "openedAt",
+     "column": "opened_at",
+     "kind": "date"
+    },
+    {
+     "field": "decidedAt",
+     "column": "decided_at",
+     "kind": "date"
+    },
+    {
+     "field": "previousCaseId",
+     "column": "previous_case_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "attempt",
+     "column": "attempt",
+     "kind": "number"
+    },
+    {
+     "field": "history",
+     "column": "history",
+     "kind": "json"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "ix_verification_queue",
+     "keys": {
+      "status": 1,
+      "verificationType": 1,
+      "openedAt": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_verification_provider",
+     "keys": {
+      "providerId": 1,
+      "verificationType": 1,
+      "openedAt": -1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ux_verification_active",
+     "keys": {
+      "providerId": 1,
+      "verificationType": 1
+     },
+     "unique": true,
+     "partialFilterExpression": {
+      "status": {
+       "$in": [
+        "OPEN",
+        "IN_REVIEW"
+       ]
+      }
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "verification_evidence",
+   "schema": "public",
+   "table": "verification_evidence",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "providerId",
+     "column": "provider_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "caseId",
+     "column": "case_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "uploadedBy",
+     "column": "uploaded_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "evidenceType",
+     "column": "evidence_type",
+     "kind": "string"
+    },
+    {
+     "field": "objectStorageKey",
+     "column": "object_storage_key",
+     "kind": "string"
+    },
+    {
+     "field": "sha256",
+     "column": "sha256",
+     "kind": "string"
+    },
+    {
+     "field": "mimeType",
+     "column": "mime_type",
+     "kind": "string"
+    },
+    {
+     "field": "sizeBytes",
+     "column": "size_bytes",
+     "kind": "number"
+    },
+    {
+     "field": "label",
+     "column": "label",
+     "kind": "string"
+    },
+    {
+     "field": "malwareScanStatus",
+     "column": "malware_scan_status",
+     "kind": "string"
+    },
+    {
+     "field": "uploadedAt",
+     "column": "uploaded_at",
+     "kind": "date"
+    },
+    {
+     "field": "retentionUntil",
+     "column": "retention_until",
+     "kind": "date"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "ix_evidence_provider",
+     "keys": {
+      "providerId": 1,
+      "uploadedAt": -1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_evidence_case",
+     "keys": {
+      "caseId": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_evidence_retention",
+     "keys": {
+      "retentionUntil": 1
+     },
+     "sparse": true,
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "provider_payout_accounts",
+   "schema": "public",
+   "table": "provider_payout_accounts",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "providerId",
+     "column": "provider_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "userId",
+     "column": "user_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "method",
+     "column": "method",
+     "kind": "string"
+    },
+    {
+     "field": "accountHolderName",
+     "column": "account_holder_name",
+     "kind": "string"
+    },
+    {
+     "field": "accountNumberCiphertext",
+     "column": "account_number_ciphertext",
+     "kind": "string"
+    },
+    {
+     "field": "accountNumberIv",
+     "column": "account_number_iv",
+     "kind": "string"
+    },
+    {
+     "field": "accountNumberTag",
+     "column": "account_number_tag",
+     "kind": "string"
+    },
+    {
+     "field": "accountNumberLast4",
+     "column": "account_number_last4",
+     "kind": "string"
+    },
+    {
+     "field": "ifsc",
+     "column": "ifsc",
+     "kind": "string"
+    },
+    {
+     "field": "bankName",
+     "column": "bank_name",
+     "kind": "string"
+    },
+    {
+     "field": "upiId",
+     "column": "upi_id",
+     "kind": "string"
+    },
+    {
+     "field": "active",
+     "column": "active",
+     "kind": "boolean"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "ux_ppayout_account_active",
+     "keys": {
+      "providerId": 1
+     },
+     "unique": true,
+     "partialFilterExpression": {
+      "active": true
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "provider_wallet_entries",
+   "schema": "public",
+   "table": "provider_wallet_entries",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "walletId",
+     "column": "wallet_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "providerId",
+     "column": "provider_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "type",
+     "column": "type",
+     "kind": "string"
+    },
+    {
+     "field": "direction",
+     "column": "direction",
+     "kind": "string"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "amountMinor",
+     "column": "amount_minor",
+     "kind": "number"
+    },
+    {
+     "field": "grossMinor",
+     "column": "gross_minor",
+     "kind": "number"
+    },
+    {
+     "field": "platformFeeMinor",
+     "column": "platform_fee_minor",
+     "kind": "number"
+    },
+    {
+     "field": "recoveryMinor",
+     "column": "recovery_minor",
+     "kind": "number"
+    },
+    {
+     "field": "currency",
+     "column": "currency",
+     "kind": "string"
+    },
+    {
+     "field": "bookingId",
+     "column": "booking_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "bookingNumber",
+     "column": "booking_number",
+     "kind": "string"
+    },
+    {
+     "field": "withdrawalId",
+     "column": "withdrawal_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "paymentRef",
+     "column": "payment_ref",
+     "kind": "string"
+    },
+    {
+     "field": "paymentMethod",
+     "column": "payment_method",
+     "kind": "string"
+    },
+    {
+     "field": "description",
+     "column": "description",
+     "kind": "string"
+    },
+    {
+     "field": "availableAt",
+     "column": "available_at",
+     "kind": "date"
+    },
+    {
+     "field": "releasedAt",
+     "column": "released_at",
+     "kind": "date"
+    },
+    {
+     "field": "reversedAt",
+     "column": "reversed_at",
+     "kind": "date"
+    },
+    {
+     "field": "idempotencyKey",
+     "column": "idempotency_key",
+     "kind": "string"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "ux_pwallet_entry_idem",
+     "keys": {
+      "idempotencyKey": 1
+     },
+     "unique": true,
+     "enforced": true
+    },
+    {
+     "name": "ix_pwallet_entry_provider",
+     "keys": {
+      "providerId": 1,
+      "createdAt": -1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_pwallet_entry_release",
+     "keys": {
+      "status": 1,
+      "availableAt": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_pwallet_entry_booking",
+     "keys": {
+      "bookingId": 1,
+      "type": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "provider_wallets",
+   "schema": "public",
+   "table": "provider_wallets",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "providerId",
+     "column": "provider_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "userId",
+     "column": "user_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "pendingMinor",
+     "column": "pending_minor",
+     "kind": "number"
+    },
+    {
+     "field": "availableMinor",
+     "column": "available_minor",
+     "kind": "number"
+    },
+    {
+     "field": "withdrawingMinor",
+     "column": "withdrawing_minor",
+     "kind": "number"
+    },
+    {
+     "field": "recoveryDueMinor",
+     "column": "recovery_due_minor",
+     "kind": "number"
+    },
+    {
+     "field": "lifetimeEarnedMinor",
+     "column": "lifetime_earned_minor",
+     "kind": "number"
+    },
+    {
+     "field": "lifetimeWithdrawnMinor",
+     "column": "lifetime_withdrawn_minor",
+     "kind": "number"
+    },
+    {
+     "field": "lifetimePlatformFeeMinor",
+     "column": "lifetime_platform_fee_minor",
+     "kind": "number"
+    },
+    {
+     "field": "currency",
+     "column": "currency",
+     "kind": "string"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "ux_pwallet_provider",
+     "keys": {
+      "providerId": 1
+     },
+     "unique": true,
+     "enforced": true
+    },
+    {
+     "name": "ix_pwallet_user",
+     "keys": {
+      "userId": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "provider_withdrawals",
+   "schema": "public",
+   "table": "provider_withdrawals",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "withdrawalNumber",
+     "column": "withdrawal_number",
+     "kind": "string"
+    },
+    {
+     "field": "providerId",
+     "column": "provider_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "userId",
+     "column": "user_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "amountMinor",
+     "column": "amount_minor",
+     "kind": "number"
+    },
+    {
+     "field": "currency",
+     "column": "currency",
+     "kind": "string"
+    },
+    {
+     "field": "payoutAccountId",
+     "column": "payout_account_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "destination",
+     "column": "destination",
+     "kind": "json"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "note",
+     "column": "note",
+     "kind": "string"
+    },
+    {
+     "field": "payoutReference",
+     "column": "payout_reference",
+     "kind": "string"
+    },
+    {
+     "field": "rejectionReason",
+     "column": "rejection_reason",
+     "kind": "string"
+    },
+    {
+     "field": "processedBy",
+     "column": "processed_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "processingAt",
+     "column": "processing_at",
+     "kind": "date"
+    },
+    {
+     "field": "paidAt",
+     "column": "paid_at",
+     "kind": "date"
+    },
+    {
+     "field": "rejectedAt",
+     "column": "rejected_at",
+     "kind": "date"
+    },
+    {
+     "field": "cancelledAt",
+     "column": "cancelled_at",
+     "kind": "date"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "ux_pwithdrawal_number",
+     "keys": {
+      "withdrawalNumber": 1
+     },
+     "unique": true,
+     "enforced": true
+    },
+    {
+     "name": "ix_pwithdrawal_provider",
+     "keys": {
+      "providerId": 1,
+      "createdAt": -1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_pwithdrawal_status",
+     "keys": {
+      "status": 1,
+      "createdAt": -1
+     },
+     "enforced": true
+    }
+   ]
   }
  ]
 };

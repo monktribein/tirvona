@@ -49,6 +49,9 @@ import { MarketplaceModule } from "./modules/marketplace/marketplace.module";
 // conversation only; outbound transactional delivery stays in WhatsAppModule.
 import { WhatsAppChannelModule } from "./modules/whatsapp-channel/whatsapp-channel.module";
 import { WalletApiModule } from "./modules/wallet/wallet-api.module";
+// Pandit / Purohit / Acharya / Jyotishi providers, ritual catalogue, verification, availability,
+// puja bookings and consultations. Served under /api/v2; see modules/providers/README.md.
+import { ProvidersModule } from "./modules/providers/providers.module";
 import {
   hybridRateLimitTracker,
   ipRateLimitTracker,
@@ -181,6 +184,7 @@ import {
     MarketplaceModule,
     WhatsAppChannelModule,
     WalletApiModule,
+    ProvidersModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

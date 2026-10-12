@@ -1,0 +1,20 @@
+-- ROLLBACK for migrations/0004_provider_wallet.sql
+--
+-- Not applied by `npm run db:migrate`. Run by hand, in a transaction, only when you
+-- are sure the pandit wallet data should go.
+--
+--   1. Deploy code without the provider wallet (ProviderWalletService and its models) FIRST.
+--   2. psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f database/rollback/0004_provider_wallet.down.sql
+--   3. Revert the registry / Drizzle generated files (or `npm run db:generate -- --prune`).
+--
+-- This drops DATA: pandit balances, the earnings ledger, payout accounts and
+-- withdrawal history. Export it first; it is the record of what Tirvona owes pandits.
+
+BEGIN;
+
+DROP TABLE IF EXISTS "public"."provider_withdrawals";
+DROP TABLE IF EXISTS "public"."provider_wallet_entries";
+DROP TABLE IF EXISTS "public"."provider_payout_accounts";
+DROP TABLE IF EXISTS "public"."provider_wallets";
+
+COMMIT;

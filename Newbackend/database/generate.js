@@ -62,7 +62,8 @@ function kindOf(st) {
   if (inst === "Boolean") return "boolean";
   if (inst === "Array") {
     if (st.schema || st.$isMongooseDocumentArray) return "json";
-    const caster = st.caster || st.$embeddedSchemaType;
+    // Mongoose 9 renamed the array element type to embeddedSchemaType.
+    const caster = st.caster || st.embeddedSchemaType || st.$embeddedSchemaType;
     const k = caster ? kindOf(caster) : "json";
     return ["objectId", "string", "number", "date", "boolean"].includes(k) ? `${k}[]` : "json";
   }

@@ -266,7 +266,57 @@ const TempleManagementPage = lazy(() => import("./admin/temples/pages/TempleMana
 const AddEditTemplePage = lazy(() => import("./admin/temples/pages/AddEditTemplePage"));
 const TempleOwnerDashboard = lazy(() => import("./pages/temple-owner/TempleOwnerDashboard"));
 
-
+const PublicPanditDirectoryPage = lazy(
+  () => import("./modules/pandit/public/PublicPanditDirectoryPage"),
+);
+const PublicProviderDetailPage = lazy(
+  () => import("./modules/pandit/public/PublicProviderDetailPage"),
+);
+const ProviderDashboard = lazy(
+  () => import("./modules/pandit/provider/ProviderDashboard"),
+);
+const ProviderProfilePage = lazy(
+  () => import("./modules/pandit/provider/ProviderProfilePage"),
+);
+const ProviderOfferingsPage = lazy(
+  () => import("./modules/pandit/provider/ProviderOfferingsPage"),
+);
+const ProviderAvailabilityPage = lazy(
+  () => import("./modules/pandit/provider/ProviderAvailabilityPage"),
+);
+const ProviderVerificationPage = lazy(
+  () => import("./modules/pandit/provider/ProviderVerificationPage"),
+);
+const ProviderBookingsPage = lazy(
+  () => import("./modules/pandit/provider/ProviderBookingsPage"),
+);
+const ProviderWalletPage = lazy(
+  () => import("./modules/pandit/provider/ProviderWalletPage"),
+);
+const AdminPanditWithdrawalsPage = lazy(
+  () => import("./modules/pandit/admin/AdminPanditWithdrawalsPage"),
+);
+const ProviderVerificationAdminPage = lazy(
+  () => import("./modules/pandit/admin/ProviderVerificationAdminPage"),
+);
+const AdminProvidersPage = lazy(
+  () => import("./modules/pandit/admin/AdminProvidersPage"),
+);
+const AdminPanditOverviewPage = lazy(
+  () => import("./modules/pandit/admin/AdminPanditOverviewPage"),
+);
+const AdminRitualCataloguePage = lazy(
+  () => import("./modules/pandit/admin/AdminRitualCataloguePage"),
+);
+const AdminPanditOfferingsPage = lazy(
+  () => import("./modules/pandit/admin/AdminPanditOfferingsPage"),
+);
+const AdminPanditBookingsPage = lazy(
+  () => import("./modules/pandit/admin/AdminPanditBookingsPage"),
+);
+const AdminPanditConsultationsPage = lazy(
+  () => import("./modules/pandit/admin/AdminPanditConsultationsPage"),
+);
 const SmartContactProfilesPage = lazy(
   () => import("./admin/smart-contact/pages/SmartContactProfilesPage"),
 );
@@ -538,6 +588,13 @@ const AppContent: React.FC = () => {
             />
             <Route path="/temples" element={<TempleSearchPage />} />
             <Route path="/temples/:slug" element={<TempleDetailPage />} />
+            {/* Pandit / Provider public directory and details */}
+            <Route path="/pandits" element={<PublicPanditDirectoryPage />} />
+            <Route path="/pandit/explore" element={<PublicPanditDirectoryPage />} />
+            <Route path="/providers" element={<PublicPanditDirectoryPage />} />
+            <Route path="/pandit" element={<PublicPanditDirectoryPage />} />
+            <Route path="/pandit/:id" element={<PublicProviderDetailPage />} />
+            <Route path="/provider/:id" element={<PublicProviderDetailPage />} />
             <Route path="/faq" element={<FaqPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
@@ -1092,6 +1149,19 @@ const AppContent: React.FC = () => {
               element={<VerificationQueuePage />}
             />
           </Route>
+          {/* Provider verification review: reviewers and Super Admin only (the server enforces this too). */}
+          <Route
+            element={
+              <ProtectedRoute allowedRoles={["verification_reviewer", "super_admin"]}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route
+              path="/admin/verifications/providers"
+              element={<ProviderVerificationAdminPage />}
+            />
+          </Route>
 
           <Route
             element={
@@ -1140,6 +1210,13 @@ const AppContent: React.FC = () => {
             />
             <Route path="/admin/temples" element={<TempleManagementPage />} />
             <Route path="/admin/temples/new" element={<AddEditTemplePage />} />
+            <Route path="/admin/pandits/overview" element={<AdminPanditOverviewPage />} />
+            <Route path="/admin/pandits" element={<AdminProvidersPage />} />
+            <Route path="/admin/providers" element={<Navigate to="/admin/pandits" replace />} />
+            <Route path="/admin/pandits/offerings" element={<AdminPanditOfferingsPage />} />
+            <Route path="/admin/pandits/rituals" element={<AdminRitualCataloguePage />} />
+            <Route path="/admin/pandits/bookings" element={<AdminPanditBookingsPage />} />
+            <Route path="/admin/pandits/consultations" element={<AdminPanditConsultationsPage />} />
             {/* Smart Contact QR. `/analytics` is declared before the `:id`
               route so the literal segment is not swallowed as a profile id. */}
             <Route
@@ -1294,6 +1371,17 @@ const AppContent: React.FC = () => {
             />
           </Route>
 
+          {/* Pandit wallet payouts: the same roles the backend's withdrawal queue allows. */}
+          <Route
+            element={
+              <ProtectedRoute allowedRoles={["super_admin", "finance_manager", "service_manager"]}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/admin/pandits/withdrawals" element={<AdminPanditWithdrawalsPage />} />
+          </Route>
+
           {/* Seller console: any signed-in user; the backend scopes every call to the caller's own store. */}
           <Route
             element={
@@ -1314,6 +1402,32 @@ const AppContent: React.FC = () => {
             <Route path="/vendor/earnings" element={<VendorEarningsPage />} />
             <Route path="/vendor/payouts" element={<VendorPayoutsPage />} />
             <Route path="/vendor/reviews" element={<VendorReviewsPage />} />
+          </Route>
+
+          {/* Pandit / Provider console: any signed-in user; backend scopes calls to caller's own profile. */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/provider" element={<Navigate to="/provider/dashboard" replace />} />
+            <Route path="/provider/dashboard" element={<ProviderDashboard />} />
+            <Route path="/provider/profile" element={<ProviderProfilePage />} />
+            <Route path="/provider/profile/new" element={<ProviderProfilePage />} />
+            <Route path="/provider/offerings" element={<ProviderOfferingsPage />} />
+            <Route path="/provider/availability" element={<ProviderAvailabilityPage />} />
+            <Route path="/provider/verification" element={<ProviderVerificationPage />} />
+            <Route path="/provider/bookings" element={<ProviderBookingsPage />} />
+            <Route path="/provider/wallet" element={<ProviderWalletPage />} />
+
+            {/* Legacy aliases so direct links from old app keep working smoothly */}
+            <Route path="/pandit/dashboard" element={<Navigate to="/provider/dashboard" replace />} />
+            <Route path="/pandit/profile" element={<Navigate to="/provider/profile" replace />} />
+            <Route path="/pandit/offerings" element={<Navigate to="/provider/offerings" replace />} />
+            <Route path="/pandit/availability" element={<Navigate to="/provider/availability" replace />} />
+            <Route path="/pandit/verification" element={<Navigate to="/provider/verification" replace />} />
           </Route>
 
           {/* Kept off /admin/manage/*, which the generic module console owns. */}

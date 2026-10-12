@@ -25,6 +25,11 @@ export const USER_ROLES = [
   "finance_manager",
   "support",
   "inspector",
+  // Pandit/provider module: a login for providers created by an admin, and the reviewer
+  // who approves provider verification. Provider ownership itself comes from owning a
+  // profile, not from this role.
+  "pandit_provider",
+  "verification_reviewer",
   "staff",
   "volunteer",
   "customer",

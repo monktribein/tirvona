@@ -236,6 +236,8 @@ const SELF_SUMMARISING_PATHS = [
   "/owner/offline-inventory",
   "/ashram-admin/offline-inventory",
   "/ashram-owner/offline-inventory",
+  "/admin/verifications/providers",
+  "/admin/pandits",
 ];
 
 const matches = (pathname: string, path: string): boolean =>

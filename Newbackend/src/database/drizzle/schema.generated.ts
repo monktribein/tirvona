@@ -4177,3 +4177,429 @@ export const smartContactSmartContactQrCodes = smartContactSchema.table("smart_c
   _nulls: text("_nulls").array(),
   _extra: jsonb("_extra"),
 });
+
+/** public.availability_rules */
+export const availabilityRules = pgTable("availability_rules", {
+  id: text("id").primaryKey(), // model: _id
+  "resourceType": text("resource_type"), // model: resourceType
+  "resourceId": text("resource_id"), // model: resourceId
+  "timezone": text("timezone"), // model: timezone
+  "rrule": text("rrule"), // model: rrule
+  "window": jsonb("window"), // model: window
+  "status": text("status"), // model: status
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.calendar_blocks */
+export const calendarBlocks = pgTable("calendar_blocks", {
+  id: text("id").primaryKey(), // model: _id
+  "resourceType": text("resource_type"), // model: resourceType
+  "resourceId": text("resource_id"), // model: resourceId
+  "startAt": timestamp("start_at", { withTimezone: true, mode: "date" }), // model: startAt
+  "endAt": timestamp("end_at", { withTimezone: true, mode: "date" }), // model: endAt
+  "blockType": text("block_type"), // model: blockType
+  "sourceId": text("source_id"), // model: sourceId
+  "status": text("status"), // model: status
+  "expiresAt": timestamp("expires_at", { withTimezone: true, mode: "date" }), // model: expiresAt
+  "reason": text("reason"), // model: reason
+  "createdBy": text("created_by"), // model: createdBy
+  "releasedAt": timestamp("released_at", { withTimezone: true, mode: "date" }), // model: releasedAt
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.consultation_messages */
+export const consultationMessages = pgTable("consultation_messages", {
+  id: text("id").primaryKey(), // model: _id
+  "consultationId": text("consultation_id"), // model: consultationId
+  "senderUserId": text("sender_user_id"), // model: senderUserId
+  "senderRole": text("sender_role"), // model: senderRole
+  "senderName": text("sender_name"), // model: senderName
+  "content": text("content"), // model: content
+  "attachments": jsonb("attachments"), // model: attachments
+  "readAt": timestamp("read_at", { withTimezone: true, mode: "date" }), // model: readAt
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.expert_consultations */
+export const expertConsultations = pgTable("expert_consultations", {
+  id: text("id").primaryKey(), // model: _id
+  "consultationType": text("consultation_type"), // model: consultationType
+  "customerUserId": text("customer_user_id"), // model: customerUserId
+  "expertProviderId": text("expert_provider_id"), // model: expertProviderId
+  "expertUserId": text("expert_user_id"), // model: expertUserId
+  "expertSnapshot": jsonb("expert_snapshot"), // model: expertSnapshot
+  "customerSnapshot": jsonb("customer_snapshot"), // model: customerSnapshot
+  "channel": text("channel"), // model: channel
+  "scheduledStartAt": timestamp("scheduled_start_at", { withTimezone: true, mode: "date" }), // model: scheduledStartAt
+  "scheduledEndAt": timestamp("scheduled_end_at", { withTimezone: true, mode: "date" }), // model: scheduledEndAt
+  "timezone": text("timezone"), // model: timezone
+  "questionSummary": text("question_summary"), // model: questionSummary
+  "expertNotes": text("expert_notes"), // model: expertNotes
+  "chartAccessGrant": jsonb("chart_access_grant"), // model: chartAccessGrant
+  "fee": jsonb("fee"), // model: fee
+  "bookingId": text("booking_id"), // model: bookingId
+  "status": text("status"), // model: status
+  "stateVersion": doublePrecision("state_version"), // model: stateVersion
+  "holdBlockId": text("hold_block_id"), // model: holdBlockId
+  "holdExpiresAt": timestamp("hold_expires_at", { withTimezone: true, mode: "date" }), // model: holdExpiresAt
+  "cancelledBy": text("cancelled_by"), // model: cancelledBy
+  "cancelReasonCode": text("cancel_reason_code"), // model: cancelReasonCode
+  "completedAt": timestamp("completed_at", { withTimezone: true, mode: "date" }), // model: completedAt
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.idempotency_keys */
+export const idempotencyKeys = pgTable("idempotency_keys", {
+  id: text("id").primaryKey(), // model: _id
+  "key": text("key"), // model: key
+  "operation": text("operation"), // model: operation
+  "actorId": text("actor_id"), // model: actorId
+  "requestHash": text("request_hash"), // model: requestHash
+  "state": text("state"), // model: state
+  "responseRef": jsonb("response_ref"), // model: responseRef
+  "expiresAt": timestamp("expires_at", { withTimezone: true, mode: "date" }), // model: expiresAt
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.provider_booking_state_history */
+export const providerBookingStateHistory = pgTable("provider_booking_state_history", {
+  id: text("id").primaryKey(), // model: _id
+  "bookingId": text("booking_id"), // model: bookingId
+  "fromState": text("from_state"), // model: fromState
+  "toState": text("to_state"), // model: toState
+  "command": text("command"), // model: command
+  "reasonCode": text("reason_code"), // model: reasonCode
+  "actorType": text("actor_type"), // model: actorType
+  "actorId": text("actor_id"), // model: actorId
+  "correlationId": text("correlation_id"), // model: correlationId
+  "aggregateVersion": doublePrecision("aggregate_version"), // model: aggregateVersion
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.provider_bookings */
+export const providerBookings = pgTable("provider_bookings", {
+  id: text("id").primaryKey(), // model: _id
+  "bookingNumber": text("booking_number"), // model: bookingNumber
+  "customerUserId": text("customer_user_id"), // model: customerUserId
+  "providerId": text("provider_id"), // model: providerId
+  "providerUserId": text("provider_user_id"), // model: providerUserId
+  "offeringId": text("offering_id"), // model: offeringId
+  "ritualId": text("ritual_id"), // model: ritualId
+  "ritualVariantId": text("ritual_variant_id"), // model: ritualVariantId
+  "fulfilmentType": text("fulfilment_type"), // model: fulfilmentType
+  "quoteId": text("quote_id"), // model: quoteId
+  "paymentRefs": text("payment_refs").array(), // model: paymentRefs
+  "paymentOrder": jsonb("payment_order"), // model: paymentOrder
+  "refund": jsonb("refund"), // model: refund
+  "serviceSnapshot": jsonb("service_snapshot"), // model: serviceSnapshot
+  "scheduledStartAt": timestamp("scheduled_start_at", { withTimezone: true, mode: "date" }), // model: scheduledStartAt
+  "scheduledEndAt": timestamp("scheduled_end_at", { withTimezone: true, mode: "date" }), // model: scheduledEndAt
+  "timezone": text("timezone"), // model: timezone
+  "customerContact": jsonb("customer_contact"), // model: customerContact
+  "serviceLocation": jsonb("service_location"), // model: serviceLocation
+  "customerNotes": text("customer_notes"), // model: customerNotes
+  "status": text("status"), // model: status
+  "stateVersion": doublePrecision("state_version"), // model: stateVersion
+  "holdBlockId": text("hold_block_id"), // model: holdBlockId
+  "holdExpiresAt": timestamp("hold_expires_at", { withTimezone: true, mode: "date" }), // model: holdExpiresAt
+  "confirmedAt": timestamp("confirmed_at", { withTimezone: true, mode: "date" }), // model: confirmedAt
+  "acceptedAt": timestamp("accepted_at", { withTimezone: true, mode: "date" }), // model: acceptedAt
+  "startedAt": timestamp("started_at", { withTimezone: true, mode: "date" }), // model: startedAt
+  "completedAt": timestamp("completed_at", { withTimezone: true, mode: "date" }), // model: completedAt
+  "cancelledAt": timestamp("cancelled_at", { withTimezone: true, mode: "date" }), // model: cancelledAt
+  "cancelReasonCode": text("cancel_reason_code"), // model: cancelReasonCode
+  "zoomMeeting": jsonb("zoom_meeting"), // model: zoomMeeting
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.provider_offerings */
+export const providerOfferings = pgTable("provider_offerings", {
+  id: text("id").primaryKey(), // model: _id
+  "providerId": text("provider_id"), // model: providerId
+  "ritualId": text("ritual_id"), // model: ritualId
+  "ritualVariantId": text("ritual_variant_id"), // model: ritualVariantId
+  "fulfilmentType": text("fulfilment_type"), // model: fulfilmentType
+  "title": text("title"), // model: title
+  "description": text("description"), // model: description
+  "destination": jsonb("destination"), // model: destination
+  "durationMinutes": doublePrecision("duration_minutes"), // model: durationMinutes
+  "teamSize": doublePrecision("team_size"), // model: teamSize
+  "minNoticeHours": doublePrecision("min_notice_hours"), // model: minNoticeHours
+  "baseProfessionalFeeMinor": doublePrecision("base_professional_fee_minor"), // model: baseProfessionalFeeMinor
+  "currency": text("currency"), // model: currency
+  "travelCharge": jsonb("travel_charge"), // model: travelCharge
+  "inclusions": text("inclusions").array(), // model: inclusions
+  "exclusions": text("exclusions").array(), // model: exclusions
+  "samagriIncluded": boolean("samagri_included"), // model: samagriIncluded
+  "voluntaryDakshinaAllowed": boolean("voluntary_dakshina_allowed"), // model: voluntaryDakshinaAllowed
+  "tags": text("tags").array(), // model: tags
+  "status": text("status"), // model: status
+  "deletedAt": timestamp("deleted_at", { withTimezone: true, mode: "date" }), // model: deletedAt
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.provider_private_profiles */
+export const providerPrivateProfiles = pgTable("provider_private_profiles", {
+  id: text("id").primaryKey(), // model: _id
+  "providerId": text("provider_id"), // model: providerId
+  "legalName": text("legal_name"), // model: legalName
+  "mobile": text("mobile"), // model: mobile
+  "email": text("email"), // model: email
+  "address": jsonb("address"), // model: address
+  "kycRefs": text("kyc_refs").array(), // model: kycRefs
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.provider_profiles */
+export const providerProfiles = pgTable("provider_profiles", {
+  id: text("id").primaryKey(), // model: _id
+  "userId": text("user_id"), // model: userId
+  "slug": text("slug"), // model: slug
+  "providerType": text("provider_type"), // model: providerType
+  "displayName": text("display_name"), // model: displayName
+  "bio": text("bio"), // model: bio
+  "avatarUrl": text("avatar_url"), // model: avatarUrl
+  "languages": text("languages").array(), // model: languages
+  "traditions": text("traditions").array(), // model: traditions
+  "specializations": text("specializations").array(), // model: specializations
+  "experienceYears": doublePrecision("experience_years"), // model: experienceYears
+  "homeCity": text("home_city"), // model: homeCity
+  "homeState": text("home_state"), // model: homeState
+  "serviceAreas": jsonb("service_areas"), // model: serviceAreas
+  "serviceCities": text("service_cities").array(), // model: serviceCities
+  "travelProfile": jsonb("travel_profile"), // model: travelProfile
+  "consultation": jsonb("consultation"), // model: consultation
+  "verificationLevel": text("verification_level"), // model: verificationLevel
+  "verificationRank": doublePrecision("verification_rank"), // model: verificationRank
+  "verification": jsonb("verification"), // model: verification
+  "identityVerifiedUntil": timestamp("identity_verified_until", { withTimezone: true, mode: "date" }), // model: identityVerifiedUntil
+  "status": text("status"), // model: status
+  "statusReason": text("status_reason"), // model: statusReason
+  "statusChangedAt": timestamp("status_changed_at", { withTimezone: true, mode: "date" }), // model: statusChangedAt
+  "statusChangedBy": text("status_changed_by"), // model: statusChangedBy
+  "metricsSnapshot": jsonb("metrics_snapshot"), // model: metricsSnapshot
+  "calendarSeq": doublePrecision("calendar_seq"), // model: calendarSeq
+  "ritualIds": text("ritual_ids").array(), // model: ritualIds
+  "ritualVariantIds": text("ritual_variant_ids").array(), // model: ritualVariantIds
+  "fulfilmentTypes": text("fulfilment_types").array(), // model: fulfilmentTypes
+  "minFeeMinor": doublePrecision("min_fee_minor"), // model: minFeeMinor
+  "maxFeeMinor": doublePrecision("max_fee_minor"), // model: maxFeeMinor
+  "feeCurrency": text("fee_currency"), // model: feeCurrency
+  "activeOfferingCount": doublePrecision("active_offering_count"), // model: activeOfferingCount
+  "availableWeekdays": text("available_weekdays").array(), // model: availableWeekdays
+  "isPubliclyListed": boolean("is_publicly_listed"), // model: isPubliclyListed
+  "isDevFixture": boolean("is_dev_fixture"), // model: isDevFixture
+  "deletedAt": timestamp("deleted_at", { withTimezone: true, mode: "date" }), // model: deletedAt
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.ritual_variants */
+export const ritualVariants = pgTable("ritual_variants", {
+  id: text("id").primaryKey(), // model: _id
+  "ritualId": text("ritual_id"), // model: ritualId
+  "code": text("code"), // model: code
+  "titles": jsonb("titles"), // model: titles
+  "scope": jsonb("scope"), // model: scope
+  "status": text("status"), // model: status
+  "createdBy": text("created_by"), // model: createdBy
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.rituals */
+export const rituals = pgTable("rituals", {
+  id: text("id").primaryKey(), // model: _id
+  "slug": text("slug"), // model: slug
+  "titles": jsonb("titles"), // model: titles
+  "summary": jsonb("summary"), // model: summary
+  "category": text("category"), // model: category
+  "aliases": text("aliases").array(), // model: aliases
+  "applicableFulfilmentTypes": text("applicable_fulfilment_types").array(), // model: applicableFulfilmentTypes
+  "defaultDurationMinutes": doublePrecision("default_duration_minutes"), // model: defaultDurationMinutes
+  "status": text("status"), // model: status
+  "contentVersion": doublePrecision("content_version"), // model: contentVersion
+  "publishedContent": jsonb("published_content"), // model: publishedContent
+  "publishedAt": timestamp("published_at", { withTimezone: true, mode: "date" }), // model: publishedAt
+  "searchText": text("search_text"), // model: searchText
+  "isListed": boolean("is_listed"), // model: isListed
+  "isDevFixture": boolean("is_dev_fixture"), // model: isDevFixture
+  "createdBy": text("created_by"), // model: createdBy
+  "submittedBy": text("submitted_by"), // model: submittedBy
+  "approvedBy": text("approved_by"), // model: approvedBy
+  "publishedBy": text("published_by"), // model: publishedBy
+  "deletedAt": timestamp("deleted_at", { withTimezone: true, mode: "date" }), // model: deletedAt
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.verification_cases */
+export const verificationCases = pgTable("verification_cases", {
+  id: text("id").primaryKey(), // model: _id
+  "providerId": text("provider_id"), // model: providerId
+  "providerUserId": text("provider_user_id"), // model: providerUserId
+  "verificationType": text("verification_type"), // model: verificationType
+  "status": text("status"), // model: status
+  "evidenceIds": text("evidence_ids").array(), // model: evidenceIds
+  "reviewerUserId": text("reviewer_user_id"), // model: reviewerUserId
+  "decisionReasonCode": text("decision_reason_code"), // model: decisionReasonCode
+  "providerMessage": text("provider_message"), // model: providerMessage
+  "internalNote": text("internal_note"), // model: internalNote
+  "validUntil": timestamp("valid_until", { withTimezone: true, mode: "date" }), // model: validUntil
+  "submittedAt": timestamp("submitted_at", { withTimezone: true, mode: "date" }), // model: submittedAt
+  "openedAt": timestamp("opened_at", { withTimezone: true, mode: "date" }), // model: openedAt
+  "decidedAt": timestamp("decided_at", { withTimezone: true, mode: "date" }), // model: decidedAt
+  "previousCaseId": text("previous_case_id"), // model: previousCaseId
+  "attempt": doublePrecision("attempt"), // model: attempt
+  "history": jsonb("history"), // model: history
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.verification_evidence */
+export const verificationEvidence = pgTable("verification_evidence", {
+  id: text("id").primaryKey(), // model: _id
+  "providerId": text("provider_id"), // model: providerId
+  "caseId": text("case_id"), // model: caseId
+  "uploadedBy": text("uploaded_by"), // model: uploadedBy
+  "evidenceType": text("evidence_type"), // model: evidenceType
+  "objectStorageKey": text("object_storage_key"), // model: objectStorageKey
+  "sha256": text("sha256"), // model: sha256
+  "mimeType": text("mime_type"), // model: mimeType
+  "sizeBytes": doublePrecision("size_bytes"), // model: sizeBytes
+  "label": text("label"), // model: label
+  "malwareScanStatus": text("malware_scan_status"), // model: malwareScanStatus
+  "uploadedAt": timestamp("uploaded_at", { withTimezone: true, mode: "date" }), // model: uploadedAt
+  "retentionUntil": timestamp("retention_until", { withTimezone: true, mode: "date" }), // model: retentionUntil
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.provider_payout_accounts */
+export const providerPayoutAccounts = pgTable("provider_payout_accounts", {
+  id: text("id").primaryKey(), // model: _id
+  "providerId": text("provider_id"), // model: providerId
+  "userId": text("user_id"), // model: userId
+  "method": text("method"), // model: method
+  "accountHolderName": text("account_holder_name"), // model: accountHolderName
+  "accountNumberCiphertext": text("account_number_ciphertext"), // model: accountNumberCiphertext
+  "accountNumberIv": text("account_number_iv"), // model: accountNumberIv
+  "accountNumberTag": text("account_number_tag"), // model: accountNumberTag
+  "accountNumberLast4": text("account_number_last4"), // model: accountNumberLast4
+  "ifsc": text("ifsc"), // model: ifsc
+  "bankName": text("bank_name"), // model: bankName
+  "upiId": text("upi_id"), // model: upiId
+  "active": boolean("active"), // model: active
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.provider_wallet_entries */
+export const providerWalletEntries = pgTable("provider_wallet_entries", {
+  id: text("id").primaryKey(), // model: _id
+  "walletId": text("wallet_id"), // model: walletId
+  "providerId": text("provider_id"), // model: providerId
+  "type": text("type"), // model: type
+  "direction": text("direction"), // model: direction
+  "status": text("status"), // model: status
+  "amountMinor": doublePrecision("amount_minor"), // model: amountMinor
+  "grossMinor": doublePrecision("gross_minor"), // model: grossMinor
+  "platformFeeMinor": doublePrecision("platform_fee_minor"), // model: platformFeeMinor
+  "recoveryMinor": doublePrecision("recovery_minor"), // model: recoveryMinor
+  "currency": text("currency"), // model: currency
+  "bookingId": text("booking_id"), // model: bookingId
+  "bookingNumber": text("booking_number"), // model: bookingNumber
+  "withdrawalId": text("withdrawal_id"), // model: withdrawalId
+  "paymentRef": text("payment_ref"), // model: paymentRef
+  "paymentMethod": text("payment_method"), // model: paymentMethod
+  "description": text("description"), // model: description
+  "availableAt": timestamp("available_at", { withTimezone: true, mode: "date" }), // model: availableAt
+  "releasedAt": timestamp("released_at", { withTimezone: true, mode: "date" }), // model: releasedAt
+  "reversedAt": timestamp("reversed_at", { withTimezone: true, mode: "date" }), // model: reversedAt
+  "idempotencyKey": text("idempotency_key"), // model: idempotencyKey
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.provider_wallets */
+export const providerWallets = pgTable("provider_wallets", {
+  id: text("id").primaryKey(), // model: _id
+  "providerId": text("provider_id"), // model: providerId
+  "userId": text("user_id"), // model: userId
+  "pendingMinor": doublePrecision("pending_minor"), // model: pendingMinor
+  "availableMinor": doublePrecision("available_minor"), // model: availableMinor
+  "withdrawingMinor": doublePrecision("withdrawing_minor"), // model: withdrawingMinor
+  "recoveryDueMinor": doublePrecision("recovery_due_minor"), // model: recoveryDueMinor
+  "lifetimeEarnedMinor": doublePrecision("lifetime_earned_minor"), // model: lifetimeEarnedMinor
+  "lifetimeWithdrawnMinor": doublePrecision("lifetime_withdrawn_minor"), // model: lifetimeWithdrawnMinor
+  "lifetimePlatformFeeMinor": doublePrecision("lifetime_platform_fee_minor"), // model: lifetimePlatformFeeMinor
+  "currency": text("currency"), // model: currency
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.provider_withdrawals */
+export const providerWithdrawals = pgTable("provider_withdrawals", {
+  id: text("id").primaryKey(), // model: _id
+  "withdrawalNumber": text("withdrawal_number"), // model: withdrawalNumber
+  "providerId": text("provider_id"), // model: providerId
+  "userId": text("user_id"), // model: userId
+  "amountMinor": doublePrecision("amount_minor"), // model: amountMinor
+  "currency": text("currency"), // model: currency
+  "payoutAccountId": text("payout_account_id"), // model: payoutAccountId
+  "destination": jsonb("destination"), // model: destination
+  "status": text("status"), // model: status
+  "note": text("note"), // model: note
+  "payoutReference": text("payout_reference"), // model: payoutReference
+  "rejectionReason": text("rejection_reason"), // model: rejectionReason
+  "processedBy": text("processed_by"), // model: processedBy
+  "processingAt": timestamp("processing_at", { withTimezone: true, mode: "date" }), // model: processingAt
+  "paidAt": timestamp("paid_at", { withTimezone: true, mode: "date" }), // model: paidAt
+  "rejectedAt": timestamp("rejected_at", { withTimezone: true, mode: "date" }), // model: rejectedAt
+  "cancelledAt": timestamp("cancelled_at", { withTimezone: true, mode: "date" }), // model: cancelledAt
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});

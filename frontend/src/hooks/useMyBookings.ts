@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { bookingService } from "../services";
 import { parkingBookingService } from "../modules/parking/services/parking.service";
+import { pujaBookingService } from "../modules/pandit";
 import { getErrorMessage } from "../lib/api";
 
-export type BookingKind = "stay" | "parking";
+export type BookingKind = "stay" | "parking" | "puja";
 export type BookingCategory = "upcoming" | "completed" | "cancelled";
 
 export interface UnifiedBooking {
@@ -67,8 +68,62 @@ const PARKING_CATEGORY: Record<string, BookingCategory> = {
   no_show: "cancelled",
 };
 
+const PUJA_CATEGORY: Record<string, BookingCategory> = {
+  PAYMENT_PENDING: "upcoming",
+  CONFIRMED: "upcoming",
+  PROVIDER_ACCEPTED: "upcoming",
+  PREPARATION_IN_PROGRESS: "upcoming",
+  READY_FOR_FULFILMENT: "upcoming",
+  IN_PROGRESS: "upcoming",
+  COMPLETED: "completed",
+  SETTLEMENT_PENDING: "completed",
+  CLOSED: "completed",
+  CANCELLED_BY_CUSTOMER: "cancelled",
+  CANCELLED_BY_PROVIDER: "cancelled",
+  CANCELLED_BY_OPS: "cancelled",
+  PAYMENT_FAILED: "cancelled",
+  DISPUTED: "cancelled",
+};
+
 const joinAddress = (address?: Record<string, string | undefined>) =>
   [address?.city, address?.state].filter(Boolean).join(", ");
+
+const fromPuja = (b: any): UnifiedBooking => {
+  const status = String(b.status || "CONFIRMED");
+  // The customer view of a booking carries these at the top level; older payloads nested them in serviceSnapshot.
+  const snap = b.serviceSnapshot ?? {};
+  const ritualInfo = b.ritual ?? snap.ritual;
+  const providerInfo = b.provider ?? snap.provider;
+  const offeringInfo = b.offering ?? snap.offering;
+  const ritual = offeringInfo?.title || ritualInfo?.titles?.en || "Vedic Puja";
+  const providerName = providerInfo?.displayName || "Tirvona Pandit";
+  const totalMinor = Number((b.pricing ?? snap.pricing)?.totalMinor || 0);
+  const amountRupees = totalMinor / 100;
+  return {
+    kind: "puja",
+    id: b.id || b._id,
+    reference: b.bookingNumber || b.id || b._id,
+    title: ritual,
+    location: providerName,
+    start: b.scheduledStartAt,
+    end: b.scheduledEndAt,
+    meta: [
+      providerName,
+      (offeringInfo?.fulfilmentType ?? b.fulfilmentType)?.replace(/_/g, " ").toLowerCase(),
+      offeringInfo?.durationMinutes ? `${offeringInfo.durationMinutes} mins` : null,
+    ]
+      .filter(Boolean)
+      .join(" · "),
+    amount: amountRupees,
+    amountPaid: status !== "PAYMENT_PENDING" && status !== "PAYMENT_FAILED" ? amountRupees : 0,
+    status,
+    category: PUJA_CATEGORY[status] || "upcoming",
+    detailHref: `/pandit/${providerInfo?.slug || providerInfo?.id || ""}`,
+    createdAt: b.createdAt || b.scheduledStartAt,
+    cancellable: ["PAYMENT_PENDING", "CONFIRMED", "PROVIDER_ACCEPTED"].includes(status),
+    rawBooking: b,
+  };
+};
 
 const fromStay = (b: any): UnifiedBooking => {
   const ashram = typeof b.ashramId === "object" ? b.ashramId : null;
@@ -190,9 +245,10 @@ export const useMyBookings = (enabled = true): UseMyBookingsResult => {
     setError("");
     setPartialFailures([]);
 
-    const [stayRes, parkingRes] = await Promise.allSettled([
+    const [stayRes, parkingRes, pujaRes] = await Promise.allSettled([
       bookingService.history(),
       parkingBookingService.list({ limit: 100 }),
+      pujaBookingService.listMine(),
     ]);
 
     const merged: UnifiedBooking[] = [];
@@ -210,7 +266,13 @@ export const useMyBookings = (enabled = true): UseMyBookingsResult => {
       failed.push("parking");
     }
 
-    if (failed.length === 2) {
+    if (pujaRes.status === "fulfilled" && pujaRes.value.data?.success) {
+      merged.push(...(pujaRes.value.data.data || []).map(fromPuja));
+    } else if (pujaRes.status === "rejected") {
+      failed.push("puja");
+    }
+
+    if (failed.length === 3) {
       const reason = stayRes.status === "rejected" ? stayRes.reason : null;
       setError(
         getErrorMessage(reason, "Could not load your bookings right now."),
@@ -239,11 +301,13 @@ export const useMyBookings = (enabled = true): UseMyBookingsResult => {
       total: bookings.length,
       stays: 0,
       parking: 0,
+      pujas: 0,
     };
     bookings.forEach((b) => {
       base[b.category] += 1;
       if (b.kind === "stay") base.stays += 1;
-      else base.parking += 1;
+      else if (b.kind === "parking") base.parking += 1;
+      else if (b.kind === "puja") base.pujas += 1;
     });
     return base;
   }, [bookings]);

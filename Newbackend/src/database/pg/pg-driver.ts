@@ -29,6 +29,8 @@ export interface PostgresDriverOptions {
   poolMax?: number;
   /** Run the TTL sweeper that replaces MongoDB TTL indexes (default true). */
   ttlSweep?: boolean;
+  /** Run schema verification against the database layout at connect (default true). */
+  verifySchema?: boolean;
 }
 
 let activeStore: PgStore | null = null;
@@ -60,7 +62,10 @@ export function enablePostgresDriver(options: PostgresDriverOptions, instance: t
     this._connectionString = uri;
     if (dbName != null) this.$dbName = dbName;
 
-    const client = new PgMongoClient(store, dbName, { ttlSweep: ttlSweep && dbName === undefined });
+    const client = new PgMongoClient(store, dbName, {
+      ttlSweep: ttlSweep && dbName === undefined,
+      verifySchema: options.verifySchema,
+    });
     this.client = client;
     try {
       await client.connect();

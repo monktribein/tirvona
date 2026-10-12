@@ -25,7 +25,7 @@
     /* Path Aliases */
     "paths": {
       "@/*": ["./src/*"],
-      "@pandit/*": ["./src/features/pandit/*"],
+      "@pandit/*": ["./src/modules/pandit/*"],
       "lucide-react": ["./src/design-system/icons/lucide-material-compat.tsx"]
     }
   },

@@ -103,7 +103,7 @@ export const getRoleDefaultDashboard = (
       return "/provider/dashboard";
 
     case "verification_reviewer":
-      return "/admin/verifications";
+      return "/admin/verifications/providers";
 
     case "offer_manager":
       return "/owner/offers";
