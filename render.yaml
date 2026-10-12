@@ -49,6 +49,15 @@ services:
         sync: false
       - key: ENCRYPTION_KEY
         sync: false
+      # Base64 32-byte key sealing pandit/ashram bank account numbers. Never rotate it.
+      - key: PAYOUT_ENCRYPTION_KEY
+        sync: false
+      - key: PROVIDER_WALLET_HOLD_HOURS
+        value: 72
+      - key: PROVIDER_PLATFORM_FEE_BPS
+        value: 0
+      - key: PROVIDER_MIN_WITHDRAWAL_MINOR
+        value: 10000
       - key: CLOUDINARY_CLOUD_NAME
         sync: false
       - key: CLOUDINARY_API_KEY

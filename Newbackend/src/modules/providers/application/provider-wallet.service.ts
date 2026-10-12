@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, type OnModuleInit } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import type { ClientSession, Model } from "mongoose";
@@ -63,7 +63,7 @@ const maskUpi = (upi: string) => {
  * a unique idempotency key, so retries never move money twice.
  */
 @Injectable()
-export class ProviderWalletService {
+export class ProviderWalletService implements OnModuleInit {
   private readonly logger = new Logger(ProviderWalletService.name);
   private sweeping = false;
 
@@ -79,6 +79,14 @@ export class ProviderWalletService {
     private readonly notifier: InAppNotificationService,
     private readonly crypto: BankAccountCrypto,
   ) {}
+
+  /** Say at startup, not on a pandit's first save, that bank details cannot be sealed. */
+  onModuleInit() {
+    if (process.env.NODE_ENV === "production" && !process.env.PAYOUT_ENCRYPTION_KEY?.trim())
+      this.logger.error(
+        "PAYOUT_ENCRYPTION_KEY is not set: pandits cannot save bank accounts for withdrawals (UPI still works). Set a base64 32-byte key.",
+      );
+  }
 
   // ================================================== booking hooks (money in)
   /**
@@ -380,7 +388,7 @@ export class ProviderWalletService {
         throw providerError.badRequest("INVALID_ACCOUNT_NUMBER", "Account number must be 9 to 18 digits");
       if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc))
         throw providerError.badRequest("INVALID_IFSC", "Enter a valid 11-character IFSC code");
-      const sealed = this.crypto.encrypt(number);
+      const sealed = this.seal(number);
       Object.assign(row, {
         accountNumberCiphertext: sealed.ciphertext,
         accountNumberIv: sealed.iv,
@@ -631,6 +639,18 @@ export class ProviderWalletService {
   }
 
   // ============================================================ internals
+  private seal(accountNumber: string) {
+    try {
+      return this.crypto.encrypt(accountNumber);
+    } catch (error) {
+      this.logger.error(`Cannot seal a pandit bank account: ${(error as Error).message}`);
+      throw providerError.unavailable(
+        "PAYOUT_ENCRYPTION_NOT_CONFIGURED",
+        "Bank accounts cannot be saved right now. Please add a UPI id instead, or try again later.",
+      );
+    }
+  }
+
   private async ensureWallet(providerId: unknown, userId: unknown, session: ClientSession) {
     return this.wallets.findOneAndUpdate(
       { providerId },

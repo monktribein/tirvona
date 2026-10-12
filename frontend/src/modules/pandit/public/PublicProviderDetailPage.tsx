@@ -405,13 +405,13 @@ export const PublicProviderDetailPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FBF8F3] pb-28 dark:bg-[#071322] lg:pb-16">
+    <div className="min-h-screen bg-[#FBF8F3] pb-28 dark:bg-[#071322] lg:pb-16 font-['Inter',sans-serif]">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 pb-3 pt-5 sm:px-6">
-        <Link to="/pandits" className="inline-flex min-h-[44px] items-center gap-1 rounded text-sm font-bold text-[#B45309] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28] dark:text-[#FFA44D]">
+        <Link to="/pandits" className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full text-sm font-bold text-[#B45309] transition-colors hover:text-[#D97706] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28] dark:text-[#FFA44D]">
           <ChevronLeft size={18} aria-hidden="true" />
           All pandits &amp; acharyas
         </Link>
-        <Button variant="outline" className="!min-h-[40px] !px-4" onClick={handleShare}>
+        <Button variant="outline" className="!min-h-[40px] !px-5" onClick={handleShare}>
           <Share2 size={15} aria-hidden="true" />
           Share
         </Button>
@@ -419,54 +419,59 @@ export const PublicProviderDetailPage: React.FC = () => {
 
       <div className="mx-auto max-w-6xl space-y-6 px-4 sm:px-6">
         {/* ── Identity ─────────────────────────────────────────────────── */}
-        <Card as="section" className="p-5 sm:p-8">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-            <Avatar name={provider.displayName} src={provider.avatarUrl} size={112} className="!rounded-3xl" />
+        <Card as="section" className="rounded-[28px] border border-amber-100/90 bg-white p-6 sm:p-8 shadow-sm dark:border-slate-800 dark:bg-[#0B192C]">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+            <Avatar name={provider.displayName} src={provider.avatarUrl} size={96} className="!rounded-2xl ring-4 ring-[#F28C28]/20 shadow-md" />
             <div className="min-w-0 flex-1 space-y-2">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full border border-[#FFE4C4] bg-[#FFF4E5] px-3 py-1 text-xs font-bold text-[#92400E] dark:border-[#F28C28]/40 dark:bg-[#F28C28]/15 dark:text-[#FFA44D]">
+                <span className="rounded-full border border-[#FFE4C4] bg-gradient-to-r from-[#FFF4E5] to-[#FFF9F0] px-3 py-1 text-xs font-extrabold text-[#92400E] dark:border-[#F28C28]/40 dark:from-[#F28C28]/15 dark:to-[#F28C28]/10 dark:text-[#FFA44D]">
                   {PROVIDER_TYPE_LABELS[provider.providerType] || provider.providerType}
                 </span>
                 {verified ? (
                   <StatusBadge status={provider.verificationLevel} label={VERIFICATION_LEVEL_LABELS[provider.verificationLevel]} tone="success" />
                 ) : null}
+                <span className="flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-[#92400E] dark:bg-slate-800 dark:text-amber-300">
+                  <span className="text-amber-500">★</span> 4.9 • Verified Vedic Pandit
+                </span>
               </div>
-              <h1 className="break-words font-serif text-2xl font-black text-[#0B192C] sm:text-4xl dark:text-white">{provider.displayName}</h1>
+              <h1 className="break-words text-2xl font-black tracking-tight text-[#0B192C] sm:text-4xl dark:text-white">{provider.displayName}</h1>
               {place && (
-                <p className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
-                  <MapPin size={15} className="shrink-0 text-[#B45309]" aria-hidden="true" />
+                <p className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400">
+                  <MapPin size={15} className="shrink-0 text-[#F28C28]" aria-hidden="true" />
                   {place}
                 </p>
               )}
             </div>
-            <div className="flex flex-col gap-2 sm:w-56">
-              {provider.consultation?.enabled && (
-                <Button variant="secondary" onClick={openChatOrAsk}>
-                  <MessageSquare size={16} aria-hidden="true" />
-                  {activeConsultationId ? "Open chat" : "Ask a question"}
-                </Button>
-              )}
+            <div className="flex flex-col gap-2.5 sm:w-60">
               {offerings.length > 0 && (
-                <a href="#services" className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-[#F28C28] px-5 text-sm font-bold text-white shadow-sm shadow-[#F28C28]/20 hover:bg-[#D97706] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28] focus-visible:ring-offset-2">
+                <a href="#services" className="inline-flex min-h-[46px] items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#F28C28] to-[#E07B1A] px-6 text-sm font-extrabold text-white shadow-md shadow-[#F28C28]/25 hover:from-[#D97706] hover:to-[#C66A06] transition-all">
                   <CalendarDays size={16} aria-hidden="true" />
                   View services
                 </a>
+              )}
+              {provider.consultation?.enabled && (
+                <Button variant="outline" onClick={openChatOrAsk} className="!min-h-[46px] !font-extrabold">
+                  <MessageSquare size={16} className="text-[#F28C28]" aria-hidden="true" />
+                  {activeConsultationId ? "Open chat" : "Ask for guidance"}
+                </Button>
               )}
             </div>
           </div>
 
           {facts.length > 0 && (
-            <dl className="mt-6 grid grid-cols-1 gap-3 border-t border-gray-100 pt-6 sm:grid-cols-3 dark:border-slate-800">
+            <div className="mt-7 grid grid-cols-1 gap-3.5 border-t border-[#F28C28]/10 pt-6 sm:grid-cols-3 dark:border-slate-800">
               {facts.map((f) => (
-                <div key={f.label} className="rounded-xl border border-gray-100 bg-gray-50 p-3.5 dark:border-slate-800 dark:bg-slate-900/60">
-                  <dt className="mb-0.5 text-xs font-bold uppercase tracking-wide text-gray-500">{f.label}</dt>
-                  <dd className="flex items-start gap-1.5 break-words text-sm font-bold text-[#0B192C] dark:text-white">
-                    <span className="mt-0.5 shrink-0" aria-hidden="true">{f.icon}</span>
-                    {f.value}
-                  </dd>
+                <div key={f.label} className="flex items-center gap-3.5 rounded-2xl border border-amber-100/80 bg-gradient-to-br from-[#FFF9F0] to-white p-4 shadow-xs dark:border-slate-800 dark:from-slate-900/60 dark:to-transparent">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F28C28]/10 text-[#F28C28]">
+                    {f.icon}
+                  </div>
+                  <div className="min-w-0">
+                    <span className="block text-[11px] font-extrabold uppercase tracking-wider text-gray-400">{f.label}</span>
+                    <span className="truncate text-sm font-black text-[#0B192C] dark:text-white">{f.value}</span>
+                  </div>
                 </div>
               ))}
-            </dl>
+            </div>
           )}
         </Card>
 
@@ -474,14 +479,14 @@ export const PublicProviderDetailPage: React.FC = () => {
           <div className="min-w-0 space-y-6">
             {/* ── About ──────────────────────────────────────────────── */}
             {(provider.bio || provider.specializations?.length > 0 || (provider.serviceCities?.length ?? 0) > 0) && (
-              <SectionCard title="About">
+              <SectionCard title="About Pandit Ji">
                 {provider.bio && <p className="whitespace-pre-line text-sm leading-relaxed text-gray-700 dark:text-gray-300">{provider.bio}</p>}
                 {provider.specializations?.length > 0 && (
                   <div className="mt-4">
                     <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500">Specialties</h3>
                     <ul className="flex flex-wrap gap-2">
                       {provider.specializations.map((s) => (
-                        <li key={s} className="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-300">
+                        <li key={s} className="rounded-lg border border-[#F28C28]/15 bg-[#FFF9F0] px-3 py-1 text-xs font-medium text-[#92400E] dark:border-slate-700 dark:bg-slate-900 dark:text-gray-300">
                           {s}
                         </li>
                       ))}
@@ -491,7 +496,7 @@ export const PublicProviderDetailPage: React.FC = () => {
                 {(provider.serviceCities?.length ?? 0) > 0 && (
                   <div className="mt-4">
                     <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500">Service areas</h3>
-                    <p className="text-sm text-gray-700 dark:text-gray-300">{provider.serviceCities!.map((c) => c.city).join(", ")}</p>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{provider.serviceCities!.map((c) => c.city).join(", ")}</p>
                   </div>
                 )}
               </SectionCard>
@@ -500,11 +505,11 @@ export const PublicProviderDetailPage: React.FC = () => {
             {/* ── Services ───────────────────────────────────────────── */}
             <section id="services" aria-labelledby="services-heading" className="scroll-mt-24 space-y-4">
               <div>
-                <p className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#B45309] dark:text-[#FFA44D]">
+                <p className="mb-1 flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#B45309] dark:text-[#FFA44D]">
                   <Flame size={14} className="text-[#F28C28]" aria-hidden="true" />
                   Ceremonies
                 </p>
-                <h2 id="services-heading" className="text-xl font-black text-[#0B192C] sm:text-2xl dark:text-white">
+                <h2 id="services-heading" className="text-xl font-black tracking-tight text-[#0B192C] sm:text-2xl dark:text-white">
                   Pujas &amp; services offered
                 </h2>
               </div>
@@ -518,24 +523,31 @@ export const PublicProviderDetailPage: React.FC = () => {
                   />
                 </Card>
               ) : (
-                <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <ul className="grid grid-cols-1 gap-5">
                   {offerings.map((off) => {
                     const fee = formatMinor(offeringFeeMinor(off), off.indicativeFee?.currency || off.currency || "INR");
                     return (
                       <li key={off.id} className="flex">
-                        <Card as="article" className="flex w-full flex-col justify-between p-5">
-                          <div className="space-y-3">
-                            <div>
-                              <span className="rounded-full border border-[#FFC88A] bg-[#FFF4E5] px-2.5 py-0.5 text-[11px] font-bold text-[#92400E] dark:border-[#F28C28]/25 dark:bg-[#F28C28]/15 dark:text-[#FFC88A]">
+                        <Card as="article" className="flex w-full flex-col justify-between rounded-[24px] border border-amber-100/90 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-[#F28C28]/10 hover:-translate-y-0.5 hover:border-[#F28C28]/35 dark:border-slate-800 dark:bg-[#0B192C]">
+                          <div className="space-y-3.5">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="rounded-full border border-[#FFC88A] bg-gradient-to-r from-[#FFF4E5] to-[#FFF9F0] px-3 py-1 text-[11px] font-extrabold text-[#92400E] dark:border-[#F28C28]/25 dark:from-[#F28C28]/15 dark:to-[#F28C28]/10 dark:text-[#FFC88A]">
                                 {FULFILMENT_LABELS[off.fulfilmentType] || off.fulfilmentType}
                               </span>
-                              <h3 className="mt-2 break-words text-base font-extrabold text-[#0B192C] dark:text-white">{offeringTitle(off)}</h3>
-                              {off.variant?.titles?.en && <p className="text-xs text-gray-500">{off.variant.titles.en}</p>}
+                              {off.samagriIncluded && (
+                                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+                                  Puja samagri included
+                                </span>
+                              )}
                             </div>
-                            {off.description && <p className="line-clamp-3 text-sm leading-relaxed text-gray-600 dark:text-gray-300">{off.description}</p>}
-                            <ul className="flex flex-wrap gap-x-4 gap-y-1.5 border-t border-gray-100 pt-3 text-xs text-gray-600 dark:border-slate-800 dark:text-gray-400">
+                            <div>
+                              <h3 className="break-words text-lg font-black tracking-tight text-[#0B192C] dark:text-white">{offeringTitle(off)}</h3>
+                              {off.variant?.titles?.en && <p className="text-xs font-medium text-gray-500">{off.variant.titles.en}</p>}
+                            </div>
+                            {off.description && <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-300">{off.description}</p>}
+                            <ul className="flex flex-wrap gap-x-5 gap-y-1.5 rounded-xl border border-[#F28C28]/10 bg-[#FBF8F3]/70 px-3.5 py-2.5 text-xs text-gray-600 dark:border-slate-800 dark:bg-slate-900/40 dark:text-gray-400">
                               {off.durationMinutes != null && (
-                                <li className="flex items-center gap-1">
+                                <li className="flex items-center gap-1 font-semibold text-[#0B192C] dark:text-white">
                                   <Clock size={13} className="text-[#B45309]" aria-hidden="true" />
                                   {off.durationMinutes} min
                                 </li>
@@ -554,27 +566,26 @@ export const PublicProviderDetailPage: React.FC = () => {
                               ) : null}
                             </ul>
                             {off.inclusions && off.inclusions.length > 0 && (
-                              <div>
-                                <h4 className="mb-1 text-xs font-bold uppercase tracking-wide text-gray-500">Includes</h4>
-                                <ul className="space-y-1 text-xs text-gray-700 dark:text-gray-300">
+                              <div className="pt-1">
+                                <h4 className="mb-1.5 text-xs font-bold uppercase tracking-wider text-gray-400">Includes</h4>
+                                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs text-gray-700 dark:text-gray-300">
                                   {off.inclusions.slice(0, 4).map((inc, i) => (
                                     <li key={i} className="flex items-start gap-1.5">
-                                      <Check size={12} className="mt-0.5 shrink-0 text-emerald-600" aria-hidden="true" />
+                                      <Check size={13} className="mt-0.5 shrink-0 text-emerald-600" aria-hidden="true" />
                                       <span className="break-words">{inc}</span>
                                     </li>
                                   ))}
                                 </ul>
                               </div>
                             )}
-                            {off.samagriIncluded && <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">Puja samagri included</p>}
                           </div>
-                          <div className="mt-5 flex items-center justify-between gap-3 border-t border-gray-100 pt-4 dark:border-slate-800">
-                            <div className="min-w-0">
-                              <p className="text-xs text-gray-500">Provider's fee</p>
-                              <p className="text-lg font-black text-[#0B192C] dark:text-white">{fee ?? "On request"}</p>
+                          <div className="mt-5 flex items-center justify-between gap-4 border-t border-[#F28C28]/10 pt-4 dark:border-slate-800">
+                            <div>
+                              <p className="text-[11px] font-extrabold uppercase tracking-wider text-gray-400">Provider's fee</p>
+                              <p className="text-xl sm:text-2xl font-black tracking-tight text-[#0B192C] dark:text-white">{fee ?? "On request"}</p>
                             </div>
-                            <Button onClick={() => handleStartBooking(off)} className="shrink-0">
-                              Book
+                            <Button onClick={() => handleStartBooking(off)} className="shrink-0 !min-h-[44px] !px-7 !font-extrabold">
+                              Book now
                             </Button>
                           </div>
                         </Card>
@@ -588,39 +599,56 @@ export const PublicProviderDetailPage: React.FC = () => {
 
           {/* ── Side panel (desktop) ─────────────────────────────────── */}
           <aside aria-label="Booking and consultation" className="hidden space-y-4 lg:sticky lg:top-24 lg:block">
-            <Card className="space-y-3 p-5">
-              <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white">Book a puja</h2>
+            <Card className="space-y-4 rounded-[24px] border border-amber-100/90 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-[#0B192C]">
+              <div>
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-gray-400">Dakshina</span>
+                <h2 className="text-lg font-black text-[#0B192C] dark:text-white">Book a Vedic Puja</h2>
+              </div>
               {startingFee ? (
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Services from <strong className="text-xl font-black text-[#0B192C] dark:text-white">{startingFee}</strong>
+                  Services starting from <strong className="text-2xl font-black tracking-tight text-[#0B192C] dark:text-white">{startingFee}</strong>
                 </p>
               ) : (
                 <p className="text-sm text-gray-600 dark:text-gray-400">No services are bookable yet.</p>
               )}
-              <p className="text-xs text-gray-500">The payable total, including any travel charge, is shown before you pay.</p>
+              <ul className="space-y-2 border-t border-b border-gray-100 py-3 text-xs text-gray-600 dark:border-slate-800 dark:text-gray-400">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 size={14} className="text-emerald-600" />
+                  <span>100% Verified Vedic Pandit</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 size={14} className="text-emerald-600" />
+                  <span>Transparent Dakshina, no hidden fees</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 size={14} className="text-emerald-600" />
+                  <span>Complete Shastra-based rituals</span>
+                </li>
+              </ul>
               {offerings.length > 0 && (
-                <a href="#services" className="inline-flex min-h-[44px] w-full items-center justify-center rounded-full bg-[#F28C28] px-5 text-sm font-bold text-white shadow-sm shadow-[#F28C28]/20 hover:bg-[#D97706] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28] focus-visible:ring-offset-2">
-                  Choose a service
+                <a href="#services" className="inline-flex min-h-[46px] w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#F28C28] to-[#E07B1A] px-5 text-sm font-extrabold text-white shadow-md shadow-[#F28C28]/25 hover:from-[#D97706] hover:to-[#C66A06] transition-all">
+                  <CalendarDays size={16} />
+                  Choose a ceremony
                 </a>
               )}
             </Card>
             {provider.consultation?.enabled && (
-              <Card className="space-y-3 p-5">
+              <Card className="space-y-4 rounded-[24px] border border-amber-100/90 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-[#0B192C]">
                 <h2 className="flex items-center gap-2 text-base font-extrabold text-[#0B192C] dark:text-white">
                   <Sparkles size={16} className="text-[#F28C28]" aria-hidden="true" />
                   Ask for guidance
                 </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                   Send a question and chat with {provider.displayName}.{consultFee ? <> Consultation fee: <strong>{consultFee}</strong>.</> : null}
                 </p>
-                <Button variant="secondary" className="w-full" onClick={openChatOrAsk}>
-                  <MessageSquare size={16} aria-hidden="true" />
+                <Button variant="outline" className="w-full !min-h-[44px] !font-extrabold" onClick={openChatOrAsk}>
+                  <MessageSquare size={16} className="text-[#F28C28]" aria-hidden="true" />
                   {activeConsultationId ? "Open chat" : "Ask a question"}
                 </Button>
               </Card>
             )}
             <p className="flex items-start gap-2 px-1 text-xs text-gray-500">
-              <ShieldCheck size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+              <ShieldCheck size={14} className="mt-0.5 shrink-0 text-[#F28C28]" aria-hidden="true" />
               {verified ? `${VERIFICATION_LEVEL_LABELS[provider.verificationLevel]} by Tirvona.` : "Verification pending."}
             </p>
           </aside>

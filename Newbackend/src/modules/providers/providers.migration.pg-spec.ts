@@ -2,8 +2,8 @@
 /**
  * Applies the real migration files (not the registry-derived DDL the other
  * suites use) to an empty Postgres, then checks the result against the layout
- * the API demands at startup, and that the rollback script undoes exactly the
- * provider tables.
+ * the API demands at startup, and that the rollback scripts undo exactly the
+ * provider tables (newest migration first).
  */
 import { randomBytes } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
@@ -14,12 +14,18 @@ import { PgStore } from "../../database/pg/pg-store";
 
 const ROOT = join(__dirname, "..", "..", "..");
 const MIGRATIONS = join(ROOT, "database", "migrations");
-const ROLLBACK = join(ROOT, "database", "rollback", "0003_providers_foundation.down.sql");
-const PROVIDER_TABLES = [
+const rollbackOf = (migration: string) =>
+  join(ROOT, "database", "rollback", migration.replace(/\.sql$/, ".down.sql"));
+
+const FOUNDATION = "0003_providers_foundation.sql";
+const WALLET = "0004_provider_wallet.sql";
+const FOUNDATION_TABLES = [
   "availability_rules", "calendar_blocks", "consultation_messages", "expert_consultations", "idempotency_keys",
   "provider_booking_state_history", "provider_bookings", "provider_offerings", "provider_private_profiles",
   "provider_profiles", "ritual_variants", "rituals", "verification_cases", "verification_evidence",
 ];
+const WALLET_TABLES = ["provider_wallets", "provider_wallet_entries", "provider_payout_accounts", "provider_withdrawals"];
+const PROVIDER_TABLES = [...FOUNDATION_TABLES, ...WALLET_TABLES];
 
 // Same preprocessing as database/migrate.js: each file runs inside its own transaction.
 const sqlOf = (file: string) => readFileSync(join(MIGRATIONS, file), "utf8").replace(/^\s*(BEGIN|COMMIT);\s*$/gm, "");
@@ -30,6 +36,10 @@ describe("provider migration files (real Postgres)", () => {
 
   const tableExists = async (name: string) =>
     (await pool.query(`SELECT to_regclass('public.${name}') AS t`)).rows[0].t !== null;
+  const tableCount = async () =>
+    (await pool.query("SELECT count(*)::int AS n FROM information_schema.tables WHERE table_schema = 'public'")).rows[0].n;
+  const recorded = async (migration: string) =>
+    (await pool.query(`SELECT count(*)::int AS n FROM public.schema_migrations WHERE name = '${migration}'`)).rows[0].n;
 
   beforeAll(async () => {
     const adminUrl = process.env.PG_TEST_URL as string;
@@ -55,7 +65,8 @@ describe("provider migration files (real Postgres)", () => {
 
   it("applies every migration in order to an empty database", async () => {
     const files = readdirSync(MIGRATIONS).filter((f) => /^\d{4}_[a-z0-9_]+\.sql$/.test(f)).sort();
-    expect(files.at(-1)).toBe("0003_providers_foundation.sql");
+    expect(files).toEqual(expect.arrayContaining([FOUNDATION, WALLET]));
+    expect(files.indexOf(WALLET)).toBeGreaterThan(files.indexOf(FOUNDATION));
     for (const file of files) await pool.query(sqlOf(file));
     for (const table of PROVIDER_TABLES) expect(await tableExists(table)).toBe(true);
   });
@@ -82,24 +93,41 @@ describe("provider migration files (real Postgres)", () => {
     await insert("idempotency_keys", "key, operation, actor_id", "'k', 'op', 'a'");
     await expect(insert("idempotency_keys", "key, operation, actor_id", "'k', 'op', 'a'")).rejects.toThrow(/unique|duplicate/i);
     await insert("idempotency_keys", "key, operation, actor_id", "'k', 'op', 'b'"); // different caller is independent
+
+    // Wallet: one wallet per provider; a ledger entry is written once per idempotency key, so a
+    // retried payment or refund cannot move money twice; one active payout account per provider.
+    await insert("provider_wallets", "provider_id, user_id", "'p1', 'u1'");
+    await expect(insert("provider_wallets", "provider_id, user_id", "'p1', 'u1'")).rejects.toThrow(/unique|duplicate/i);
+    await insert("provider_wallet_entries", "provider_id, idempotency_key", "'p1', 'earning-b1'");
+    await expect(insert("provider_wallet_entries", "provider_id, idempotency_key", "'p1', 'earning-b1'")).rejects.toThrow(/unique|duplicate/i);
+    await insert("provider_payout_accounts", "provider_id, active", "'p1', true");
+    await expect(insert("provider_payout_accounts", "provider_id, active", "'p1', true")).rejects.toThrow(/unique|duplicate/i);
+    await insert("provider_payout_accounts", "provider_id, active", "'p1', false"); // replaced accounts are kept
+    await insert("provider_withdrawals", "withdrawal_number, provider_id", "'PWD-1', 'p1'");
+    await expect(insert("provider_withdrawals", "withdrawal_number, provider_id", "'PWD-1', 'p1'")).rejects.toThrow(/unique|duplicate/i);
   });
 
-  it("rolls back exactly the provider tables and leaves the rest alone", async () => {
+  it("rolls back exactly the provider tables, newest first, and leaves the rest alone", async () => {
     await pool.query("CREATE TABLE IF NOT EXISTS public.schema_migrations (name text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())");
-    await pool.query("INSERT INTO public.schema_migrations (name) VALUES ('0003_providers_foundation.sql')");
-    const before = (await pool.query("SELECT count(*)::int AS n FROM information_schema.tables WHERE table_schema = 'public'")).rows[0].n;
+    await pool.query(`INSERT INTO public.schema_migrations (name) VALUES ('${FOUNDATION}'), ('${WALLET}')`);
+    const before = await tableCount();
 
-    await pool.query(readFileSync(ROLLBACK, "utf8"));
+    await pool.query(readFileSync(rollbackOf(WALLET), "utf8"));
+    for (const table of WALLET_TABLES) expect(await tableExists(table)).toBe(false);
+    for (const table of FOUNDATION_TABLES) expect(await tableExists(table)).toBe(true);
+    expect(await recorded(WALLET)).toBe(0);
+    expect(await recorded(FOUNDATION)).toBe(1);
 
+    await pool.query(readFileSync(rollbackOf(FOUNDATION), "utf8"));
     for (const table of PROVIDER_TABLES) expect(await tableExists(table)).toBe(false);
-    const after = (await pool.query("SELECT count(*)::int AS n FROM information_schema.tables WHERE table_schema = 'public'")).rows[0].n;
-    expect(before - after).toBe(PROVIDER_TABLES.length);
+    expect(before - (await tableCount())).toBe(PROVIDER_TABLES.length);
     expect(await tableExists("users")).toBe(true);
-    expect((await pool.query("SELECT count(*)::int AS n FROM public.schema_migrations WHERE name = '0003_providers_foundation.sql'")).rows[0].n).toBe(0);
+    expect(await recorded(FOUNDATION)).toBe(0);
   });
 
   it("can be applied again after a rollback", async () => {
-    await pool.query(sqlOf("0003_providers_foundation.sql"));
+    await pool.query(sqlOf(FOUNDATION));
+    await pool.query(sqlOf(WALLET));
     for (const table of PROVIDER_TABLES) expect(await tableExists(table)).toBe(true);
     await expect(new PgStore(pool, REGISTRY).verifySchema()).resolves.not.toThrow();
   });
