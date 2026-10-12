@@ -4,8 +4,8 @@ import {
   Logger,
 } from "@nestjs/common";
 import { ModuleRef } from "@nestjs/core";
-import { getModelToken } from "@nestjs/mongoose";
-import type { Model } from "mongoose";
+import { getModelToken } from "../../../database/orm-nest";
+import type { Model } from "../../../database/orm";
 
 export interface DeletionBlocker {
   code: string;

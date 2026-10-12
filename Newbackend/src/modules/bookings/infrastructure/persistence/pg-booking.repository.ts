@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, Optional } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import type { ClientSession, Model } from "mongoose";
+import { InjectModel } from "../../../../database/orm-nest";
+import type { ClientSession, Model } from "../../../../database/orm";
 import type { BookingRepository } from "../../domain/booking.repository";
 import {
   activeDayStayFilter,
@@ -10,7 +10,7 @@ import {
 } from "../../../day-stay/domain/day-stay-occupancy";
 
 @Injectable()
-export class MongooseBookingRepository implements BookingRepository {
+export class PgBookingRepository implements BookingRepository {
   constructor(
     @InjectModel("BookingInventory") private readonly inventory: Model<any>,
     @Optional() @InjectModel("Booking") private readonly bookings?: Model<any>,

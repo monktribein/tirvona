@@ -12,7 +12,7 @@ The Tirvona repository is an established pilgrimage accommodation and spiritual 
 
 ### Technology Stack Summary
 - **Backend**: NestJS (v11), TypeScript (v5.9), Express, Socket.IO, BullMQ for async queues, Pino for HTTP logging.
-- **Database**: MongoDB with Mongoose (v9.9), utilizing optimistic concurrency (`versionKey` / version numbers) and partial unique indexes.
+- **Database**: Supabase PostgreSQL, utilizing optimistic concurrency (`versionKey` / version numbers) and partial unique indexes.
 - **Frontend**: React 19, TypeScript, Vite 6, TailwindCSS v3, Framer Motion, TanStack React Query v5, Lucide Icons, Axios, i18next.
 - **Authentication & RBAC**: JWT Bearer Tokens, Passport JWT & Google OAuth 2.0 strategies, Role-based access control (`roles.guard.ts` supporting `customer`, `ashram_owner`, `ashram_staff`, `admin`, `super_admin`).
 - **Payments**: Razorpay Node SDK, webhook validation, refund handling via Razorpay refunds API.
@@ -58,7 +58,7 @@ The Tirvona repository is an established pilgrimage accommodation and spiritual 
 - Inventory Reservation:
   - Uses `BookingInventoryHoldSchema` (`booking_inventory` collection) indexed by `{ bookingId, roomId }` with `state: "held" | "confirmed" | "released" | "expired"` and TTL index on `expiresAt`.
 - Concurrency Control:
-  - Optimistic locking via mongoose versioning + MongoDB atomic `$inc` updates with conditional filters (`totalInventory - (bookedCount + heldCount) >= requestedUnits`) to prevent overselling.
+  - Optimistic locking via document versioning + atomic `$inc` updates with conditional filters (`totalInventory - (bookedCount + heldCount) >= requestedUnits`) to prevent overselling.
 
 ---
 
@@ -115,7 +115,7 @@ The Tirvona repository is an established pilgrimage accommodation and spiritual 
 ## 8. Technical Risks & Recommended Approach
 
 1. **Double Booking / Race Conditions**: High concurrency during Vrindavan peak festival days (e.g., Janmashtami, Radhashtami).
-   - *Mitigation*: Leverage MongoDB atomic `$expr` conditional operators and transactional slot reservation locks with 10-minute hold TTL.
+   - *Mitigation*: Leverage atomic `$expr` conditional updates and transactional slot reservation locks with 10-minute hold TTL.
 2. **Backward Compatibility**: Existing overnight booking API & mobile/web consumers must not break.
    - *Mitigation*: Default `bookingType = 'overnight'` on all schemas and maintain identical responses for overnight queries.
 3. **Family/Pilgrim Brand Safety**: Avoiding generic "hourly hotel" optics.

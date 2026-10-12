@@ -32,6 +32,6 @@
 
 ## 2. Summary of Key Architectural Findings
 
-1. **Maximum Reuse**: The existing NestJS backend module structure (`application`, `domain`, `infrastructure`, `presentation`) and MongoDB Mongoose schemas can be cleanly extended with zero breaking changes to overnight stays.
+1. **Maximum Reuse**: The existing NestJS backend module structure (`application`, `domain`, `infrastructure`, `presentation`) and model schemas can be cleanly extended with zero breaking changes to overnight stays.
 2. **Backward Compatibility**: By making `bookingType` default to `'overnight'`, all existing queries and client code continue functioning without alteration.
 3. **High Performance**: In-memory and index-backed time interval overlap queries (`{ $lt: requestedEnd, $gt: requestedStart }`) will provide sub-50ms availability lookups.

@@ -1,4 +1,4 @@
-import { Schema } from "mongoose";
+import { Schema } from "../../../../database/orm";
 import { randomUUID } from "node:crypto";
 import {
   SMART_CONTACT_BRANDS,

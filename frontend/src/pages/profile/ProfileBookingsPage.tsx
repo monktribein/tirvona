@@ -21,6 +21,8 @@ import { bookingService } from "../../services";
 import { formatCurrency, formatSlotTime } from "../../utils/format";
 import { parkingBookingService } from "../../modules/parking/services/parking.service";
 import { StatusBadge, pujaBookingService } from "../../modules/pandit";
+import { PujaProcessButton } from "../../modules/pandit/components/PujaProcessGuide";
+import { WatchLiveButton } from "../../modules/pandit/components/YouTubeLive";
 import { getErrorMessage } from "../../lib/api";
 import useMyBookings, {
   type BookingCategory,
@@ -129,32 +131,6 @@ export const ProfileBookingsPage: React.FC = () => {
     }
   };
 
-  const handleJoinZoom = async (b: UnifiedBooking) => {
-    const directJoin = b.rawBooking?.zoomMeeting?.joinUrl;
-    if (directJoin) {
-      window.open(directJoin, "_blank", "noopener,noreferrer");
-      return;
-    }
-    try {
-      const res = await pujaBookingService.getZoomMeeting(b.id);
-      // API shape: { success, configured, data: { joinUrl, ... } | null }
-      if (res.data?.success && res.data.data?.joinUrl) {
-        window.open(res.data.data.joinUrl, "_blank", "noopener,noreferrer");
-      } else {
-        addNotification(
-          "Zoom Session Not Ready",
-          "The Acharya has not launched the Zoom live session yet. Please check back closer to the ceremony time.",
-          "info",
-        );
-      }
-    } catch {
-      addNotification(
-        "Live Pooja Session",
-        "The Acharya has not started the live video session yet. Please join at the scheduled ceremony time.",
-        "info",
-      );
-    }
-  };
 
   if (!authLoading && !user) {
     return (
@@ -357,6 +333,11 @@ export const ProfileBookingsPage: React.FC = () => {
                         )}
                         {b.kind === "parking" ? "Parking" : b.kind === "puja" ? "Puja" : "Stay"}
                       </span>
+                      {b.kind === "puja" && b.rawBooking?.deliveryMode === "LIVE_ONLINE" && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-black text-white">
+                          <Video size={10} /> Live online
+                        </span>
+                      )}
                     </div>
 
                     <Link
@@ -489,15 +470,12 @@ export const ProfileBookingsPage: React.FC = () => {
                       </Link>
                     )}
 
+                    {b.kind === "puja" && (
+                      <PujaProcessButton ritualId={b.rawBooking?.ritual?.id} title={b.rawBooking?.ritual?.titles?.en} viewer="DEVOTEE" className="!min-h-[34px] !text-xs" />
+                    )}
+
                     {b.kind === "puja" && ["CONFIRMED", "PROVIDER_ACCEPTED", "PREPARATION_IN_PROGRESS", "READY_FOR_FULFILMENT", "IN_PROGRESS"].includes(b.status) && (
-                      <EnterpriseButton
-                        variant="primary"
-                        size="sm"
-                        className="gap-1.5 text-xs bg-blue-600 hover:bg-blue-700 !text-white"
-                        onClick={() => handleJoinZoom(b)}
-                      >
-                        <Video size={14} /> Join live pooja
-                      </EnterpriseButton>
+                      <WatchLiveButton stream={b.rawBooking?.liveStream} title={b.rawBooking?.ritual?.titles?.en} className="!min-h-[34px] !text-xs" />
                     )}
 
                     {b.cancellable && (

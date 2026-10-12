@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
-import { MongooseModule } from "@nestjs/mongoose";
+import { OrmModule } from "../../database/orm-nest";
 import { AshramsModule } from "../ashrams/ashrams.module";
 import { BookingsModule } from "../bookings/bookings.module";
 import { PayoutReconciliationService } from "./application/payout-reconciliation.service";
@@ -15,7 +15,7 @@ import { PayoutsController } from "./presentation/payouts.controller";
 @Module({
   imports: [
     ConfigModule.forFeature(payoutConfig),
-    MongooseModule.forFeature(PAYOUT_MODELS),
+    OrmModule.forFeature(PAYOUT_MODELS),
     AshramsModule,
     BookingsModule,
   ],

@@ -1,6 +1,7 @@
+import { parseYouTubeUrl } from "../domain/youtube";
 import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import type { Model } from "mongoose";
+import { InjectModel } from "../../../database/orm-nest";
+import type { Model } from "../../../database/orm";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { TransactionService } from "../../../common/database/transaction.service";
 import bcrypt from "bcryptjs";
@@ -186,7 +187,12 @@ export class ProviderProfileService {
   /** Public detail. Anything not publicly listable is "not found", not "forbidden". */
   async getPublic(idOrSlug: string) {
     const profile = await this.findPublicProfile(idOrSlug);
-    return { success: true, data: toPublicProvider(profile) };
+    // Real numbers only: what this pandit has actually completed on Tirvona.
+    const completedBookings = await this.bookings.countDocuments({
+      providerId: profile._id,
+      status: { $in: ["COMPLETED", "SETTLEMENT_PENDING", "CLOSED"] },
+    });
+    return { success: true, data: { ...toPublicProvider(profile), stats: { completedBookings } } };
   }
 
   /** Resolves a publicly listable provider by id or slug, re-checking every listing rule at read time. */
@@ -261,6 +267,33 @@ export class ProviderProfileService {
   }
 
   /** Provider-permitted status moves: ONBOARDING/INACTIVE -> ACTIVE (needs verified identity), ACTIVE -> INACTIVE. */
+  /** The dashboard's "Live online available" switch: devotees can then book a live video katha / puja. */
+  async setLiveOnline(user: AuthenticatedUser, enabled: boolean, youtubeUrl?: string) {
+    const profile = await this.requireOwn(user);
+    this.assertNotSuspended(profile);
+    let link = profile.liveOnline?.youtubeUrl ?? null;
+    if (youtubeUrl !== undefined && youtubeUrl.trim() !== "") {
+      const parsed = parseYouTubeUrl(youtubeUrl);
+      if (!parsed)
+        throw providerError.badRequest(
+          "INVALID_YOUTUBE_LINK",
+          "Enter a YouTube link, e.g. https://www.youtube.com/@yourchannel/live",
+        );
+      link = parsed.url;
+    }
+    if (enabled && !link)
+      throw providerError.badRequest(
+        "YOUTUBE_LINK_REQUIRED",
+        "Add your YouTube live link before going live online.",
+      );
+    await this.profiles.updateOne(
+      { _id: profile._id },
+      { $set: { liveOnline: { enabled, youtubeUrl: link, updatedAt: new Date() } } },
+    );
+    await this.audit.log(user, "profile.live_online", "provider_profile", profile._id, { enabled });
+    return { success: true, data: await this.ownerView(profile._id) };
+  }
+
   async setOwnStatus(user: AuthenticatedUser, status: "ACTIVE" | "INACTIVE") {
     const profile = await this.requireOwn(user);
     this.assertNotSuspended(profile);
@@ -574,6 +607,11 @@ export class ProviderProfileService {
       serviceAreas: profile.serviceAreas ?? [],
       travelProfile: profile.travelProfile ?? {},
       consultation: profile.consultation ?? { enabled: false },
+      liveOnline: {
+        enabled: Boolean(profile.liveOnline?.enabled),
+        youtubeUrl: profile.liveOnline?.youtubeUrl ?? null,
+        updatedAt: profile.liveOnline?.updatedAt ?? null,
+      },
       status: profile.status,
       statusReason: profile.statusReason ?? null,
       verificationLevel: profile.verificationLevel as VerificationLevel,

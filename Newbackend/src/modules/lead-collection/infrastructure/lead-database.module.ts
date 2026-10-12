@@ -1,6 +1,5 @@
 import { Module } from "@nestjs/common";
-import { MongooseModule } from "@nestjs/mongoose";
-import { leadCollectionConfig } from "../config/lead-collection.config";
+import { OrmModule } from "../../../database/orm-nest";
 import { DRIVER_URI, LEAD_DATABASE, configureDatabase } from "../../../database/database";
 import {
   LEAD_ATTENDANCE_MODEL,
@@ -18,34 +17,14 @@ import { LeadLocationPingSchema } from "./persistence/lead-location-ping.schema"
 
 @Module({
   imports: [
-    MongooseModule.forRootAsync({
+    OrmModule.forRootAsync({
       connectionName: LEAD_CONNECTION,
       useFactory: () => {
-        const dataBackend =
-          process.env.DATA_BACKEND ??
-          (process.env.SUPABASE_DB_URL ? "supabase" : "mongo");
-
-        if (dataBackend === "supabase") {
-          configureDatabase();
-          return {
-            uri: DRIVER_URI,
-            dbName: LEAD_DATABASE,
-          };
-        }
-
-        const config = leadCollectionConfig();
-        return {
-          uri: config.mongoUri,
-          dbName: config.mongoDbName,
-          autoIndex: process.env.NODE_ENV !== "production",
-          minPoolSize: 1,
-          maxPoolSize: 5,
-          serverSelectionTimeoutMS: 10_000,
-          socketTimeoutMS: 45_000,
-        };
+        configureDatabase();
+        return { uri: DRIVER_URI, dbName: LEAD_DATABASE };
       },
     }),
-    MongooseModule.forFeature(
+    OrmModule.forFeature(
       [
         { name: LEAD_USER_MODEL, schema: LeadUserSchema },
         { name: LEAD_MODEL, schema: LeadSchema },
@@ -56,6 +35,6 @@ import { LeadLocationPingSchema } from "./persistence/lead-location-ping.schema"
       LEAD_CONNECTION,
     ),
   ],
-  exports: [MongooseModule],
+  exports: [OrmModule],
 })
 export class LeadDatabaseModule {}

@@ -1,4 +1,4 @@
-import { Schema } from "mongoose";
+import { Schema } from "../../../../database/orm";
 import {
   LEAD_LOCATION_PING_COLLECTION,
   LEAD_TRACKING,

@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
+import { InjectModel } from "../../../database/orm-nest";
 import { randomBytes, randomUUID } from "node:crypto";
-import { isValidObjectId, Types, type Model } from "mongoose";
+import { isValidObjectId, Types, type Model } from "../../../database/orm";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { BankAccountCrypto } from "../../payouts/infrastructure/bank-account.crypto";
 import { mapProviderStatus, type PayoutProvider } from "../../payouts/domain/payout.types";

@@ -1,7 +1,7 @@
-import { Injectable, Logger } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
+import { Injectable, Logger, type OnModuleInit } from "@nestjs/common";
+import { InjectModel } from "../../../database/orm-nest";
 import { Cron, CronExpression } from "@nestjs/schedule";
-import type { ClientSession, Model } from "mongoose";
+import type { ClientSession, Model } from "../../../database/orm";
 import { TransactionService } from "../../../common/database/transaction.service";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { InAppNotificationService } from "../../notifications/application/in-app-notification.service";
@@ -11,10 +11,10 @@ import {
   WITHDRAWAL_NUMBER_PREFIX,
   paymentMethodOf,
   providerWalletConfig,
-  splitEarning,
   type ProviderWithdrawalStatus,
 } from "../domain/provider-wallet.constants";
 import { providerError } from "../domain/provider.errors";
+import { earningOf, providerPlatformFeeBps } from "../domain/platform-fee";
 import { pageParams } from "../presentation/dto/common.dto";
 import type {
   AdminWithdrawalQueryDto,
@@ -63,7 +63,7 @@ const maskUpi = (upi: string) => {
  * a unique idempotency key, so retries never move money twice.
  */
 @Injectable()
-export class ProviderWalletService {
+export class ProviderWalletService implements OnModuleInit {
   private readonly logger = new Logger(ProviderWalletService.name);
   private sweeping = false;
 
@@ -80,6 +80,14 @@ export class ProviderWalletService {
     private readonly crypto: BankAccountCrypto,
   ) {}
 
+  /** Say at startup, not on a pandit's first save, that bank details cannot be sealed. */
+  onModuleInit() {
+    if (process.env.NODE_ENV === "production" && !process.env.PAYOUT_ENCRYPTION_KEY?.trim())
+      this.logger.error(
+        "PAYOUT_ENCRYPTION_KEY is not set: pandits cannot save bank accounts for withdrawals (UPI still works). Set a base64 32-byte key.",
+      );
+  }
+
   // ================================================== booking hooks (money in)
   /**
    * Credits the pandit for a booking that has just been paid. Called by
@@ -87,14 +95,14 @@ export class ProviderWalletService {
    * Idempotent per booking.
    */
   async recordEarning(booking: any, paymentRef: string | undefined, session: ClientSession) {
-    const grossMinor = Number(booking.serviceSnapshot?.pricing?.totalMinor ?? 0);
+    // The devotee paid the total; Tirvona keeps its platform fee; the pandit gets the rest (fee + travel).
+    const { grossMinor, platformFeeMinor, netMinor } = earningOf(booking.serviceSnapshot?.pricing);
     if (!(grossMinor > 0)) return null; // free offering: nothing was paid
     const idempotencyKey = `earning-${booking._id}`;
     const prior = await this.entries.findOne({ idempotencyKey }).session(session);
     if (prior) return prior;
 
     const cfg = providerWalletConfig();
-    const { platformFeeMinor, netMinor } = splitEarning(grossMinor, cfg.platformFeeBps);
     const wallet = await this.ensureWallet(booking.providerId, booking.providerUserId, session);
     const now = new Date();
     const [entry] = await this.entries.create(
@@ -318,7 +326,8 @@ export class ProviderWalletService {
         recentEntries: recent.map((row) => this.entryView(row)),
         rules: {
           holdHours: cfg.holdHours,
-          platformFeePercent: cfg.platformFeeBps / 100,
+          /** Charged to the devotee on top of the pandit's fee; never deducted from the pandit. */
+          devoteePlatformFeePercent: providerPlatformFeeBps() / 100,
           minWithdrawalMinor: cfg.minWithdrawalMinor,
         },
       },
@@ -380,7 +389,7 @@ export class ProviderWalletService {
         throw providerError.badRequest("INVALID_ACCOUNT_NUMBER", "Account number must be 9 to 18 digits");
       if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc))
         throw providerError.badRequest("INVALID_IFSC", "Enter a valid 11-character IFSC code");
-      const sealed = this.crypto.encrypt(number);
+      const sealed = this.seal(number);
       Object.assign(row, {
         accountNumberCiphertext: sealed.ciphertext,
         accountNumberIv: sealed.iv,
@@ -631,6 +640,18 @@ export class ProviderWalletService {
   }
 
   // ============================================================ internals
+  private seal(accountNumber: string) {
+    try {
+      return this.crypto.encrypt(accountNumber);
+    } catch (error) {
+      this.logger.error(`Cannot seal a pandit bank account: ${(error as Error).message}`);
+      throw providerError.unavailable(
+        "PAYOUT_ENCRYPTION_NOT_CONFIGURED",
+        "Bank accounts cannot be saved right now. Please add a UPI id instead, or try again later.",
+      );
+    }
+  }
+
   private async ensureWallet(providerId: unknown, userId: unknown, session: ClientSession) {
     return this.wallets.findOneAndUpdate(
       { providerId },

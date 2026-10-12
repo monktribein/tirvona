@@ -1,4 +1,4 @@
-import { type Schema, SchemaTypes } from "mongoose";
+import { type Schema, SchemaTypes } from "../../database/orm";
 
 /**
  * The two ways a customer can own a record: a website account (`User`) or a

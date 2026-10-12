@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import { isValidObjectId, Types, type Model } from "mongoose";
+import { InjectModel } from "../../../database/orm-nest";
+import { isValidObjectId, Types, type Model } from "../../../database/orm";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import type { CreateReviewDto } from "../presentation/marketplace.dto";
 import { MarketplaceAuditService } from "./marketplace-audit.service";

@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import type { ClientSession, Model } from "mongoose";
+import { InjectModel } from "../../../database/orm-nest";
+import type { ClientSession, Model } from "../../../database/orm";
 import { availableWeekdays } from "../domain/availability.util";
 import { deriveVerification, isPubliclyListable } from "../domain/provider-visibility";
 import { providerConfig, toObjectId } from "./provider.helpers";

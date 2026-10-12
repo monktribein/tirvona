@@ -1,6 +1,7 @@
-import { IsArray, IsMongoId, IsOptional, IsString } from "class-validator";
+import { IsArray, IsOptional, IsString } from "class-validator";
+import { IsEntityId } from "../../../../common/decorators/is-entity-id.decorator";
 export class CreateSettlementDto {
-  @IsOptional() @IsMongoId() ownerId?: string;
+  @IsOptional() @IsEntityId() ownerId?: string;
   @IsOptional() @IsArray() ashramIds?: string[];
 }
 export class CompleteSettlementDto {

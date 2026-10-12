@@ -1,7 +1,7 @@
 import { ConflictException, Inject, Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
+import { InjectModel } from "../../../database/orm-nest";
 import { ConfigService } from "@nestjs/config";
-import type { ClientSession, Model } from "mongoose";
+import type { ClientSession, Model } from "../../../database/orm";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import QRCode from "qrcode";
 import Razorpay from "razorpay";

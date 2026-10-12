@@ -206,6 +206,9 @@ export const marketplaceAdminApi = {
     api.post(`/marketplace/admin/products/${id}/review`, clean({ decision, reason })),
   disableProduct: (id: string, disabled: boolean, reason?: string) =>
     api.post(`/marketplace/admin/products/${id}/disable`, clean({ disabled, reason })),
+  /** Super admin: show this product on pandit pages (puja samagri for devotees). */
+  setPanditPages: (id: string, visible: boolean) =>
+    api.post(`/marketplace/admin/products/${id}/pandit-pages`, { visible }),
 
   categories: () => api.get("/marketplace/admin/categories", { skipToast: true }),
   createCategory: (data: Query) => api.post("/marketplace/admin/categories", data),

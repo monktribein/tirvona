@@ -1,4 +1,4 @@
-import { Schema, SchemaTypes } from "mongoose";
+import { Schema, SchemaTypes } from "../../../database/orm";
 import {
   WALLET_HOLD_STATUSES,
   WALLET_MODULES,

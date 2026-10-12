@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { MongooseModule } from "@nestjs/mongoose";
+import { OrmModule } from "../../database/orm-nest";
 import { AARTI_MODEL } from "./domain/aarti.constants";
 import { WalletModule } from "../wallet/wallet.module";
 import { AARTI_REPOSITORY } from "./domain/aarti.repository";
@@ -17,7 +17,7 @@ import { AartiBookingController } from "./presentation/controllers/aarti-booking
 import { AartiScanController } from "./presentation/controllers/aarti-scan.controller";
 import { AartiOwnerController } from "./presentation/controllers/aarti-owner.controller";
 import { AartiAdminController } from "./presentation/controllers/aarti-admin.controller";
-import { MongooseAartiRepository } from "./infrastructure/persistence/mongoose-aarti.repository";
+import { PgAartiRepository } from "./infrastructure/persistence/pg-aarti.repository";
 import {
   AartiAshramRefSchema,
   AartiAvailabilitySchema,
@@ -63,7 +63,7 @@ const schemas = [
 ].map(([name, schema]) => ({ name: name as string, schema: schema as any }));
 
 @Module({
-  imports: [MongooseModule.forFeature(schemas), WalletModule],
+  imports: [OrmModule.forFeature(schemas), WalletModule],
   controllers: [
     AartiPublicController,
     AartiBookingController,
@@ -81,10 +81,10 @@ const schemas = [
     AartiStreamService,
     AartiReportService,
     AartiManagementService,
-    { provide: AARTI_REPOSITORY, useClass: MongooseAartiRepository },
+    { provide: AARTI_REPOSITORY, useClass: PgAartiRepository },
   ],
   exports: [
-    MongooseModule,
+    OrmModule,
     AartiAccessService,
     AartiCapabilityGuard,
     AartiPricingService,

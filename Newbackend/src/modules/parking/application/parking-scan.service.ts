@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import type { ClientSession, Model } from "mongoose";
+import { InjectModel } from "../../../database/orm-nest";
+import type { ClientSession, Model } from "../../../database/orm";
 import { TransactionService } from "../../../common/database/transaction.service";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import {

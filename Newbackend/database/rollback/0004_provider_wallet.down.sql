@@ -17,4 +17,12 @@ DROP TABLE IF EXISTS "public"."provider_wallet_entries";
 DROP TABLE IF EXISTS "public"."provider_payout_accounts";
 DROP TABLE IF EXISTS "public"."provider_wallets";
 
+-- Forget that the migration ran, so it can be applied again later.
+DO $$
+BEGIN
+  IF to_regclass('public.schema_migrations') IS NOT NULL THEN
+    DELETE FROM "public"."schema_migrations" WHERE name = '0004_provider_wallet.sql';
+  END IF;
+END $$;
+
 COMMIT;

@@ -1,4 +1,4 @@
-import { Schema, SchemaTypes } from "mongoose";
+import { Schema, SchemaTypes } from "../../../../database/orm";
 import { IDENTITY_CODE_PATTERN } from "../../domain/identity-code";
 const id = (ref: string, required = false) => ({
   type: SchemaTypes.ObjectId,

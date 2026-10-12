@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import { Types } from "../../../database/orm";
 
 export const TEST_COUPON_OBJECT_ID = new Types.ObjectId(
   "000000000000000000000001",

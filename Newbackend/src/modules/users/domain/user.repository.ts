@@ -1,4 +1,4 @@
-import type { ClientSession } from "mongoose";
+import type { ClientSession } from "../../../database/orm";
 import type { UserDocument } from "../infrastructure/persistence/user.schema";
 
 export const USER_REPOSITORY = Symbol("USER_REPOSITORY");

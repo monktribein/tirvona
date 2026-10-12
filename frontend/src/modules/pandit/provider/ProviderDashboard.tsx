@@ -17,6 +17,7 @@ import {
   Landmark,
   MessageSquare,
   Plus,
+  Radio,
   RefreshCw,
   ShieldCheck,
   Sparkles,
@@ -41,7 +42,9 @@ import {
   StatusBadge,
   Skeleton,
   buttonClass,
+  cx,
   formatMinor,
+  inputClass,
 } from "../ui";
 
 // What the server reports as missing from a profile, with where to fix it.
@@ -85,6 +88,9 @@ export const ProviderDashboard: React.FC = () => {
   const [secondaryLoading, setSecondaryLoading] = useState(false);
   const [loadedOnce, setLoadedOnce] = useState(false);
   const [changingStatus, setChangingStatus] = useState(false);
+  const [changingLive, setChangingLive] = useState(false);
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [youtubeError, setYoutubeError] = useState<string | null>(null);
 
   const loadProfile = useCallback(async () => {
     setProfileLoading(true);
@@ -225,6 +231,30 @@ export const ProviderDashboard: React.FC = () => {
     }
   };
 
+  const liveOn = Boolean(profile.liveOnline?.enabled);
+  const savedYoutube = profile.liveOnline?.youtubeUrl ?? "";
+  /** Switch live on/off; switching on (or saving a new link) needs the pandit's YouTube live link. */
+  const updateLive = async (enabled: boolean) => {
+    const link = youtubeUrl.trim() || savedYoutube;
+    if (enabled && !link) {
+      setYoutubeError("Add your YouTube live link first, e.g. https://www.youtube.com/@yourchannel/live");
+      return;
+    }
+    setChangingLive(true);
+    setYoutubeError(null);
+    try {
+      const res = await providerSelfService.setLiveOnline(enabled, youtubeUrl.trim() || undefined);
+      if (res.data?.data) setProfile(res.data.data);
+      setYoutubeUrl("");
+      toast.success(enabled ? "You are live online. Devotees can watch on YouTube and book a live katha / puja." : "Live online is off.");
+    } catch (err) {
+      setYoutubeError(getErrorMessage(err, "Could not change live online."));
+    } finally {
+      setChangingLive(false);
+    }
+  };
+  const toggleLive = () => updateLive(!liveOn);
+
   const loading = secondaryLoading && !loadedOnce;
   const show = (value: React.ReactNode) => (loading ? <Skeleton className="h-6 w-16" /> : value);
   const money = (minor?: number) => formatMinor(minor ?? 0) ?? "₹0";
@@ -275,6 +305,93 @@ export const ProviderDashboard: React.FC = () => {
       </div>
 
       {suspended && <ErrorNotice message="Your provider account is suspended. You can view your data but cannot change services or availability. Contact Tirvona support." />}
+
+      {/* ── Live online katha / puja switch ─────────────────────────── */}
+      <section
+        aria-label="Live online"
+        className={cx(
+          "flex flex-wrap items-center justify-between gap-4 rounded-2xl border bg-white p-4 shadow-sm dark:bg-[#0B192C] sm:p-5",
+          liveOn ? "border-rose-300 dark:border-rose-900" : "border-gray-200 dark:border-slate-800",
+        )}
+      >
+        <div className="flex min-w-0 items-center gap-3">
+          <span
+            className={cx(
+              "relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
+              liveOn ? "bg-rose-50 text-rose-600 dark:bg-rose-950/40" : "bg-gray-100 text-gray-500 dark:bg-slate-800",
+            )}
+            aria-hidden="true"
+          >
+            <Radio size={20} />
+            {liveOn && <span className="absolute -right-0.5 -top-0.5 h-3 w-3 animate-ping rounded-full bg-rose-500 motion-reduce:animate-none" />}
+          </span>
+          <div className="min-w-0">
+            <p className="flex flex-wrap items-center gap-2 text-sm font-black text-[#0B192C] dark:text-white">
+              Live online katha &amp; puja
+              <span className={cx("rounded-full px-2 py-0.5 text-[10px] font-black", liveOn ? "bg-rose-600 text-white" : "bg-gray-100 text-gray-500 dark:bg-slate-800")}>
+                {liveOn ? "LIVE" : "OFF"}
+              </span>
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {liveOn
+                ? "Devotees see you as live, can watch your YouTube stream and book a live katha / puja from anywhere."
+                : "Stream your katha / puja on YouTube. Add your YouTube live link and turn this on so devotees can watch and book."}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={liveOn}
+          aria-label="Live online katha and puja"
+          disabled={changingLive || suspended}
+          onClick={toggleLive}
+          className={cx(
+            "relative inline-flex h-8 w-14 shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28] focus-visible:ring-offset-2 disabled:opacity-50",
+            liveOn ? "bg-rose-600" : "bg-gray-300 dark:bg-slate-600",
+          )}
+        >
+          <span className={cx("inline-block h-6 w-6 rounded-full bg-white shadow transition-transform", liveOn ? "translate-x-7" : "translate-x-1")} />
+        </button>
+        <div className="w-full space-y-1.5 border-t border-gray-100 pt-3 dark:border-slate-800">
+          <label htmlFor="youtube-live-link" className="text-xs font-bold text-gray-700 dark:text-gray-300">
+            Your YouTube live link
+          </label>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <input
+              id="youtube-live-link"
+              type="url"
+              inputMode="url"
+              className={cx(inputClass, "sm:flex-1")}
+              placeholder={savedYoutube || "https://www.youtube.com/@yourchannel/live"}
+              value={youtubeUrl}
+              onChange={(e) => setYoutubeUrl(e.target.value)}
+              aria-invalid={youtubeError ? true : undefined}
+              aria-describedby="youtube-live-hint"
+            />
+            <Button variant="outline" className="!min-h-[44px]" loading={changingLive} disabled={!youtubeUrl.trim()} onClick={() => updateLive(liveOn)}>
+              Save link
+            </Button>
+          </div>
+          {youtubeError ? (
+            <p role="alert" className="text-xs font-semibold text-rose-700 dark:text-rose-300">{youtubeError}</p>
+          ) : (
+            <p id="youtube-live-hint" className="text-xs text-gray-500">
+              {savedYoutube ? (
+                <>
+                  Saved:{" "}
+                  <a href={savedYoutube} target="_blank" rel="noreferrer noopener" className="font-semibold text-[#B45309] underline dark:text-[#FFA44D]">
+                    {savedYoutube}
+                  </a>
+                  . For a specific puja, add its stream link on the booking.
+                </>
+              ) : (
+                "Your channel's live page works best (youtube.com/@yourchannel/live): it always shows your current stream."
+              )}
+            </p>
+          )}
+        </div>
+      </section>
 
       {/* ── Six compact tiles: 2 per row on phones, 3 on tablets, 6 on desktop ── */}
       <section aria-label="Overview" className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-6">

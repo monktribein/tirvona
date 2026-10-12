@@ -1,4 +1,4 @@
-import { Schema, SchemaTypes } from "mongoose";
+import { Schema, SchemaTypes } from "../../../database/orm";
 import { PAYOUT_MODES, PAYOUT_STATUSES } from "../domain/payout.constants";
 
 const id = (ref: string, required = false) => ({

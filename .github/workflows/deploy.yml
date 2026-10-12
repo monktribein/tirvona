@@ -64,6 +64,16 @@ jobs:
             npx tsc -p tsconfig.build.json --outDir "$API_BUILD_ROOT/api-next"
             mkdir -p "$API_BUILD_ROOT/api-next/modules/smart-contact/assets"
             cp -R src/modules/smart-contact/assets/* "$API_BUILD_ROOT/api-next/modules/smart-contact/assets/" || true
+
+            # The API refuses to start against a schema that does not match its
+            # models, so new tables/columns must exist before it restarts.
+            # Migrations are additive only (never alter or drop), so the API
+            # still running keeps working against the new schema. Any failure
+            # stops the deploy here, before the running API is replaced.
+            echo "=== Database migrations ==="
+            npm run db:migrate
+            npm run db:verify
+
             rm -rf "$API_BUILD_ROOT/api"
             mv "$API_BUILD_ROOT/api-next" "$API_BUILD_ROOT/api"
 

@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
+import { InjectModel } from "../../../database/orm-nest";
 import { randomUUID } from "node:crypto";
-import { Types, type ClientSession, type Model } from "mongoose";
+import { Types, type ClientSession, type Model } from "../../../database/orm";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { computeWalletBalance, type LedgerEntryLike, type WalletBalance } from "../domain/ledger";
 import type { LedgerEntryType } from "../domain/marketplace.constants";

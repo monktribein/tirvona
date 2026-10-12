@@ -1,4 +1,4 @@
-import { Schema, Types } from "mongoose";
+import { Schema, Types } from "../../../../database/orm";
 import { smartContactConfig } from "../../config/smart-contact.config";
 import {
   SMART_CONTACT_DEVICE_TYPES,

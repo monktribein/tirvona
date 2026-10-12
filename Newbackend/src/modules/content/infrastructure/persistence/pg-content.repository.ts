@@ -1,10 +1,10 @@
 import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import type { Model } from "mongoose";
+import { InjectModel } from "../../../../database/orm-nest";
+import type { Model } from "../../../../database/orm";
 import type { ContentRepository } from "../../domain/content.repository";
 
 @Injectable()
-export class MongooseContentRepository implements ContentRepository {
+export class PgContentRepository implements ContentRepository {
   private readonly models: Record<string, Model<any>>;
 
   constructor(

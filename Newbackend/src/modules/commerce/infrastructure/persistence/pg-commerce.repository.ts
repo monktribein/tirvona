@@ -1,10 +1,10 @@
 import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import { Model, Types } from "mongoose";
+import { InjectModel } from "../../../../database/orm-nest";
+import { Model, Types } from "../../../../database/orm";
 import type { CommerceRepository } from "../../domain/commerce.repository";
 
 @Injectable()
-export class MongooseCommerceRepository implements CommerceRepository {
+export class PgCommerceRepository implements CommerceRepository {
   private readonly models: Record<string, Model<any>>;
   constructor(
     @InjectModel("MarketplaceCategory") categories: Model<any>,

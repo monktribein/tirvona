@@ -1,5 +1,5 @@
 /// <reference types="jest" />
-import { Types } from "mongoose";
+import { Types } from "../../../database/orm";
 import { UserSchema } from "../../users/infrastructure/persistence/user.schema";
 import { createInMemoryModel } from "../../marketplace/testing/in-memory-model";
 import { makeUser } from "../../marketplace/testing/harness";

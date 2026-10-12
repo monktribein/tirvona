@@ -17,7 +17,7 @@ describe("LeadAttendanceService", () => {
   };
 
   // In-memory fake collection so the DTO-to-schema write contract is
-  // exercised the same way Mongoose strict mode would enforce it.
+  // exercised the same way schema strict mode would enforce it.
   function createAttendanceModelMock() {
     const ALLOWED_FIELDS = new Set([
       "agentId",

@@ -4,7 +4,7 @@
  * replaced by in-memory stand-ins (no database needed).
  */
 import { ConfigService } from "@nestjs/config";
-import { getModelToken } from "@nestjs/mongoose";
+import { getModelToken } from "../../database/orm-nest";
 import { Test } from "@nestjs/testing";
 import { TransactionService } from "../../common/database/transaction.service";
 import { payoutConfig } from "../payouts/config/payout.config";

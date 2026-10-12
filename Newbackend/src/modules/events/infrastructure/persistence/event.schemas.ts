@@ -1,4 +1,4 @@
-import { Schema, SchemaTypes } from "mongoose";
+import { Schema, SchemaTypes } from "../../../../database/orm";
 import {
   EVENT_FACILITIES,
   EVENT_REGISTRATION_STATUSES,

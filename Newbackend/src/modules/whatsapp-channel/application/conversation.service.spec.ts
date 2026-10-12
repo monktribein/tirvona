@@ -1017,7 +1017,7 @@ describe("error handling", () => {
       message({ text: "kal se 2 din Vrindavan me room chahiye 2 log" }),
     );
     const text = allText(reply);
-    expect(text).not.toMatch(/internal server error|ECONNREFUSED|mongodb/i);
+    expect(text).not.toMatch(/internal server error|ECONNREFUSED|postgres/i);
     expect(text).toMatch(/nothing was charged|koi charge|कोई शुल्क/i);
   });
 });
@@ -1134,14 +1134,14 @@ describe("confirm never books on a stale price or a stale conversation", () => {
     const engine = build({
       actions: {
         createStayBooking: jest.fn(async () => {
-          throw new Error("MongoServerError: connection pool closed at 10.0.0.4");
+          throw new Error("PostgresError: connection pool closed at 10.0.0.4");
         }),
       },
     });
     atConfirm(engine);
     await engine.service.handle(message({ replyId: "confirm:yes" }));
     const text = allText(engine.reply);
-    expect(text).not.toContain("MongoServerError");
+    expect(text).not.toContain("PostgresError");
     expect(text).not.toContain("10.0.0.4");
     expect(text).toMatch(/nothing was charged|koi charge|कोई शुल्क/i);
   });

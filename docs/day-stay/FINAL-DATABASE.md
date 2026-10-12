@@ -5,7 +5,7 @@
 The database schema extensions for Day Stay follow strict backward-compatibility guidelines:
 - **Zero Destructive Migrations**: Existing collections (`ashrams`, `rooms`, `bookings`, `payment_webhook_events`) are augmented with optional subdocuments and default values.
 - **Overnight Default**: The field `bookingType` defaults to `"overnight"`, guaranteeing all legacy booking queries, admin aggregations, and financial reports function with 100% fidelity without schema updates.
-- **Optimistic Concurrency**: Mongoose `versionKey` (`__v`) and atomic operators (`$set`, `$setOnInsert`, `$inc`) guarantee thread-safe writes.
+- **Optimistic Concurrency**: Document `versionKey` (`__v`) and atomic operators (`$set`, `$setOnInsert`, `$inc`) guarantee thread-safe writes.
 
 ---
 

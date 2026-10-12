@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { MongooseModule } from "@nestjs/mongoose";
+import { OrmModule } from "../../database/orm-nest";
 import { AshramSchema } from "../ashrams/infrastructure/persistence/ashram.schemas";
 import {
   User,
@@ -24,7 +24,7 @@ import { ParkingScanController } from "./presentation/controllers/parking-scan.c
 import { ParkingPartnerController } from "./presentation/controllers/parking-partner.controller";
 import { ParkingAdminController } from "./presentation/controllers/parking-admin.controller";
 import { PublicParkingPaymentController } from "./presentation/controllers/public-parking-payment.controller";
-import { MongooseParkingRepository } from "./infrastructure/persistence/mongoose-parking.repository";
+import { PgParkingRepository } from "./infrastructure/persistence/pg-parking.repository";
 import {
   ParkingPartnerSchema,
   ParkingLocationSchema,
@@ -78,7 +78,7 @@ const tenantSchemas = [
 
 @Module({
   imports: [
-    MongooseModule.forFeature([...schemas, ...tenantSchemas]),
+    OrmModule.forFeature([...schemas, ...tenantSchemas]),
     WalletModule,
   ],
   controllers: [
@@ -100,10 +100,10 @@ const tenantSchemas = [
     ParkingManagementService,
     ParkingExpiryAlertService,
     ParkingPaymentLinkService,
-    { provide: PARKING_REPOSITORY, useClass: MongooseParkingRepository },
+    { provide: PARKING_REPOSITORY, useClass: PgParkingRepository },
   ],
   exports: [
-    MongooseModule,
+    OrmModule,
     ParkingAccessService,
     ParkingCapabilityGuard,
     ParkingPricingService,

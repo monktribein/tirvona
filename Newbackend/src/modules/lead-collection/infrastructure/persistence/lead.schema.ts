@@ -1,4 +1,4 @@
-import { Schema, SchemaTypes } from "mongoose";
+import { Schema, SchemaTypes } from "../../../../database/orm";
 import {
   LEAD_COLLECTION_NAME,
   LEAD_INTERESTS,

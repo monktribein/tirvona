@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
-import { Types } from "mongoose";
+import { Types } from "../../../database/orm";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { escapeRegex } from "../../../common/utils/escape-regex";
 import { isAshramOwner } from "../../../common/auth/ashram-access";

@@ -6,7 +6,6 @@ import {
   IsEmail,
   IsIn,
   IsInt,
-  IsMongoId,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -15,6 +14,7 @@ import {
   MinLength,
   ValidateIf,
 } from "class-validator";
+import { IsEntityId } from "../../../common/decorators/is-entity-id.decorator";
 import { ASHRAM_OWNER_ROLE } from "../../../common/auth/ashram-access";
 import { USER_ROLES } from "../infrastructure/persistence/user.schema";
 
@@ -37,7 +37,7 @@ export class CreateStaffDto {
   @IsString() phone: string;
   @IsString() @MinLength(8) password: string;
   @IsIn(["manager", "reception", "housekeeping"]) role: string;
-  @IsMongoId() ashramId: string;
+  @IsEntityId() ashramId: string;
 }
 export class CreateAccountDto {
   @IsString() @MinLength(2) name: string;
@@ -51,10 +51,10 @@ export class CreateAccountDto {
   @ValidateIf((dto: CreateAccountDto) =>
     ASHRAM_SCOPED_ACCOUNT_ROLES.includes(dto.role),
   )
-  @IsMongoId({ message: "Select the ashram this account will be assigned to" })
+  @IsEntityId({ message: "Select the ashram this account will be assigned to" })
   assignedAshramId?: string;
   @ValidateIf((dto: CreateAccountDto) => dto.role === "temple_owner")
-  @IsMongoId({ message: "Select the temple this account will be assigned to" })
+  @IsEntityId({ message: "Select the temple this account will be assigned to" })
   assignedTempleId?: string;
 }
 export class UserStatusDto {
@@ -101,7 +101,7 @@ export class BulkDeleteUsersDto {
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(100)
-  @IsMongoId({ each: true })
+  @IsEntityId({ each: true })
   ids: string[];
 }
 export class RegisterFcmTokenDto {

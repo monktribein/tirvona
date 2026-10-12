@@ -3,7 +3,7 @@
  * controller declared in SupportModule can be constructed, with models and
  * cross-module services replaced by stand-ins (no database needed).
  */
-import { getConnectionToken, getModelToken } from "@nestjs/mongoose";
+import { getConnectionToken, getModelToken } from "../../database/orm-nest";
 import { Test } from "@nestjs/testing";
 import { InAppNotificationService } from "../notifications/application/in-app-notification.service";
 import { UploadsService } from "../uploads/application/uploads.service";

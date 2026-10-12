@@ -9,14 +9,34 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Save, Upload, X } from "lucide-react";
+import { ArrowLeft, Bed, Bus, Car, Save, Upload, X } from "lucide-react";
 import { providerSelfService } from "../services/provider.service";
 import type { ProviderProfile, CreateProviderProfileInput } from "../types/provider.types";
-import { PROVIDER_TYPES, PROVIDER_TYPE_LABELS } from "../types/provider.types";
+import { PROVIDER_TYPES, PROVIDER_TYPE_LABELS, STAY_ARRANGEMENT_LABELS, TRAVEL_MODE_LABELS, type TravelProfile } from "../types/provider.types";
 import { getErrorMessage } from "../../../lib/api";
 import { uploadService } from "../../../services";
 import { toast } from "../../../lib/toast";
-import { Avatar, Button, ErrorNotice, Field, LoadingBlock, PageContainer, SectionCard, cx, inputClass } from "../ui";
+import { Avatar, Button, ErrorNotice, Field, LoadingBlock, PageContainer, SectionCard, Toggle, cx, inputClass } from "../ui";
+
+const TRAVEL_MODE_ICONS: Record<string, React.ReactNode> = {
+  TRAIN: <Bus size={16} aria-hidden="true" />,
+  FLIGHT: <span aria-hidden="true">✈</span>,
+  ROAD: <Car size={16} aria-hidden="true" />,
+};
+
+/** Only the travel fields the server accepts, with blanks left out. */
+const cleanTravel = (t: TravelProfile): TravelProfile => {
+  const out: TravelProfile = { willingToTravel: Boolean(t.willingToTravel) };
+  if (!t.willingToTravel) return out;
+  out.overnightOk = Boolean(t.overnightOk);
+  out.modes = (t.modes ?? []).filter((m) => m in TRAVEL_MODE_LABELS);
+  if (t.maxDistanceKm != null && String(t.maxDistanceKm) !== "") out.maxDistanceKm = Number(t.maxDistanceKm);
+  if (t.overnightOk && t.stayArrangement) out.stayArrangement = t.stayArrangement;
+  if (t.notes?.trim()) out.notes = t.notes.trim();
+  if (t.minNoticeHours != null) out.minNoticeHours = t.minNoticeHours;
+  if (t.regions?.length) out.regions = t.regions;
+  return out;
+};
 
 /** Mirrors the backend's controlled language list. */
 const SUPPORTED_LANGUAGES = [
@@ -28,7 +48,7 @@ const PHONE = /^\+?[0-9][0-9\s-]{6,17}$/;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_AVATAR_BYTES = 10 * 1024 * 1024;
 
-type Errors = Partial<Record<"displayName" | "legalName" | "languages" | "experience" | "email" | "phone", string>>;
+type Errors = Partial<Record<"displayName" | "legalName" | "languages" | "experience" | "email" | "phone" | "travel" | "distance", string>>;
 
 // ─── TagInput ─────────────────────────────────────────────────────────────────
 
@@ -95,6 +115,8 @@ export const ProviderProfilePage: React.FC = () => {
   const [typeLocked, setTypeLocked] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Errors>({});
+  const [travel, setTravel] = useState<TravelProfile>({ willingToTravel: false, overnightOk: false, modes: [] });
+  const setTravelField = (patch: Partial<TravelProfile>) => setTravel((t) => ({ ...t, ...patch }));
 
   const [form, setForm] = useState<CreateProviderProfileInput>({
     displayName: "",
@@ -133,6 +155,7 @@ export const ProviderProfilePage: React.FC = () => {
           contactEmail: p.contactEmail || "",
           contactPhone: p.contactPhone || "",
         });
+        setTravel({ willingToTravel: false, overnightOk: false, modes: [], ...(p.travelProfile ?? {}) });
         setTypeLocked(p.verificationLevel !== "UNVERIFIED");
         setIsNew(false);
       }
@@ -176,6 +199,9 @@ export const ProviderProfilePage: React.FC = () => {
     if (form.experienceYears != null && (!Number.isInteger(form.experienceYears) || form.experienceYears < 0 || form.experienceYears > 80)) next.experience = "Enter whole years between 0 and 80.";
     if (form.contactEmail && !EMAIL.test(form.contactEmail)) next.email = "Enter a valid email address.";
     if (form.contactPhone && !PHONE.test(form.contactPhone)) next.phone = "Enter a valid phone number, for example +91 98765 43210.";
+    if (travel.willingToTravel && !(travel.modes ?? []).length) next.travel = "Choose at least one way you travel.";
+    if (travel.maxDistanceKm != null && String(travel.maxDistanceKm) !== "" && (!Number.isInteger(Number(travel.maxDistanceKm)) || Number(travel.maxDistanceKm) < 0 || Number(travel.maxDistanceKm) > 5000))
+      next.distance = "Enter whole kilometres between 0 and 5000.";
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -195,6 +221,7 @@ export const ProviderProfilePage: React.FC = () => {
       avatarUrl: form.avatarUrl || undefined,
       contactEmail: form.contactEmail?.trim() || undefined,
       contactPhone: form.contactPhone?.trim() || undefined,
+      travelProfile: cleanTravel(travel),
     };
     setSaving(true);
     try {
@@ -348,6 +375,98 @@ export const ProviderProfilePage: React.FC = () => {
             <Field label="Tradition or lineage" hint="For example Shankaracharya Sampradaya or Nimbarka.">
               <TagInput value={form.traditions || []} onChange={(v) => set("traditions", v)} placeholder="e.g. Vaishnava, Shaiva" maxItems={10} />
             </Field>
+          </div>
+        </SectionCard>
+
+        <SectionCard title="Home visits & travel" description="Tell devotees whether you can come to their home, how you travel and where you stay. Shown on your public profile.">
+          <div className="space-y-4">
+            <Toggle
+              checked={Boolean(travel.willingToTravel)}
+              onChange={(next) => setTravelField({ willingToTravel: next })}
+              label="I travel to devotees' homes, including other cities"
+              description="Devotees can book you for a puja or katha at their home."
+            />
+            {travel.willingToTravel && (
+              <>
+                <Field label="How I can travel" required error={errors.travel} hint="Choose every way you are comfortable travelling.">
+                  <div role="group" className="flex flex-wrap gap-2">
+                    {Object.entries(TRAVEL_MODE_LABELS).map(([mode, label]) => {
+                      const on = (travel.modes ?? []).includes(mode);
+                      return (
+                        <button
+                          key={mode}
+                          type="button"
+                          aria-pressed={on}
+                          onClick={() =>
+                            setTravelField({ modes: on ? (travel.modes ?? []).filter((m) => m !== mode) : [...(travel.modes ?? []), mode] })
+                          }
+                          className={cx(
+                            "inline-flex min-h-[44px] items-center gap-2 rounded-xl border px-4 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]",
+                            on
+                              ? "border-[#F28C28] bg-[#FFF4E5] text-[#B45309] dark:bg-[#F28C28]/15 dark:text-[#FFC88A]"
+                              : "border-gray-300 text-gray-700 hover:border-[#F28C28] dark:border-slate-600 dark:text-gray-300",
+                          )}
+                        >
+                          {TRAVEL_MODE_ICONS[mode]}
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Field>
+                <Field label="Maximum distance (km)" error={errors.distance} hint="Leave empty for no limit.">
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    max={5000}
+                    className={inputClass}
+                    value={travel.maxDistanceKm ?? ""}
+                    onChange={(e) => setTravelField({ maxDistanceKm: e.target.value === "" ? null : Number(e.target.value) })}
+                    placeholder="e.g. 800"
+                  />
+                </Field>
+                <Toggle
+                  checked={Boolean(travel.overnightOk)}
+                  onChange={(next) => setTravelField({ overnightOk: next })}
+                  label="I can stay overnight for longer pujas and kathas"
+                  description="For multi-day kathas or pujas far from home."
+                />
+                {travel.overnightOk && (
+                  <Field label="Where I stay">
+                    <div role="radiogroup" className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                      {Object.entries(STAY_ARRANGEMENT_LABELS).map(([value, label]) => (
+                        <button
+                          key={value}
+                          type="button"
+                          role="radio"
+                          aria-checked={travel.stayArrangement === value}
+                          onClick={() => setTravelField({ stayArrangement: value })}
+                          className={cx(
+                            "flex min-h-[44px] items-center gap-2 rounded-xl border px-3 text-left text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]",
+                            travel.stayArrangement === value
+                              ? "border-[#F28C28] bg-[#FFF4E5] text-[#B45309] dark:bg-[#F28C28]/15 dark:text-[#FFC88A]"
+                              : "border-gray-300 text-gray-700 hover:border-[#F28C28] dark:border-slate-600 dark:text-gray-300",
+                          )}
+                        >
+                          <Bed size={15} aria-hidden="true" />
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </Field>
+                )}
+                <Field label="Note for devotees" hint="Optional. e.g. Travel tickets and stay are arranged by the family; I bring all puja samagri.">
+                  <textarea
+                    rows={2}
+                    maxLength={300}
+                    className={inputClass}
+                    value={travel.notes ?? ""}
+                    onChange={(e) => setTravelField({ notes: e.target.value })}
+                  />
+                </Field>
+              </>
+            )}
           </div>
         </SectionCard>
 

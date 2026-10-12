@@ -1,4 +1,4 @@
-import { Schema, Types } from "mongoose";
+import { Schema, Types } from "../../../../database/orm";
 import {
   SMART_CONTACT_AUDIT_ACTIONS,
   SMART_CONTACT_AUDIT_COLLECTION,

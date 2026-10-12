@@ -1,39 +1,14 @@
 import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import type { Model } from "mongoose";
-import type { CommunityRepository } from "../../domain/community.repository";
+import { InjectConnection } from "../../../../database/orm-nest";
+import type { Connection, Model } from "../../../../database/orm";
+import type { GovernanceRepository } from "../../domain/governance.repository";
 @Injectable()
-export class MongooseCommunityRepository implements CommunityRepository {
-  private readonly models: Record<string, Model<any>>;
-  constructor(
-    @InjectModel("UserMemory") memories: Model<any>,
-    @InjectModel("VolunteerJob") jobs: Model<any>,
-    @InjectModel("VolunteerApplication") applications: Model<any>,
-    @InjectModel("VisitorArticle") articles: Model<any>,
-    @InjectModel("VisitorArticleComment") comments: Model<any>,
-    @InjectModel("VisitorArticleLike") likes: Model<any>,
-    @InjectModel("VisitorArticleStatusHistory") histories: Model<any>,
-    @InjectModel("CommunityNotification") notifications: Model<any>,
-    @InjectModel("CommunityBooking") bookings: Model<any>,
-    @InjectModel("CommunityAshram") ashrams: Model<any>,
-  ) {
-    this.models = {
-      memories,
-      jobs,
-      applications,
-      articles,
-      comments,
-      likes,
-      histories,
-      notifications,
-      bookings,
-      ashrams,
-    };
-  }
+export class PgGovernanceRepository implements GovernanceRepository {
+  constructor(@InjectConnection() private readonly connection: Connection) {}
   private model(name: string): Model<any> {
-    const value = this.models[name];
-    if (!value) throw new Error(`Unknown community model: ${name}`);
-    return value;
+    const model = this.connection.models[name];
+    if (!model) throw new Error(`Unknown governance model: ${name}`);
+    return model;
   }
   async list(
     name: string,
@@ -55,7 +30,6 @@ export class MongooseCommunityRepository implements CommunityRepository {
   ): Promise<any | null> {
     let query = this.model(name).findOne(filter);
     for (const path of options.populate ?? []) query = query.populate(path);
-    if (options.select) query = query.select(options.select);
     return query.lean();
   }
   count(name: string, filter: Record<string, unknown> = {}): Promise<number> {
@@ -78,6 +52,13 @@ export class MongooseCommunityRepository implements CommunityRepository {
       })
       .lean();
   }
+  async updateMany(
+    name: string,
+    filter: Record<string, unknown>,
+    update: Record<string, unknown>,
+  ): Promise<number> {
+    return (await this.model(name).updateMany(filter, update)).modifiedCount;
+  }
   remove(name: string, filter: Record<string, unknown>): Promise<any | null> {
     return this.model(name).findOneAndDelete(filter).lean();
   }
@@ -85,7 +66,6 @@ export class MongooseCommunityRepository implements CommunityRepository {
     name: string,
     filter: Record<string, unknown>,
   ): Promise<number> {
-    const result = await this.model(name).deleteMany(filter);
-    return result.deletedCount ?? 0;
+    return (await this.model(name).deleteMany(filter)).deletedCount;
   }
 }

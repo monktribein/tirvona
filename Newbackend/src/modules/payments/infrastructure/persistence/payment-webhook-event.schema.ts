@@ -1,4 +1,4 @@
-import { Schema } from "mongoose";
+import { Schema } from "../../../../database/orm";
 
 /// One row per Razorpay webhook delivery, keyed by (provider, eventId) so a
 /// retried delivery (Razorpay retries on timeout/5xx) is a no-op rather than

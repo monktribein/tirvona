@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
-import { MongooseModule } from "@nestjs/mongoose";
+import { OrmModule } from "../../database/orm-nest";
 import { AuditModule } from "../audit/audit.module";
 import { WalletModule } from "../wallet/wallet.module";
 import { MarketplaceAddressSchema } from "../commerce/infrastructure/persistence/marketplace-address.schemas";
@@ -36,7 +36,7 @@ import { MarketplaceVendorController } from "./presentation/marketplace-vendor.c
     ConfigModule.forFeature(payoutConfig),
     AuditModule,
     WalletModule,
-    MongooseModule.forFeature([
+    OrmModule.forFeature([
       ...MARKETPLACE_MODELS,
       { name: "MarketplaceAddress", schema: MarketplaceAddressSchema },
     ]),
@@ -63,6 +63,6 @@ import { MarketplaceVendorController } from "./presentation/marketplace-vendor.c
     ReviewService,
     DashboardService,
   ],
-  exports: [OrderService, MongooseModule],
+  exports: [OrderService, OrmModule],
 })
 export class MarketplaceModule {}

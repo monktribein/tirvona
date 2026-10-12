@@ -33,4 +33,6 @@ export const providerError = {
     new HttpException(body(code, message), HttpStatus.BAD_GATEWAY),
   gone: (code: string, message: string) =>
     new HttpException(body(code, message), HttpStatus.GONE),
+  unavailable: (code: string, message: string) =>
+    new HttpException(body(code, message), HttpStatus.SERVICE_UNAVAILABLE),
 };

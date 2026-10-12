@@ -1,7 +1,12 @@
 /**
  * Shared UI kit for the Pandit & Acharya experience (public, provider and admin screens).
  *
- * Brand (src/index.css): navy #0B192C for structure, saffron #F28C28 (hover #D97706, text #B45309, light #FFF4E5) for actions and accents.
+ * Brand tokens (synced with src/index.css):
+ *   Navy   #0B192C  — structural headings, dark-mode card backgrounds
+ *   Saffron  #F28C28 / hover #D97706 / text #B45309 / light #FFF4E5
+ *   Warm bg  #FBF8F3 — page canvas (light)
+ *   Font     "Plus Jakarta Sans", "Inter", system-ui
+ *
  * Everything here is presentational: no data fetching and no business rules.
  */
 import React, { useEffect, useId, useRef } from "react";
@@ -34,18 +39,18 @@ export const formatMinor = (minor?: number | null, currency = "INR") =>
 type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger";
 
 const BUTTON_BASE =
-  "inline-flex items-center justify-center gap-2 rounded-full font-bold transition-colors select-none " +
-  "min-h-[44px] px-5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 " +
+  "inline-flex items-center justify-center gap-2 rounded-full font-extrabold tracking-tight transition-all duration-200 select-none " +
+  "min-h-[44px] px-6 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 " +
   "focus-visible:ring-[#F28C28] dark:focus-visible:ring-offset-[#071322] disabled:opacity-50 disabled:cursor-not-allowed " +
-  "active:scale-[0.99] motion-reduce:transition-none motion-reduce:active:scale-100";
+  "active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100";
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
-  primary: "bg-[#F28C28] text-white hover:bg-[#D97706] active:bg-[#B45309] shadow-sm shadow-[#F28C28]/20",
-  secondary: "bg-[#0B192C] text-white hover:bg-[#12284a] dark:bg-slate-700 dark:hover:bg-slate-600",
+  primary: "bg-gradient-to-r from-[#F28C28] to-[#E07B1A] text-white hover:from-[#D97706] hover:to-[#C66A06] active:from-[#B45309] active:to-[#A34808] shadow-md shadow-[#F28C28]/25 hover:shadow-lg hover:shadow-[#F28C28]/30",
+  secondary: "bg-[#0B192C] text-white hover:bg-[#142D4C] dark:bg-slate-700 dark:hover:bg-slate-600 shadow-sm",
   outline:
-    "border border-gray-300 dark:border-slate-600 text-[#0B192C] dark:text-gray-100 bg-white dark:bg-transparent hover:bg-gray-50 dark:hover:bg-slate-800",
+    "border border-[#F28C28]/20 dark:border-slate-600 text-[#0B192C] dark:text-gray-100 bg-white dark:bg-transparent hover:bg-[#FFF4E5]/60 hover:border-[#F28C28]/40 dark:hover:bg-slate-800",
   ghost: "text-[#B45309] dark:text-[#FFA44D] hover:bg-[#FFF4E5] dark:hover:bg-slate-800",
-  danger: "bg-rose-700 text-white hover:bg-rose-800",
+  danger: "bg-rose-700 text-white hover:bg-rose-800 shadow-sm",
 };
 
 export const buttonClass = (variant: ButtonVariant = "primary", extra?: string) =>
@@ -204,8 +209,8 @@ export const PageHeader: React.FC<{
         </span>
       )}
       <div className="min-w-0">
-        {eyebrow && <p className="text-[11px] font-extrabold tracking-wide text-gray-500 dark:text-gray-400">{eyebrow}</p>}
-        <h1 className="text-lg sm:text-xl font-black tracking-tight text-[#0B192C] dark:text-white break-words">{title}</h1>
+        {eyebrow && <p className="text-[11px] font-bold uppercase tracking-wider text-[#B45309] dark:text-[#FFA44D]">{eyebrow}</p>}
+        <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[#0B192C] dark:text-white break-words">{title}</h1>
         {description && <p className="mt-0.5 max-w-2xl text-xs text-gray-500 dark:text-gray-400">{description}</p>}
       </div>
     </div>
@@ -218,7 +223,7 @@ export const Card: React.FC<{ children: React.ReactNode; className?: string; as?
   className,
   as: Tag = "div",
 }) => (
-  <Tag className={cx("rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#0B192C]", className)}>
+  <Tag className={cx("rounded-2xl border border-[#F28C28]/10 bg-white shadow-sm dark:border-slate-800 dark:bg-[#0B192C]", className)}>
     {children}
   </Tag>
 );
@@ -255,12 +260,12 @@ export const StatTile: React.FC<{
   const body = (
     <>
       <div className="flex items-start justify-between gap-2">
-        <span className="text-[11px] font-extrabold tracking-wide text-gray-500 dark:text-gray-400">{label}</span>
+        <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">{label}</span>
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#F28C28]/10 text-[#F28C28]" aria-hidden="true">
           {icon}
         </span>
       </div>
-      <div className="mt-1 text-xl font-black tabular-nums text-[#0B192C] dark:text-white break-words">{value}</div>
+      <div className="mt-1.5 text-2xl font-black tabular-nums tracking-tight text-[#0B192C] dark:text-white break-words">{value}</div>
       {hint && <div className="mt-1 text-[11px] font-semibold text-gray-400">{hint}</div>}
       {to && cta && (
         <span className="mt-auto inline-flex items-center gap-0.5 pt-2.5 text-[11px] font-bold text-[#B45309] dark:text-[#FFA44D]">
@@ -271,7 +276,7 @@ export const StatTile: React.FC<{
     </>
   );
   const frame =
-    "flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-[#0B192C]";
+    "flex h-full flex-col rounded-2xl border border-[#F28C28]/10 bg-white p-5 shadow-sm transition-all duration-200 dark:border-slate-800 dark:bg-[#0B192C]";
   if (to && !action)
     return (
       <Link
@@ -391,8 +396,8 @@ export const LoadingBlock: React.FC<{ label?: string }> = ({ label = "Loading" }
 // ───────────────────────────────────────────────────────────────── Forms
 
 export const inputClass =
-  "w-full min-h-[44px] rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 " +
-  "focus:border-[#F28C28] focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 disabled:bg-gray-50 disabled:text-gray-500 " +
+  "w-full min-h-[46px] rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 " +
+  "focus:border-[#F28C28] focus:outline-none focus:ring-2 focus:ring-[#F28C28]/20 transition-colors duration-150 disabled:bg-gray-50 disabled:text-gray-500 " +
   "dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:disabled:bg-slate-800 aria-[invalid=true]:border-rose-500";
 
 /**
@@ -750,14 +755,14 @@ export const Avatar: React.FC<{ name: string; src?: string | null; size?: number
         decoding="async"
         onError={() => setFailed(true)}
         style={style}
-        className={cx("shrink-0 rounded-2xl border border-gray-100 object-cover dark:border-slate-800", className)}
+        className={cx("shrink-0 rounded-2xl border-2 border-[#F28C28]/20 object-cover ring-2 ring-[#F28C28]/10 ring-offset-1 dark:border-slate-700 dark:ring-offset-[#0B192C]", className)}
       />
     );
   return (
     <span
       aria-hidden="true"
-      style={{ ...style, fontSize: size * 0.4 }}
-      className={cx("flex shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#F28C28] to-[#D97706] font-serif font-black text-white", className)}
+      style={{ ...style, fontSize: size * 0.38 }}
+      className={cx("flex shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#F28C28] via-[#E07B1A] to-[#D97706] font-black tracking-tight text-white shadow-md shadow-[#F28C28]/25", className)}
     >
       {(name || "?").trim().charAt(0).toUpperCase()}
     </span>

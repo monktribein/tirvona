@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { MongooseModule } from "@nestjs/mongoose";
+import { OrmModule } from "../../database/orm-nest";
 import { AshramsModule } from "../ashrams/ashrams.module";
 import { BookingsModule } from "../bookings/bookings.module";
 import { RefundPolicyService } from "./application/refund-policy.service";
@@ -12,12 +12,12 @@ import {
 
 @Module({
   imports: [
-    MongooseModule.forFeature(REFUND_MODELS),
+    OrmModule.forFeature(REFUND_MODELS),
     BookingsModule,
     AshramsModule,
   ],
   controllers: [RefundsController, RefundPoliciesController],
   providers: [RefundsService, RefundPolicyService],
-  exports: [MongooseModule, RefundsService],
+  exports: [OrmModule, RefundsService],
 })
 export class RefundsModule {}

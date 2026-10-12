@@ -4,8 +4,8 @@ import {
   Logger,
   ServiceUnavailableException,
 } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import type { Model } from "mongoose";
+import { InjectModel } from "../../../database/orm-nest";
+import type { Model } from "../../../database/orm";
 import type { WhatsAppResolvedIdentity } from "../../bookings/domain/booking-customer";
 import { normalizeWhatsAppNumber } from "../../../integrations/whatsapp/utils/whatsapp-phone.util";
 import { WHATSAPP_CHANNEL_MODEL } from "../domain/whatsapp-channel.constants";

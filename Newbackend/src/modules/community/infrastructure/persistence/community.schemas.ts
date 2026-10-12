@@ -1,4 +1,4 @@
-import { Schema, SchemaTypes } from "mongoose";
+import { Schema, SchemaTypes } from "../../../../database/orm";
 const loose = (collection: string, fields: any = {}): Schema =>
   new Schema(fields, { strict: false, timestamps: true, collection });
 export const COMMUNITY_MODELS = [

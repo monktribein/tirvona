@@ -1,12 +1,12 @@
 import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import type { ClientSession, Model } from "mongoose";
+import { InjectModel } from "../../../../database/orm-nest";
+import type { ClientSession, Model } from "../../../../database/orm";
 import { PARKING_MODEL } from "../../domain/parking.constants";
 import type { ParkingRepository } from "../../domain/parking.repository";
 import { toDateKey } from "../../domain/parking.utils";
 
 @Injectable()
-export class MongooseParkingRepository implements ParkingRepository {
+export class PgParkingRepository implements ParkingRepository {
   constructor(
     @InjectModel(PARKING_MODEL.Location) private readonly locations: Model<any>,
     @InjectModel(PARKING_MODEL.SlotType) private readonly slotTypes: Model<any>,

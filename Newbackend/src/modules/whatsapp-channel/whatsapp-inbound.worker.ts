@@ -1,8 +1,8 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { Processor, WorkerHost } from "@nestjs/bullmq";
-import { InjectModel } from "@nestjs/mongoose";
+import { InjectModel } from "../../database/orm-nest";
 import type { Job } from "bullmq";
-import type { Model } from "mongoose";
+import type { Model } from "../../database/orm";
 import { ConversationService } from "./application/conversation.service";
 import type { InboundJob } from "./application/whatsapp-webhook.service";
 import { WHATSAPP_CHANNEL_MODEL, WHATSAPP_INBOUND_QUEUE } from "./domain/whatsapp-channel.constants";

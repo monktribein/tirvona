@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import { Global, Module } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { getModelToken } from "@nestjs/mongoose";
+import { getModelToken } from "../../database/orm-nest";
 import { Test } from "@nestjs/testing";
 import { TransactionService } from "../../common/database/transaction.service";
 import { PilgrimageModule } from "./pilgrimage.module";

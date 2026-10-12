@@ -6,9 +6,9 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
+import { InjectModel } from "../../../database/orm-nest";
 import { ConfigService } from "@nestjs/config";
-import { Types, type Model } from "mongoose";
+import { Types, type Model } from "../../../database/orm";
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import Razorpay from "razorpay";
 import { TransactionService } from "../../../common/database/transaction.service";

@@ -8,9 +8,9 @@ import {
   ServiceUnavailableException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { InjectModel } from "@nestjs/mongoose";
+import { InjectModel } from "../../../database/orm-nest";
 import { randomBytes } from "node:crypto";
-import type { Model } from "mongoose";
+import type { Model } from "../../../database/orm";
 import { bookingBelongsTo, type BookingActor } from "../domain/booking-customer";
 import {
   PAYMENT_LINK_MAX_TTL_MS,

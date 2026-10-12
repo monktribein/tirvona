@@ -9,6 +9,7 @@ import { ProviderZoomService } from "../application/provider-zoom.service";
 import { Idempotent } from "../infrastructure/idempotency.interceptor";
 import {
   BookingListQueryDto,
+  BookingLiveStreamDto,
   BookingTransitionDto,
   CancelWithReasonDto,
   ConfirmProviderPaymentDto,
@@ -97,6 +98,17 @@ export class ProviderBookingsController {
     @Body() dto: ConfirmProviderPaymentDto,
   ) {
     return this.payments.confirmPayment(bookingId, user, dto);
+  }
+
+  /** The pandit sets the YouTube live link for this booking. */
+  @Post(":bookingId/live-stream")
+  @Idempotent("provider.booking.live_stream")
+  setLiveStream(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("bookingId", ObjectIdPipe) bookingId: string,
+    @Body() dto: BookingLiveStreamDto,
+  ) {
+    return this.bookings.setLiveStreamAs(user, bookingId, dto.youtubeUrl);
   }
 
   @Get(":bookingId/zoom")

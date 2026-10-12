@@ -11531,6 +11531,11 @@ export const REGISTRY: Registry = {
      "field": "vendor",
      "column": "vendor",
      "kind": "json"
+    },
+    {
+     "field": "showOnPanditPages",
+     "column": "show_on_pandit_pages",
+     "kind": "boolean"
     }
    ],
    "indexes": [
@@ -23711,6 +23716,16 @@ export const REGISTRY: Registry = {
      "field": "updatedAt",
      "column": "updated_at",
      "kind": "date"
+    },
+    {
+     "field": "deliveryMode",
+     "column": "delivery_mode",
+     "kind": "string"
+    },
+    {
+     "field": "liveStream",
+     "column": "live_stream",
+     "kind": "json"
     }
    ],
    "indexes": [
@@ -24172,6 +24187,11 @@ export const REGISTRY: Registry = {
      "field": "updatedAt",
      "column": "updated_at",
      "kind": "date"
+    },
+    {
+     "field": "liveOnline",
+     "column": "live_online",
+     "kind": "json"
     }
    ],
    "indexes": [
@@ -24418,6 +24438,21 @@ export const REGISTRY: Registry = {
      "field": "updatedAt",
      "column": "updated_at",
      "kind": "date"
+    },
+    {
+     "field": "process",
+     "column": "process",
+     "kind": "json"
+    },
+    {
+     "field": "processUpdatedAt",
+     "column": "process_updated_at",
+     "kind": "date"
+    },
+    {
+     "field": "processUpdatedBy",
+     "column": "process_updated_by",
+     "kind": "objectId"
     }
    ],
    "indexes": [

@@ -6,8 +6,8 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { InjectModel } from "@nestjs/mongoose";
-import { Types, type Model } from "mongoose";
+import { InjectModel } from "../../../database/orm-nest";
+import { Types, type Model } from "../../../database/orm";
 import { createHash, randomUUID } from "node:crypto";
 import Razorpay from "razorpay";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";

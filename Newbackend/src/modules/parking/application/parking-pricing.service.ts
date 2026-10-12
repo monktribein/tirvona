@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import type { Model } from "mongoose";
+import { InjectModel } from "../../../database/orm-nest";
+import type { Model } from "../../../database/orm";
 import { PARKING_DEFAULTS, PARKING_MODEL } from "../domain/parking.constants";
 import { billableHours, minutesBetween } from "../domain/parking.utils";
 

@@ -1,4 +1,4 @@
-import { Schema, Types } from "mongoose";
+import { Schema, Types } from "../../../../database/orm";
 import {
   SMART_CONTACT_QR_COLLECTION,
   SMART_CONTACT_QR_FORMATS,

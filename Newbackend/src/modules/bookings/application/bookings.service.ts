@@ -8,9 +8,9 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
+import { InjectModel } from "../../../database/orm-nest";
 import { ConfigService } from "@nestjs/config";
-import type { Model } from "mongoose";
+import type { Model } from "../../../database/orm";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import Razorpay from "razorpay";
 import { TransactionService } from "../../../common/database/transaction.service";
@@ -430,7 +430,7 @@ export class BookingsService {
         state: "held",
         expiresAt: created.reservationExpiresAt,
       }));
-      // Mongoose refuses create() with a session on >1 document unless
+      // The model layer refuses create() with a session on >1 document unless
       // ordered is explicit; multi-room-category bookings produce one hold
       // doc per room, so this array can have length > 1.
       await this.inventoryHolds.create(holdDocs, { session, ordered: true });

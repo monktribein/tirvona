@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import { Global, Module } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { getModelToken } from "@nestjs/mongoose";
+import { getModelToken } from "../../database/orm-nest";
 import { Test } from "@nestjs/testing";
 import { TransactionService } from "../../common/database/transaction.service";
 import { AartiModule } from "./aarti.module";
@@ -41,7 +41,7 @@ class AmbientStubModule {}
 
 /**
  * Proves the module's dependency graph resolves without a database. Every
- * Mongoose model token is stubbed, so a missing `forFeature` registration or a
+ * model token is stubbed, so a missing `forFeature` registration or a
  * service injecting a model the module never declared fails here rather than at
  * container boot in production.
  */

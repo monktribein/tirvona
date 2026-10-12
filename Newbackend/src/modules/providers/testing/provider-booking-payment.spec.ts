@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import { Types } from "../../../database/orm";
 import { ProviderBookingPaymentService } from "../application/provider-booking-payment.service";
 
 describe("ProviderBookingPaymentService", () => {

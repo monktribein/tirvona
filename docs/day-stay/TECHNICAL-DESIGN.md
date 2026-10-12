@@ -39,7 +39,7 @@
 |  +---------------------------+                                   +---------------------------+  |
 |                                                |                                                |
 |  +---------------------------+                 |                 +---------------------------+  |
-|  | Notifications Outbox /    |<----------------+---------------->| Mongoose / MongoDB Engine |  |
+|  | Notifications Outbox /    |<----------------+---------------->| Supabase PostgreSQL       |  |
 |  | Redis BullMQ Worker       |                                   | (ACID Transactions & TTL) |  |
 |  +---------------------------+                                   +---------------------------+  |
 +-------------------------------------------------------------------------------------------------+
@@ -47,7 +47,7 @@
 
 ---
 
-## 2. Database Schema Design (MongoDB / Mongoose)
+## 2. Database Schema Design (Supabase PostgreSQL)
 
 ### A. Extended `AshramSchema` (`ashram.schemas.ts`)
 ```typescript
@@ -167,7 +167,7 @@ For any requested room and interval $[T_{req\_start}, T_{req\_end}]$, the total 
 2. **Overnight Occupancy Protection**:
    - Day Stays cannot extend past property's Day Stay operating cutoff (e.g. 19:00 / 20:00) or interfere with standard overnight check-in (12:00 / 14:00) if rooms are shared between overnight and day rest.
 
-### Atomic Inventory Hold with Mongo Transaction
+### Atomic Inventory Hold with a Database Transaction
 ```typescript
 // 1. Check current unallocated units for the interval
 // 2. Insert hold record in `booking_inventory` with `state: "held"`, `expiresAt: now + 10m`

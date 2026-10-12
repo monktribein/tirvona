@@ -5,7 +5,6 @@ import {
   IsBoolean,
   IsIn,
   IsInt,
-  IsMongoId,
   IsNumber,
   IsObject,
   IsOptional,
@@ -15,6 +14,7 @@ import {
   Min,
   MinLength,
 } from "class-validator";
+import { IsEntityId } from "../../../../common/decorators/is-entity-id.decorator";
 
 export class AshramQueryDto {
   @IsOptional() @IsString() search?: string;
@@ -103,7 +103,7 @@ export class AshramDocumentsDto {
 }
 
 export class CreateRoomDto {
-  @IsMongoId() ashramId: string;
+  @IsEntityId() ashramId: string;
   @IsString() name: string;
   @IsIn(["dormitory", "private_room", "family_room", "hall"]) type: string;
   @IsIn(["AC", "Non-AC"]) acType: string;

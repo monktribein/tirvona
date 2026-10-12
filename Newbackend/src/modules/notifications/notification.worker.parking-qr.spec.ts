@@ -263,7 +263,7 @@ describe("Parking confirmation WhatsApp QR (fetch mocked, nothing sent)", () => 
     const qrCodes = { findOne: jest.fn(() => lookupChain(storedQr)) };
     const booking = { _id: BOOKING_ID, bookingReference: REFERENCE, status: "upcoming" };
     const bookings = { findById: jest.fn(() => ({ session: jest.fn().mockResolvedValue(booking) })) };
-    // The chain's session() resolves the stored QR document, as Mongoose would.
+    // The chain's session() resolves the stored QR document, as the model layer would.
     qrCodes.findOne.mockImplementation(() => {
       const chain: any = { sort: jest.fn(() => chain), session: jest.fn().mockResolvedValue(storedQr) };
       return chain;

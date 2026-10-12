@@ -1,11 +1,11 @@
 import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import type { ClientSession, Model } from "mongoose";
+import { InjectModel } from "../../../../database/orm-nest";
+import type { ClientSession, Model } from "../../../../database/orm";
 import type { UserRepository } from "../../domain/user.repository";
 import { User, UserDocument } from "./user.schema";
 
 @Injectable()
-export class MongooseUserRepository implements UserRepository {
+export class PgUserRepository implements UserRepository {
   constructor(@InjectModel(User.name) private readonly users: Model<User>) {}
 
   findById(id: string): Promise<UserDocument | null> {

@@ -18,13 +18,8 @@ import { configureDatabase } from "./database/database";
 async function bootstrap(): Promise<void> {
   const isProduction = process.env.NODE_ENV === "production";
   applyDnsServersFromEnvironment();
-  const dataBackend =
-    process.env.DATA_BACKEND ??
-    (process.env.SUPABASE_DB_URL ? "supabase" : "mongo");
-  if (dataBackend === "supabase") {
-    // Must run before any Mongoose connection exists.
-    configureDatabase();
-  }
+  // Must run before any model connection exists.
+  configureDatabase();
 
   const app = await NestFactory.create(AppModule, {
     rawBody: true,

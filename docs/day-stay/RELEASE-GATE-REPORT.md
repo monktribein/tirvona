@@ -75,7 +75,7 @@
 
 | Security Area | Status | Verification Evidence |
 | :--- | :--- | :--- |
-| **Vendor Property Isolation** | ✅ **VERIFIED (PASS)** | Vendor endpoints require `@Roles("ashram_owner", "ashram_staff", "admin")` and verify `ownerId` match on MongoDB documents. |
+| **Vendor Property Isolation** | ✅ **VERIFIED (PASS)** | Vendor endpoints require `@Roles("ashram_owner", "ashram_staff", "admin")` and verify `ownerId` match on stored records. |
 | **Admin Authorization** | ✅ **VERIFIED (PASS)** | Role guards correctly protect management routes. |
 | **Booking Ownership** | ✅ **VERIFIED (PASS)** | `confirmPayment` and `holdSlot` bind directly to `@CurrentUser() user.id`. |
 | **API Validation** | ✅ **VERIFIED (PASS)** | Class-validator DTOs validate all inputs (`DayStayHoldDto`, `DayStayConfirmPaymentDto`). |

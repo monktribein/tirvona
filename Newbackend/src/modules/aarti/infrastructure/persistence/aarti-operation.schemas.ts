@@ -1,4 +1,4 @@
-import { Schema, SchemaTypes } from "mongoose";
+import { Schema, SchemaTypes } from "../../../../database/orm";
 import {
   AARTI_BOOKING_STATUSES,
   AARTI_PAYMENT_STATUSES,

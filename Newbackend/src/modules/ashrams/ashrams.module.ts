@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { MongooseModule } from "@nestjs/mongoose";
+import { OrmModule } from "../../database/orm-nest";
 import { AshramsService } from "./application/ashrams.service";
 import { AshramsController } from "./presentation/ashrams.controller";
 import { RoomsController } from "./presentation/rooms.controller";
@@ -30,7 +30,7 @@ import { OfflineInventoryController } from "./presentation/offline-inventory.con
   imports: [
     ParkingModule,
     AuditModule,
-    MongooseModule.forFeature([
+    OrmModule.forFeature([
       { name: "Ashram", schema: AshramSchema },
       { name: "Room", schema: RoomSchema },
       { name: "RoomRate", schema: RoomRateSchema },
@@ -65,7 +65,7 @@ import { OfflineInventoryController } from "./presentation/offline-inventory.con
     RoomRatesService,
   ],
   exports: [
-    MongooseModule,
+    OrmModule,
     AshramsService,
     AshramSlugService,
     OfflineInventoryService,

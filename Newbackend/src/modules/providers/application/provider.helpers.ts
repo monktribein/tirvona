@@ -1,8 +1,8 @@
 import { randomBytes } from "node:crypto";
-import { Types } from "mongoose";
+import { Types } from "../../../database/orm";
 import { providerError } from "../domain/provider.errors";
 
-/** Strict 24-hex check. Mongoose's isValidObjectId() also accepts any 12-character string. */
+/** Strict 24-hex check. isValidObjectId() also accepts any 12-character string. */
 export const isObjectIdString = (value: unknown): value is string =>
   typeof value === "string" && /^[a-fA-F0-9]{24}$/.test(value);
 

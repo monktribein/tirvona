@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { MongooseModule } from "@nestjs/mongoose";
+import { OrmModule } from "../../database/orm-nest";
 import { ConfigModule } from "@nestjs/config";
 import { CommonModule } from "../../common/common.module";
 import { DayStayProductSchema } from "./infrastructure/persistence/day-stay-product.schemas";
@@ -22,7 +22,7 @@ import { WalletModule } from "../wallet/wallet.module";
     ConfigModule,
     CommonModule,
     WalletModule,
-    MongooseModule.forFeature([
+    OrmModule.forFeature([
       { name: "DayStayProduct", schema: DayStayProductSchema },
       { name: "Ashram", schema: AshramSchema },
       { name: "Room", schema: RoomSchema },

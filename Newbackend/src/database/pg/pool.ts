@@ -33,7 +33,49 @@ export function nodePgPool(connectionString: string, options: { max?: number; ap
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 15_000,
   });
-  return pool as PgPool;
+  // node-postgres reports a broken idle connection on the pool; unhandled, it would crash the process.
+  pool.on("error", (error: Error) => console.error(`[pg-pool] idle connection error: ${error.message}`));
+  return withConnectionRetry(pool as PgPool);
+}
+
+/**
+ * Supabase's pooler refuses new sessions while it is at its client limit
+ * ("EMAXCONNSESSION ... max clients reached", or Postgres 53300). That is
+ * momentary under a burst, so acquiring a connection is retried with a short
+ * backoff instead of failing the request. Only connection *acquisition* is
+ * retried: the refusal happens before any statement runs, so a retry can
+ * never execute a write twice.
+ */
+const RETRY_DELAYS_MS = [150, 400, 1_000, 2_000];
+
+export const isConnectionLimitError = (error: unknown): boolean => {
+  const e = error as { code?: string; message?: string } | null;
+  return (
+    e?.code === "53300" ||
+    /EMAXCONNSESSION|max clients reached|too many clients|remaining connection slots are reserved/i.test(
+      String(e?.message ?? ""),
+    )
+  );
+};
+
+async function retrying<T>(attempt: () => Promise<T>): Promise<T> {
+  for (let i = 0; ; i += 1) {
+    try {
+      return await attempt();
+    } catch (error) {
+      if (i >= RETRY_DELAYS_MS.length || !isConnectionLimitError(error)) throw error;
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS_MS[i]));
+    }
+  }
+}
+
+export function withConnectionRetry(pool: PgPool): PgPool {
+  return {
+    connect: () => retrying(() => pool.connect()),
+    // pool.query acquires, runs and releases in one call; a limit refusal comes from the acquire step.
+    query: (text, params) => retrying(() => pool.query(text, params)),
+    end: () => pool.end(),
+  };
 }
 
 /**

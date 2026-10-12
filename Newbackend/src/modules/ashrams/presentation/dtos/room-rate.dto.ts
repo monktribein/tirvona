@@ -2,7 +2,6 @@ import { Type } from "class-transformer";
 import {
   IsArray,
   IsBoolean,
-  IsMongoId,
   IsNumber,
   IsOptional,
   IsString,
@@ -10,12 +9,13 @@ import {
   MaxLength,
   Min,
 } from "class-validator";
+import { IsEntityId } from "../../../../common/decorators/is-entity-id.decorator";
 
 export class UpsertRoomRateDto {
-  @IsMongoId()
+  @IsEntityId()
   ashramId: string;
 
-  @IsMongoId()
+  @IsEntityId()
   roomId: string;
 
   @Type(() => Number)
@@ -45,11 +45,11 @@ export class ToggleRateDiscountDto {
 }
 
 export class BulkRoomRatesDto {
-  @IsMongoId()
+  @IsEntityId()
   ashramId: string;
 
   @IsArray()
-  @IsMongoId({ each: true })
+  @IsEntityId({ each: true })
   roomIds: string[];
 
   @Type(() => Number)

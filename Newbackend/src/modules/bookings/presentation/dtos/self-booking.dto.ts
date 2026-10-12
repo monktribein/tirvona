@@ -3,7 +3,6 @@ import {
   IsEmail,
   IsIn,
   IsInt,
-  IsMongoId,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -11,8 +10,9 @@ import {
   MinLength,
   ValidateIf,
   IsArray,
-  ValidateNested
+  ValidateNested,
 } from "class-validator";
+import { IsEntityId } from "../../../../common/decorators/is-entity-id.decorator";
 import {
   BOOKING_SOURCES,
   OFFLINE_PAYMENT_METHODS,
@@ -22,7 +22,7 @@ import { RoomBookingDto } from "./booking.dto";
 
 export class CreateSelfBookingDto {
   @IsIn(BOOKING_SOURCES) bookingType: string;
-  @IsMongoId() ashramId: string;
+  @IsEntityId() ashramId: string;
   
   @IsOptional()
   @IsArray()
@@ -31,7 +31,7 @@ export class CreateSelfBookingDto {
   rooms?: RoomBookingDto[];
 
   @IsOptional()
-  @IsMongoId()
+  @IsEntityId()
   roomId?: string;
 
   @IsString() @MinLength(2) guestName: string;
@@ -61,7 +61,7 @@ export class CreateSelfBookingDto {
 }
 
 export class SelfBookingAvailabilityDto {
-  @IsMongoId() ashramId: string;
+  @IsEntityId() ashramId: string;
   @IsString() @IsNotEmpty() checkInDate: string;
   @IsString() @IsNotEmpty() checkOutDate: string;
 }

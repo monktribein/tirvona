@@ -1,6 +1,6 @@
 import { ForbiddenException, Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import type { Model } from "mongoose";
+import { InjectModel } from "../../../database/orm-nest";
+import type { Model } from "../../../database/orm";
 import {
   PARKING_ASHRAM_OWNER_ROLE,
   PARKING_CAPABILITIES,

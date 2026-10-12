@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { MongooseModule } from "@nestjs/mongoose";
+import { OrmModule } from "../../database/orm-nest";
 import { AuditModule } from "../audit/audit.module";
 import { NotificationsModule } from "../notifications/notifications.module";
 import { UploadsModule } from "../uploads/uploads.module";
@@ -25,7 +25,7 @@ import { SupportController } from "./presentation/support.controller";
     UsersModule,
     UploadsModule,
     NotificationsModule,
-    MongooseModule.forFeature(SUPPORT_MODELS),
+    OrmModule.forFeature(SUPPORT_MODELS),
   ],
   controllers: [SupportController, SupportAdminController],
   providers: [

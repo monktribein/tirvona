@@ -1,6 +1,6 @@
 import { forwardRef, Inject, Injectable, Logger, Optional } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import { Types, type ClientSession, type Model } from "mongoose";
+import { InjectModel } from "../../../database/orm-nest";
+import { Types, type ClientSession, type Model } from "../../../database/orm";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { TransactionService } from "../../../common/database/transaction.service";
 import { canonicalPhone } from "../../../common/phone/phone.util";
@@ -16,6 +16,13 @@ import {
 import { providerError } from "../domain/provider.errors";
 import { addDays, localDateOf, zonedToUtc } from "../domain/provider-time.util";
 import { listingBlockers, maskPhone } from "../domain/provider-visibility";
+import { parseYouTubeUrl } from "../domain/youtube";
+import {
+  PLATFORM_FEE_LABEL,
+  PLATFORM_FEE_LINE,
+  platformFeeMinor,
+  providerPlatformFeeBps,
+} from "../domain/platform-fee";
 import { correlationId } from "../infrastructure/request-context";
 import { pageParams } from "../presentation/dto/common.dto";
 import type {
@@ -56,6 +63,14 @@ const CANCELLED: readonly BookingStatus[] = [
   "PAYMENT_FAILED",
 ];
 const OPS_ROLES = ["service_manager", "super_admin"];
+/** A live link makes sense from confirmation until the puja is done. */
+const LIVE_STREAM_STATUSES = [
+  "CONFIRMED",
+  "PROVIDER_ACCEPTED",
+  "PREPARATION_IN_PROGRESS",
+  "READY_FOR_FULFILMENT",
+  "IN_PROGRESS",
+];
 export const isBookingOps = (user: Pick<AuthenticatedUser, "role">): boolean =>
   OPS_ROLES.includes(user.role);
 
@@ -119,11 +134,18 @@ export class ProviderBookingService {
         `Bookings can be made up to ${MAX_BOOKING_HORIZON_DAYS} days ahead`,
       );
     const end = new Date(start.getTime() + offering.durationMinutes * 60_000);
-    this.assertLocation(dto, offering, provider);
+    const deliveryMode = dto.deliveryMode === "LIVE_ONLINE" ? "LIVE_ONLINE" : "IN_PERSON";
+    if (deliveryMode === "LIVE_ONLINE" && !provider.liveOnline?.enabled)
+      throw providerError.conflict(
+        "LIVE_ONLINE_UNAVAILABLE",
+        "This pandit is not taking live online bookings right now. Please choose an in-person booking.",
+      );
+    // A live online katha happens on video: no address and no travel.
+    if (deliveryMode === "IN_PERSON") this.assertLocation(dto, offering, provider);
 
     const timezone = await this.availability.timezoneOf(provider._id);
     const titles = await this.snapshotTitles(variant, ritual);
-    const pricing = this.pricingSnapshot(offering);
+    const pricing = this.pricingSnapshot(offering, deliveryMode);
     const holdExpiresAt = new Date(now.getTime() + providerConfig().holdMinutes * 60_000);
 
     const serviceSnapshot = {
@@ -141,6 +163,7 @@ export class ProviderBookingService {
         id: idStr(offering._id),
         title: offering.title ?? null,
         fulfilmentType: offering.fulfilmentType,
+        deliveryMode,
         durationMinutes: offering.durationMinutes,
         teamSize: offering.teamSize,
         inclusions: offering.inclusions ?? [],
@@ -180,12 +203,23 @@ export class ProviderBookingService {
                 ritualId: ritual._id,
                 ritualVariantId: variant._id,
                 fulfilmentType: offering.fulfilmentType,
+                deliveryMode,
+                // A live online booking starts with the pandit's YouTube live page; they can set a specific stream later.
+                liveStream:
+                  deliveryMode === "LIVE_ONLINE" && provider.liveOnline?.youtubeUrl
+                    ? {
+                        youtubeUrl: provider.liveOnline.youtubeUrl,
+                        videoId: parseYouTubeUrl(provider.liveOnline.youtubeUrl)?.videoId ?? null,
+                        source: "PROFILE",
+                        addedAt: now,
+                      }
+                    : null,
                 serviceSnapshot,
                 scheduledStartAt: start,
                 scheduledEndAt: end,
                 timezone,
                 customerContact: { name: dto.customerName, phone: canonicalPhone(dto.customerPhone) },
-                serviceLocation: dto.serviceLocation ?? null,
+                serviceLocation: deliveryMode === "LIVE_ONLINE" ? null : dto.serviceLocation ?? null,
                 customerNotes: dto.notes,
                 status: "PAYMENT_PENDING",
                 stateVersion: 0,
@@ -314,6 +348,39 @@ export class ProviderBookingService {
             ? "decline"
             : "cancel_by_provider";
     return this.transition(actor, user, bookingId, { command, reasonCode });
+  }
+
+  /**
+   * The pandit (or ops) sets the YouTube link devotees watch for this booking:
+   * any booking can be streamed (a live online katha, or a home puja for family
+   * far away). The devotee is told as soon as it is added.
+   */
+  async setLiveStreamAs(user: AuthenticatedUser, bookingId: string, youtubeUrl: string) {
+    const actor = await this.resolveActor(user, bookingId);
+    if (actor === "CUSTOMER")
+      throw providerError.forbidden("BOOKING_TRANSITION_FORBIDDEN", "Only the pandit can set the live stream link");
+    const parsed = parseYouTubeUrl(youtubeUrl);
+    if (!parsed)
+      throw providerError.badRequest("INVALID_YOUTUBE_LINK", "Enter a YouTube link, e.g. https://youtube.com/live/...");
+    const booking: any = await this.bookings.findById(toObjectId(bookingId)).select("status bookingNumber customerUserId").lean();
+    if (!LIVE_STREAM_STATUSES.includes(booking.status))
+      throw providerError.conflict("BOOKING_NOT_STREAMABLE", `A live link cannot be added while the booking is ${booking.status}`);
+    await this.bookings.updateOne(
+      { _id: booking._id },
+      { $set: { liveStream: { youtubeUrl: parsed.url, videoId: parsed.videoId, source: "BOOKING", addedAt: new Date() } } },
+    );
+    await this.audit.log(user, "booking.live_stream", "provider_booking", booking._id, { hasVideoId: Boolean(parsed.videoId) });
+    try {
+      await this.notifier.notifyUsers([String(booking.customerUserId)], {
+        title: `Booking ${booking.bookingNumber}`,
+        body: "Pandit ji added the YouTube live link for your puja. Open My bookings to watch.",
+        deepLink: "/profile/bookings",
+        kind: "provider.booking.live_stream",
+      });
+    } catch (error) {
+      this.logger.warn(`Live link notice for ${booking.bookingNumber} failed: ${(error as Error).message}`);
+    }
+    return this.getAs(user, bookingId);
   }
 
   // ------------------------------------------- system hooks (payment/ops)
@@ -635,6 +702,10 @@ export class ProviderBookingService {
       bookingNumber: row.bookingNumber,
       status: row.status,
       fulfilmentType: row.fulfilmentType,
+      deliveryMode: row.deliveryMode ?? "IN_PERSON",
+      liveStream: row.liveStream
+        ? { youtubeUrl: row.liveStream.youtubeUrl, videoId: row.liveStream.videoId ?? null, addedAt: row.liveStream.addedAt ?? null }
+        : null,
       ritual: snapshot.ritual ?? null,
       variant: snapshot.variant ?? null,
       offering: snapshot.offering ?? null,
@@ -668,6 +739,9 @@ export class ProviderBookingService {
           lines: (snapshot.pricing.lines ?? []).filter((line: any) =>
             ["PROVIDER_SERVICE", "TRAVEL"].includes(line.code),
           ),
+          youReceiveMinor:
+            snapshot.pricing.providerSubtotalMinor ??
+            Number(snapshot.pricing.totalMinor ?? 0) - Number(snapshot.pricing.platformFeeMinor ?? 0),
         }
       : null;
     return {
@@ -754,25 +828,34 @@ export class ProviderBookingService {
    * tax and discounts belong to the quote engine, which is not part of this
    * phase, so the snapshot is explicitly a provider estimate.
    */
-  private pricingSnapshot(offering: any) {
+  private pricingSnapshot(offering: any, deliveryMode: string = "IN_PERSON") {
     const professional = offering.baseProfessionalFeeMinor as number;
-    const charge = offering.travelCharge ?? { policy: "NONE" };
+    // Nobody travels for a live online katha.
+    const charge = deliveryMode === "LIVE_ONLINE" ? { policy: "NONE" } : offering.travelCharge ?? { policy: "NONE" };
     const travel = charge.policy === "FLAT" ? (charge.flatMinor as number) : 0;
+    // The devotee pays Tirvona's fee on top of the pandit's professional fee; the pandit keeps fee + travel.
+    const feeBps = providerPlatformFeeBps();
+    const fee = platformFeeMinor(professional, feeBps);
+    const lines: Array<Record<string, unknown>> = [
+      { code: "PROVIDER_SERVICE", label: "Professional fee", amountMinor: professional },
+      {
+        code: "TRAVEL",
+        label: charge.policy === "ACTUALS_AT_COST" ? "Travel (at actual cost)" : "Travel charge",
+        amountMinor: travel,
+        policy: charge.policy,
+      },
+    ];
+    if (fee > 0)
+      lines.push({ code: PLATFORM_FEE_LINE, label: `${PLATFORM_FEE_LABEL} (${feeBps / 100}%)`, amountMinor: fee, rateBps: feeBps });
     return {
       status: "PROVIDER_ESTIMATE",
       currency: offering.currency,
-      lines: [
-        { code: "PROVIDER_SERVICE", label: "Professional fee", amountMinor: professional },
-        {
-          code: "TRAVEL",
-          label: charge.policy === "ACTUALS_AT_COST" ? "Travel (at actual cost)" : "Travel charge",
-          amountMinor: travel,
-          policy: charge.policy,
-        },
-      ],
-      totalMinor: professional + travel,
+      lines,
+      providerSubtotalMinor: professional + travel,
+      platformFeeMinor: fee,
+      totalMinor: professional + travel + fee,
       travelPending: charge.policy === "ACTUALS_AT_COST",
-      note: "Provider-declared amounts. Platform fee, tax and discounts are applied by the quote.",
+      note: "Provider-declared amounts plus Tirvona's platform fee. Tax and discounts are applied by the quote.",
     };
   }
 

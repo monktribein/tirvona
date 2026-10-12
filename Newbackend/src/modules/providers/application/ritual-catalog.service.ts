@@ -1,6 +1,7 @@
+import type { RitualProcessDto } from "../presentation/dto/catalog.dto";
 import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import type { Model } from "mongoose";
+import { InjectModel } from "../../../database/orm-nest";
+import type { Model } from "../../../database/orm";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { uniqueSlug } from "../../../common/slug/slug.util";
 import { escapeRegex } from "../../../common/utils/escape-regex";
@@ -94,6 +95,7 @@ export const toPublicRitual = (ritual: any) => {
     defaultDurationMinutes: content.defaultDurationMinutes ?? null,
     contentVersion: content.version ?? 1,
     publishedAt: ritual.publishedAt ?? null,
+    process: ritual.process ?? null,
   };
 };
 
@@ -124,6 +126,8 @@ const adminRitual = (ritual: any) => ({
   approvedBy: idStr(ritual.approvedBy) ?? null,
   createdAt: ritual.createdAt,
   updatedAt: ritual.updatedAt,
+  process: ritual.process ?? null,
+  processUpdatedAt: ritual.processUpdatedAt ?? null,
 });
 
 @Injectable()
@@ -513,6 +517,31 @@ export class RitualCatalogService {
       if (byId) return byId;
     }
     return this.rituals.findOne({ slug: key }).lean();
+  }
+
+  /**
+   * Sets the puja's step-by-step guide (before the pandit arrives, during, after).
+   * Shown to devotees and pandits at once; it is guidance, not the reviewed
+   * catalogue content, so it does not go through draft/review/publish.
+   */
+  async setProcess(user: AuthenticatedUser, id: string, dto: RitualProcessDto) {
+    const ritual = await this.requireRitual(id);
+    const clean = (steps?: Array<{ title: string; detail?: string; owner?: string }>) =>
+      (steps ?? [])
+        .map((step) => ({ title: step.title.trim(), detail: step.detail?.trim() || null, owner: step.owner ?? "BOTH" }))
+        .filter((step) => step.title.length > 0);
+    const process = { before: clean(dto.before), during: clean(dto.during), after: clean(dto.after) };
+    const empty = !process.before.length && !process.during.length && !process.after.length;
+    await this.rituals.updateOne(
+      { _id: ritual._id },
+      { $set: { process: empty ? null : process, processUpdatedAt: new Date(), processUpdatedBy: toObjectId(user.id) } },
+    );
+    await this.audit.log(user, "ritual.process.updated", "ritual", ritual._id, {
+      before: process.before.length,
+      during: process.during.length,
+      after: process.after.length,
+    });
+    return this.get(String(ritual._id));
   }
 
   private async requireRitual(id: string): Promise<any> {

@@ -1,4 +1,4 @@
-import { Schema, SchemaTypes } from "mongoose";
+import { Schema, SchemaTypes } from "../../../database/orm";
 
 /**
  * Every public path an entity has ever answered to. When a slug or city

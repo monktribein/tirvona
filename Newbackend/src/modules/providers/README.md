@@ -2,7 +2,7 @@
 
 Backend for the Tirvona Puja + Jyotish provider domain: ritual catalogue, provider profiles, offerings with pricing, availability and calendar, verification, puja bookings and expert consultations. Implements the provider-side of the manager's **SRS v2.0, Technical Architecture v2.0, Data Dictionary v2.0 and OpenAPI v2.0** (see [Contract decisions](#contract-decisions-that-need-sign-off) for every place the repository forced a difference).
 
-Everything lives in this folder. Outside it there are only these wiring changes: `app.module.ts` (register `ProvidersModule`), `users/.../user.schema.ts` (two roles), `main.ts` (allow the `Idempotency-Key` CORS header), `tsconfig.build.json` (keep the test harness out of the production build), `database/generate.js` (a one-line Mongoose 9 fix, see below), `package.json` (one script) and the generated registry/migration.
+Everything lives in this folder. Outside it there are only these wiring changes: `app.module.ts` (register `ProvidersModule`), `users/.../user.schema.ts` (two roles), `main.ts` (allow the `Idempotency-Key` CORS header), `tsconfig.build.json` (keep the test harness out of the production build), `database/generate.js` (a one-line array-type fix, see below), `package.json` (one script) and the generated registry/migration.
 
 ## Scope
 
@@ -19,7 +19,7 @@ Everything lives in this folder. Outside it there are only these wiring changes:
 
 ## Integration architecture
 
-* **One backend, one database.** The module is a NestJS module in `Newbackend`, stored in the platform Postgres through the existing Mongoose-over-Postgres driver, following the `marketplace` module's conventions (self-contained folder, ownership-scoped onboarding, `audit_logs`, generated migrations). No new database or service was introduced. (The SRS/Data Dictionary describe MongoDB; this repository is Postgres. Collection names, fields and indexes follow the dictionary exactly, so the model is traceable.)
+* **One backend, one database.** The module is a NestJS module in `Newbackend`, stored in the platform Postgres through the existing model-layer Postgres driver, following the `marketplace` module's conventions (self-contained folder, ownership-scoped onboarding, `audit_logs`, generated migrations). No new database or service was introduced. (The SRS/Data Dictionary predate the move to Supabase; this repository is Postgres. Collection names, fields and indexes follow the dictionary exactly, so the model is traceable.)
 * **Frontend: one module in the main app, like marketplace.** All pandit screens live in `frontend/src/modules/pandit/` (`provider/` console, `public/` devotee pages, `admin/` Tirvona admin pages, `services/`, `types/`, `ui.tsx`; alias `@pandit/*`) and are served by the main app on tirvona.com (`/provider/*`, `/pandits`, `/admin/pandits/*`). There is no separate app or subdomain. The old standalone `pandit/frontend` Next.js prototype (localStorage mocks, never deployed) is superseded and can be deleted.
 * **Routing.** Every endpoint is served under **`/api/v2`** using Nest URI versioning, which matches the OpenAPI contract, the existing frontend calls (`/api` + `/v2/...`) and the repository's precedent for versioned controllers (`smart-contact` is `/api/v1`). Existing version-neutral routes (`/api/bookings` for stays, etc.) are unaffected: neutral controllers do not answer `/api/v2/*` (verified), so `/api/v2/bookings` is a different, collision-free resource from the stay bookings.
 
@@ -67,7 +67,7 @@ npm run db:verify                   # schema matches the code
 
 Rollback (manual, drops the data): `database/rollback/0003_providers_foundation.down.sql`, with the steps in its header. `db:migrate` never reads that folder. Both directions, plus a re-apply, are tested against an empty Postgres (`providers.migration.pg-spec.ts`).
 
-> `database/generate.js` had a bug under Mongoose 9: array element types were not detected, so every new array field was typed `jsonb` (slow, un-indexable search). It now reads `embeddedSchemaType`. Only columns generated from now on are affected; existing registry columns are never altered by the tool.
+> `database/generate.js` had a bug: array element types were not detected, so every new array field was typed `jsonb` (slow, un-indexable search). It now reads `embeddedSchemaType`. Only columns generated from now on are affected; existing registry columns are never altered by the tool.
 
 ## Lifecycles
 
@@ -125,7 +125,7 @@ The booking `serviceSnapshot.pricing` is explicitly a **`PROVIDER_ESTIMATE`**: t
 
 Devotees pay Tirvona (Razorpay checkout, which includes the UPI QR, or their Tirvona wallet); the pandit is paid from their **provider wallet**.
 
-* **Credit.** When a booking becomes `CONFIRMED` the pandit's net share (`pricing.totalMinor` minus `PROVIDER_PLATFORM_FEE_BPS`) is credited as a `PENDING` `EARNING`, inside the same transaction as the state change. Idempotent per booking (`earning-<bookingId>`).
+* **Credit.** When a booking becomes `CONFIRMED` the pandit's share (professional fee + travel; the devotee's `PLATFORM_FEE` line stays with Tirvona) is credited as a `PENDING` `EARNING`, inside the same transaction as the state change. Idempotent per booking (`earning-<bookingId>`).
 * **Hold.** It becomes `AVAILABLE` after `PROVIDER_WALLET_HOLD_HOURS` (72): a sweep runs every 5 minutes, and any wallet read releases what is due first.
 * **Refund.** Cancelling a paid booking refunds the devotee in full, so the earning is reversed in the cancellation's transaction: a pending one is voided; a released one is debited from the balance and any shortfall becomes `recoveryDueMinor`, settled from the next released earnings.
 * **Withdrawal.** The pandit saves one bank account (number AES-GCM sealed with the payout key, only the last 4 digits ever returned) or UPI id, then requests an amount ≤ available. Finance (`finance_manager`, `service_manager`, `super_admin`) reveals the destination (audited), transfers manually and records the UTR (`:mark-paid`), or rejects it and the money returns to the balance. The provider can cancel while `REQUESTED`. Automatic RazorpayX payouts are not wired.
@@ -151,7 +151,7 @@ Routes: `GET /provider/wallet`, `GET /provider/wallet/transactions`, `GET|PUT /p
 | `PROVIDERS_MAINTENANCE_ENABLED` | `true` | Background sweeps |
 | `PROVIDERS_ALLOW_DEV_FIXTURES` | unset | Dev only (ignored in production) |
 | `PROVIDER_WALLET_HOLD_HOURS` | `72` | Hours a booking payment stays on hold before the pandit can withdraw it |
-| `PROVIDER_PLATFORM_FEE_BPS` | `0` | Tirvona fee per booking in basis points (500 = 5%) |
+| `PROVIDER_PLATFORM_FEE_BPS` | `1000` | Tirvona platform fee the devotee pays on top of the professional fee, basis points (1000 = 10%; ₹501 → ₹551.10). Snapshotted per booking as a `PLATFORM_FEE` price line; the pandit never sees or pays it |
 | `PROVIDER_MIN_WITHDRAWAL_MINOR` | `10000` | Smallest withdrawal, paise |
 | `PAYOUT_ENCRYPTION_KEY` | (dev: falls back to `ENCRYPTION_KEY`/`JWT_SECRET`) | Seals pandit bank account numbers; required in production |
 

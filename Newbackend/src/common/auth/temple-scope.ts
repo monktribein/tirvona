@@ -1,5 +1,5 @@
 import { ForbiddenException } from "@nestjs/common";
-import type { Model } from "mongoose";
+import type { Model } from "../../database/orm";
 import type { AuthenticatedUser } from "../decorators/current-user.decorator";
 import { canManageAllTemples, isTempleOwner } from "./temple-access";
 

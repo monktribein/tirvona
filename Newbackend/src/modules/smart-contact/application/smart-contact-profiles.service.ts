@@ -4,8 +4,8 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import { Model, Types } from "mongoose";
+import { InjectModel } from "../../../database/orm-nest";
+import { Model, Types } from "../../../database/orm";
 import { escapeRegex } from "../../../common/utils/escape-regex";
 import {
   buildProfileUrl,

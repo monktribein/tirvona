@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
+import { InjectModel } from "../../../database/orm-nest";
 import { createHash } from "node:crypto";
-import { Model, Types } from "mongoose";
+import { Model, Types } from "../../../database/orm";
 import type { Request } from "express";
 import {
   smartContactConfig,

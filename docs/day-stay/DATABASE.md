@@ -175,5 +175,5 @@ dayStayDetails: {
    - `bookingType` has `default: "overnight"`.
    - Existing documents with omitted `bookingType` and `dayStayDetails` continue to validate and behave identically as overnight bookings.
 2. **Timezone Representation**:
-   - All time slots (`slotStartTime`, `slotEndTime`, `graceExpiresAt`, `housekeepingEndsAt`) are stored as absolute UTC `Date` timestamps in MongoDB, aligned with the platform's standard MongoDB date handling.
+   - All time slots (`slotStartTime`, `slotEndTime`, `graceExpiresAt`, `housekeepingEndsAt`) are stored as absolute UTC `Date` timestamps in Supabase PostgreSQL, aligned with the platform's standard date handling.
    - Local operational time (e.g. `operatingHours: { start: "06:00", end: "20:00" }`) is resolved in context of the property's operational zone (`Asia/Kolkata` default).

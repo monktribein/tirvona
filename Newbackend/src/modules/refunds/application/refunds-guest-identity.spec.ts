@@ -1,5 +1,5 @@
 import { ConflictException, ForbiddenException } from "@nestjs/common";
-import { model, Types } from "mongoose";
+import { model, Types } from "../../../database/orm";
 import type { ConfigService } from "@nestjs/config";
 import type { BookingActor } from "../../bookings/domain/booking-customer";
 import { actorFromUser } from "../../bookings/domain/booking-customer";

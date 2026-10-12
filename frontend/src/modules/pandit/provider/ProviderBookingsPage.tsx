@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { CalendarDays, Clock, Copy, ExternalLink, MapPin, MessageSquare, Phone, RefreshCw, User, Video } from "lucide-react";
 import { ConsultationChatModal } from "../components/ConsultationChatModal";
+import { PujaProcessButton } from "../components/PujaProcessGuide";
+import { YouTubePlayer } from "../components/YouTubeLive";
 import { consultationService, providerSelfService, pujaBookingService } from "../services/provider.service";
 import { getErrorMessage } from "../../../lib/api";
 import { toast } from "../../../lib/toast";
@@ -27,8 +29,8 @@ import {
 
 const PAGE_SIZE = 20;
 
-/** Booking states in which a live Zoom session can exist (the server checks this too). */
-const ZOOM_STATUSES = ["CONFIRMED", "PROVIDER_ACCEPTED", "PREPARATION_IN_PROGRESS", "READY_FOR_FULFILMENT", "IN_PROGRESS"];
+/** Booking states in which a YouTube live link can be set (the server checks this too). */
+const LIVE_STATUSES = ["CONFIRMED", "PROVIDER_ACCEPTED", "PREPARATION_IN_PROGRESS", "READY_FOR_FULFILMENT", "IN_PROGRESS"];
 
 const BOOKING_FILTERS = [
   "PAYMENT_PENDING",
@@ -95,12 +97,11 @@ export const ProviderBookingsPage: React.FC = () => {
   const [cancelTarget, setCancelTarget] = useState<any | null>(null);
   const [consultReason, setConsultReason] = useState(CONSULT_CANCEL_REASONS[0][0]);
 
-  // Zoom
-  const [zoomBooking, setZoomBooking] = useState<any | null>(null);
-  const [zoomMeeting, setZoomMeeting] = useState<any | null>(null);
-  const [zoomLoading, setZoomLoading] = useState(false);
-  const [zoomError, setZoomError] = useState<string | null>(null);
-  const [zoomNotConfigured, setZoomNotConfigured] = useState(false);
+  // YouTube live link
+  const [streamBooking, setStreamBooking] = useState<any | null>(null);
+  const [streamUrl, setStreamUrl] = useState("");
+  const [streamSaving, setStreamSaving] = useState(false);
+  const [streamError, setStreamError] = useState<string | null>(null);
 
   // Chat
   const [chatConsultation, setChatConsultation] = useState<any | null>(null);
@@ -166,39 +167,26 @@ export const ProviderBookingsPage: React.FC = () => {
     }
   };
 
-  const openZoom = async (b: any) => {
-    setZoomBooking(b);
-    setZoomMeeting(null);
-    setZoomError(null);
-    setZoomNotConfigured(false);
-    setZoomLoading(true);
-    try {
-      const res = await pujaBookingService.getZoomMeeting(b.id);
-      // { success, configured, data: { meetingId, joinUrl, startUrl, ... } | null }
-      if (res.data?.success && res.data.data) setZoomMeeting(res.data.data);
-      else if (res.data?.configured === false) setZoomNotConfigured(true);
-    } catch (err) {
-      setZoomError(getErrorMessage(err, "Could not load the Zoom session."));
-    } finally {
-      setZoomLoading(false);
-    }
+  const openStream = (b: any) => {
+    setStreamBooking(b);
+    setStreamUrl(b.liveStream?.youtubeUrl ?? "");
+    setStreamError(null);
   };
 
-  const createZoom = async () => {
-    if (!zoomBooking) return;
-    setZoomLoading(true);
-    setZoomError(null);
+  const saveStream = async () => {
+    if (!streamBooking) return;
+    setStreamSaving(true);
+    setStreamError(null);
     try {
-      const res = await pujaBookingService.createZoomMeeting(zoomBooking.id);
-      if (res.data?.success && res.data.data) {
-        setZoomMeeting(res.data.data);
-        toast.success(res.data.reused ? "Zoom session ready." : "Zoom session created.");
-      }
-    } catch (err: any) {
-      if (err?.response?.data?.code === "ZOOM_NOT_CONFIGURED" || /not configured/i.test(String(err?.response?.data?.message))) setZoomNotConfigured(true);
-      else setZoomError(getErrorMessage(err, "Could not create the Zoom session."));
+      const res = await pujaBookingService.setLiveStream(streamBooking.id, streamUrl.trim());
+      const updated = res.data?.data;
+      if (updated) setStreamBooking(updated);
+      toast.success("YouTube live link saved. The devotee has been told.");
+      loadData();
+    } catch (err) {
+      setStreamError(getErrorMessage(err, "Could not save the YouTube link."));
     } finally {
-      setZoomLoading(false);
+      setStreamSaving(false);
     }
   };
 
@@ -340,6 +328,12 @@ export const ProviderBookingsPage: React.FC = () => {
                             </li>
                           )}
                         </ul>
+                        {b.deliveryMode === "LIVE_ONLINE" && (
+                          <p className="inline-flex items-center gap-1.5 rounded-full bg-rose-600 px-3 py-1 text-xs font-black text-white">
+                            <Video size={13} aria-hidden="true" />
+                            Live online katha · stream it on YouTube at the booked time
+                          </p>
+                        )}
                         {place && (
                           <p className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
                             <MapPin size={15} className="mt-0.5 shrink-0" aria-hidden="true" />
@@ -348,7 +342,7 @@ export const ProviderBookingsPage: React.FC = () => {
                         )}
                         {b.notes && <p className="rounded-lg bg-gray-50 p-3 text-sm text-gray-700 dark:bg-slate-900 dark:text-gray-300">Note from devotee: {b.notes}</p>}
 
-                        {(actions.length > 0 || ZOOM_STATUSES.includes(b.status)) && (
+                        {(actions.length > 0 || LIVE_STATUSES.includes(b.status)) && (
                           <div className="flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3 dark:border-slate-800">
                             {actions
                               .filter((a) => COMMAND_META[a.command]?.kind !== "danger")
@@ -361,12 +355,13 @@ export const ProviderBookingsPage: React.FC = () => {
                                   </Button>
                                 );
                               })}
-                            {ZOOM_STATUSES.includes(b.status) && (
-                              <Button variant="outline" onClick={() => openZoom(b)}>
+                            {LIVE_STATUSES.includes(b.status) && (
+                              <Button variant="outline" onClick={() => openStream(b)}>
                                 <Video size={16} aria-hidden="true" />
-                                Live pooja (Zoom)
+                                {b.liveStream ? "YouTube live link" : "Add YouTube live link"}
                               </Button>
                             )}
+                            <PujaProcessButton ritualId={b.ritual?.id} title={b.ritual?.titles?.en} viewer="PANDIT" className="!min-h-[44px]" />
                             {actions
                               .filter((a) => COMMAND_META[a.command]?.kind === "danger")
                               .map((a) => (
@@ -539,76 +534,45 @@ export const ProviderBookingsPage: React.FC = () => {
         </Field>
       </ConfirmDialog>
 
-      {/* ── Zoom ──────────────────────────────────────────────────────── */}
+      {/* ── YouTube live link ─────────────────────────────────────────── */}
       <Modal
-        open={!!zoomBooking}
-        onClose={() => setZoomBooking(null)}
-        title="Live pooja on Zoom"
-        description={zoomBooking ? `${zoomBooking.offering?.title || zoomBooking.ritual?.titles?.en || "Puja"} · ${when(zoomBooking.scheduledStartAt)}` : undefined}
+        open={!!streamBooking}
+        onClose={() => setStreamBooking(null)}
+        title="Live on YouTube"
+        description={streamBooking ? `${streamBooking.offering?.title || streamBooking.ritual?.titles?.en || "Puja"} · ${when(streamBooking.scheduledStartAt)}` : undefined}
         footer={
-          <Button variant="outline" onClick={() => setZoomBooking(null)}>
-            Close
-          </Button>
+          <>
+            <Button variant="outline" onClick={() => setStreamBooking(null)}>
+              Close
+            </Button>
+            <Button onClick={saveStream} loading={streamSaving} disabled={!streamUrl.trim()}>
+              Save link
+            </Button>
+          </>
         }
       >
         <div className="space-y-4">
-          {zoomNotConfigured && (
-            <Notice tone="warning">
-              <strong>Zoom is not set up on this server yet.</strong> Live pooja sessions need Zoom credentials to be configured by Tirvona. Nothing was created.
-            </Notice>
-          )}
-          {zoomError && <ErrorNotice message={zoomError} />}
-          {zoomMeeting ? (
-            <div className="space-y-3">
-              <dl className="grid grid-cols-2 gap-3 rounded-xl bg-gray-50 p-3 text-sm dark:bg-slate-900">
-                <div>
-                  <dt className="text-xs text-gray-500">Meeting ID</dt>
-                  <dd className="font-mono font-bold">{zoomMeeting.meetingId}</dd>
-                </div>
-                {zoomMeeting.password && (
-                  <div>
-                    <dt className="text-xs text-gray-500">Passcode</dt>
-                    <dd className="font-mono font-bold">{zoomMeeting.password}</dd>
-                  </div>
-                )}
-              </dl>
-              {zoomMeeting.startUrl && (
-                <a
-                  href={zoomMeeting.startUrl}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full bg-[#0B192C] px-5 text-sm font-bold text-white hover:bg-[#12284a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28] focus-visible:ring-offset-2"
-                >
-                  <Video size={16} aria-hidden="true" />
-                  Start as host
-                  <ExternalLink size={14} aria-hidden="true" />
-                </a>
-              )}
-              {zoomMeeting.joinUrl && (
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => {
-                    navigator.clipboard?.writeText(zoomMeeting.joinUrl);
-                    toast.success("Devotee join link copied.");
-                  }}
-                >
-                  <Copy size={14} aria-hidden="true" />
-                  Copy devotee join link
-                </Button>
-              )}
-              <p className="text-xs text-gray-500">Keep the host link private. The devotee gets their own join link in their booking.</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Start a live stream on your YouTube channel (YouTube app or YouTube Studio → Go live), then paste the stream link here. The devotee watches it
+            inside their Tirvona booking.
+          </p>
+          {streamError && <ErrorNotice message={streamError} />}
+          <Field label="YouTube live link" hint="e.g. https://youtube.com/live/abc123xyz00 or https://www.youtube.com/@yourchannel/live">
+            <input
+              type="url"
+              inputMode="url"
+              className={inputClass}
+              value={streamUrl}
+              onChange={(e) => setStreamUrl(e.target.value)}
+              placeholder="https://youtube.com/live/..."
+              data-autofocus
+            />
+          </Field>
+          {streamBooking?.liveStream && (
+            <div>
+              <p className="mb-2 text-xs font-semibold text-gray-500">What the devotee sees now</p>
+              <YouTubePlayer stream={streamBooking.liveStream} title={streamBooking.ritual?.titles?.en} />
             </div>
-          ) : (
-            !zoomNotConfigured && (
-              <div className="space-y-3 py-2 text-center">
-                <p className="text-sm text-gray-600 dark:text-gray-400">{zoomLoading ? "Checking for an existing session…" : "No Zoom session has been created for this booking yet."}</p>
-                <Button onClick={createZoom} loading={zoomLoading}>
-                  <Video size={16} aria-hidden="true" />
-                  Create Zoom session
-                </Button>
-              </div>
-            )
           )}
         </div>
       </Modal>

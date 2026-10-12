@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException, Logger } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import { InjectModel } from "../../../database/orm-nest";
+import { Model } from "../../../database/orm";
 import { CreateTempleDto, UpdateTempleDto, CreateAartiDto, CreateFestivalDto } from "../presentation/dtos/temple.dto";
 import { PARKING_MODEL } from "../../parking/domain/parking.constants";
 import { canManageAllTemples } from "../../../common/auth/temple-access";

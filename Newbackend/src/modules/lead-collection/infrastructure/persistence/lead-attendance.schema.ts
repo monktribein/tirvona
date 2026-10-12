@@ -1,4 +1,4 @@
-import { Schema } from "mongoose";
+import { Schema } from "../../../../database/orm";
 import {
   LEAD_ATTENDANCE_COLLECTION,
   LEAD_USER_MODEL,

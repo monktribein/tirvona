@@ -9,9 +9,9 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
+import { InjectModel } from "../../../database/orm-nest";
 import { createHash, randomUUID } from "node:crypto";
-import type { ClientSession, Model } from "mongoose";
+import type { ClientSession, Model } from "../../../database/orm";
 import { TransactionService } from "../../../common/database/transaction.service";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import {

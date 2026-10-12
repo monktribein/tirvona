@@ -1,17 +1,17 @@
 /**
- * Test-only in-memory stand-in for a Mongoose model, used by the marketplace
+ * Test-only in-memory stand-in for a model, used by the marketplace
  * specs so business flows run end-to-end without a database.
  *
  * - Documents are cast + defaulted through the REAL schema (a disconnected
- *   Mongoose instance), so schema defaults/enums behave as in production.
- * - Filters are matched with `sift` (MongoDB query semantics).
+ *   model-layer instance), so schema defaults/enums behave as in production.
+ * - Filters are matched with `sift` (the model layer's query semantics).
  * - findOneAndUpdate / updateOne / updateMany apply atomically (no await
- *   between match and write), mirroring MongoDB's single-document atomicity,
+ *   between match and write), mirroring the store's single-row atomicity,
  *   which is what the inventory/lock/idempotency code relies on.
- * - Unique indexes listed in `unique` throw `{ code: 11000 }` like MongoDB.
+ * - Unique indexes listed in `unique` throw `{ code: 11000 }` like the Postgres driver.
  * - ObjectIds are normalised to hex strings on both sides of every match.
  */
-import mongoose, { Types, type Schema } from "mongoose";
+import orm, { Types, type Schema } from "../../../database/orm";
 import sift from "sift";
 
 const isOid = (v: unknown): v is Types.ObjectId =>
@@ -100,7 +100,7 @@ export interface InMemoryModelOptions {
 }
 
 export function createInMemoryModel(name: string, schema: Schema, opts: InMemoryModelOptions = {}) {
-  const m = new mongoose.Mongoose();
+  const m = new orm.Mongoose();
   const Real = m.model(`${name}_${Math.random().toString(36).slice(2)}`, schema.clone());
   const store = new Map<string, any>();
 

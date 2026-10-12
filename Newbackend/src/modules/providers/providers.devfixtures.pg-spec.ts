@@ -6,7 +6,7 @@
  * touching anything else.
  */
 import type { INestApplication } from "@nestjs/common";
-import { getModelToken } from "@nestjs/mongoose";
+import { getModelToken } from "../../database/orm-nest";
 import request from "supertest";
 import {
   assertDevEnvironment,

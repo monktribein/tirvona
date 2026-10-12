@@ -495,7 +495,18 @@ export const SUPPORTED_LANGUAGES = [
   "Urdu",
 ] as const;
 
+/** ROAD is a car / four-wheeler. */
 export const TRAVEL_MODES = ["TRAIN", "FLIGHT", "ROAD"] as const;
+/** Where a travelling pandit stays overnight. */
+export const STAY_ARRANGEMENTS = ["HOST_PROVIDES", "SELF_ARRANGED", "EITHER"] as const;
+
+/** How a booked puja / katha is delivered: in person, or live online on video (Zoom). */
+export const DELIVERY_MODES = ["IN_PERSON", "LIVE_ONLINE"] as const;
+export type DeliveryMode = (typeof DELIVERY_MODES)[number];
+
+/** Puja process guide (set by Tirvona admins per ritual): who does each step. */
+export const PROCESS_STEP_OWNERS = ["DEVOTEE", "PANDIT", "BOTH", "TIRVONA"] as const;
+export const MAX_PROCESS_STEPS = 25;
 
 /** Reason codes accepted when a provider or an administrator changes provider status. */
 export const SUSPENSION_REASON_CODES = [

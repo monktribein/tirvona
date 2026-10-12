@@ -1,4 +1,4 @@
-import { Schema, SchemaTypes } from "mongoose";
+import { Schema, SchemaTypes } from "../../../../database/orm";
 
 /**
  * One row per inbound WhatsApp message Meta delivers to the webhook.

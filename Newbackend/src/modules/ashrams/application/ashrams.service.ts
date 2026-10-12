@@ -8,8 +8,8 @@ import {
 } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
 import bcrypt from "bcryptjs";
-import { InjectModel } from "@nestjs/mongoose";
-import type { Model } from "mongoose";
+import { InjectModel } from "../../../database/orm-nest";
+import type { Model } from "../../../database/orm";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { canManageAllAshrams } from "../../../common/auth/ashram-access";
 import { canonicalPhone, phoneCandidates } from "../../../common/phone/phone.util";

@@ -1,5 +1,5 @@
-import type { Connection, Model} from "mongoose";
-import { createConnection } from "mongoose";
+import type { Connection, Model} from "../../../../database/orm";
+import { createConnection } from "../../../../database/orm";
 import { AshramSchema, RoomSchema } from "../../../ashrams/infrastructure/persistence/ashram.schemas";
 import { BookingSchema } from "../../../bookings/infrastructure/persistence/booking.schemas";
 import { DayStayProductSchema } from "../../../day-stay/infrastructure/persistence/day-stay-product.schemas";

@@ -68,7 +68,7 @@
 | Test Suite | Tests | Result |
 |---|---|---|
 | `booking-source-separation.spec.ts` | 8 passed | PASSED |
-| `mongoose-booking.repository.spec.ts` | 14 passed | PASSED |
+| `pg-booking.repository.spec.ts` | 14 passed | PASSED |
 | `self-booking.service.spec.ts` | 12 passed | PASSED |
 | `bookings-admin.service.spec.ts` | 11 passed | PASSED |
 | `offers.service.spec.ts` | 9 passed | PASSED |

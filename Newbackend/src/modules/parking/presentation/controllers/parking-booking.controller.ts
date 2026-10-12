@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
-import { InjectModel } from "@nestjs/mongoose";
-import type { Model } from "mongoose";
+import { InjectModel } from "../../../../database/orm-nest";
+import type { Model } from "../../../../database/orm";
 import {
   CurrentUser,
   AuthenticatedUser,

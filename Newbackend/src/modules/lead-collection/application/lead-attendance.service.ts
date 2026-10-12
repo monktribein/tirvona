@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import { Model, Types } from "mongoose";
+import { InjectModel } from "../../../database/orm-nest";
+import { Model, Types } from "../../../database/orm";
 import {
   LEAD_ATTENDANCE_MODEL,
   LEAD_CONNECTION,

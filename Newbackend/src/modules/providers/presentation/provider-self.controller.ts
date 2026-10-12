@@ -25,6 +25,7 @@ import {
   CreateCalendarBlockDto,
   CreateOfferingDto,
   CreateProviderProfileDto,
+  LiveOnlineDto,
   ProviderStatusDto,
   PutAvailabilityRulesDto,
   UpdateOfferingDto,
@@ -72,6 +73,13 @@ export class ProviderSelfController {
   @Idempotent("provider.profile.status", { sensitive: true })
   status(@CurrentUser() user: AuthenticatedUser, @Body() dto: ProviderStatusDto) {
     return this.profiles.setOwnStatus(user, dto.status as "ACTIVE" | "INACTIVE");
+  }
+
+  /** "Live online available" switch on the dashboard. */
+  @Patch("profile/live")
+  @Idempotent("provider.profile.live")
+  setLive(@CurrentUser() user: AuthenticatedUser, @Body() dto: LiveOnlineDto) {
+    return this.profiles.setLiveOnline(user, dto.enabled, dto.youtubeUrl);
   }
 
   // -------------------------------------------------------------- offerings

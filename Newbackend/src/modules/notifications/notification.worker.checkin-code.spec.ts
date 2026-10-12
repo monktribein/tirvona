@@ -1,6 +1,6 @@
 import { Logger } from "@nestjs/common";
 import { Test, type TestingModule } from "@nestjs/testing";
-import { model, models, Types, type Model } from "mongoose";
+import { model, models, Types, type Model } from "../../database/orm";
 import { BookingSchema } from "../bookings/infrastructure/persistence/booking.schemas";
 import { checkInQrPayload } from "../bookings/domain/booking.utils";
 import { WhatsAppTransactionalNotificationService } from "../../integrations/whatsapp/services/whatsapp-transactional-notification.service";
@@ -12,7 +12,7 @@ import { NotificationWorker, type NotificationJob } from "./notification.worker"
  * booking (`booking_bookings.checkInCode`), the same value the check-in QR
  * encodes and the counter verifies.
  *
- * The worker's booking lookup is emulated with Mongoose's real projection
+ * The worker's booking lookup is emulated with the model layer's real projection
  * rules applied to the worker's exact `select()` string, so a projection that
  * silently drops the field fails here. No database is needed and `fetch` is
  * mocked, so no WhatsApp message is sent.
@@ -22,14 +22,14 @@ const ProjectionProbe: Model<any> =
   (models.CheckInCodeProjectionProbe as Model<any>) ??
   model("CheckInCodeProjectionProbe", BookingSchema);
 
-/** The projection Mongoose would send to MongoDB for this select string. */
+/** The projection the model layer would send to the store for this select string. */
 const projectionFor = (select: string): Record<string, unknown> => {
   const query: any = ProjectionProbe.findById(new Types.ObjectId()).select(select);
   query._applyPaths();
   return { ...(query._fields ?? {}) };
 };
 
-/** Returns the stored document the way MongoDB would, given that projection. */
+/** Returns the stored document the way the store would, given that projection. */
 const applyProjection = (
   doc: Record<string, any>,
   projection: Record<string, unknown>,
@@ -39,7 +39,7 @@ const applyProjection = (
   const inclusive = keys.some((key) => projection[key] === 1 || projection[key] === true);
   if (!inclusive) return { ...doc };
   const out: Record<string, any> = { _id: doc._id };
-  // Mongoose adds populated paths to an inclusive projection itself.
+  // The model layer adds populated paths to an inclusive projection itself.
   for (const key of [...keys, ...populatedRoots]) {
     const root = key.split(".")[0];
     if (root in doc) out[root] = doc[root];
@@ -230,7 +230,7 @@ describe("Stay confirmation WhatsApp {{8}} carries the stored check-in code", ()
   it("D: the worker's booking projection keeps the canonical checkInCode field", async () => {
     const { select } = await deliver(storedBooking());
     expect(projectionFor(select)).toHaveProperty("checkInCode");
-    // A "+checkInCode" prefix is dropped by Mongoose for a field that is not
+    // A "+checkInCode" prefix is dropped by the model layer for a field that is not
     // select:false, which is exactly how {{8}} became "-".
     expect(projectionFor("+checkInCode bookingId")).not.toHaveProperty("checkInCode");
   });

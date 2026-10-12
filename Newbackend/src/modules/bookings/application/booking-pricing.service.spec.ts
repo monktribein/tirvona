@@ -6,7 +6,7 @@ const ASHRAM_ID = "507f1f77bcf86cd799439011";
 const ROOM_A = "507f1f77bcf86cd799439021";
 const ROOM_B = "507f1f77bcf86cd799439022";
 
-/** A chainable stand-in for a mongoose query that resolves to `value`. */
+/** A chainable stand-in for a model query that resolves to `value`. */
 const chain = (value: unknown) => {
   const q: any = {
     select: () => q,

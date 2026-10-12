@@ -1,7 +1,7 @@
 import { LEAD_TRACKING } from "./lead-collection.constants";
 
 /**
- * The route maths, kept free of Mongoose so the filtering rules that decide
+ * The route maths, kept free of the model layer so the filtering rules that decide
  * what counts as real movement can be tested directly.
  *
  * A phone's GPS is noisy in exactly the ways that inflate a distance total:

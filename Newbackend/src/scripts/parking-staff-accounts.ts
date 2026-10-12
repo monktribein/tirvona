@@ -1,7 +1,7 @@
 import { NestFactory } from "@nestjs/core";
-import { getModelToken } from "@nestjs/mongoose";
+import { getModelToken } from "../database/orm-nest";
 import bcrypt from "bcryptjs";
-import type { Model } from "mongoose";
+import type { Model } from "../database/orm";
 import { AppModule } from "../app.module";
 import { applyDnsServersFromEnvironment } from "../config/environment";
 import { configureDatabase } from "../database/database";

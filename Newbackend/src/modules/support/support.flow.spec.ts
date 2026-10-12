@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from "@nestjs/common";
-import { Types } from "mongoose";
+import { Types } from "../../database/orm";
 import { SUPPORT_MANAGE_ALL_PERMISSION } from "./domain/support.constants";
 import { actor, buildSupport } from "./testing/support-harness";
 

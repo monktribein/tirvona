@@ -2,7 +2,7 @@
 
 ## 1. Architectural Principles & Overview
 
-The **Tirvona Day Stay Engine™** is designed as a native, non-destructive extension of Tirvona's existing modular monolith architecture (NestJS + MongoDB / Mongoose + React / Vite). It provides short-duration accommodation and freshen-up capabilities (`FRESHEN_UP` 90m, `DAY_REST_3H` 3h, `DAY_REST_6H` 6h) for religious pilgrimage markets (initial pilot: Vrindavan / Braj) without altering or degrading the core overnight accommodation system.
+The **Tirvona Day Stay Engine™** is designed as a native, non-destructive extension of Tirvona's existing modular monolith architecture (NestJS + Supabase PostgreSQL + React / Vite). It provides short-duration accommodation and freshen-up capabilities (`FRESHEN_UP` 90m, `DAY_REST_3H` 3h, `DAY_REST_6H` 6h) for religious pilgrimage markets (initial pilot: Vrindavan / Braj) without altering or degrading the core overnight accommodation system.
 
 ```
 +-----------------------------------------------------------------------------------+
@@ -76,7 +76,7 @@ $$\max(T_{\text{start}}^A, T_{\text{start}}^B) < \min(T_{\text{end\_effective}}^
 ## 4. Concurrency & Hold Locking Architecture
 
 ```
-[Customer Browser]               [DayStayService]               [MongoDB / Memory]
+[Customer Browser]               [DayStayService]               [Supabase / Memory]
         │                               │                               │
         │── 1. Create Hold ────────────►│                               │
         │   (roomId, slot, product)     │── 2. Check Overlap Lock ─────►│

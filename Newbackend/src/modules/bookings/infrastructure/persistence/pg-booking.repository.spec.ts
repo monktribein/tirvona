@@ -1,14 +1,14 @@
 import { ConflictException } from "@nestjs/common";
-import { MongooseBookingRepository } from "./mongoose-booking.repository";
+import { PgBookingRepository } from "./pg-booking.repository";
 
-describe("MongooseBookingRepository", () => {
+describe("PgBookingRepository", () => {
   const session = {} as any;
   it("atomically reserves every requested inventory unit", async () => {
     const inventory = {
       updateOne: jest.fn().mockResolvedValue({}),
       findOneAndUpdate: jest.fn().mockResolvedValue({ _id: "row" }),
     } as any;
-    const repository = new MongooseBookingRepository(inventory);
+    const repository = new PgBookingRepository(inventory);
     await repository.holdInventory({
       ashramId: "a",
       roomId: "r",
@@ -28,7 +28,7 @@ describe("MongooseBookingRepository", () => {
       findOneAndUpdate: jest.fn().mockResolvedValue(null),
     } as any;
     await expect(
-      new MongooseBookingRepository(inventory).holdInventory({
+      new PgBookingRepository(inventory).holdInventory({
         ashramId: "a",
         roomId: "r",
         dates: [new Date("2026-08-01")],
@@ -46,7 +46,7 @@ describe("MongooseBookingRepository", () => {
       updateOne: jest.fn().mockResolvedValue({}),
       findOneAndUpdate: jest.fn().mockResolvedValue({ _id: "row" }),
     } as any;
-    await new MongooseBookingRepository(inventory).holdInventory({
+    await new PgBookingRepository(inventory).holdInventory({
       ashramId: "a",
       roomId: "r",
       dates: [new Date("2026-08-01")],
@@ -65,7 +65,7 @@ describe("MongooseBookingRepository", () => {
     const inventory = {
       updateOne: jest.fn().mockResolvedValue({ modifiedCount: 1 }),
     } as any;
-    await new MongooseBookingRepository(inventory).confirmInventory({
+    await new PgBookingRepository(inventory).confirmInventory({
       roomId: "r",
       dates: [new Date("2026-08-01")],
       count: 2,
@@ -97,9 +97,9 @@ describe("MongooseBookingRepository", () => {
       const ashrams = {
         findById: jest.fn(() => chain({ policies: { checkInTime: "12:00", checkOutTime: "11:00" } })),
       } as any;
-      return { inventory, bookings, repository: new MongooseBookingRepository(inventory, bookings, ashrams) };
+      return { inventory, bookings, repository: new PgBookingRepository(inventory, bookings, ashrams) };
     };
-    const hold = (repository: MongooseBookingRepository) =>
+    const hold = (repository: PgBookingRepository) =>
       repository.holdInventory({
         ashramId: "a",
         roomId: "r",

@@ -1,9 +1,9 @@
 import { Module } from "@nestjs/common";
-import { MongooseModule } from "@nestjs/mongoose";
+import { OrmModule } from "../../database/orm-nest";
 import { AuditModule } from "../audit/audit.module";
 import { ContentService } from "./application/content.service";
 import { CONTENT_REPOSITORY } from "./domain/content.repository";
-import { MongooseContentRepository } from "./infrastructure/persistence/mongoose-content.repository";
+import { PgContentRepository } from "./infrastructure/persistence/pg-content.repository";
 import { CONTENT_MODELS } from "./infrastructure/persistence/content.schemas";
 import {
   BlogController,
@@ -14,7 +14,7 @@ import {
 } from "./presentation/content.controllers";
 
 @Module({
-  imports: [MongooseModule.forFeature(CONTENT_MODELS), AuditModule],
+  imports: [OrmModule.forFeature(CONTENT_MODELS), AuditModule],
   controllers: [
     BlogController,
     CmsController,
@@ -24,8 +24,8 @@ import {
   ],
   providers: [
     ContentService,
-    { provide: CONTENT_REPOSITORY, useClass: MongooseContentRepository },
+    { provide: CONTENT_REPOSITORY, useClass: PgContentRepository },
   ],
-  exports: [MongooseModule],
+  exports: [OrmModule],
 })
 export class ContentModule {}

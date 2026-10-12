@@ -1,14 +1,14 @@
 /**
- * Storage: Supabase Postgres, reached through the Mongoose storage driver in
- * ./pg. Must run before Nest creates any Mongoose connection (main.ts and
- * the CLI scripts call it first). Models, hooks and services use Mongoose as
- * their data-mapping layer; every read and write goes to Postgres.
+ * Storage: Supabase Postgres, reached through the model-layer storage driver in
+ * ./pg. Must run before Nest creates any model connection (main.ts and
+ * the CLI scripts call it first). Models, hooks and services use the model layer
+ * (./orm) for data mapping; every read and write goes to Postgres.
  */
 import { REGISTRY } from "./pg/registry.generated";
 import { enablePostgresDriver } from "./pg/pg-driver";
 
 /**
- * Logical database name of each Mongoose connection. They map to the
+ * Logical database name of each model connection. They map to the
  * Postgres schemas public, leads and smart_contact (see the registry).
  */
 export const MAIN_DATABASE = undefined;
@@ -16,7 +16,7 @@ export const LEAD_DATABASE = "tirvona_leads";
 export const SMART_CONTACT_DATABASE = "tirvona_smart_contact";
 
 /**
- * The connection string Mongoose is given. The Postgres driver ignores it —
+ * The connection string the model layer is given. The Postgres driver ignores it —
  * it uses the pool built from SUPABASE_DB_URL — so it never carries secrets.
  */
 export const DRIVER_URI = "postgres://supabase";

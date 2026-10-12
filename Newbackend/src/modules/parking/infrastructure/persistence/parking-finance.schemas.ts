@@ -1,4 +1,4 @@
-import { Schema, SchemaTypes } from "mongoose";
+import { Schema, SchemaTypes } from "../../../../database/orm";
 import { whatsappCustomerRef } from "../../../../common/database/customer-identity";
 import { PARKING_PAYMENT_STATUSES } from "../../domain/parking.constants";
 

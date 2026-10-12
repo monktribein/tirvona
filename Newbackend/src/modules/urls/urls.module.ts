@@ -1,5 +1,5 @@
 import { Global, Module } from "@nestjs/common";
-import { MongooseModule } from "@nestjs/mongoose";
+import { OrmModule } from "../../database/orm-nest";
 import { UrlResolverService } from "./application/url-resolver.service";
 import { UrlRedirectSchema } from "./infrastructure/url-redirect.schema";
 import { UrlController } from "./presentation/url.controller";
@@ -11,12 +11,12 @@ import { UrlController } from "./presentation/url.controller";
 @Global()
 @Module({
   imports: [
-    MongooseModule.forFeature([
+    OrmModule.forFeature([
       { name: "UrlRedirect", schema: UrlRedirectSchema },
     ]),
   ],
   controllers: [UrlController],
   providers: [UrlResolverService],
-  exports: [UrlResolverService, MongooseModule],
+  exports: [UrlResolverService, OrmModule],
 })
 export class UrlsModule {}

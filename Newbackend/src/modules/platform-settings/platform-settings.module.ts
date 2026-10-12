@@ -1,16 +1,16 @@
 import { Module } from "@nestjs/common";
-import { MongooseModule } from "@nestjs/mongoose";
+import { OrmModule } from "../../database/orm-nest";
 import { PlatformSettingsService } from "./application/platform-settings.service";
 import { PlatformSettingsSchema } from "./infrastructure/platform-settings.schema";
 import { PlatformSettingsController } from "./presentation/platform-settings.controller";
 @Module({
   imports: [
-    MongooseModule.forFeature([
+    OrmModule.forFeature([
       { name: "PlatformSettings", schema: PlatformSettingsSchema },
     ]),
   ],
   controllers: [PlatformSettingsController],
   providers: [PlatformSettingsService],
-  exports: [PlatformSettingsService, MongooseModule],
+  exports: [PlatformSettingsService, OrmModule],
 })
 export class PlatformSettingsModule {}
