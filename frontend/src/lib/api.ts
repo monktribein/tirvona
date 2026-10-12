@@ -36,6 +36,15 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  const method = config.method?.toLowerCase();
+  if (method && ["post", "put", "patch", "delete"].includes(method)) {
+    if (!config.headers["Idempotency-Key"] && !config.headers["idempotency-key"]) {
+      config.headers["Idempotency-Key"] =
+        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : `idemp_${Date.now()}_${Math.random().toString(36).slice(2, 10)}_${Math.random().toString(36).slice(2, 10)}`;
+    }
+  }
   return config;
 });
 

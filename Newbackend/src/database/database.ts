@@ -30,5 +30,6 @@ export function configureDatabase(env: NodeJS.ProcessEnv = process.env): void {
     registry: REGISTRY,
     poolMax: Number.isFinite(poolMax) && poolMax > 0 ? poolMax : 10,
     ttlSweep: env.SUPABASE_TTL_SWEEP !== "false",
+    verifySchema: env.SUPABASE_VERIFY_SCHEMA !== "false",
   });
 }

@@ -11,6 +11,7 @@ import FloatingSupportBox from "../components/shared/FloatingSupportBox";
 import { setGuestPendingIntent } from "../utils/guestGate";
 import { getRoleDefaultDashboard, isParkingRole } from "../utils/roleRedirect";
 import { vendorApi } from "../services/marketplace.service";
+import { providerSelfService } from "../modules/pandit";
 import { useCurrency } from "../contexts/CurrencyContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import { getFormattingLocale } from "../utils/format";
@@ -37,6 +38,7 @@ import {
   Package,
   LifeBuoy,
   Wallet,
+  Flame,
 } from "lucide-react";
 
 const FooterAccordion: React.FC<{
@@ -262,6 +264,52 @@ export const PublicLayout: React.FC = () => {
     };
   }, [user?.id]);
 
+  // A pandit account always has a provider console, and a remembered profile is shown straight away,
+  // so the dashboard button does not wait for the profile request like it never waits for other roles.
+  const providerCacheKey = user?.id ? `tirvona:provider-profile:${user.id}` : "";
+  const [hasProviderProfile, setHasProviderProfile] = useState(() => {
+    if (user?.role === "pandit_provider") return true;
+    try {
+      return Boolean(providerCacheKey) && localStorage.getItem(providerCacheKey) === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    const isPandit = user?.role === "pandit_provider";
+    let remembered = false;
+    try {
+      remembered = Boolean(providerCacheKey) && localStorage.getItem(providerCacheKey) === "1";
+    } catch {
+      remembered = false;
+    }
+    setHasProviderProfile(isPandit || remembered);
+    if (!user) return;
+    // Background check for the "Pandit Dashboard" button: never pop an error at a visitor (404 = not a pandit).
+    providerSelfService
+      .getProfile({ silent: true })
+      .then((res) => {
+        if (cancelled) return;
+        const has = Boolean(res.data?.data?.id);
+        setHasProviderProfile(has || isPandit);
+        try {
+          if (has) localStorage.setItem(providerCacheKey, "1");
+          else localStorage.removeItem(providerCacheKey);
+        } catch {
+          /* storage unavailable: the button simply appears once the request returns */
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  // A dedicated Pandit/Acharya account is a provider console, not a shopper: no wallet or cart in the header.
+  const isPanditAccount = user?.role === "pandit_provider";
+
   const hasOperationalDashboard = () => {
     if (!user) return false;
     if (isParkingRole(user.parkingRoles, user.role, user.email)) return true;
@@ -296,6 +344,7 @@ export const PublicLayout: React.FC = () => {
 
   const navLinks: { label: string; to: string; isHighlighted?: boolean }[] = [
     { label: "Destinations", to: "/search" },
+    { label: "Pandits & Pujas", to: "/pandits" },
     { label: "Parking", to: "/parking" },
     { label: "Marketplace", to: "/marketplace" },
     { label: "Aarti Booking", to: "/aarti" },
@@ -481,9 +530,9 @@ export const PublicLayout: React.FC = () => {
 
               {user ? (
                 <div className="flex items-center gap-2">
-                  {!hasOperationalDashboard() && <WalletButton />}
+                  {!hasOperationalDashboard() && !isPanditAccount && <WalletButton />}
 
-                  {!hasOperationalDashboard() && <CartButton />}
+                  {!hasOperationalDashboard() && !isPanditAccount && <CartButton />}
 
                   <NotificationDropdown />
 
@@ -507,6 +556,17 @@ export const PublicLayout: React.FC = () => {
                     >
                       <LayoutDashboard size={13} />
                       <span className="hidden md:inline">Seller Dashboard</span>
+                    </Link>
+                  )}
+
+                  {!hasOperationalDashboard() && hasProviderProfile && (
+                    <Link
+                      to="/provider/dashboard"
+                      aria-label="Pandit Dashboard"
+                      className="hidden sm:flex text-xs font-extrabold px-3 py-1.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white shadow-sm transition-all items-center gap-1.5 shrink-0"
+                    >
+                      <LayoutDashboard size={13} />
+                      <span className="hidden md:inline">Pandit Dashboard</span>
                     </Link>
                   )}
 
@@ -634,6 +694,19 @@ export const PublicLayout: React.FC = () => {
                                 </div>
                                 <span className="text-xs font-bold">
                                   {hasStore ? "Seller Dashboard" : "Sell on Tirvona"}
+                                </span>
+                              </Link>
+
+                              <Link
+                                to={hasProviderProfile ? "/provider/dashboard" : "/provider/profile"}
+                                onClick={() => setProfileDropdownOpen(false)}
+                                className="px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                              >
+                                <div className="w-6 h-6 rounded-md bg-amber-100/60 dark:bg-amber-950/60 text-[#E58C28] flex items-center justify-center shrink-0">
+                                  <Flame size={13} />
+                                </div>
+                                <span className="text-xs font-bold">
+                                  {hasProviderProfile ? "Pandit Dashboard" : "Become a Pandit / Acharya"}
                                 </span>
                               </Link>
 
@@ -791,6 +864,32 @@ export const PublicLayout: React.FC = () => {
                   <LayoutDashboard size={15} /> Seller Dashboard
                 </span>
                 <ChevronRight size={14} className="text-primary/50" />
+              </Link>
+            )}
+
+            {user && hasProviderProfile && !hasOperationalDashboard() && (
+              <Link
+                to="/provider/dashboard"
+                onClick={() => setDrawerOpen(false)}
+                className="flex items-center justify-between py-3.5 px-3 rounded-xl text-sm font-bold text-[#0A4DA6] hover:bg-blue-50/50 transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  <Flame size={15} className="text-[#E58C28]" /> Pandit Dashboard
+                </span>
+                <ChevronRight size={14} className="text-[#0A4DA6]/50" />
+              </Link>
+            )}
+
+            {user && !hasProviderProfile && !hasOperationalDashboard() && (
+              <Link
+                to="/provider/profile"
+                onClick={() => setDrawerOpen(false)}
+                className="flex items-center justify-between py-3.5 px-3 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-900 transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  <Flame size={15} className="text-[#E58C28]" /> Become a Pandit / Acharya
+                </span>
+                <ChevronRight size={14} className="text-gray-400" />
               </Link>
             )}
 

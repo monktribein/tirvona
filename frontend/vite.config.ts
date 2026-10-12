@@ -10,6 +10,7 @@ export default defineConfig(() => {
       preserveSymlinks: true,
       alias: {
         "@": path.resolve(__dirname, "./src"),
+        "@pandit": path.resolve(__dirname, "./src/modules/pandit"),
         "lucide-react": path.resolve(
           __dirname,
           "./src/design-system/icons/lucide-material-compat.tsx",

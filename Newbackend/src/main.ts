@@ -78,6 +78,7 @@ async function bootstrap(): Promise<void> {
       "Content-Type",
       "X-Request-Id",
       "X-Session-Id",
+      "Idempotency-Key",
     ],
     maxAge: 86_400,
   });

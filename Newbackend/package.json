@@ -17,6 +17,7 @@
     "typecheck": "tsc --noEmit --incremental false",
     "parking:staff": "ts-node src/scripts/parking-staff-accounts.ts",
     "parking:seed": "ts-node src/scripts/seed-parking-roles.ts",
+    "providers:seed-dev": "ts-node src/scripts/seed-provider-dev.ts",
     "test:pg": "jest --config ./test/jest-pg.json --runInBand",
     "db:generate": "node database/generate.js",
     "db:migrate": "node database/migrate.js",

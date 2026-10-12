@@ -49,6 +49,7 @@ import {
   Tag,
   HeartHandshake,
   Flame,
+  User,
 } from "lucide-react";
 
 export const HomePage: React.FC = () => {
@@ -598,6 +599,14 @@ export const HomePage: React.FC = () => {
       icon: HeartHandshake,
       category: "volunteer",
       target: "/volunteer",
+      isHighlight: false,
+    },
+    {
+      id: "pandit",
+      label: "Pandit & Jyotish",
+      icon: User,
+      category: "pandit",
+      target: "/pandits",
       isHighlight: false,
     },
   ];

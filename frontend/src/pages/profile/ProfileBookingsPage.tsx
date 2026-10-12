@@ -12,12 +12,15 @@ import {
   XCircle,
   ArrowRight,
   Ticket,
+  Flame,
+  Video,
 } from "lucide-react";
 import { EnterpriseButton, EnterpriseStatusBadge } from "../../admin/shared";
 import { useAuth } from "../../contexts/AuthContext";
 import { bookingService } from "../../services";
 import { formatCurrency, formatSlotTime } from "../../utils/format";
 import { parkingBookingService } from "../../modules/parking/services/parking.service";
+import { StatusBadge, pujaBookingService } from "../../modules/pandit";
 import { getErrorMessage } from "../../lib/api";
 import useMyBookings, {
   type BookingCategory,
@@ -55,6 +58,7 @@ const FALLBACK_IMAGE: Record<string, string> = {
   stay: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E",
   parking:
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E",
+  puja: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%23f97316' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23fff7ed'/%3E%3Cpath d='M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z'/%3E%3C/svg%3E",
 };
 
 export const ProfileBookingsPage: React.FC = () => {
@@ -66,7 +70,7 @@ export const ProfileBookingsPage: React.FC = () => {
     useMyBookings(Boolean(user));
 
   const [activeTab, setActiveTab] = useState<BookingCategory>("upcoming");
-  const [kindFilter, setKindFilter] = useState<"all" | "stay" | "parking">(
+  const [kindFilter, setKindFilter] = useState<"all" | "stay" | "parking" | "puja">(
     "all",
   );
   const [cancellingId, setCancellingId] = useState<string | null>(null);
@@ -104,6 +108,8 @@ export const ProfileBookingsPage: React.FC = () => {
               booking.id,
               "Cancelled from profile",
             )
+          : booking.kind === "puja"
+          ? await pujaBookingService.cancel(booking.id, "CHANGE_OF_PLAN")
           : await bookingService.cancel(booking.id, "Cancelled from profile");
 
       if (res.data?.success) {
@@ -120,6 +126,33 @@ export const ProfileBookingsPage: React.FC = () => {
       addNotification("Cancellation Failed", message, "error");
     } finally {
       setCancellingId(null);
+    }
+  };
+
+  const handleJoinZoom = async (b: UnifiedBooking) => {
+    const directJoin = b.rawBooking?.zoomMeeting?.joinUrl;
+    if (directJoin) {
+      window.open(directJoin, "_blank", "noopener,noreferrer");
+      return;
+    }
+    try {
+      const res = await pujaBookingService.getZoomMeeting(b.id);
+      // API shape: { success, configured, data: { joinUrl, ... } | null }
+      if (res.data?.success && res.data.data?.joinUrl) {
+        window.open(res.data.data.joinUrl, "_blank", "noopener,noreferrer");
+      } else {
+        addNotification(
+          "Zoom Session Not Ready",
+          "The Acharya has not launched the Zoom live session yet. Please check back closer to the ceremony time.",
+          "info",
+        );
+      }
+    } catch {
+      addNotification(
+        "Live Pooja Session",
+        "The Acharya has not started the live video session yet. Please join at the scheduled ceremony time.",
+        "info",
+      );
     }
   };
 
@@ -168,8 +201,8 @@ export const ProfileBookingsPage: React.FC = () => {
           ))}
         </div>
 
-        {counts.stays > 0 && counts.parking > 0 && (
-          <div className="flex items-center justify-center gap-1.5">
+        {counts.total > 0 && (counts.stays > 0 || counts.parking > 0 || (counts as any).pujas > 0) && (
+          <div className="flex flex-wrap items-center justify-center gap-1.5">
             {(
               [
                 { key: "all", label: `All (${counts.total})`, icon: Ticket },
@@ -182,6 +215,11 @@ export const ProfileBookingsPage: React.FC = () => {
                   key: "parking",
                   label: `Parking (${counts.parking})`,
                   icon: CircleParking,
+                },
+                {
+                  key: "puja",
+                  label: `Pujas (${(counts as any).pujas || 0})`,
+                  icon: Flame,
                 },
               ] as const
             ).map(({ key, label, icon: Icon }) => (
@@ -260,6 +298,12 @@ export const ProfileBookingsPage: React.FC = () => {
               >
                 <CircleParking size={13} /> Book Parking
               </Link>
+              <Link
+                to="/pandits"
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 text-purple-600 dark:text-purple-400 rounded-full text-xs font-bold hover:border-purple-500 transition-colors"
+              >
+                <Flame size={13} /> Book Puja
+              </Link>
             </div>
           </div>
         ) : (
@@ -296,7 +340,7 @@ export const ProfileBookingsPage: React.FC = () => {
                       <span className="text-[10px] text-gray-400 font-bold">
                         {b.reference}
                       </span>
-                      <EnterpriseStatusBadge status={b.status} />
+                      {b.kind === "puja" ? <StatusBadge status={b.status} /> : <EnterpriseStatusBadge status={b.status} />}
                       <span
                         className={`inline-flex items-center gap-1 text-[9px] font-black tracking-wider px-2 py-0.5 rounded-full ${
                           b.kind === "parking"
@@ -306,10 +350,12 @@ export const ProfileBookingsPage: React.FC = () => {
                       >
                         {b.kind === "parking" ? (
                           <CircleParking size={10} />
+                        ) : b.kind === "puja" ? (
+                          <Flame size={10} />
                         ) : (
                           <BedDouble size={10} />
                         )}
-                        {b.kind === "parking" ? "Parking" : "Stay"}
+                        {b.kind === "parking" ? "Parking" : b.kind === "puja" ? "Puja" : "Stay"}
                       </span>
                     </div>
 
@@ -381,6 +427,12 @@ export const ProfileBookingsPage: React.FC = () => {
                       </p>
                     )}
 
+                    {b.kind === "puja" && b.status === "PAYMENT_PENDING" && b.rawBooking?.holdExpiresAt && (
+                      <p className="text-[11px] font-bold text-amber-700 dark:text-amber-300 pt-1">
+                        Slot held until {formatDateTime(b.rawBooking.holdExpiresAt)}. It is released if payment is not completed.
+                      </p>
+                    )}
+
                     {b.category === "cancelled" &&
                       (b.refundAmount ?? 0) > 0 && (
                         <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 pt-1">
@@ -393,7 +445,7 @@ export const ProfileBookingsPage: React.FC = () => {
                 <div className="flex md:flex-col justify-between items-end gap-3 w-full md:w-auto pt-3 md:pt-0 shrink-0">
                   <div className="text-right">
                     <span className="text-[10px] text-gray-400 block font-bold">
-                      {b.amountPaid > 0 ? "Paid" : "Payable at Stay"}
+                      {b.amountPaid > 0 ? "Paid" : b.kind === "puja" ? "Amount due" : "Payable at Stay"}
                     </span>
                     <span className="text-lg font-black text-[#F28C28] dark:text-white">
                       {formatCurrency(
@@ -435,6 +487,17 @@ export const ProfileBookingsPage: React.FC = () => {
                           <Ticket size={14} /> QR Pass
                         </EnterpriseButton>
                       </Link>
+                    )}
+
+                    {b.kind === "puja" && ["CONFIRMED", "PROVIDER_ACCEPTED", "PREPARATION_IN_PROGRESS", "READY_FOR_FULFILMENT", "IN_PROGRESS"].includes(b.status) && (
+                      <EnterpriseButton
+                        variant="primary"
+                        size="sm"
+                        className="gap-1.5 text-xs bg-blue-600 hover:bg-blue-700 !text-white"
+                        onClick={() => handleJoinZoom(b)}
+                      >
+                        <Video size={14} /> Join live pooja
+                      </EnterpriseButton>
                     )}
 
                     {b.cancellable && (
