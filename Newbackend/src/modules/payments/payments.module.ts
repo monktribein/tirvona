@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { MongooseModule } from "@nestjs/mongoose";
+import { OrmModule } from "../../database/orm-nest";
 import { BookingsModule } from "../bookings/bookings.module";
 import { ParkingModule } from "../parking/parking.module";
 import { AartiModule } from "../aarti/aarti.module";
@@ -18,7 +18,7 @@ import { PaymentsWebhookController } from "./presentation/payments-webhook.contr
 /// verifies the webhook is genuinely from Razorpay.
 @Module({
   imports: [
-    MongooseModule.forFeature([
+    OrmModule.forFeature([
       { name: "PaymentWebhookEvent", schema: PaymentWebhookEventSchema },
     ]),
     BookingsModule,

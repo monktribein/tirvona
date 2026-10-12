@@ -7,7 +7,7 @@ import { AuthService } from "./application/auth.service";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import { JwtStrategy } from "./infrastructure/jwt.strategy";
 import { AuthController } from "./presentation/auth.controller";
-import { MongooseModule } from "@nestjs/mongoose";
+import { OrmModule } from "../../database/orm-nest";
 import { AuthChallengeSchema } from "./infrastructure/auth-challenge.schema";
 import { ParkingModule } from "../parking/parking.module";
 import { WhatsAppModule } from "../../integrations/whatsapp/whatsapp.module";
@@ -29,7 +29,7 @@ import { WhatsAppModule } from "../../integrations/whatsapp/whatsapp.module";
         },
       }),
     }),
-    MongooseModule.forFeature([
+    OrmModule.forFeature([
       { name: "AuthChallenge", schema: AuthChallengeSchema },
     ]),
   ],

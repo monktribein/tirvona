@@ -1,5 +1,5 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument, SchemaTypes, Types } from "mongoose";
+import { Prop, Schema, SchemaFactory } from "../../../../database/orm-nest";
+import { HydratedDocument, SchemaTypes, Types } from "../../../../database/orm";
 
 export const USER_ROLES = [
   "super_admin",

@@ -1,5 +1,5 @@
 /**
- * Mongoose model names owned by the WhatsApp channel.
+ * Model names owned by the WhatsApp channel.
  *
  * No counter model: `wappId` generation (see `whatsapp-customer.code.ts`)
  * generates a random suffix and relies on the unique index to catch a

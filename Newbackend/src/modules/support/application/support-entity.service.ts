@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { InjectConnection } from "@nestjs/mongoose";
-import { Types, type Connection } from "mongoose";
+import { InjectConnection } from "../../../database/orm-nest";
+import { Types, type Connection } from "../../../database/orm";
 import {
   LINKABLE_ENTITIES,
   PUBLIC_ENTITY_TYPES,

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
+import { InjectModel } from "../../../database/orm-nest";
 import { ConfigService } from "@nestjs/config";
-import type { Model } from "mongoose";
+import type { Model } from "../../../database/orm";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { BookingsService } from "../../bookings/application/bookings.service";
 import { ParkingBookingService } from "../../parking/application/parking-booking.service";

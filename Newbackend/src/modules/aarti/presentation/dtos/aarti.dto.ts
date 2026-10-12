@@ -6,7 +6,6 @@ import {
   IsEmail,
   IsIn,
   IsInt,
-  IsMongoId,
   IsNumber,
   IsObject,
   IsOptional,
@@ -18,6 +17,7 @@ import {
   Min,
   ValidateNested,
 } from "class-validator";
+import { IsEntityId } from "../../../../common/decorators/is-entity-id.decorator";
 import {
   AARTI_BOOKING_STATUSES,
   AARTI_FACILITIES,
@@ -43,7 +43,7 @@ export class AartiSearchDto extends PaginationDto {
   @IsOptional() @IsString() city?: string;
   @IsOptional() @IsString() state?: string;
   @IsOptional() @IsIn(AARTI_KINDS) kind?: string;
-  @IsOptional() @IsMongoId() ashramId?: string;
+  @IsOptional() @IsEntityId() ashramId?: string;
   @IsOptional() @IsDateString() date?: string;
   @IsOptional()
   @Transform(csv)
@@ -58,7 +58,7 @@ export class AartiSearchDto extends PaginationDto {
 export class StreamSearchDto extends PaginationDto {
   @IsOptional() @IsString() q?: string;
   @IsOptional() @IsString() city?: string;
-  @IsOptional() @IsMongoId() ashramId?: string;
+  @IsOptional() @IsEntityId() ashramId?: string;
   @IsOptional() @Transform(bool) @IsBoolean() liveOnly?: boolean;
 }
 
@@ -72,8 +72,8 @@ export class AartiCalendarQueryDto {
 }
 
 export class AartiQuoteDto {
-  @IsMongoId() sessionId: string;
-  @IsMongoId() passTypeId: string;
+  @IsEntityId() sessionId: string;
+  @IsEntityId() passTypeId: string;
   @IsDateString() sessionDate: string;
   @Type(() => Number) @IsInt() @Min(1) @Max(50) passCount: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) donationAmount?: number;
@@ -132,7 +132,7 @@ export class PassFormatDto {
 export class GateScanDto {
   @IsOptional() @IsString() token?: string;
   @IsOptional() @IsString() @MaxLength(20) displayCode?: string;
-  @IsOptional() @IsMongoId() sessionId?: string;
+  @IsOptional() @IsEntityId() sessionId?: string;
   @IsOptional() @IsIn(["entry", "verify"]) action?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(50) admitCount?: number;
   @IsOptional() @IsString() @MaxLength(200) deviceInfo?: string;
@@ -145,7 +145,7 @@ export class ManualCheckInDto {
 }
 
 export class GateRosterDto {
-  @IsMongoId() sessionId: string;
+  @IsEntityId() sessionId: string;
   @IsDateString() date: string;
 }
 
@@ -160,7 +160,7 @@ export class AartiVenueDto {
 }
 
 export class CreateAartiSessionDto {
-  @IsMongoId() ashramId: string;
+  @IsEntityId() ashramId: string;
   @IsString() @MaxLength(160) name: string;
   @IsIn(AARTI_KINDS) kind: string;
   @IsOptional() @IsString() @MaxLength(120) deity?: string;
@@ -260,7 +260,7 @@ export class UpdateAartiSessionDto {
 }
 
 export class CreateAartiPassTypeDto {
-  @IsMongoId() sessionId: string;
+  @IsEntityId() sessionId: string;
   @IsString() @MaxLength(120) name: string;
   @IsString() @MaxLength(20) code: string;
   @IsOptional() @IsString() @MaxLength(1000) description?: string;
@@ -298,9 +298,9 @@ export class UpdateAartiPassTypeDto {
 }
 
 export class UpsertAartiPricingDto {
-  @IsOptional() @IsMongoId() _id?: string;
-  @IsMongoId() sessionId: string;
-  @IsOptional() @IsMongoId() passTypeId?: string;
+  @IsOptional() @IsEntityId() _id?: string;
+  @IsEntityId() sessionId: string;
+  @IsOptional() @IsEntityId() passTypeId?: string;
   @IsOptional() @IsString() @MaxLength(120) name?: string;
   @IsOptional() @IsDateString() validFrom?: string;
   @IsOptional() @IsDateString() validUntil?: string;
@@ -325,9 +325,9 @@ export class UpsertAartiPricingDto {
 }
 
 export class UpsertAartiHolidayDto {
-  @IsOptional() @IsMongoId() _id?: string;
-  @IsOptional() @IsMongoId() sessionId?: string;
-  @IsOptional() @IsMongoId() ashramId?: string;
+  @IsOptional() @IsEntityId() _id?: string;
+  @IsOptional() @IsEntityId() sessionId?: string;
+  @IsOptional() @IsEntityId() ashramId?: string;
   @IsString() @MaxLength(160) name: string;
   @IsOptional() @IsIn(["festival", "closure", "special"]) type?: string;
   @IsDateString() startDate: string;
@@ -339,8 +339,8 @@ export class UpsertAartiHolidayDto {
 }
 
 export class BlockSeatsDto {
-  @IsMongoId() sessionId: string;
-  @IsMongoId() passTypeId: string;
+  @IsEntityId() sessionId: string;
+  @IsEntityId() passTypeId: string;
   @IsDateString() date: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) blockedCount?: number;
   @IsOptional() @Transform(bool) @IsBoolean() isClosed?: boolean;
@@ -350,8 +350,8 @@ export class BlockSeatsDto {
 
 export class UpsertAartiSettingDto {
   @IsIn(["platform", "ashram", "session"]) scope: string;
-  @IsOptional() @IsMongoId() ashramId?: string;
-  @IsOptional() @IsMongoId() sessionId?: string;
+  @IsOptional() @IsEntityId() ashramId?: string;
+  @IsOptional() @IsEntityId() sessionId?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) reservationHoldMinutes?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) gateOpensBeforeMinutes?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) gateClosesAfterMinutes?: number;
@@ -386,10 +386,10 @@ export class UpsertAartiSettingDto {
 }
 
 export class CreateAartiStaffDto {
-  @IsMongoId() userId: string;
-  @IsMongoId() ashramId: string;
+  @IsEntityId() userId: string;
+  @IsEntityId() ashramId: string;
   @IsIn(AARTI_ROLES) aartiRole: string;
-  @IsOptional() @IsArray() @IsMongoId({ each: true }) sessionIds?: string[];
+  @IsOptional() @IsArray() @IsEntityId({ each: true }) sessionIds?: string[];
   @IsOptional() @IsArray() @IsString({ each: true }) capabilityOverrides?: string[];
   @IsOptional() @IsString() @MaxLength(40) employeeCode?: string;
   @IsOptional() @IsString() @MaxLength(20) phone?: string;
@@ -397,8 +397,8 @@ export class CreateAartiStaffDto {
 }
 
 export class CreateAartiStreamDto {
-  @IsMongoId() ashramId: string;
-  @IsOptional() @IsMongoId() sessionId?: string;
+  @IsEntityId() ashramId: string;
+  @IsOptional() @IsEntityId() sessionId?: string;
   @IsString() @MaxLength(160) title: string;
   @IsOptional() @IsString() @MaxLength(2000) description?: string;
   @IsOptional() @IsString() @MaxLength(120) deity?: string;
@@ -423,7 +423,7 @@ export class CreateAartiStreamDto {
 }
 
 export class UpdateAartiStreamDto {
-  @IsOptional() @IsMongoId() sessionId?: string;
+  @IsOptional() @IsEntityId() sessionId?: string;
   @IsOptional() @IsString() @MaxLength(160) title?: string;
   @IsOptional() @IsString() @MaxLength(2000) description?: string;
   @IsOptional() @IsString() @MaxLength(120) deity?: string;
@@ -465,8 +465,8 @@ export class SetSessionStatusDto {
 export class AartiListQueryDto extends PaginationDto {
   @IsOptional() @IsString() q?: string;
   @IsOptional() @IsString() status?: string;
-  @IsOptional() @IsMongoId() ashramId?: string;
-  @IsOptional() @IsMongoId() sessionId?: string;
+  @IsOptional() @IsEntityId() ashramId?: string;
+  @IsOptional() @IsEntityId() sessionId?: string;
   @IsOptional() @IsDateString() date?: string;
 }
 

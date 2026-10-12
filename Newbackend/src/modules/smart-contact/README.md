@@ -23,7 +23,7 @@ phone number, an email or a designation. Cards outlive the details on them, so:
 
 | Concern | How it is isolated |
 | --- | --- |
-| Data | Own Mongoose connection (`SMART_CONTACT_CONNECTION`) and own Postgres schema (`smart_contact`). Models registered against it cannot be resolved from platform modules, and vice versa. |
+| Data | Own model connection (`SMART_CONTACT_CONNECTION`) and own Postgres schema (`smart_contact`). Models registered against it cannot be resolved from platform modules, and vice versa. |
 | Config | `SMART_CONTACT_*` read straight from `process.env`, not from `environment()`. |
 | Audit | Local `smart_contact_audit_logs`, not the platform audit module — an extracted service carries its own history. |
 | Analytics | Local `smart_contact_events`. |
@@ -45,7 +45,7 @@ else in the platform references it.
 ```
 domain/          constants, enums, view types (no storage concepts)
 config/          SMART_CONTACT_* settings + URL builders
-infrastructure/  named Mongoose connection + the four schemas
+infrastructure/  named model connection + the four schemas
 application/     profiles, qr-codes, qr rendering, vcard, analytics, audit
 presentation/    public + admin controllers, DTOs
 ```

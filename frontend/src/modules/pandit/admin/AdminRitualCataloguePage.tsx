@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { BookOpen, Plus, RefreshCw } from "lucide-react";
 import { ritualAdminService } from "../services/provider.service";
+import { ProcessBadgeIcon, RitualProcessEditor, processStepCount } from "./RitualProcessEditor";
 import { getErrorMessage } from "../../../lib/api";
 import { toast } from "../../../lib/toast";
 import {
@@ -60,6 +61,7 @@ export const AdminRitualCataloguePage: React.FC = () => {
   const [status, setStatus] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<any | null>(null);
+  const [processTarget, setProcessTarget] = useState<any | null>(null);
 
   // New ritual
   const [createOpen, setCreateOpen] = useState(false);
@@ -265,6 +267,10 @@ export const AdminRitualCataloguePage: React.FC = () => {
                         {next.label}
                       </Button>
                     )}
+                    <Button variant="outline" onClick={() => setProcessTarget(r)}>
+                      <ProcessBadgeIcon size={15} aria-hidden="true" />
+                      Puja steps{processStepCount(r.process) ? ` (${processStepCount(r.process)})` : ""}
+                    </Button>
                     {r.status !== "ARCHIVED" && (
                       <Button variant="outline" onClick={() => { setVariantTarget(r); setNewVariantName(""); setVariantError(null); }}>
                         Add variant
@@ -283,6 +289,12 @@ export const AdminRitualCataloguePage: React.FC = () => {
         </ul>
       )}
       {!loading && <Pagination page={page} pageCount={pageCount} onChange={setPage} />}
+
+      <RitualProcessEditor
+        ritual={processTarget ? { id: processTarget.id, name: titleOf(processTarget.titles, processTarget.slug), process: processTarget.process } : null}
+        onClose={() => setProcessTarget(null)}
+        onSaved={load}
+      />
 
       <ConfirmDialog
         open={!!archiveTarget}

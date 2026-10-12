@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import type { Model } from "mongoose";
+import { InjectModel } from "../../../database/orm-nest";
+import type { Model } from "../../../database/orm";
 
 export interface LegacyResolver {
   /** Matches a legacy path and yields the identifier to look up. */

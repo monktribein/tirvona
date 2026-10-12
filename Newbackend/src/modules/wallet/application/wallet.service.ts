@@ -4,9 +4,9 @@ import {
   Injectable,
   Logger,
 } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
+import { InjectModel } from "../../../database/orm-nest";
 import { Cron, CronExpression } from "@nestjs/schedule";
-import { Types, type ClientSession, type Model } from "mongoose";
+import { Types, type ClientSession, type Model } from "../../../database/orm";
 import {
   WALLET_HOLD_TTL_MINUTES,
   roundMoney,

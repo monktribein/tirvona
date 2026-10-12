@@ -116,6 +116,13 @@ export const providerSelfService = {
   setStatus: (status: "ACTIVE" | "INACTIVE") =>
     api.patch<any>(`${V2}/provider/profile/status`, { status }),
 
+  /**
+   * "Live online available" switch: devotees can book a live video katha / puja.
+   * Backend: PATCH /api/v2/provider/profile/live
+   */
+  setLiveOnline: (enabled: boolean, youtubeUrl?: string) =>
+    api.patch<any>(`${V2}/provider/profile/live`, youtubeUrl ? { enabled, youtubeUrl } : { enabled }),
+
   // ── Offerings ────────────────────────────────────────────────────────────
 
   /**
@@ -296,6 +303,10 @@ export const pujaBookingService = {
    * Get authorized Zoom meeting session details.
    * Backend: GET /api/v2/bookings/:bookingId/zoom
    */
+  /** Pandit sets the YouTube live link devotees watch. Backend: POST /api/v2/bookings/:id/live-stream */
+  setLiveStream: (bookingId: string, youtubeUrl: string) =>
+    api.post<any>(`${V2}/bookings/${bookingId}/live-stream`, { youtubeUrl }),
+
   getZoomMeeting: (bookingId: string) =>
     api.get<any>(`${V2}/bookings/${bookingId}/zoom`),
 };
@@ -578,6 +589,9 @@ export const ritualAdminService = {
   create: (data: unknown) => api.post<any>(`${V2}/admin/rituals`, data),
   /** Backend: POST /api/v2/admin/rituals/:id/variants */
   createVariant: (id: string, data: unknown) => api.post<any>(`${V2}/admin/rituals/${id}/variants`, data),
+  /** Puja process guide (before / during / after). Live for devotees and pandits once saved. */
+  setProcess: (id: string, process: { before: unknown[]; during: unknown[]; after: unknown[] }) =>
+    api.put<any>(`${V2}/admin/rituals/${id}/process`, process),
   /** Workflow: submit-review | approve | publish | revise | archive. */
   transition: (id: string, action: "submit-review" | "approve" | "publish" | "revise" | "archive", note?: string) =>
     api.post<any>(`${V2}/admin/rituals/${id}:${action}`, note ? { note } : {}),

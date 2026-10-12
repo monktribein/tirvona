@@ -14,7 +14,7 @@
  *
  * New collections are prefixed `marketplace_`.
  */
-import { Schema, SchemaTypes } from "mongoose";
+import { Schema, SchemaTypes } from "../../../database/orm";
 import {
   APPROVAL_STATUSES,
   BUSINESS_TYPES,
@@ -165,6 +165,8 @@ export const ProductSchema = new Schema(
     approvedBy: id("User"),
     adminDisabled: { type: Boolean, default: false },
     adminDisabledReason: String,
+    /** Super admin switch: also show this product on pandit pages (puja samagri for devotees). */
+    showOnPanditPages: { type: Boolean, default: false },
     // `stock` is THE available-quantity counter, shared with the legacy
     // checkout (which decrements it directly), so both systems stay in step.
     stock: { type: Number, default: 0, min: 0 },

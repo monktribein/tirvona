@@ -6,7 +6,7 @@
 
 ### DEC-001: Schema Extension Strategy over Separate Day Stay Database
 - **Context**: Day Stay requires time-based inventory, but sits inside the existing Tirvona platform.
-- **Decision**: Extend existing Mongoose schemas (`AshramSchema`, `RoomSchema`, `BookingSchema`) and add a centralized product catalog (`DayStayProductSchema`).
+- **Decision**: Extend existing model schemas (`AshramSchema`, `RoomSchema`, `BookingSchema`) and add a centralized product catalog (`DayStayProductSchema`).
 - **Rationale**: Preserves single-source-of-truth for Users, Ashrams, Payments, Refunds, and Admin oversight while avoiding duplicate data models.
 - **Classification**: Technical Decision.
 
@@ -24,6 +24,6 @@
 
 ### DEC-004: Timezone Storage Strategy
 - **Context**: Day Stays are time-window sensitive.
-- **Decision**: Persist all specific slot instances (`slotStartTime`, `slotEndTime`, `graceExpiresAt`, `housekeepingEndsAt`) as UTC ISO `Date` timestamps in MongoDB, while storing recurring property operational hours (`operatingHours: { start: "06:00", end: "20:00" }`) as 24-hour time strings evaluated against property local time (`Asia/Kolkata`).
+- **Decision**: Persist all specific slot instances (`slotStartTime`, `slotEndTime`, `graceExpiresAt`, `housekeepingEndsAt`) as UTC ISO `Date` timestamps in Supabase PostgreSQL, while storing recurring property operational hours (`operatingHours: { start: "06:00", end: "20:00" }`) as 24-hour time strings evaluated against property local time (`Asia/Kolkata`).
 - **Rationale**: Standardizes database indexing and prevents DST or server timezone skew.
 - **Classification**: Technical Decision.

@@ -23,10 +23,10 @@ import {
 } from "@nestjs/common";
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE, Reflector } from "@nestjs/core";
 import { ConfigModule } from "@nestjs/config";
-import { MongooseModule } from "@nestjs/mongoose";
+import { OrmModule } from "../../../database/orm-nest";
 import { Test } from "@nestjs/testing";
 import { randomUUID } from "node:crypto";
-import { Types } from "mongoose";
+import { Types } from "../../../database/orm";
 import { ApiExceptionFilter } from "../../../common/filters/api-exception.filter";
 import { RequestIdInterceptor } from "../../../common/interceptors/request-id.interceptor";
 import { RolesGuard } from "../../../common/guards/roles.guard";
@@ -139,9 +139,9 @@ export async function createProviderTestApp(): Promise<ProviderTestApp> {
     imports: [
       // ignoreEnvFile: tests must never read the workspace .env (it holds real credentials).
       ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true, load: [environment] }),
-      MongooseModule.forRoot(DRIVER_URI),
+      OrmModule.forRoot(DRIVER_URI),
       // Only the dev-fixture tests touch users; the providers module itself never reads them.
-      MongooseModule.forFeature([{ name: "User", schema: UserSchema }]),
+      OrmModule.forFeature([{ name: "User", schema: UserSchema }]),
       TransactionsModule,
       ProvidersModule,
     ],

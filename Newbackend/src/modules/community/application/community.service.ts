@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { Types } from "mongoose";
+import { Types } from "../../../database/orm";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { canManageAllAshrams } from "../../../common/auth/ashram-access";
 import { escapeRegex } from "../../../common/utils/escape-regex";

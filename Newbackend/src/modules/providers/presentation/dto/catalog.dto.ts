@@ -20,6 +20,22 @@ import {
   VARIANT_STATUSES,
 } from "../../domain/provider.constants";
 import { IsLocaleMap, PageQueryDto } from "./common.dto";
+import { Type } from "class-transformer";
+import { ArrayMaxSize as MaxItems, IsArray as IsList, IsIn as OneOf, IsOptional as Optional, IsString as Str, Length as Len, ValidateNested as Nested } from "class-validator";
+import { MAX_PROCESS_STEPS, PROCESS_STEP_OWNERS } from "../../domain/provider.constants";
+
+export class ProcessStepDto {
+  @Str() @Len(2, 120) title: string;
+  @Optional() @Str() @Len(0, 600) detail?: string;
+  @Optional() @OneOf(PROCESS_STEP_OWNERS) owner?: string;
+}
+
+/** The puja's step-by-step guide: what happens before the pandit arrives, during, and after. */
+export class RitualProcessDto {
+  @Optional() @IsList() @MaxItems(MAX_PROCESS_STEPS) @Nested({ each: true }) @Type(() => ProcessStepDto) before?: ProcessStepDto[];
+  @Optional() @IsList() @MaxItems(MAX_PROCESS_STEPS) @Nested({ each: true }) @Type(() => ProcessStepDto) during?: ProcessStepDto[];
+  @Optional() @IsList() @MaxItems(MAX_PROCESS_STEPS) @Nested({ each: true }) @Type(() => ProcessStepDto) after?: ProcessStepDto[];
+}
 
 const trim = () =>
   Transform(({ value }) => (typeof value === "string" ? value.trim() : value));

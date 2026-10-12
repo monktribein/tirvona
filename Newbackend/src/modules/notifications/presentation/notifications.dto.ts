@@ -3,7 +3,6 @@ import {
   IsArray,
   IsIn,
   IsInt,
-  IsMongoId,
   IsOptional,
   IsString,
   IsUrl,
@@ -11,6 +10,7 @@ import {
   Min,
   MinLength,
 } from "class-validator";
+import { IsEntityId } from "../../../common/decorators/is-entity-id.decorator";
 import { USER_ROLES } from "../../users/infrastructure/persistence/user.schema";
 
 const AUDIENCE_TYPES = ["all", "users", "role", "ashram"] as const;
@@ -19,8 +19,8 @@ export type AudienceType = (typeof AUDIENCE_TYPES)[number];
 export class AudiencePreviewDto {
   @IsIn(AUDIENCE_TYPES) audienceType: AudienceType;
   @IsOptional() @IsArray() @IsIn(USER_ROLES, { each: true }) targetRoles?: string[];
-  @IsOptional() @IsArray() @IsMongoId({ each: true }) targetUserIds?: string[];
-  @IsOptional() @IsArray() @IsMongoId({ each: true }) ashramIds?: string[];
+  @IsOptional() @IsArray() @IsEntityId({ each: true }) targetUserIds?: string[];
+  @IsOptional() @IsArray() @IsEntityId({ each: true }) ashramIds?: string[];
 }
 
 export class SendCampaignDto {
@@ -30,8 +30,8 @@ export class SendCampaignDto {
   @IsOptional() @IsString() deepLink?: string;
   @IsIn(AUDIENCE_TYPES) audienceType: AudienceType;
   @IsOptional() @IsArray() @IsIn(USER_ROLES, { each: true }) targetRoles?: string[];
-  @IsOptional() @IsArray() @IsMongoId({ each: true }) targetUserIds?: string[];
-  @IsOptional() @IsArray() @IsMongoId({ each: true }) ashramIds?: string[];
+  @IsOptional() @IsArray() @IsEntityId({ each: true }) targetUserIds?: string[];
+  @IsOptional() @IsArray() @IsEntityId({ each: true }) ashramIds?: string[];
 }
 
 export class ListCampaignsQueryDto {

@@ -3,7 +3,7 @@
  * (`pilgrim_wallets`): that one holds a devotee's refunds and credits, this
  * one holds what Tirvona owes a pandit.
  */
-import { Schema, SchemaTypes } from "mongoose";
+import { Schema, SchemaTypes } from "../../../database/orm";
 import {
   PAYOUT_METHODS,
   WALLET_ENTRY_STATUSES,

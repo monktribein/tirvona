@@ -1,8 +1,8 @@
 /// <reference types="jest" />
 import { BadRequestException, ConflictException, ForbiddenException } from "@nestjs/common";
-import { getModelToken } from "@nestjs/mongoose";
+import { getModelToken } from "../../../database/orm-nest";
 import bcrypt from "bcryptjs";
-import { Schema, Types } from "mongoose";
+import { Schema, Types } from "../../../database/orm";
 import { AuditLogSchema } from "../../audit/audit.module";
 import { createInMemoryModel } from "../../marketplace/testing/in-memory-model";
 import { PilgrimWalletSchema } from "../../wallet/infrastructure/wallet.schemas";

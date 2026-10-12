@@ -126,8 +126,9 @@ describe("provider migration files (real Postgres)", () => {
   });
 
   it("can be applied again after a rollback", async () => {
-    await pool.query(sqlOf(FOUNDATION));
-    await pool.query(sqlOf(WALLET));
+    // Re-apply every migration from the provider foundation on, in order (later ones add columns to these tables).
+    const files = readdirSync(MIGRATIONS).filter((f) => /^\d{4}_[a-z0-9_]+\.sql$/.test(f)).sort();
+    for (const file of files.slice(files.indexOf(FOUNDATION))) await pool.query(sqlOf(file));
     for (const table of PROVIDER_TABLES) expect(await tableExists(table)).toBe(true);
     await expect(new PgStore(pool, REGISTRY).verifySchema()).resolves.not.toThrow();
   });

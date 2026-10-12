@@ -1,5 +1,5 @@
 /// <reference types="jest" />
-import { Types } from "mongoose";
+import { Types } from "../../../database/orm";
 import { createInMemoryModel } from "../../marketplace/testing/in-memory-model";
 import {
   PilgrimWalletHoldSchema,

@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { MongooseModule } from "@nestjs/mongoose";
+import { OrmModule } from "../../database/orm-nest";
 import { WalletService } from "./application/wallet.service";
 import { WALLET_MODELS } from "./infrastructure/wallet.schemas";
 
@@ -10,8 +10,8 @@ import { WALLET_MODELS } from "./infrastructure/wallet.schemas";
  * `WalletApiModule`.
  */
 @Module({
-  imports: [MongooseModule.forFeature(WALLET_MODELS)],
+  imports: [OrmModule.forFeature(WALLET_MODELS)],
   providers: [WalletService],
-  exports: [MongooseModule, WalletService],
+  exports: [OrmModule, WalletService],
 })
 export class WalletModule {}

@@ -15,7 +15,7 @@ sequenceDiagram
     actor Customer as Pilgrim (Browser)
     participant Engine as Day Stay Booking Service
     participant Gateway as Razorpay Gateway
-    participant DB as MongoDB
+    participant DB as Supabase
 
     Customer->>Engine: POST /api/day-stay/hold {ashramId, roomId, productCode, slot}
     Engine->>DB: Check Availability & Create Pending Booking (10m Hold)

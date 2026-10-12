@@ -1,4 +1,4 @@
-import { Schema, SchemaTypes } from "mongoose";
+import { Schema, SchemaTypes } from "../../../../database/orm";
 const id = (ref: string, required = false) => ({
   type: SchemaTypes.ObjectId,
   ref,

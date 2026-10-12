@@ -4,8 +4,8 @@ import {
   Logger,
   NotFoundException,
 } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import { isValidObjectId, type Model } from "mongoose";
+import { InjectModel } from "../../../database/orm-nest";
+import { isValidObjectId, type Model } from "../../../database/orm";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import type { DayStayConfigUpdateDto, DayStayVendorBlockDto } from "../presentation/dtos/day-stay.dto";
 import { addDays, istDateString, istDayBounds } from "../domain/day-stay-time";

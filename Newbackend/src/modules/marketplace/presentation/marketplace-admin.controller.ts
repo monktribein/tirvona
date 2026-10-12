@@ -19,6 +19,7 @@ import {
   OrderQueryDto,
   PayoutQueryDto,
   ProductDisableDto,
+  ProductPanditPagesDto,
   ProductQueryDto,
   ProductReviewDecisionDto,
   ReasonDto,
@@ -136,6 +137,14 @@ export class MarketplaceAdminController {
   @HttpCode(200)
   async reviewProduct(@CurrentUser() user: AuthenticatedUser, @Param("id") id: string, @Body() dto: ProductReviewDecisionDto) {
     return { success: true, data: await this.products.adminReview(user, id, dto.decision, dto.reason) };
+  }
+
+  /** Show this product on pandit pages (super admin only). */
+  @Post("products/:id/pandit-pages")
+  @Roles("super_admin")
+  @HttpCode(200)
+  async productPanditPages(@CurrentUser() user: AuthenticatedUser, @Param("id") id: string, @Body() dto: ProductPanditPagesDto) {
+    return { success: true, data: await this.products.adminSetPanditPages(user, id, dto.visible) };
   }
 
   @Post("products/:id/disable")

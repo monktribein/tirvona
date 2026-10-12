@@ -26,8 +26,8 @@ Production requires `SUPABASE_DB_URL`, non-wildcard `CORS_ORIGINS`, Redis, JWT a
 
 ## Database
 
-All data lives in Supabase PostgreSQL. Models are written with Mongoose; a
-storage driver (`src/database/pg`) stores them in Postgres, so services keep
+All data lives in Supabase PostgreSQL. Models are defined through the model
+layer (`src/database/orm.ts`, `src/database/orm-nest.ts`); a storage driver (`src/database/pg`) stores them in Postgres, so services keep
 their query/update style while every read and write goes to SQL.
 `configureDatabase()` (`src/database/database.ts`) installs it at startup.
 

@@ -7,7 +7,7 @@ const KEY_SECRET = "test-key-secret";
 const sign = (orderId: string, paymentId: string) =>
   createHmac("sha256", KEY_SECRET).update(`${orderId}|${paymentId}`).digest("hex");
 
-/** A mongoose-style query that supports .session()/.sort()/.lean(). */
+/** A model query that supports .session()/.sort()/.lean(). */
 const query = <T>(value: T) => {
   const q: any = {
     session: () => q,

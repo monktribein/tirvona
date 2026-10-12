@@ -1,7 +1,7 @@
 import { Injectable, Logger, type OnModuleInit } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
+import { InjectModel } from "../../../database/orm-nest";
 import { Cron, CronExpression } from "@nestjs/schedule";
-import type { ClientSession, Model } from "mongoose";
+import type { ClientSession, Model } from "../../../database/orm";
 import { TransactionService } from "../../../common/database/transaction.service";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { InAppNotificationService } from "../../notifications/application/in-app-notification.service";
@@ -11,10 +11,10 @@ import {
   WITHDRAWAL_NUMBER_PREFIX,
   paymentMethodOf,
   providerWalletConfig,
-  splitEarning,
   type ProviderWithdrawalStatus,
 } from "../domain/provider-wallet.constants";
 import { providerError } from "../domain/provider.errors";
+import { earningOf, providerPlatformFeeBps } from "../domain/platform-fee";
 import { pageParams } from "../presentation/dto/common.dto";
 import type {
   AdminWithdrawalQueryDto,
@@ -95,14 +95,14 @@ export class ProviderWalletService implements OnModuleInit {
    * Idempotent per booking.
    */
   async recordEarning(booking: any, paymentRef: string | undefined, session: ClientSession) {
-    const grossMinor = Number(booking.serviceSnapshot?.pricing?.totalMinor ?? 0);
+    // The devotee paid the total; Tirvona keeps its platform fee; the pandit gets the rest (fee + travel).
+    const { grossMinor, platformFeeMinor, netMinor } = earningOf(booking.serviceSnapshot?.pricing);
     if (!(grossMinor > 0)) return null; // free offering: nothing was paid
     const idempotencyKey = `earning-${booking._id}`;
     const prior = await this.entries.findOne({ idempotencyKey }).session(session);
     if (prior) return prior;
 
     const cfg = providerWalletConfig();
-    const { platformFeeMinor, netMinor } = splitEarning(grossMinor, cfg.platformFeeBps);
     const wallet = await this.ensureWallet(booking.providerId, booking.providerUserId, session);
     const now = new Date();
     const [entry] = await this.entries.create(
@@ -326,7 +326,8 @@ export class ProviderWalletService implements OnModuleInit {
         recentEntries: recent.map((row) => this.entryView(row)),
         rules: {
           holdHours: cfg.holdHours,
-          platformFeePercent: cfg.platformFeeBps / 100,
+          /** Charged to the devotee on top of the pandit's fee; never deducted from the pandit. */
+          devoteePlatformFeePercent: providerPlatformFeeBps() / 100,
           minWithdrawalMinor: cfg.minWithdrawalMinor,
         },
       },

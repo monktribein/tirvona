@@ -4,7 +4,7 @@
  * a fake Razorpay gateway and a fake payout provider. Test-only.
  */
 import { createHmac, randomBytes } from "node:crypto";
-import { Types } from "mongoose";
+import { Types } from "../../../database/orm";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { AuditLogSchema } from "../../audit/audit.module";
 import { MarketplaceAddressSchema } from "../../commerce/infrastructure/persistence/marketplace-address.schemas";

@@ -1,6 +1,6 @@
 import type { TestingModule } from "@nestjs/testing";
 import { Test } from "@nestjs/testing";
-import { getModelToken } from "@nestjs/mongoose";
+import { getModelToken } from "../../../database/orm-nest";
 import { ConfigService } from "@nestjs/config";
 import { createHmac } from "node:crypto";
 import { DayStayInventoryService } from "../application/day-stay-inventory.service";

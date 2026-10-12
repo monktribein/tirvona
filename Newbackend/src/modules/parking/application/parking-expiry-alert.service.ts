@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { Interval } from "@nestjs/schedule";
-import { InjectModel } from "@nestjs/mongoose";
-import type { Model } from "mongoose";
+import { InjectModel } from "../../../database/orm-nest";
+import type { Model } from "../../../database/orm";
 import { PARKING_MODEL } from "../domain/parking.constants";
 import { parkingOwnerFields } from "../domain/parking.utils";
 

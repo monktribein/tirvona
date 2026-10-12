@@ -2,7 +2,7 @@ import { Module } from "@nestjs/common";
 import { BullModule } from "@nestjs/bullmq";
 import { ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
-import { MongooseModule } from "@nestjs/mongoose";
+import { OrmModule } from "../../database/orm-nest";
 import { BookingsModule } from "../bookings/bookings.module";
 import { ParkingModule } from "../parking/parking.module";
 import { UsersModule } from "../users/users.module";
@@ -34,7 +34,7 @@ import { WhatsAppModule } from "../../integrations/whatsapp/whatsapp.module";
     AartiModule,
     EventsModule,
     WhatsAppModule,
-    MongooseModule.forFeature([
+    OrmModule.forFeature([
       { name: "PushCampaign", schema: PushCampaignSchema },
       { name: "UserNotification", schema: UserNotificationSchema },
     ]),

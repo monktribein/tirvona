@@ -1,4 +1,4 @@
-import type { Schema } from "mongoose";
+import type { Schema } from "../../database/orm";
 import { BookingSchema } from "../bookings/infrastructure/persistence/booking.schemas";
 import { ParkingBookingSchema } from "../parking/infrastructure/persistence/parking-operation.schemas";
 import { AartiBookingSchema } from "../aarti/infrastructure/persistence/aarti-operation.schemas";
@@ -10,7 +10,7 @@ import { NotificationWorker, type NotificationJob } from "./notification.worker"
  * exist on the real schema slipped through and failed every stay notification
  * in a live run ("Cannot populate path `roomId`..."). These tests capture the
  * exact select/populate calls the worker makes and check each one against the
- * real Mongoose schema, with no database needed.
+ * real model schema, with no database needed.
  */
 
 interface Captured {
@@ -117,7 +117,7 @@ describe("NotificationWorker booking context lookups match the real schemas", ()
     async (domain, schema) => {
       const captured = await runDomain(domain);
       expect(captured.populates.length).toBeGreaterThan(0);
-      // Mongoose adds populated paths to an inclusive projection itself
+      // The model layer adds populated paths to an inclusive projection itself
       // (selectPopulatedFields), so only the path's existence is checked.
 
       for (const path of captured.populates) {

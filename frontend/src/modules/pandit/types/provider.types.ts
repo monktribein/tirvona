@@ -100,9 +100,40 @@ export interface ServiceArea {
 export interface TravelProfile {
   willingToTravel?: boolean;
   overnightOk?: boolean;
+  /** TRAIN | FLIGHT | ROAD (car / four-wheeler) */
   modes?: string[];
   minNoticeHours?: number;
   regions?: string[];
+  maxDistanceKm?: number | null;
+  /** HOST_PROVIDES | SELF_ARRANGED | EITHER */
+  stayArrangement?: string | null;
+  notes?: string | null;
+}
+
+export const TRAVEL_MODE_LABELS: Record<string, string> = {
+  TRAIN: "Train",
+  FLIGHT: "Flight",
+  ROAD: "Car (four-wheeler)",
+};
+
+export const STAY_ARRANGEMENT_LABELS: Record<string, string> = {
+  HOST_PROVIDES: "Stays with / is hosted by the family",
+  SELF_ARRANGED: "Arranges own stay",
+  EITHER: "Either is fine",
+};
+
+/** One step of a puja's process guide, set by Tirvona per ritual. */
+export interface PujaProcessStep {
+  title: string;
+  detail?: string | null;
+  /** DEVOTEE | PANDIT | BOTH | TIRVONA */
+  owner?: string;
+}
+
+export interface PujaProcess {
+  before: PujaProcessStep[];
+  during: PujaProcessStep[];
+  after: PujaProcessStep[];
 }
 
 export interface ConsultationSettings {
@@ -140,6 +171,8 @@ export interface ProviderProfile {
   serviceAreas?: ServiceArea[];
   travelProfile?: TravelProfile;
   consultation?: ConsultationSettings;
+  /** Dashboard switch: live online katha / puja available. */
+  liveOnline?: { enabled: boolean; youtubeUrl?: string | null; updatedAt?: string | null };
   contactEmail?: string;
   contactPhone?: string;
   address?: ProviderAddress;

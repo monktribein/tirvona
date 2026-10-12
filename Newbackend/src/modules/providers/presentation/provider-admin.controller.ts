@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Post, Put, Query } from "@nestjs/common";
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -16,6 +16,7 @@ import {
   AdminRitualQueryDto,
   CreateRitualDto,
   CreateRitualVariantDto,
+  RitualProcessDto,
   RitualWorkflowDto,
   UpdateRitualDto,
   UpdateRitualVariantDto,
@@ -50,6 +51,17 @@ export class AdminRitualsController {
   @Idempotent("ritual.create")
   create(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateRitualDto) {
     return this.catalogue.create(user, dto);
+  }
+
+  /** Puja process guide (before / during / after). Live for devotees and pandits as soon as it is saved. */
+  @Put(":ritualId/process")
+  @Idempotent("ritual.process")
+  setProcess(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("ritualId", ObjectIdPipe) ritualId: string,
+    @Body() dto: RitualProcessDto,
+  ) {
+    return this.catalogue.setProcess(user, ritualId, dto);
   }
 
   @Get(":ritualId")

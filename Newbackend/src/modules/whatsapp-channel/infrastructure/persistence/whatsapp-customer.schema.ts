@@ -1,4 +1,4 @@
-import { Schema, SchemaTypes } from "mongoose";
+import { Schema, SchemaTypes } from "../../../../database/orm";
 import { WHATSAPP_CUSTOMER_CODE_PATTERN } from "../../domain/whatsapp-customer.code";
 
 /**

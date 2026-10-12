@@ -3,7 +3,6 @@ import {
   IsBoolean,
   IsIn,
   IsInt,
-  IsMongoId,
   IsOptional,
   IsString,
   Matches,
@@ -12,6 +11,7 @@ import {
   Min,
   MinLength,
 } from "class-validator";
+import { IsEntityId } from "../../../../common/decorators/is-entity-id.decorator";
 import {
   EVIDENCE_TYPES,
   MAX_VERIFICATION_VALIDITY_DAYS,
@@ -38,7 +38,7 @@ export class OpenVerificationCaseDto {
   /** Defaults to IDENTITY. TRUST_REVIEW can only be opened by reviewers. */
   @IsOptional() @IsIn(VERIFICATION_CASE_TYPES) verificationType?: string;
   /** Reviewers/ops open a case for a provider; a provider's own id is implied and any other value is refused. */
-  @IsOptional() @IsMongoId() providerId?: string;
+  @IsOptional() @IsEntityId() providerId?: string;
   @IsOptional() @trim() @IsString() @MaxLength(500) notes?: string;
 }
 
@@ -67,7 +67,7 @@ export class DecideVerificationDto {
 export class VerificationQueueQueryDto extends PageQueryDto {
   @IsOptional() @IsIn(VERIFICATION_CASE_STATUSES) status?: string;
   @IsOptional() @IsIn(VERIFICATION_CASE_TYPES) verificationType?: string;
-  @IsOptional() @IsMongoId() providerId?: string;
+  @IsOptional() @IsEntityId() providerId?: string;
   /** Reviewer queue only: just the cases assigned to me. */
   @IsOptional() @QueryBoolean() @IsBoolean() assignedToMe?: boolean;
 }

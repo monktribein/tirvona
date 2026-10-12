@@ -1,7 +1,7 @@
 import { Controller, Get, Header, Req } from "@nestjs/common";
 import { Request } from "express";
-import { InjectConnection } from "@nestjs/mongoose";
-import { Connection } from "mongoose";
+import { InjectConnection } from "../database/orm-nest";
+import { Connection } from "../database/orm";
 import { Public } from "./decorators/public.decorator";
 import { citySlug, slugify } from "./slug/slug.util";
 

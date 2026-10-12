@@ -1,4 +1,4 @@
-import { Schema } from "mongoose";
+import { Schema } from "../../../../database/orm";
 import { LEAD_REGION_COLLECTION } from "../../domain/lead-collection.constants";
 
 export const LeadRegionSchema = new Schema(

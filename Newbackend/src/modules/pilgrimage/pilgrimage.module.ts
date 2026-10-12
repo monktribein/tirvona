@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { MongooseModule } from "@nestjs/mongoose";
+import { OrmModule } from "../../database/orm-nest";
 import { PILGRIMAGE_MODEL } from "./domain/pilgrimage.constants";
 import { PilgrimageAccessService } from "./application/pilgrimage-access.service";
 import { PilgrimageDiscoveryService } from "./application/pilgrimage-discovery.service";
@@ -25,7 +25,7 @@ const schemas = [
 ].map(([name, schema]) => ({ name: name as string, schema: schema as any }));
 
 @Module({
-  imports: [MongooseModule.forFeature(schemas)],
+  imports: [OrmModule.forFeature(schemas)],
   controllers: [
     PilgrimagePublicController,
     PilgrimageOwnerController,
@@ -37,6 +37,6 @@ const schemas = [
     PilgrimagePlannerService,
     PilgrimageManagementService,
   ],
-  exports: [MongooseModule, PilgrimageAccessService, PilgrimageDiscoveryService],
+  exports: [OrmModule, PilgrimageAccessService, PilgrimageDiscoveryService],
 })
 export class PilgrimageModule {}

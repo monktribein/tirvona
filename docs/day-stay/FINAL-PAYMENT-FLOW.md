@@ -67,8 +67,8 @@ Both paths converge on a single idempotent state machine inside `DayStayBookingS
 
 | Race Scenario | System Behavior & Guarantee |
 |---|---|
-| **Client confirm + Webhook arrive simultaneously** | Atomic Mongoose update transitions state once; the second runner observes `status === 'confirmed'` and returns success without double-processing. |
-| **Duplicate Webhooks from Razorpay retries** | MongoDB unique compound index `{ provider: "razorpay", eventId: 1 }` prevents duplicate execution. |
+| **Client confirm + Webhook arrive simultaneously** | Atomic database update transitions state once; the second runner observes `status === 'confirmed'` and returns success without double-processing. |
+| **Duplicate Webhooks from Razorpay retries** | Unique compound index `{ provider: "razorpay", eventId: 1 }` prevents duplicate execution. |
 | **Duplicate Browser Confirmations** | Idempotency guard checks `booking.paymentStatus === 'paid'` and returns existing confirmed booking without emitting duplicate notifications. |
 | **Tampered / Invalid Signature** | Throws `400 Bad Request` (`INVALID_PAYMENT_SIGNATURE`), booking remains in `held` status until hold expires. |
 

@@ -1,4 +1,4 @@
-import type { ClientSession, HydratedDocument } from "mongoose";
+import type { ClientSession, HydratedDocument } from "../../../database/orm";
 
 export const PARKING_REPOSITORY = Symbol("PARKING_REPOSITORY");
 export type ParkingDocument = HydratedDocument<Record<string, unknown>>;

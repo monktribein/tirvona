@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { InjectConnection } from "@nestjs/mongoose";
-import { Types, type Connection } from "mongoose";
+import { InjectConnection } from "../../../database/orm-nest";
+import { Types, type Connection } from "../../../database/orm";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { canManageAllAshrams } from "../../../common/auth/ashram-access";
 import { resolveAshramScope } from "../../../common/auth/ashram-scope";

@@ -1,5 +1,5 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
-import { Types } from "mongoose";
+import { Types } from "../../../database/orm";
 import { SmartContactProfilesService } from "./smart-contact-profiles.service";
 import type { SmartContactAuditService } from "./smart-contact-audit.service";
 

@@ -7,10 +7,10 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { InjectModel } from "@nestjs/mongoose";
+import { InjectModel } from "../../../database/orm-nest";
 import bcrypt from "bcryptjs";
 import { OAuth2Client } from "google-auth-library";
-import type { Model } from "mongoose";
+import type { Model } from "../../../database/orm";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import type { DeleteAccountDto } from "../presentation/account-deletion.dto";
 import {

@@ -1,4 +1,4 @@
-import { Schema, SchemaTypes } from "mongoose";
+import { Schema, SchemaTypes } from "../../../../database/orm";
 
 const schema = (collection: string): Schema =>
   new Schema({}, { strict: false, timestamps: true, collection });
@@ -42,7 +42,7 @@ export const CONTENT_MODELS = [
   { name: "PilgrimageCircuit", schema: schema("pilgrimagecircuits") },
   // Registered under a content-specific model name while pointing at the same
   // `temples` collection. The strict, indexed `Temple` model owned by
-  // TemplesModule must be the sole holder of the "Temple" Mongoose name;
+  // TemplesModule must be the sole holder of the "Temple" model name;
   // registering a second permissive schema under that name would let whichever
   // module initialised first silently define the schema for both.
   { name: "ContentTemple", schema: schema("temples") },

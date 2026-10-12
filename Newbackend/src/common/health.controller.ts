@@ -6,9 +6,9 @@ import {
   ServiceUnavailableException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { InjectConnection } from "@nestjs/mongoose";
+import { InjectConnection } from "../database/orm-nest";
 import Redis from "ioredis";
-import type { Connection } from "mongoose";
+import type { Connection } from "../database/orm";
 import { Public } from "./decorators/public.decorator";
 
 @Controller("health")

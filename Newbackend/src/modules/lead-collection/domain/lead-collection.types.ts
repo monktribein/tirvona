@@ -1,4 +1,4 @@
-import type { Document, Types } from "mongoose";
+import type { Document, Types } from "../../../database/orm";
 import type { LeadStatus, LeadUserRole } from "./lead-collection.constants";
 
 export interface AuthenticatedLeadUser {

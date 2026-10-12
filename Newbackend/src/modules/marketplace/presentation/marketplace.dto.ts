@@ -8,7 +8,6 @@ import {
   IsEmail,
   IsIn,
   IsInt,
-  IsMongoId,
   IsNumber,
   IsObject,
   IsOptional,
@@ -21,6 +20,7 @@ import {
   Min,
   ValidateNested,
 } from "class-validator";
+import { IsEntityId } from "../../../common/decorators/is-entity-id.decorator";
 import {
   APPROVAL_STATUSES,
   AWAITING_APPROVAL_FILTER,
@@ -123,7 +123,7 @@ export class CreateCategoryDto {
   @IsString() @Length(2, 80) name!: string;
   @IsOptional() @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, { message: "slug must be lowercase words separated by hyphens" }) slug?: string;
   @IsOptional() @IsString() @MaxLength(1000) description?: string;
-  @IsOptional() @IsMongoId() parentId?: string;
+  @IsOptional() @IsEntityId() parentId?: string;
   @IsOptional() @IsUrl() image?: string;
   @IsOptional() @IsIn(["active", "inactive"]) status?: "active" | "inactive";
   @IsOptional() @IsInt() @Min(0) sortOrder?: number;
@@ -131,11 +131,11 @@ export class CreateCategoryDto {
 }
 export class UpdateCategoryDto extends PartialType(CreateCategoryDto) {
   /** null moves the category to the top level. */
-  @IsOptional() @IsMongoId() declare parentId?: string;
+  @IsOptional() @IsEntityId() declare parentId?: string;
 }
 
 class ReorderItemDto {
-  @IsMongoId() id!: string;
+  @IsEntityId() id!: string;
   @IsInt() @Min(0) sortOrder!: number;
 }
 export class ReorderCategoriesDto {
@@ -157,7 +157,7 @@ class DimensionsDto {
 
 export class CreateProductDto {
   @IsString() @Length(3, 150) name!: string;
-  @IsMongoId() categoryId!: string;
+  @IsEntityId() categoryId!: string;
   @IsOptional() @IsString() @MaxLength(5000) description?: string;
   @IsOptional() @IsString() @MaxLength(300) shortDescription?: string;
   @IsOptional() @Transform(upper) @Matches(/^[A-Z0-9][A-Z0-9_-]{1,39}$/, { message: "sku must be 2-40 letters, digits, - or _" }) sku?: string;
@@ -188,8 +188,8 @@ export class SetStockDto {
 
 export class ProductQueryDto extends PageQueryDto {
   @IsOptional() @IsString() @MaxLength(80) search?: string;
-  @IsOptional() @IsMongoId() categoryId?: string;
-  @IsOptional() @IsMongoId() vendorId?: string;
+  @IsOptional() @IsEntityId() categoryId?: string;
+  @IsOptional() @IsEntityId() vendorId?: string;
   @IsOptional() @IsString() @MaxLength(80) vendorSlug?: string;
   @IsOptional() @IsIn(APPROVAL_STATUSES) approvalStatus?: string;
   @IsOptional() @IsIn(LISTING_STATUSES) listingStatus?: string;
@@ -197,6 +197,12 @@ export class ProductQueryDto extends PageQueryDto {
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) maxPrice?: number;
   @IsOptional() @Transform(({ value }) => value === true || value === "true") @IsBoolean() inStock?: boolean;
   @IsOptional() @IsIn(["featured", "price_low", "price_high", "newest", "rating"]) sortBy?: string;
+  /** Only products a super admin switched on for pandit pages. */
+  @IsOptional() @Transform(({ value }) => value === true || value === "true") @IsBoolean() panditPages?: boolean;
+}
+
+export class ProductPanditPagesDto {
+  @IsBoolean() visible!: boolean;
 }
 
 export class ProductReviewDecisionDto {
@@ -211,7 +217,7 @@ export class ProductDisableDto {
 
 // -------------------------------------------------------------- orders
 export class CartItemDto {
-  @IsMongoId() productId!: string;
+  @IsEntityId() productId!: string;
   @Type(() => Number) @IsInt() @Min(1) @Max(50) quantity!: number;
 }
 
@@ -227,7 +233,7 @@ export class CheckoutAddressDto extends AddressInputDto {
 
 export class CheckoutDto extends QuoteDto {
   /** A saved address from the existing /marketplace/addresses book. */
-  @IsOptional() @IsMongoId() addressId?: string;
+  @IsOptional() @IsEntityId() addressId?: string;
   @IsOptional() @ValidateNested() @Type(() => CheckoutAddressDto) address?: CheckoutAddressDto;
   @IsOptional() @IsString() @MaxLength(500) notes?: string;
   /** Client-generated key; retrying checkout with the same key returns the same order. */
@@ -245,8 +251,8 @@ export class ConfirmPaymentDto {
 export class OrderQueryDto extends PageQueryDto {
   @IsOptional() @IsIn([...MASTER_ORDER_STATUSES, ...FULFILLMENT_STATUSES]) status?: string;
   @IsOptional() @IsIn(PAYMENT_STATUSES) paymentStatus?: string;
-  @IsOptional() @IsMongoId() vendorId?: string;
-  @IsOptional() @IsMongoId() customerId?: string;
+  @IsOptional() @IsEntityId() vendorId?: string;
+  @IsOptional() @IsEntityId() customerId?: string;
 }
 
 class TrackingDto {
@@ -273,13 +279,13 @@ export class ResolveReturnDto {
 // ------------------------------------------------------------- finance
 export class RequestPayoutDto {
   @Type(() => Number) @IsNumber({ maxDecimalPlaces: 2 }) @Min(1) amount!: number;
-  @IsOptional() @IsMongoId() bankAccountId?: string;
+  @IsOptional() @IsEntityId() bankAccountId?: string;
   @IsOptional() @IsIn(["IMPS", "NEFT", "RTGS"]) mode?: "IMPS" | "NEFT" | "RTGS";
 }
 
 export class PayoutQueryDto extends PageQueryDto {
   @IsOptional() @IsIn(PAYOUT_STATUSES) status?: string;
-  @IsOptional() @IsMongoId() vendorId?: string;
+  @IsOptional() @IsEntityId() vendorId?: string;
 }
 
 export class MarkPayoutPaidDto {
@@ -309,8 +315,8 @@ export class UpdateSettingsDto {
 
 // -------------------------------------------------------------- reviews
 export class CreateReviewDto {
-  @IsMongoId() vendorOrderId!: string;
-  @IsMongoId() productId!: string;
+  @IsEntityId() vendorOrderId!: string;
+  @IsEntityId() productId!: string;
   @Type(() => Number) @IsInt() @Min(1) @Max(5) rating!: number;
   @IsOptional() @IsString() @MaxLength(120) title?: string;
   @IsOptional() @IsString() @MaxLength(2000) comment?: string;
@@ -322,5 +328,5 @@ export class ReviewStatusDto {
 
 export class ReviewQueryDto extends PageQueryDto {
   @IsOptional() @IsIn(["published", "hidden"]) status?: string;
-  @IsOptional() @IsMongoId() vendorId?: string;
+  @IsOptional() @IsEntityId() vendorId?: string;
 }

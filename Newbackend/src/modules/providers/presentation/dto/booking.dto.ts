@@ -1,3 +1,4 @@
+import { DELIVERY_MODES } from "../../domain/provider.constants";
 import { Transform, Type } from "class-transformer";
 import {
   ArrayMaxSize,
@@ -7,7 +8,6 @@ import {
   IsIn,
   IsISO8601,
   IsInt,
-  IsMongoId,
   IsOptional,
   IsString,
   Matches,
@@ -17,6 +17,7 @@ import {
   MinLength,
   ValidateNested,
 } from "class-validator";
+import { IsEntityId } from "../../../../common/decorators/is-entity-id.decorator";
 import {
   BOOKING_STATUSES,
   CONSULTATION_CHANNELS,
@@ -39,13 +40,20 @@ export class ServiceLocationDto {
 }
 
 export class CreateProviderBookingDto {
-  @IsMongoId() offeringId: string;
+  @IsEntityId() offeringId: string;
   @IsISO8601({ strict: true }) @Matches(WITH_OFFSET, { message: "scheduledStartAt must include a timezone offset (e.g. +05:30 or Z)" }) scheduledStartAt: string;
   @trim() @IsString() @MinLength(2) @MaxLength(120) customerName: string;
   @Matches(PHONE, { message: "customerPhone is not a valid phone number" }) customerPhone: string;
   /** Required when the service is performed at the customer's address. */
   @IsOptional() @ValidateNested() @Type(() => ServiceLocationDto) serviceLocation?: ServiceLocationDto;
   @IsOptional() @trim() @IsString() @MaxLength(500) notes?: string;
+  /** LIVE_ONLINE: the pandit performs it live on video (only while their live-online switch is on). */
+  @IsOptional() @IsIn(DELIVERY_MODES) deliveryMode?: string;
+}
+
+/** The YouTube link for this booking's live katha / puja. */
+export class BookingLiveStreamDto {
+  @trim() @IsString() @MaxLength(300) youtubeUrl: string;
 }
 
 export class BookingTransitionDto {
@@ -59,13 +67,13 @@ export class BookingListQueryDto extends PageQueryDto {
   @IsOptional() @IsIn(BOOKING_STATUSES) status?: string;
   @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/) from?: string;
   @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/) to?: string;
-  @IsOptional() @IsMongoId() providerId?: string;
+  @IsOptional() @IsEntityId() providerId?: string;
 }
 
 // ------------------------------------------------------------- consultations
 export class CreateConsultationDto {
   @IsIn(CONSULTATION_TYPES) consultationType: string;
-  @IsMongoId() expertProviderId: string;
+  @IsEntityId() expertProviderId: string;
   @IsIn(CONSULTATION_CHANNELS) channel: string;
   @IsISO8601({ strict: true }) @Matches(WITH_OFFSET, { message: "scheduledStartAt must include a timezone offset (e.g. +05:30 or Z)" }) scheduledStartAt: string;
   /** Defaults to the expert's configured slot length. */
@@ -73,7 +81,7 @@ export class CreateConsultationDto {
   /** Customer's question; readable only by the customer and the expert. */
   @IsOptional() @trim() @IsString() @MaxLength(1000) questionSummary?: string;
   /** Optional related provider booking (must be the same customer and expert). */
-  @IsOptional() @IsMongoId() bookingId?: string;
+  @IsOptional() @IsEntityId() bookingId?: string;
 }
 
 export class ScheduleConsultationDto {
@@ -120,6 +128,6 @@ export class SendConsultationMessageDto {
 
 export class MessageListQueryDto {
   /** Return only messages created after this message id (for polling and reconnects). */
-  @IsOptional() @IsMongoId() after?: string;
+  @IsOptional() @IsEntityId() after?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(200) limit?: number;
 }

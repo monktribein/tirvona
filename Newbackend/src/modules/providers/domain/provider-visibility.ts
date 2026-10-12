@@ -2,6 +2,7 @@
  * Who may see a provider, and what each audience may see. Everything here is
  * pure so the rules that protect private data are unit tested directly.
  */
+import { PLATFORM_FEE_LABEL, platformFeeMinor, providerPlatformFeeBps } from "./platform-fee";
 import {
   LEVEL_BY_CASE_TYPE,
   VERIFICATION_CASE_TYPES,
@@ -156,7 +157,14 @@ export const toPublicProvider = (profile: any, now = new Date()) => ({
     willingToTravel: Boolean(profile.travelProfile?.willingToTravel),
     overnightOk: Boolean(profile.travelProfile?.overnightOk),
     modes: profile.travelProfile?.modes ?? [],
+    maxDistanceKm: profile.travelProfile?.maxDistanceKm ?? null,
+    stayArrangement: profile.travelProfile?.stayArrangement ?? null,
+    notes: profile.travelProfile?.notes ?? null,
   },
+  /** Pandit has switched on live online katha / puja. */
+  liveOnline: Boolean(profile.liveOnline?.enabled),
+  /** Their YouTube live page, shown only while live online is on. */
+  liveYoutubeUrl: profile.liveOnline?.enabled ? profile.liveOnline?.youtubeUrl ?? null : null,
   verificationLevel: profile.verificationLevel,
   verifiedBadges: verifiedBadges(profile.verification, now),
   consultation: profile.consultation?.enabled
@@ -179,7 +187,10 @@ export const toPublicProvider = (profile: any, now = new Date()) => ({
 });
 
 /** Public offering. The fee is the provider's indicative professional fee; the payable total comes from the booking. */
-export const toPublicOffering = (offering: any, catalogue?: { ritual?: any; variant?: any }) => ({
+export const toPublicOffering = (offering: any, catalogue?: { ritual?: any; variant?: any }) => {
+  const feeBps = providerPlatformFeeBps();
+  const fee = platformFeeMinor(offering.baseProfessionalFeeMinor, feeBps);
+  return {
   id: idOf(offering._id ?? offering.id),
   providerId: idOf(offering.providerId),
   ritualId: idOf(offering.ritualId),
@@ -197,13 +208,17 @@ export const toPublicOffering = (offering: any, catalogue?: { ritual?: any; vari
     amountMinor: offering.baseProfessionalFeeMinor,
     currency: offering.currency,
   },
+  /** Tirvona's fee on top of the professional fee, and what the devotee pays before any travel charge. */
+  platformFee: { rateBps: feeBps, percent: feeBps / 100, amountMinor: fee, label: PLATFORM_FEE_LABEL },
+  devoteePriceMinor: offering.baseProfessionalFeeMinor + fee,
   travelCharge: offering.travelCharge ?? { policy: "NONE" },
   inclusions: offering.inclusions ?? [],
   exclusions: offering.exclusions ?? [],
   samagriIncluded: Boolean(offering.samagriIncluded),
   voluntaryDakshinaAllowed: Boolean(offering.voluntaryDakshinaAllowed),
   tags: offering.tags ?? [],
-});
+  };
+};
 
 /** Share of the onboarding checklist done, so clients stop inventing a number. */
 export const profileCompletion = (

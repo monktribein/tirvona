@@ -11,7 +11,7 @@
  * Run through `npm run providers:seed-dev` (see src/scripts/seed-provider-dev.ts),
  * which adds the interactive guards (explicit flags, database host check).
  */
-import { Types, type Model } from "mongoose";
+import { Types, type Model } from "../../../database/orm";
 import { weeklyRrule } from "../domain/availability.util";
 import { DAYS_OF_WEEK } from "../domain/provider.constants";
 import { slugify } from "../../../common/slug/slug.util";

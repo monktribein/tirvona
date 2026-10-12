@@ -8,7 +8,6 @@ import {
   IsISO8601,
   IsLatitude,
   IsLongitude,
-  IsMongoId,
   IsNumber,
   IsOptional,
   IsString,
@@ -17,6 +16,7 @@ import {
   Min,
   ValidateNested,
 } from "class-validator";
+import { IsEntityId } from "../../../../common/decorators/is-entity-id.decorator";
 import { LEAD_TRACKING } from "../../domain/lead-collection.constants";
 
 export class TrackingConsentDto {
@@ -85,5 +85,5 @@ export class TrackingHistoryQueryDto extends TrackingDayQueryDto {
 }
 
 export class AgentTrackingQueryDto extends TrackingDayQueryDto {
-  @IsOptional() @IsMongoId() agentId?: string;
+  @IsOptional() @IsEntityId() agentId?: string;
 }

@@ -1,4 +1,5 @@
-import { IsIn, IsMongoId, IsOptional, IsString, Matches } from "class-validator";
+import { IsIn, IsOptional, IsString, Matches } from "class-validator";
+import { IsEntityId } from "../../../../common/decorators/is-entity-id.decorator";
 
 export const ROOM_SUMMARY_TYPES = [
   "dormitory",
@@ -13,7 +14,7 @@ export const ROOM_SUMMARY_STATUSES = ["active", "under_maintenance"] as const;
 
 export class RoomSummaryQueryDto {
   /** Narrows to one ashram. Omitted, the caller sees everything in their scope. */
-  @IsOptional() @IsMongoId() ashramId?: string;
+  @IsOptional() @IsEntityId() ashramId?: string;
 
   /**
    * The night the occupancy columns are measured on, as YYYY-MM-DD. Availability

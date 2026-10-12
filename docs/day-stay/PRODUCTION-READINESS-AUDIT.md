@@ -17,7 +17,7 @@ This document certifies that the **Tirvona Day Stay Engine™** has completed ar
 
 | Domain | Assessment Area | Status | Notes |
 | :--- | :--- | :--- | :--- |
-| **Data Integrity** | Mongoose Schema Extensions & Default Values | ✅ PASS | `bookingType: "overnight"` default ensures zero regression. |
+| **Data Integrity** | Model Schema Extensions & Default Values | ✅ PASS | `bookingType: "overnight"` default ensures zero regression. |
 | **Concurrency** | Atomic 10-Minute Slot Hold Lock | ✅ PASS | Turnaround window math prevents double booking. |
 | **Security** | Payment Cryptography & Signature Check | ✅ PASS | HMAC SHA-256 Razorpay validation strictly enforced. |
 | **API Architecture** | Modular NestJS Controller & Services | ✅ PASS | Registered in `app.module.ts` under `/api/day-stay`. |

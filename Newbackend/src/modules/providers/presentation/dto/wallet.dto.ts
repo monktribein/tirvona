@@ -2,7 +2,6 @@ import { Type } from "class-transformer";
 import {
   IsIn,
   IsInt,
-  IsMongoId,
   IsOptional,
   IsString,
   Length,
@@ -10,6 +9,7 @@ import {
   Min,
   ValidateIf,
 } from "class-validator";
+import { IsEntityId } from "../../../../common/decorators/is-entity-id.decorator";
 import {
   PAYOUT_METHODS,
   WALLET_ENTRY_STATUSES,
@@ -28,7 +28,7 @@ export class WithdrawalQueryDto extends PageQueryDto {
 }
 
 export class AdminWithdrawalQueryDto extends WithdrawalQueryDto {
-  @IsOptional() @IsMongoId() providerId?: string;
+  @IsOptional() @IsEntityId() providerId?: string;
 }
 
 export class SavePayoutAccountDto {

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { model } from "mongoose";
+import { model } from "../../../database/orm";
 import { AuthChallengeSchema } from "./auth-challenge.schema";
 
 const AuthChallenge = model("AuthChallengeSpec", AuthChallengeSchema);

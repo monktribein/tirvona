@@ -5,7 +5,6 @@ import {
   IsBoolean,
   IsIn,
   IsInt,
-  IsMongoId,
   IsOptional,
   IsString,
   Matches,
@@ -15,6 +14,7 @@ import {
   MinLength,
   ValidateNested,
 } from "class-validator";
+import { IsEntityId } from "../../../common/decorators/is-entity-id.decorator";
 import {
   LINKABLE_ENTITY_TYPES,
   MAX_ATTACHMENTS_PER_MESSAGE,
@@ -35,7 +35,7 @@ const csv = ({ value }: { value: unknown }) =>
 
 export class RelatedEntityDto {
   @IsIn(LINKABLE_ENTITY_TYPES) type!: string;
-  @IsOptional() @IsMongoId() entityId?: string;
+  @IsOptional() @IsEntityId() entityId?: string;
   @IsOptional() @Transform(clean) @IsString() @MaxLength(120) reference?: string;
 }
 
@@ -44,20 +44,20 @@ export class CreateTicketDto {
   @Transform(clean) @IsString() @MinLength(10) @MaxLength(5000) description!: string;
   @Transform(clean) @IsString() @MaxLength(60) category!: string;
   @IsOptional() @ValidateNested() @Type(() => RelatedEntityDto) relatedEntity?: RelatedEntityDto;
-  @IsOptional() @IsArray() @ArrayMaxSize(MAX_ATTACHMENTS_PER_MESSAGE) @IsMongoId({ each: true })
+  @IsOptional() @IsArray() @ArrayMaxSize(MAX_ATTACHMENTS_PER_MESSAGE) @IsEntityId({ each: true })
   attachmentIds?: string[];
 }
 
 /** Staff raising a ticket for a customer (phone call, walk-in, email). */
 export class AdminCreateTicketDto extends CreateTicketDto {
-  @IsMongoId() userId!: string;
+  @IsEntityId() userId!: string;
   @IsOptional() @Transform(upper) @IsIn(TICKET_PRIORITIES) priority?: string;
-  @IsOptional() @IsMongoId() assignedTo?: string;
+  @IsOptional() @IsEntityId() assignedTo?: string;
 }
 
 export class ReplyDto {
   @Transform(clean) @IsString() @MinLength(1) @MaxLength(5000) body!: string;
-  @IsOptional() @IsArray() @ArrayMaxSize(MAX_ATTACHMENTS_PER_MESSAGE) @IsMongoId({ each: true })
+  @IsOptional() @IsArray() @ArrayMaxSize(MAX_ATTACHMENTS_PER_MESSAGE) @IsEntityId({ each: true })
   attachmentIds?: string[];
 }
 
@@ -78,7 +78,7 @@ export class UpdateTicketDto {
 
 export class AssignTicketDto {
   /** null / omitted = unassign. */
-  @IsOptional() @IsMongoId() assigneeId?: string | null;
+  @IsOptional() @IsEntityId() assigneeId?: string | null;
 }
 
 export class EscalateTicketDto {
@@ -112,8 +112,8 @@ export class AdminTicketsQueryDto {
   @IsOptional() @Transform(csv) @IsArray() @IsIn(TICKET_STATUSES, { each: true }) status?: string[];
   @IsOptional() @Transform(csv) @IsArray() @IsIn(TICKET_PRIORITIES, { each: true }) priority?: string[];
   @IsOptional() @Transform(clean) @IsString() @MaxLength(60) category?: string;
-  @IsOptional() @IsMongoId() assignedTo?: string;
-  @IsOptional() @IsMongoId() userId?: string;
+  @IsOptional() @IsEntityId() assignedTo?: string;
+  @IsOptional() @IsEntityId() userId?: string;
   @IsOptional() @IsIn(LINKABLE_ENTITY_TYPES) entityType?: string;
   @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/) from?: string;
   @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/) to?: string;

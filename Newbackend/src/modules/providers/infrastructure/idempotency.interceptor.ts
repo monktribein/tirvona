@@ -7,9 +7,9 @@ import {
   type NestInterceptor,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import { InjectModel } from "@nestjs/mongoose";
+import { InjectModel } from "../../../database/orm-nest";
 import type { Request, Response } from "express";
-import type { Model } from "mongoose";
+import type { Model } from "../../../database/orm";
 import { Observable, from, of, throwError } from "rxjs";
 import { catchError, mergeMap } from "rxjs/operators";
 import { IDEMPOTENCY_TTL_HOURS } from "../domain/provider.constants";

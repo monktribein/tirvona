@@ -9,10 +9,10 @@ import {
   ServiceUnavailableException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { InjectModel } from "@nestjs/mongoose";
+import { InjectModel } from "../../../database/orm-nest";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
-import { isValidObjectId, Types, type Model } from "mongoose";
+import { isValidObjectId, Types, type Model } from "../../../database/orm";
 import Razorpay from "razorpay";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { TransactionService } from "../../../common/database/transaction.service";

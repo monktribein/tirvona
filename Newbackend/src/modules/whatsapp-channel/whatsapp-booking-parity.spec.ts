@@ -67,7 +67,7 @@ describe("customer identity on a booking", () => {
     const instance: any = Object.create(null);
     Object.assign(instance, doc);
     // Exercise the hook directly: it is the rule under test, and building a
-    // full mongoose document here would need a live connection.
+    // full model document here would need a live connection.
     const hooks = (BookingSchema as any).s.hooks._pres.get("validate") ?? [];
     for (const hook of hooks) await hook.fn.call(instance);
   };
@@ -164,7 +164,7 @@ describe("the WhatsApp identity itself", () => {
 
   it("enforces the human-readable WAPP-YYYYMMDD-XXXXXX shape at the schema level", () => {
     // Asserted through the schema's own validator rather than by comparing
-    // regex identity: Mongoose clones the pattern, so the two objects are
+    // regex identity: the model layer clones the pattern, so the two objects are
     // never the same reference even though they are the same expression.
     const schemaPattern = (WhatsAppCustomerSchema.path("wappId") as any).options
       .match as RegExp;

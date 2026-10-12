@@ -5,8 +5,8 @@ import {
   Logger,
   NotFoundException,
 } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import type { Model } from "mongoose";
+import { InjectModel } from "../../../database/orm-nest";
+import type { Model } from "../../../database/orm";
 import { randomBytes } from "node:crypto";
 import { TransactionService } from "../../../common/database/transaction.service";
 import {

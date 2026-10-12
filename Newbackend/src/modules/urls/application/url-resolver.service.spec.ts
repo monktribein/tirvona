@@ -106,7 +106,7 @@ describe("legacy url resolution", () => {
 });
 
 describe("isObjectIdLike", () => {
-  it("recognises a mongo id and rejects a slug", () => {
+  it("recognises an entity id and rejects a slug", () => {
     expect(isObjectIdLike("68a1f0c2d3e4f5a6b7c8d9e0")).toBe(true);
     expect(isObjectIdLike("saptrishi-ashram")).toBe(false);
   });

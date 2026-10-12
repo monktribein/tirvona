@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import { isValidObjectId, Types, type Model } from "mongoose";
+import { InjectModel } from "../../../database/orm-nest";
+import { isValidObjectId, Types, type Model } from "../../../database/orm";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { uniqueSlug } from "../../../common/slug/slug.util";
 import { escapeRegex } from "../../../common/utils/escape-regex";
@@ -206,6 +206,7 @@ export class ProductService {
     if (query.vendorId && isValidObjectId(query.vendorId)) filter.vendorId = new Types.ObjectId(query.vendorId);
     if (query.categoryId && isValidObjectId(query.categoryId)) filter.categoryId = new Types.ObjectId(query.categoryId);
     if (query.search) filter.name = { $regex: escapeRegex(query.search.slice(0, 80)), $options: "i" };
+    if (query.panditPages) filter.showOnPanditPages = true;
     return this.paginate(filter, query, { submittedAt: -1, updatedAt: -1 }, true);
   }
 
@@ -252,6 +253,16 @@ export class ProductService {
     return product;
   }
 
+  /** Super admin: show (or stop showing) a product on pandit pages. It still appears only while publicly listed. */
+  async adminSetPanditPages(actor: AuthenticatedUser, id: string, visible: boolean): Promise<any> {
+    const product = await this.products.findById(this.oid(id));
+    if (!product) throw new NotFoundException("Product not found");
+    product.showOnPanditPages = visible;
+    await product.save();
+    await this.audit.log(actor, visible ? "product.pandit_pages.shown" : "product.pandit_pages.hidden", "MpProduct", product._id, {});
+    return product;
+  }
+
   // ------------------------------------------------------------- public
   async publicList(query: ProductQueryDto): Promise<any> {
     const filter: Record<string, any> = {
@@ -279,6 +290,7 @@ export class ProductService {
       };
     }
     if (query.inStock) filter.$and = [{ $or: [{ "inventory.trackInventory": false }, { stock: { $gt: 0 } }] }];
+    if (query.panditPages) filter.showOnPanditPages = true;
     const sort: Record<string, 1 | -1> =
       query.sortBy === "price_low" ? { price: 1 } :
       query.sortBy === "price_high" ? { price: -1 } :

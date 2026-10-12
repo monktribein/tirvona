@@ -4,10 +4,10 @@ import {
   type OnApplicationBootstrap,
 } from "@nestjs/common";
 import { InjectQueue } from "@nestjs/bullmq";
-import { InjectModel } from "@nestjs/mongoose";
+import { InjectModel } from "../../database/orm-nest";
 import { Interval, SchedulerRegistry } from "@nestjs/schedule";
 import type { Queue } from "bullmq";
-import type { Model } from "mongoose";
+import type { Model } from "../../database/orm";
 import { AARTI_MODEL } from "../aarti/domain/aarti.constants";
 import { EVENT_MODEL } from "../events/domain/event.constants";
 import type { NotificationJob } from "./notification.worker";

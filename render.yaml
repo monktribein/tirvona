@@ -54,8 +54,9 @@ services:
         sync: false
       - key: PROVIDER_WALLET_HOLD_HOURS
         value: 72
+      # Platform fee paid by the devotee on top of the pandit fee (1000 = 10%).
       - key: PROVIDER_PLATFORM_FEE_BPS
-        value: 0
+        value: 1000
       - key: PROVIDER_MIN_WITHDRAWAL_MINOR
         value: 10000
       - key: CLOUDINARY_CLOUD_NAME

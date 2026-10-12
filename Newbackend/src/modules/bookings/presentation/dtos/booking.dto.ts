@@ -6,7 +6,6 @@ import {
   IsBoolean,
   IsIn,
   IsInt,
-  IsMongoId,
   IsNumber,
   IsObject,
   IsOptional,
@@ -19,15 +18,16 @@ import {
   ValidateIf,
   ValidateNested,
 } from "class-validator";
+import { IsEntityId } from "../../../../common/decorators/is-entity-id.decorator";
 
 export class RoomBookingDto {
-  @IsMongoId() roomId: string;
+  @IsEntityId() roomId: string;
   @Type(() => Number) @IsInt() @Min(1) @Max(20) units: number;
 }
 
 export class CreateBookingDto {
-  @IsMongoId() ashramId: string;
-  @IsOptional() @IsMongoId() roomId?: string;
+  @IsEntityId() ashramId: string;
+  @IsOptional() @IsEntityId() roomId?: string;
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
@@ -39,7 +39,7 @@ export class CreateBookingDto {
   @Type(() => Number) @IsInt() @Min(1) @Max(20) roomsBookedCount: number;
   @IsOptional() @IsObject() services?: Record<string, any>;
   @IsOptional() @IsString() promoCode?: string;
-  @IsOptional() @IsMongoId() appliedOfferId?: string;
+  @IsOptional() @IsEntityId() appliedOfferId?: string;
   @IsOptional() @IsString() specialRequests?: string;
   @IsOptional() @IsArray() guests?: Record<string, any>[];
 }
@@ -65,7 +65,7 @@ export class ManualConfirmBookingDto {
 export class BookingDashboardQueryDto {
   @IsOptional() @IsString() status?: string;
   @IsOptional() @IsString() paymentStatus?: string;
-  @IsOptional() @IsMongoId() ashramId?: string;
+  @IsOptional() @IsEntityId() ashramId?: string;
   @IsOptional() @IsIn(["tirvona", "self", "all"]) source?: string;
   /**
    * Optional reporting filter on the interface a booking arrived through.
@@ -99,7 +99,7 @@ export class CancelBookingDto {
   @IsString() @MinLength(2) reason: string;
 }
 export class RoomNumberGroupDto {
-  @IsMongoId() roomId: string;
+  @IsEntityId() roomId: string;
   @IsArray() @IsString({ each: true }) @MinLength(1, { each: true }) roomNumbers: string[];
 }
 export class AssignRoomDto {
@@ -142,7 +142,7 @@ export class AdminUpdateBookingDto {
 export class ValidatePromoDto {
   @IsString() promoCode: string;
   @Type(() => Number) @IsNumber() @Min(0) bookingAmount: number;
-  @IsOptional() @IsMongoId() ashramId?: string;
+  @IsOptional() @IsEntityId() ashramId?: string;
 }
 export class SaveOfferDto {
   @IsString() offerTitle: string;
@@ -159,10 +159,10 @@ export class SaveOfferDto {
   discountType: string;
   @Type(() => Number) @IsNumber() @Min(0) discountValue: number;
   @IsString() validTill: string;
-  @IsOptional() @IsMongoId() ashramId?: string | null;
+  @IsOptional() @IsEntityId() ashramId?: string | null;
   @IsOptional()
   @ValidateIf((o) => Boolean(o.roomId))
-  @IsMongoId()
+  @IsEntityId()
   roomId?: string | null;
   @IsOptional()
   @IsBoolean()
@@ -224,8 +224,8 @@ export class ReviewRatingDto {
   valueForMoney?: number;
 }
 export class CreateReviewDto {
-  @IsOptional() @IsMongoId() bookingId?: string;
-  @IsMongoId() ashramId: string;
+  @IsOptional() @IsEntityId() bookingId?: string;
+  @IsEntityId() ashramId: string;
   @IsObject()
   @ValidateNested()
   @Type(() => ReviewRatingDto)

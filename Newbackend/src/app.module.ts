@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
-import { MongooseModule } from "@nestjs/mongoose";
+import { OrmModule } from "./database/orm-nest";
 import { APP_GUARD } from "@nestjs/core";
 import { LoggerModule } from "nestjs-pino";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
@@ -64,43 +64,10 @@ import {
       load: [environment],
       validate: validateEnvironment,
     }),
-    MongooseModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => {
-        const dataBackend =
-          process.env.DATA_BACKEND ??
-          (process.env.SUPABASE_DB_URL ? "supabase" : "mongo");
-
-        if (dataBackend === "supabase") {
-          configureDatabase();
-          return {
-            uri: DRIVER_URI,
-            dbName: MAIN_DATABASE,
-          };
-        }
-
-        const uri =
-          config.get<string>("mongoUri") ||
-          process.env.MONGODB_URI ||
-          "mongodb://127.0.0.1:27017/tirvona";
-        const credentialsAreInUri = /^mongodb(?:\+srv)?:\/\/[^/@]+@/i.test(uri);
-        return {
-          uri,
-          dbName: config.get<string>("mongoDbName") || undefined,
-          user: credentialsAreInUri
-            ? undefined
-            : config.get<string>("mongoUsername") || undefined,
-          pass: credentialsAreInUri
-            ? undefined
-            : config.get<string>("mongoPassword") || undefined,
-          autoIndex: config.get<string>("nodeEnv") !== "production",
-          minPoolSize: config.get<number>("mongoMinPoolSize") ?? 1,
-          maxPoolSize: config.get<number>("mongoMaxPoolSize") ?? 20,
-          serverSelectionTimeoutMS:
-            config.get<number>("mongoServerSelectionTimeoutMs") ?? 10_000,
-          socketTimeoutMS:
-            config.get<number>("mongoSocketTimeoutMs") ?? 45_000,
-        };
+    OrmModule.forRootAsync({
+      useFactory: () => {
+        configureDatabase();
+        return { uri: DRIVER_URI, dbName: MAIN_DATABASE };
       },
     }),
     ...(process.env.NODE_ENV === "production"

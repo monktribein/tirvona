@@ -1,4 +1,4 @@
-import { Schema, SchemaTypes } from "mongoose";
+import { Schema, SchemaTypes } from "../../../database/orm";
 export const AuthChallengeSchema = new Schema(
   {
     tokenHash: { type: String, required: true, unique: true },

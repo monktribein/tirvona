@@ -1,16 +1,16 @@
 import { Module } from "@nestjs/common";
-import { MongooseModule } from "@nestjs/mongoose";
+import { OrmModule } from "../../database/orm-nest";
 import { CommunityService } from "./application/community.service";
 import { COMMUNITY_REPOSITORY } from "./domain/community.repository";
 import { COMMUNITY_MODELS } from "./infrastructure/persistence/community.schemas";
-import { MongooseCommunityRepository } from "./infrastructure/persistence/mongoose-community.repository";
+import { PgCommunityRepository } from "./infrastructure/persistence/pg-community.repository";
 import {
   UserMemoryController,
   VisitorArticlesController,
   VolunteerController,
 } from "./presentation/community.controllers";
 @Module({
-  imports: [MongooseModule.forFeature(COMMUNITY_MODELS)],
+  imports: [OrmModule.forFeature(COMMUNITY_MODELS)],
   controllers: [
     UserMemoryController,
     VolunteerController,
@@ -18,8 +18,8 @@ import {
   ],
   providers: [
     CommunityService,
-    { provide: COMMUNITY_REPOSITORY, useClass: MongooseCommunityRepository },
+    { provide: COMMUNITY_REPOSITORY, useClass: PgCommunityRepository },
   ],
-  exports: [MongooseModule],
+  exports: [OrmModule],
 })
 export class CommunityModule {}

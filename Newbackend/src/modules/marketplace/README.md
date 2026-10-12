@@ -84,4 +84,4 @@ npx ts-node src/modules/marketplace/scripts/create-marketplace-indexes.ts
 
 ## Tests
 
-`npx jest src/modules/marketplace`: the specs run the real services against in-memory models (`testing/`) that use the real schemas, MongoDB query semantics (`sift`), atomic conditional updates and unique-key errors.
+`npx jest src/modules/marketplace`: the specs run the real services against in-memory models (`testing/`) that use the real schemas, the model layer's query semantics (`sift`), atomic conditional updates and unique-key errors.

@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import type { Model } from "mongoose";
+import { InjectModel } from "../../../database/orm-nest";
+import type { Model } from "../../../database/orm";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { ACTIVE_STATUSES, TICKET_PRIORITIES, TICKET_STATUSES } from "../domain/support.constants";
 import { isSupervisor } from "./support-access";

@@ -6,7 +6,6 @@ import {
   IsEmail,
   IsIn,
   IsInt,
-  IsMongoId,
   IsNumber,
   IsObject,
   IsOptional,
@@ -17,6 +16,7 @@ import {
   Min,
   ValidateNested,
 } from "class-validator";
+import { IsEntityId } from "../../../../common/decorators/is-entity-id.decorator";
 import {
   EVENT_FACILITIES,
   EVENT_REGISTRATION_STATUSES,
@@ -41,7 +41,7 @@ export class EventSearchDto extends PaginationDto {
   @IsOptional() @IsString() city?: string;
   @IsOptional() @IsString() state?: string;
   @IsOptional() @IsIn(EVENT_TYPES) eventType?: string;
-  @IsOptional() @IsMongoId() ashramId?: string;
+  @IsOptional() @IsEntityId() ashramId?: string;
   @IsOptional() @IsDateString() date?: string;
   @IsOptional() @Transform(bool) @IsBoolean() includePast?: boolean;
   @IsOptional()
@@ -58,7 +58,7 @@ export class EventAttendeeDto {
 }
 
 export class CreateRegistrationDto {
-  @IsMongoId() eventId: string;
+  @IsEntityId() eventId: string;
   @IsDateString() attendDate: string;
   @Type(() => Number) @IsInt() @Min(1) @Max(50) seats: number;
   @IsOptional()
@@ -82,7 +82,7 @@ export class PassFormatDto {
 export class EventScanDto {
   @IsOptional() @IsString() token?: string;
   @IsOptional() @IsString() @MaxLength(20) displayCode?: string;
-  @IsOptional() @IsMongoId() eventId?: string;
+  @IsOptional() @IsEntityId() eventId?: string;
   @IsOptional() @IsIn(["entry", "verify"]) action?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(50) admitCount?: number;
   @IsOptional() @IsString() @MaxLength(200) deviceInfo?: string;
@@ -95,7 +95,7 @@ export class EventManualCheckInDto {
 }
 
 export class EventGateRosterDto {
-  @IsMongoId() eventId: string;
+  @IsEntityId() eventId: string;
   @IsDateString() date: string;
 }
 
@@ -165,7 +165,7 @@ class EventBodyDto {
 }
 
 export class CreateEventDto extends EventBodyDto {
-  @IsMongoId() ashramId: string;
+  @IsEntityId() ashramId: string;
   @IsString() @MaxLength(160) declare name: string;
   @IsIn(EVENT_TYPES) declare eventType: string;
   @IsDateString() startDate: string;
@@ -178,7 +178,7 @@ export class UpdateEventDto extends EventBodyDto {
 }
 
 export class BlockEventDayDto {
-  @IsMongoId() eventId: string;
+  @IsEntityId() eventId: string;
   @IsDateString() date: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) totalCapacity?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) blockedCount?: number;
@@ -188,8 +188,8 @@ export class BlockEventDayDto {
 
 export class UpsertEventSettingDto {
   @IsIn(["platform", "ashram", "event"]) scope: string;
-  @IsOptional() @IsMongoId() ashramId?: string;
-  @IsOptional() @IsMongoId() eventId?: string;
+  @IsOptional() @IsEntityId() ashramId?: string;
+  @IsOptional() @IsEntityId() eventId?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) gateOpensBeforeMinutes?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) noShowAfterMinutes?: number;
   @IsOptional()
@@ -215,10 +215,10 @@ export class UpsertEventSettingDto {
 }
 
 export class CreateEventStaffDto {
-  @IsMongoId() userId: string;
-  @IsMongoId() ashramId: string;
+  @IsEntityId() userId: string;
+  @IsEntityId() ashramId: string;
   @IsIn(EVENT_ROLES) eventRole: string;
-  @IsOptional() @IsArray() @IsMongoId({ each: true }) eventIds?: string[];
+  @IsOptional() @IsArray() @IsEntityId({ each: true }) eventIds?: string[];
   @IsOptional() @IsArray() @IsString({ each: true }) capabilityOverrides?: string[];
   @IsOptional() @IsString() @MaxLength(40) employeeCode?: string;
   @IsOptional() @IsString() @MaxLength(20) phone?: string;
@@ -241,8 +241,8 @@ export class SetEventStatusDto {
 export class EventListQueryDto extends PaginationDto {
   @IsOptional() @IsString() q?: string;
   @IsOptional() @IsString() status?: string;
-  @IsOptional() @IsMongoId() ashramId?: string;
-  @IsOptional() @IsMongoId() eventId?: string;
+  @IsOptional() @IsEntityId() ashramId?: string;
+  @IsOptional() @IsEntityId() eventId?: string;
   @IsOptional() @IsDateString() date?: string;
 }
 

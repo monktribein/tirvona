@@ -5,8 +5,8 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import { Types, type Model } from "mongoose";
+import { InjectModel } from "../../../database/orm-nest";
+import { Types, type Model } from "../../../database/orm";
 import { Interval } from "@nestjs/schedule";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";

@@ -5,7 +5,6 @@ import {
   IsDateString,
   IsIn,
   IsInt,
-  IsMongoId,
   IsNumber,
   IsOptional,
   IsString,
@@ -13,6 +12,7 @@ import {
   Max,
   Min,
 } from "class-validator";
+import { IsEntityId } from "../../../../common/decorators/is-entity-id.decorator";
 import {
   PARKING_AMENITIES,
   PARKING_VEHICLE_TYPES,
@@ -77,8 +77,8 @@ export class OptionalParkingWindowDto {
 }
 
 export class ParkingQuoteDto extends ParkingWindowDto {
-  @IsMongoId() locationId: string;
-  @IsMongoId() slotTypeId: string;
+  @IsEntityId() locationId: string;
+  @IsEntityId() slotTypeId: string;
   @IsIn(PARKING_VEHICLE_TYPES) declare vehicleType: string;
 }
 
@@ -115,12 +115,12 @@ export class ReviewParkingDto {
 
 export class ParkingScanDto {
   @IsString() token: string;
-  @IsMongoId() locationId: string;
+  @IsEntityId() locationId: string;
 }
 export class ParkingCheckoutScanDto extends ParkingScanDto {
   @IsOptional() @IsString() overstayPaymentMethod = "cash";
 }
 export class ParkingVehicleLookupDto {
   @IsString() vehicleNumber: string;
-  @IsMongoId() locationId: string;
+  @IsEntityId() locationId: string;
 }

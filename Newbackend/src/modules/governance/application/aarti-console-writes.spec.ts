@@ -1,5 +1,5 @@
 import { BadRequestException } from "@nestjs/common";
-import { Types } from "mongoose";
+import { Types } from "../../../database/orm";
 import { GovernanceService } from "./governance.service";
 
 describe("super admin Aarti console writes", () => {

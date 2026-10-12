@@ -1,4 +1,4 @@
-import { Schema, SchemaTypes } from "mongoose";
+import { Schema, SchemaTypes } from "../../../../database/orm";
 import { AARTI_PAYMENT_STATUSES } from "../../domain/aarti.constants";
 
 const id = (ref: string, required = false) => ({

@@ -1,4 +1,4 @@
-import { Schema, SchemaTypes } from "mongoose";
+import { Schema, SchemaTypes } from "../../../database/orm";
 import {
   LINKABLE_ENTITY_TYPES,
   TICKET_PRIORITIES,

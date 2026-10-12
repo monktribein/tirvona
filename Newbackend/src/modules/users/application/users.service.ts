@@ -6,9 +6,9 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
+import { InjectModel } from "../../../database/orm-nest";
 import bcrypt from "bcryptjs";
-import type { Model } from "mongoose";
+import type { Model } from "../../../database/orm";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import type {
   CreateAccountDto,

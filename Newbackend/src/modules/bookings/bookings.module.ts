@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { MongooseModule } from "@nestjs/mongoose";
+import { OrmModule } from "../../database/orm-nest";
 import { AshramsModule } from "../ashrams/ashrams.module";
 import { UsersModule } from "../users/users.module";
 import { PlatformSettingsModule } from "../platform-settings/platform-settings.module";
@@ -55,7 +55,7 @@ import {
   BookingReportSchema,
   BookingReviewSchema,
 } from "./infrastructure/persistence/booking-support.schemas";
-import { MongooseBookingRepository } from "./infrastructure/persistence/mongoose-booking.repository";
+import { PgBookingRepository } from "./infrastructure/persistence/pg-booking.repository";
 import { BookingsController } from "./presentation/bookings.controller";
 import { OffersController } from "./presentation/offers.controller";
 import { ReviewsController } from "./presentation/reviews.controller";
@@ -96,7 +96,7 @@ const models = [
     UsersModule,
     PlatformSettingsModule,
     WalletModule,
-    MongooseModule.forFeature(models),
+    OrmModule.forFeature(models),
   ],
   controllers: [
     BookingsController,
@@ -119,8 +119,8 @@ const models = [
     BookingMaintenanceService,
     BookingCheckinReminderService,
     BookingFinanceService,
-    MongooseBookingRepository,
-    { provide: BOOKING_REPOSITORY, useExisting: MongooseBookingRepository },
+    PgBookingRepository,
+    { provide: BOOKING_REPOSITORY, useExisting: PgBookingRepository },
   ],
   exports: [
     BookingsService,
@@ -128,7 +128,7 @@ const models = [
     SelfBookingService,
     BookingPricingService,
     OffersService,
-    MongooseModule,
+    OrmModule,
   ],
 })
 export class BookingsModule {}

@@ -226,3 +226,30 @@ describe("Reviews", () => {
     expect(await h.models.products.findById(p._id).lean()).toMatchObject({ rating: 5, reviewCount: 1 });
   });
 });
+
+describe("Products on pandit pages", () => {
+  it("shows only products a super admin switched on, and only while they are publicly listed", async () => {
+    const h = buildMarketplace();
+    const cat = await h.category();
+    const { user, vendor } = await h.activeVendor();
+    const samagri = await h.publishedProduct(user, String(cat._id));
+    await h.publishedProduct(user, String(cat._id)); // a second product that stays off pandit pages
+
+    expect((await h.productService.publicList({})).total).toBe(2);
+    expect((await h.productService.publicList({ panditPages: true })).total).toBe(0); // off by default
+
+    await h.productService.adminSetPanditPages(h.admin, String(samagri._id), true);
+    const onPandit = await h.productService.publicList({ panditPages: true });
+    expect(onPandit.total).toBe(1);
+    expect(String(onPandit.data[0]._id ?? onPandit.data[0].id)).toBe(String(samagri._id));
+
+    // Switched on but no longer public (store suspended): not shown on pandit pages either.
+    await h.vendorService.adminSetStatus(h.admin, String(vendor._id), "suspend", "Complaints");
+    expect((await h.productService.publicList({ panditPages: true })).total).toBe(0);
+    await h.vendorService.adminSetStatus(h.admin, String(vendor._id), "reactivate");
+    expect((await h.productService.publicList({ panditPages: true })).total).toBe(1);
+
+    await h.productService.adminSetPanditPages(h.admin, String(samagri._id), false);
+    expect((await h.productService.publicList({ panditPages: true })).total).toBe(0);
+  });
+});

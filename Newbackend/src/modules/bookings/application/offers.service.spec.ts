@@ -1,5 +1,5 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
-import { Types } from "mongoose";
+import { Types } from "../../../database/orm";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { OffersService } from "./offers.service";
 import type { UpdateOfferDto } from "../presentation/dtos/booking.dto";

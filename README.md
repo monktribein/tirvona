@@ -25,7 +25,7 @@ The project is structured as a monorepo containing two main modules:
 ### Backend
 *   **Core**: Node.js, NestJS, TypeScript
 *   **Real-time Update**: Socket.io (live booking lifecycle events to customer & owner)
-*   **Database**: Supabase PostgreSQL (Mongoose models on a Postgres storage driver; see `Newbackend/README.md`)
+*   **Database**: Supabase PostgreSQL (see `Newbackend/README.md`)
 *   **Authentication**: JWT (JSON Web Tokens), bcryptjs
 *   **Payments**: Razorpay (order create + server-side signature verification; demo fallback when keys absent)
 *   **File Uploads**: Multer + Cloudinary (`POST /api/uploads`; returns secure URLs)

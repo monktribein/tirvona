@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import { Model, Types } from "mongoose";
+import { InjectModel } from "../../../database/orm-nest";
+import { Model, Types } from "../../../database/orm";
 import {
   SMART_CONTACT_AUDIT_MODEL,
   SMART_CONTACT_CONNECTION,

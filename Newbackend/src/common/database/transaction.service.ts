@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
-import { InjectConnection } from "@nestjs/mongoose";
-import type { ClientSession, Connection } from "mongoose";
+import { InjectConnection } from "../../database/orm-nest";
+import type { ClientSession, Connection } from "../../database/orm";
 
 @Injectable()
 export class TransactionService {

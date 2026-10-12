@@ -31,7 +31,7 @@ describe("Marketplace dashboards", () => {
       { productId: String(pa._id), quantity: 1 },
       { productId: String(pb._id), quantity: 2 },
     ]);
-    // The in-memory model does not apply schema timestamps; MongoDB does.
+    // The in-memory model does not apply schema timestamps; the real store does.
     await h.models.vendorOrders.updateMany({}, { $set: { createdAt: new Date() } });
 
     const da = await dashboard.vendorDashboard(a.user);

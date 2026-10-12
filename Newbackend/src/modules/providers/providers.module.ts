@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
-import { MongooseModule } from "@nestjs/mongoose";
+import { OrmModule } from "../../database/orm-nest";
 import { AuditModule } from "../audit/audit.module";
 import { NotificationsModule } from "../notifications/notifications.module";
 import { payoutConfig } from "../payouts/config/payout.config";
@@ -64,12 +64,12 @@ import { VerificationCasesController } from "./presentation/verification.control
     AuditModule,
     NotificationsModule,
     WalletModule,
-    MongooseModule.forFeature(PROVIDER_MODELS),
-    MongooseModule.forFeature(PROVIDER_WALLET_MODELS),
+    OrmModule.forFeature(PROVIDER_MODELS),
+    OrmModule.forFeature(PROVIDER_WALLET_MODELS),
     // The pandit's payout account number is sealed with the same key as ashram payout accounts.
     ConfigModule.forFeature(payoutConfig),
-    // Admin onboarding looks an account up by id; the guard in @nestjs/mongoose makes a repeat registration of "User" safe.
-    MongooseModule.forFeature([{ name: "User", schema: UserSchema }]),
+    // Admin onboarding looks an account up by id; the guard in OrmModule.forFeature makes a repeat registration of "User" safe.
+    OrmModule.forFeature([{ name: "User", schema: UserSchema }]),
   ],
   controllers: [
     RitualsPublicController,

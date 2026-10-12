@@ -4,7 +4,6 @@ import {
   IsBoolean,
   IsIn,
   IsInt,
-  IsMongoId,
   IsNumber,
   IsOptional,
   IsString,
@@ -14,6 +13,7 @@ import {
   MinLength,
   ValidateNested,
 } from "class-validator";
+import { IsEntityId } from "../../../../common/decorators/is-entity-id.decorator";
 import {
   REFUND_MODULES,
   REFUND_STATUSES,
@@ -21,7 +21,7 @@ import {
 
 export class CreateRefundRequestDto {
   @IsIn(REFUND_MODULES as unknown as string[]) module!: string;
-  @IsMongoId() sourceId!: string;
+  @IsEntityId() sourceId!: string;
   @IsString() @MinLength(3) @MaxLength(300) reason!: string;
   @IsOptional() @IsString() @MaxLength(1000) customerNote?: string;
 }
@@ -57,7 +57,7 @@ export class SaveRefundPolicyDto {
   @IsString() @MinLength(2) @MaxLength(120) name!: string;
   @IsOptional() @IsString() @MaxLength(500) description?: string;
   @IsIn([...(REFUND_MODULES as unknown as string[]), "global"]) module!: string;
-  @IsOptional() @IsMongoId() ashramId?: string;
+  @IsOptional() @IsEntityId() ashramId?: string;
   @IsOptional() @IsBoolean() isActive?: boolean;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) priority?: number;
 

@@ -280,7 +280,7 @@ export const PublicPanditDirectoryPage: React.FC = () => {
               Verified Vedic <span className="bg-gradient-to-r from-[#FFA44D] via-[#F28C28] to-[#E07B1A] bg-clip-text text-transparent">Pandits &amp; Acharyas</span>
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-300 sm:text-base">
-              Book authentic temple &amp; home pujas, havans, and Vedic sanskaras with certified purohits. Every provider has their identity and lineage verified by Tirvona.
+              Book authentic temple &amp; home pujas, havans, and Vedic sanskaras with certified purohits. Every listed provider's identity is verified by Tirvona; lineage and institution checks show as extra badges.
             </p>
           </div>
 
@@ -463,9 +463,12 @@ export const PublicPanditDirectoryPage: React.FC = () => {
                                   </span>
                                   {verified && <StatusBadge status={p.verificationLevel} label={VERIFICATION_LEVEL_LABELS[p.verificationLevel]} tone="success" />}
                                 </div>
-                                <div className="flex items-center gap-1 rounded-full bg-amber-50/80 px-2 py-0.5 text-[11px] font-bold text-[#92400E] dark:bg-slate-800 dark:text-amber-300">
-                                  <span className="text-amber-500">★</span> 4.9
-                                </div>
+                                {(p as any).liveOnline && (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-rose-600 px-2 py-0.5 text-[11px] font-black text-white">
+                                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white motion-reduce:animate-none" aria-hidden="true" />
+                                    Live
+                                  </span>
+                                )}
                               </div>
                               <h3 className="break-words text-lg font-black leading-snug tracking-tight text-[#0B192C] transition-colors group-hover:text-[#B45309] dark:text-white dark:group-hover:text-[#FFA44D]">
                                 <Link to={profilePath} className="focus-visible:outline-none focus-visible:underline">
@@ -519,11 +522,11 @@ export const PublicPanditDirectoryPage: React.FC = () => {
                                 Starting Dakshina
                               </span>
                               <span className="text-xl sm:text-2xl font-black tracking-tight text-[#0B192C] dark:text-white">
-                                {fee || "₹501"}
+                                {fee || "On request"}
                               </span>
                             </div>
                             <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-                              <ShieldCheck size={13} /> Verified Purohit
+                              <ShieldCheck size={13} /> {verified ? VERIFICATION_LEVEL_LABELS[p.verificationLevel] : "Verification pending"}
                             </span>
                           </div>
                           <div className="flex gap-2.5">

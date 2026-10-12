@@ -4,8 +4,8 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import { Types, type Model } from "mongoose";
+import { InjectModel } from "../../../database/orm-nest";
+import { Types, type Model } from "../../../database/orm";
 import { TransactionService } from "../../../common/database/transaction.service";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { canManageAllAshrams, isAshramOwner } from "../../../common/auth/ashram-access";

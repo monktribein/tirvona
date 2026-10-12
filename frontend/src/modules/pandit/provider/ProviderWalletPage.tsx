@@ -92,7 +92,7 @@ type Summary = {
   nextRelease: { amountMinor: number; availableAt: string } | null;
   payoutAccount: any | null;
   openWithdrawals: any[];
-  rules: { holdHours: number; platformFeePercent: number; minWithdrawalMinor: number };
+  rules: { holdHours: number; devoteePlatformFeePercent?: number; minWithdrawalMinor: number };
 };
 
 export const ProviderWalletPage: React.FC = () => {
@@ -365,8 +365,8 @@ export const ProviderWalletPage: React.FC = () => {
             </li>
           ))}
         </ol>
-        {s.rules.platformFeePercent > 0 && (
-          <p className="mt-4 text-xs text-gray-500">Tirvona platform fee: {s.rules.platformFeePercent}% of each booking, deducted before it reaches your wallet.</p>
+        {(s.rules.devoteePlatformFeePercent ?? 0) > 0 && (
+          <p className="mt-4 text-xs text-gray-500">You receive your full fee. Devotees pay a separate {s.rules.devoteePlatformFeePercent}% Tirvona platform fee on top, which never comes out of your earnings.</p>
         )}
       </Card>
 

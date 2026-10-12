@@ -5,7 +5,6 @@ import {
   IsDateString,
   IsIn,
   IsInt,
-  IsMongoId,
   IsNumber,
   IsOptional,
   IsString,
@@ -15,6 +14,7 @@ import {
   Min,
   ValidateNested,
 } from "class-validator";
+import { IsEntityId } from "../../../../common/decorators/is-entity-id.decorator";
 import {
   CIRCUIT_DIFFICULTIES,
   CIRCUIT_SEASONS,
@@ -39,7 +39,7 @@ export class CircuitSearchDto extends PaginationDto {
   @IsOptional() @IsIn(CIRCUIT_DIFFICULTIES) difficulty?: string;
   @IsOptional() @IsIn(CIRCUIT_SEASONS) season?: string;
   @IsOptional() @IsString() state?: string;
-  @IsOptional() @IsMongoId() ashramId?: string;
+  @IsOptional() @IsEntityId() ashramId?: string;
   @IsOptional()
   @Matches(/^\d{1,2}-\d{1,2}$/, { message: "duration must look like 4-7" })
   duration?: string;
@@ -91,7 +91,7 @@ export class ItineraryDayDto {
 
 export class SaveItineraryDto {
   @IsString() @MaxLength(160) title: string;
-  @IsOptional() @IsMongoId() circuitId?: string;
+  @IsOptional() @IsEntityId() circuitId?: string;
   @IsOptional() @IsDateString() startDate?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(50) travellers?: number;
   @IsOptional() @IsIn(["relaxed", "balanced", "packed"]) pace?: string;
@@ -128,7 +128,7 @@ class CircuitBodyDto {
 }
 
 export class CreateCircuitDto extends CircuitBodyDto {
-  @IsMongoId() ashramId: string;
+  @IsEntityId() ashramId: string;
   @IsString() @MaxLength(160) declare name: string;
   @IsIn(CIRCUIT_TYPES) declare circuitType: string;
   @Type(() => Number) @IsInt() @Min(1) @Max(60) durationDays: number;
@@ -142,7 +142,7 @@ class StopBodyDto {
   @IsOptional() @IsString() @MaxLength(160) name?: string;
   @IsOptional() @IsIn(STOP_TYPES) stopType?: string;
   @IsOptional() @IsString() @MaxLength(120) templeSlug?: string;
-  @IsOptional() @IsMongoId() linkedAshramId?: string;
+  @IsOptional() @IsEntityId() linkedAshramId?: string;
   @IsOptional() @IsString() @MaxLength(120) city?: string;
   @IsOptional() @IsString() @MaxLength(120) state?: string;
   @IsOptional() @Type(() => Number) @IsNumber() latitude?: number;
@@ -168,7 +168,7 @@ class StopBodyDto {
 }
 
 export class CreateStopDto extends StopBodyDto {
-  @IsMongoId() circuitId: string;
+  @IsEntityId() circuitId: string;
   @IsString() @MaxLength(160) declare name: string;
   @Type(() => Number) @IsInt() @Min(1) @Max(60) dayNumber: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) order?: number;
@@ -180,13 +180,13 @@ export class UpdateStopDto extends StopBodyDto {
 }
 
 export class ReorderStopEntryDto {
-  @IsMongoId() _id: string;
+  @IsEntityId() _id: string;
   @Type(() => Number) @IsInt() @Min(1) @Max(60) dayNumber: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) order?: number;
 }
 
 export class ReorderStopsDto {
-  @IsMongoId() circuitId: string;
+  @IsEntityId() circuitId: string;
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ReorderStopEntryDto)
@@ -195,8 +195,8 @@ export class ReorderStopsDto {
 
 export class UpsertPilgrimageSettingDto {
   @IsIn(["platform", "ashram", "circuit"]) scope: string;
-  @IsOptional() @IsMongoId() ashramId?: string;
-  @IsOptional() @IsMongoId() circuitId?: string;
+  @IsOptional() @IsEntityId() ashramId?: string;
+  @IsOptional() @IsEntityId() circuitId?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(60) maxDurationDays?: number;
   @IsOptional()
   @Type(() => Number)
@@ -228,5 +228,5 @@ export class SetCircuitStatusDto {
 export class CircuitListQueryDto extends PaginationDto {
   @IsOptional() @IsString() q?: string;
   @IsOptional() @IsIn(CIRCUIT_STATUSES) status?: string;
-  @IsOptional() @IsMongoId() ashramId?: string;
+  @IsOptional() @IsEntityId() ashramId?: string;
 }

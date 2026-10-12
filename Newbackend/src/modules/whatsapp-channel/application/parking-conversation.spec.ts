@@ -342,13 +342,13 @@ describe("parking confirm never books on a stale price", () => {
   it("still apologises generically for an unexpected failure, exposing nothing", async () => {
     const e = build({
       createParkingBooking: jest.fn(async () => {
-        throw new Error("MongoServerError: connection pool closed at 10.0.0.4");
+        throw new Error("PostgresError: connection pool closed at 10.0.0.4");
       }),
     });
     await atConfirm(e);
     await e.service.handle(message({ replyId: "parkingconfirm:yes" }));
     const text = texts(e);
-    expect(text).not.toContain("MongoServerError");
+    expect(text).not.toContain("PostgresError");
     expect(text).not.toContain("10.0.0.4");
   });
 });

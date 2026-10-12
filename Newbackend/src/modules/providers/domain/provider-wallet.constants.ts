@@ -51,18 +51,9 @@ const positiveInt = (value: string | undefined, fallback: number): number => {
 export const providerWalletConfig = () => ({
   /** Hours a paid booking's earning stays pending before it can be withdrawn. */
   holdHours: positiveInt(process.env.PROVIDER_WALLET_HOLD_HOURS, 72),
-  /** Tirvona's commission on each booking, in basis points (500 = 5%). 0 = the pandit keeps everything. */
-  platformFeeBps: Math.min(10_000, positiveInt(process.env.PROVIDER_PLATFORM_FEE_BPS, 0)),
   /** Smallest withdrawal, in paise. */
   minWithdrawalMinor: positiveInt(process.env.PROVIDER_MIN_WITHDRAWAL_MINOR, 10_000),
 });
-
-/** Platform fee and pandit's net share of a paid amount. */
-export const splitEarning = (grossMinor: number, feeBps: number) => {
-  const gross = Math.max(0, Math.round(grossMinor));
-  const fee = Math.min(gross, Math.round((gross * feeBps) / 10_000));
-  return { grossMinor: gross, platformFeeMinor: fee, netMinor: gross - fee };
-};
 
 /** How the devotee paid, from the opaque reference the booking keeps. */
 export const paymentMethodOf = (paymentRef?: string | null): string => {

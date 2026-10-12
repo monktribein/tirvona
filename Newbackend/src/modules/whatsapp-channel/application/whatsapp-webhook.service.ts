@@ -1,9 +1,9 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
+import { InjectModel } from "../../../database/orm-nest";
 import { InjectQueue } from "@nestjs/bullmq";
 import type { ConfigType } from "@nestjs/config";
 import type { Queue } from "bullmq";
-import type { Model } from "mongoose";
+import type { Model } from "../../../database/orm";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { whatsappConfig } from "../../../integrations/whatsapp/config/whatsapp.config";
 import { maskWhatsAppNumber } from "../../../integrations/whatsapp/utils/whatsapp-phone.util";

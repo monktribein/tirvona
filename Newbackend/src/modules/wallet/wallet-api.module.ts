@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { MongooseModule } from "@nestjs/mongoose";
+import { OrmModule } from "../../database/orm-nest";
 import { NotificationsModule } from "../notifications/notifications.module";
 import { User, UserSchema } from "../users/infrastructure/persistence/user.schema";
 import { WalletAccountService } from "./application/wallet-account.service";
@@ -19,7 +19,7 @@ import {
   imports: [
     WalletModule,
     NotificationsModule,
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    OrmModule.forFeature([{ name: User.name, schema: UserSchema }]),
   ],
   controllers: [WalletController, WalletAdminController],
   providers: [WalletAccountService],

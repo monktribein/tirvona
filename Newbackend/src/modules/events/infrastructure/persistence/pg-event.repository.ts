@@ -1,12 +1,12 @@
 import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import type { ClientSession, Model } from "mongoose";
+import { InjectModel } from "../../../../database/orm-nest";
+import type { ClientSession, Model } from "../../../../database/orm";
 import { EVENT_MODEL } from "../../domain/event.constants";
 import type { EventRepository } from "../../domain/event.repository";
 import { toDateKey } from "../../domain/event.utils";
 
 @Injectable()
-export class MongooseEventRepository implements EventRepository {
+export class PgEventRepository implements EventRepository {
   constructor(
     @InjectModel(EVENT_MODEL.Event) private readonly events: Model<any>,
     @InjectModel(EVENT_MODEL.Availability)

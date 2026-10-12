@@ -3,7 +3,6 @@ import {
   IsBoolean,
   IsIn,
   IsInt,
-  IsMongoId,
   IsNumber,
   IsOptional,
   IsString,
@@ -12,6 +11,7 @@ import {
   Min,
   MinLength,
 } from "class-validator";
+import { IsEntityId } from "../../../common/decorators/is-entity-id.decorator";
 import {
   WALLET_TXN_CATEGORIES,
   WITHDRAWAL_METHODS,
@@ -54,7 +54,7 @@ export class CreateWithdrawalDto {
 }
 
 export class AdminCreditDto {
-  @IsMongoId() userId!: string;
+  @IsEntityId() userId!: string;
   @Type(() => Number) @IsNumber({ maxDecimalPlaces: 2 }) @Min(1) @Max(1_000_000) amount!: number;
   @IsOptional() @IsString() @MaxLength(300) note?: string;
   @IsOptional() @IsString() @MinLength(8) @MaxLength(80) idempotencyKey?: string;

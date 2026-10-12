@@ -1,4 +1,4 @@
-import { Schema, SchemaTypes } from "mongoose";
+import { Schema, SchemaTypes } from "../../../../database/orm";
 import {
   MAX_PROPERTY_SEQUENCE,
   MIN_PROPERTY_SEQUENCE,

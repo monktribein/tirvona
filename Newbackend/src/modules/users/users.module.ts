@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
-import { MongooseModule } from "@nestjs/mongoose";
+import { OrmModule } from "../../database/orm-nest";
 import { USER_REPOSITORY } from "./domain/user.repository";
-import { MongooseUserRepository } from "./infrastructure/persistence/mongoose-user.repository";
+import { PgUserRepository } from "./infrastructure/persistence/pg-user.repository";
 import { User, UserSchema } from "./infrastructure/persistence/user.schema";
 import { AshramsModule } from "../ashrams/ashrams.module";
 import { TemplesModule } from "../temples/temples.module";
@@ -13,7 +13,7 @@ import { AshramRoleMigrationService } from "./application/ashram-role-migration.
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    OrmModule.forFeature([{ name: User.name, schema: UserSchema }]),
     AshramsModule,
     TemplesModule,
     ParkingModule,
@@ -21,10 +21,10 @@ import { AshramRoleMigrationService } from "./application/ashram-role-migration.
   ],
   controllers: [UsersController],
   providers: [
-    { provide: USER_REPOSITORY, useClass: MongooseUserRepository },
+    { provide: USER_REPOSITORY, useClass: PgUserRepository },
     UsersService,
     AshramRoleMigrationService,
   ],
-  exports: [MongooseModule, USER_REPOSITORY],
+  exports: [OrmModule, USER_REPOSITORY],
 })
 export class UsersModule {}

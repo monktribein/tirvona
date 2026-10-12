@@ -4,7 +4,7 @@
  * read-only connection for linked records, a fake upload store and a
  * recording notifier. Test-only; never touches a database.
  */
-import { Types } from "mongoose";
+import { Types } from "../../../database/orm";
 import sift from "sift";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { AuditLogSchema } from "../../audit/audit.module";
@@ -66,7 +66,7 @@ function fakeConnection(data: Record<string, any[]>) {
   };
 }
 
-/** The in-memory model does not apply schema timestamps; stamp creates like MongoDB would (strictly increasing). */
+/** The in-memory model does not apply schema timestamps; stamp creates like the real store would (strictly increasing). */
 let clock = 0;
 function withTimestamps<T extends { create: (...args: any[]) => any }>(model: T): T {
   const original = model.create.bind(model);

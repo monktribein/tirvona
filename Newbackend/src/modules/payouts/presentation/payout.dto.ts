@@ -5,7 +5,6 @@ import {
   IsEmail,
   IsIn,
   IsInt,
-  IsMongoId,
   IsNumber,
   IsOptional,
   IsString,
@@ -16,6 +15,7 @@ import {
   Min,
   MinLength,
 } from "class-validator";
+import { IsEntityId } from "../../../common/decorators/is-entity-id.decorator";
 import { PAYOUT_MODES, PAYOUT_STATUSES } from "../domain/payout.constants";
 
 export class SavePayoutBankAccountDto {
@@ -33,7 +33,7 @@ export class SavePayoutBankAccountDto {
 }
 
 export class CreatePayoutRequestDto {
-  @IsMongoId() ashramId!: string;
+  @IsEntityId() ashramId!: string;
   @Type(() => Number) @IsNumber({ maxDecimalPlaces: 2 }) @Min(1)
   amount!: number;
   @IsOptional() @IsIn(PAYOUT_MODES) mode?: string;
@@ -57,8 +57,8 @@ export class RecordManualPayoutDto {
 }
 
 export class PayoutListQueryDto {
-  @IsOptional() @IsMongoId() ashramId?: string;
-  @IsOptional() @IsMongoId() ownerId?: string;
+  @IsOptional() @IsEntityId() ashramId?: string;
+  @IsOptional() @IsEntityId() ownerId?: string;
   @IsOptional() @IsIn(PAYOUT_STATUSES) status?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) page = 1;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit = 20;

@@ -2,27 +2,38 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import {
   Award,
+  Bed,
+  Bus,
+  Car,
   BookOpen,
   CalendarDays,
   Check,
   CheckCircle2,
   ChevronLeft,
   Clock,
+  Loader2,
   Flame,
+  Home,
   MapPin,
   MessageSquare,
+  Radio,
   Share2,
   ShieldCheck,
+  ShoppingBag,
   Sparkles,
   Users,
 } from "lucide-react";
 import { providerPublicService, pujaBookingService, consultationService } from "../services/provider.service";
 import { ConsultationChatModal } from "../components/ConsultationChatModal";
+import { PujaProcessButton, PujaProcessGuide } from "../components/PujaProcessGuide";
+import { WatchLiveButton } from "../components/YouTubeLive";
+import { storeApi, toStoreProduct, type StoreProduct } from "../../../services/marketplace.service";
 import { getErrorMessage } from "../../../lib/api";
 import { useAuth } from "../../../contexts/AuthContext";
 import { toast } from "../../../lib/toast";
+import { openRazorpayCheckout, type RazorpayResult } from "../../../lib/razorpay";
 import type { ProviderProfile, Offering, ProviderBooking } from "../types/provider.types";
-import { PROVIDER_TYPE_LABELS, VERIFICATION_LEVEL_LABELS } from "../types/provider.types";
+import { PROVIDER_TYPE_LABELS, STAY_ARRANGEMENT_LABELS, TRAVEL_MODE_LABELS, VERIFICATION_LEVEL_LABELS } from "../types/provider.types";
 import {
   Avatar,
   Button,
@@ -57,25 +68,66 @@ const istDate = (at: number) => new Date(at + IST_OFFSET_MS).toISOString().slice
 const formatWhen = (iso?: string) =>
   iso ? new Date(iso).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" }) : null;
 
+/** One bookable start: the exact instant sent to the server, and how it reads to the devotee. */
+type BookingSlot = { iso: string; label: string };
+/** Start times are offered every 30 minutes inside the provider's free windows. */
+const SLOT_STEP_MS = 30 * 60_000;
+/** How far ahead the dialog looks for the first open day (the API allows up to 62). */
+const LOOKAHEAD_DAYS = 28;
+/** "9:30 am" in the provider's own timezone (the server's windows are in that zone). */
+const slotLabel = (at: number, timeZone = "Asia/Kolkata") =>
+  new Date(at).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true, timeZone });
+/** "13 Oct 2026, 11:30 am" (or just the date) in India time. */
+const whenIst = (at: number, part: "datetime" | "date" = "datetime") =>
+  new Date(at).toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    ...(part === "datetime" ? { hour: "numeric", minute: "2-digit", hour12: true } : { weekday: "short" }),
+  });
+
 /** Fields the public API sends that the shared ProviderProfile type does not model. */
 type PublicProvider = ProviderProfile & {
   serviceCities?: Array<{ city: string; state?: string | null }>;
   consultation?: { enabled: boolean; feeMinor?: number | null; currency?: string; slotMinutes?: number | null; channels?: string[] };
   offerings?: { count: number; minFeeMinor: number | null; currency?: string };
   acceptingBookings?: boolean;
-  travel?: { willingToTravel?: boolean; overnightOk?: boolean };
+  travel?: {
+    willingToTravel?: boolean;
+    overnightOk?: boolean;
+    modes?: string[];
+    maxDistanceKm?: number | null;
+    stayArrangement?: string | null;
+    notes?: string | null;
+  };
+  /** The pandit has switched on live online katha / puja. */
+  liveOnline?: boolean;
+  /** Their YouTube live page while live online is on. */
+  liveYoutubeUrl?: string | null;
+  /** Real numbers from Tirvona bookings. */
+  stats?: { completedBookings?: number };
 };
 
 type OfferingView = Offering & {
   ritual?: { titles?: Record<string, string> } | null;
   variant?: { titles?: Record<string, string> } | null;
   indicativeFee?: { amountMinor: number; currency?: string };
+  /** Tirvona's fee the devotee pays on top of the professional fee (from the server). */
+  platformFee?: { rateBps: number; percent: number; amountMinor: number; label?: string };
+  devoteePriceMinor?: number;
   teamSize?: number;
 };
 
 const offeringTitle = (o: OfferingView) =>
   o.title || o.ritual?.titles?.en || Object.values(o.ritual?.titles ?? {})[0] || "Vedic puja";
 const offeringFeeMinor = (o: OfferingView) => o.indicativeFee?.amountMinor ?? o.baseProfessionalFeeMinor ?? null;
+const offeringCurrency = (o: OfferingView) => o.indicativeFee?.currency || o.currency || "INR";
+/** The flat travel charge a booking adds, when the offering has one. */
+const offeringTravelMinor = (o: OfferingView) => {
+  const charge = (o as any).travelCharge;
+  return charge?.policy === "FLAT" ? Number(charge.flatMinor ?? 0) : 0;
+};
 
 export const PublicProviderDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -92,7 +144,8 @@ export const PublicProviderDetailPage: React.FC = () => {
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [selectedOffering, setSelectedOffering] = useState<OfferingView | null>(null);
   const [bookingDate, setBookingDate] = useState("");
-  const [bookingTime, setBookingTime] = useState("09:00");
+  /** The chosen start, as the exact instant the server will book (ISO). */
+  const [bookingStartIso, setBookingStartIso] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState(user?.name || "");
   const [customerPhone, setCustomerPhone] = useState(user?.phone || "");
   const [customerAddress, setCustomerAddress] = useState("");
@@ -102,11 +155,19 @@ export const PublicProviderDetailPage: React.FC = () => {
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
   const [bookingResult, setBookingResult] = useState<ProviderBooking | null>(null);
   const [bookingError, setBookingError] = useState<string | null>(null);
-  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  /** Bookable start times per local date, built from the provider's real free windows. */
+  const [slotsByDate, setSlotsByDate] = useState<Record<string, BookingSlot[]>>({});
   const [slotsLoading, setSlotsLoading] = useState(false);
+  const [scheduleConfigured, setScheduleConfigured] = useState(true);
+  const [slotsError, setSlotsError] = useState<string | null>(null);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [paymentBlocker, setPaymentBlocker] = useState<string | null>(null);
   const [useWallet, setUseWallet] = useState(true);
+  /** In person (home / temple), or live online on video when the pandit is live. */
+  const [deliveryMode, setDeliveryMode] = useState<"IN_PERSON" | "LIVE_ONLINE">("IN_PERSON");
+  /** Marketplace products a super admin chose to show on pandit pages. */
+  const [samagri, setSamagri] = useState<StoreProduct[]>([]);
+  const [showSteps, setShowSteps] = useState(false);
 
   // Consultation dialog
   const [consultModalOpen, setConsultModalOpen] = useState(false);
@@ -122,9 +183,11 @@ export const PublicProviderDetailPage: React.FC = () => {
   const earliestStart = useMemo(() => Date.now() + minNoticeHours * 3600 * 1000, [minNoticeHours, bookingModalOpen]); // eslint-disable-line react-hooks/exhaustive-deps
   const earliestDate = istDate(earliestStart);
   // The server needs the devotee's address for home services, keeps it for "on behalf" services and ignores it otherwise.
-  const needsAddress = selectedOffering?.fulfilmentType === "LOCAL_HOME" || selectedOffering?.fulfilmentType === "DESTINATION_PROVIDER_HOME";
-  const allowsAddress = needsAddress || selectedOffering?.fulfilmentType === "ON_BEHALF";
-  const notTravelling = selectedOffering?.fulfilmentType === "DESTINATION_PROVIDER_HOME" && provider?.travel?.willingToTravel === false;
+  const liveOnline = deliveryMode === "LIVE_ONLINE";
+  // A live online katha happens on video: no address and nobody travels.
+  const needsAddress = !liveOnline && (selectedOffering?.fulfilmentType === "LOCAL_HOME" || selectedOffering?.fulfilmentType === "DESTINATION_PROVIDER_HOME");
+  const allowsAddress = needsAddress || (!liveOnline && selectedOffering?.fulfilmentType === "ON_BEHALF");
+  const notTravelling = !liveOnline && selectedOffering?.fulfilmentType === "DESTINATION_PROVIDER_HOME" && provider?.travel?.willingToTravel === false;
 
   useEffect(() => {
     if (!user || !provider?.id) return;
@@ -141,26 +204,61 @@ export const PublicProviderDetailPage: React.FC = () => {
       .catch(() => undefined);
   }, [user, provider?.id]);
 
-  // Open slots for the chosen day, from the provider's real calendar.
+  /**
+   * Loads the provider's free windows for a range of days and turns them into
+   * bookable start times: every SLOT_STEP inside a window, never before the
+   * notice period, and only where the whole service fits before the window
+   * ends. These are exactly the starts the server accepts.
+   */
+  const loadSlots = useCallback(
+    async (from: string, to: string) => {
+      if (!provider?.id || !selectedOffering) return {} as Record<string, BookingSlot[]>;
+      const res = await providerPublicService.availabilityOf(provider.id, {
+        from,
+        to,
+        durationMinutes: selectedOffering.durationMinutes || 60,
+      });
+      const data = res.data?.data ?? {};
+      setScheduleConfigured(data.scheduleConfigured !== false);
+      const durationMs = (selectedOffering.durationMinutes || 60) * 60_000;
+      const notBefore = Date.now() + (selectedOffering.minNoticeHours ?? 0) * 3_600_000;
+      const out: Record<string, BookingSlot[]> = {};
+      for (const day of data.days ?? []) {
+        const slots: BookingSlot[] = [];
+        for (const w of day.windows ?? []) {
+          const end = new Date(w.endAt).getTime();
+          let t = Math.ceil(Math.max(new Date(w.startAt).getTime(), notBefore) / SLOT_STEP_MS) * SLOT_STEP_MS;
+          for (; t + durationMs <= end; t += SLOT_STEP_MS) {
+            slots.push({ iso: new Date(t).toISOString(), label: slotLabel(t, data.timezone) });
+          }
+        }
+        out[day.date] = slots;
+      }
+      return out;
+    },
+    [provider?.id, selectedOffering],
+  );
+
+  // When the dialog opens: load the next few weeks and preselect the first time that can actually be booked.
   useEffect(() => {
-    if (!bookingModalOpen || !provider?.id || !bookingDate) return;
+    if (!bookingModalOpen || !provider?.id || !selectedOffering) return;
     let active = true;
     (async () => {
       setSlotsLoading(true);
+      setSlotsError(null);
+      setBookingStartIso(null);
       try {
-        const res = await providerPublicService.availabilityOf(provider.id, {
-          from: bookingDate,
-          to: bookingDate,
-          durationMinutes: selectedOffering?.durationMinutes || 60,
-        });
-        if (active && res.data?.success) {
-          const windows = res.data.data?.days?.[0]?.windows || [];
-          const times = windows.map((w: any) => w.startTime);
-          setAvailableSlots(times);
-          if (times.length > 0 && !times.includes(bookingTime)) setBookingTime(times[0]);
-        }
-      } catch {
-        if (active) setAvailableSlots([]);
+        const from = istDate(Date.now() + (selectedOffering.minNoticeHours ?? 0) * 3_600_000);
+        const loaded = await loadSlots(from, istDate(Date.parse(from) + (LOOKAHEAD_DAYS - 1) * 86_400_000));
+        if (!active) return;
+        setSlotsByDate(loaded);
+        const first = Object.keys(loaded).sort().find((date) => loaded[date].length > 0);
+        if (first) {
+          setBookingDate(first);
+          setBookingStartIso(loaded[first][0].iso);
+        } else setBookingDate(from);
+      } catch (err) {
+        if (active) setSlotsError(getErrorMessage(err, "Could not load the provider's calendar."));
       } finally {
         if (active) setSlotsLoading(false);
       }
@@ -168,7 +266,42 @@ export const PublicProviderDetailPage: React.FC = () => {
     return () => {
       active = false;
     };
-  }, [bookingModalOpen, provider?.id, bookingDate, selectedOffering?.durationMinutes]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [bookingModalOpen, provider?.id, selectedOffering, loadSlots]);
+
+  // A date beyond the preloaded weeks is fetched on demand.
+  useEffect(() => {
+    if (!bookingModalOpen || !bookingDate || slotsLoading || slotsByDate[bookingDate]) return;
+    let active = true;
+    loadSlots(bookingDate, bookingDate)
+      .then((loaded) => active && setSlotsByDate((prev) => ({ ...prev, ...loaded })))
+      .catch(() => active && setSlotsByDate((prev) => ({ ...prev, [bookingDate]: [] })));
+    return () => {
+      active = false;
+    };
+  }, [bookingModalOpen, bookingDate, slotsLoading, slotsByDate, loadSlots]);
+
+  const daySlots = slotsByDate[bookingDate];
+  const nextAvailableDate = Object.keys(slotsByDate)
+    .sort()
+    .find((date) => date > bookingDate && slotsByDate[date].length > 0);
+  const canSubmitBooking = !!bookingStartIso && !notTravelling;
+
+  const changeBookingDate = (date: string) => {
+    setBookingDate(date);
+    setBookingError(null);
+    setBookingStartIso(slotsByDate[date]?.[0]?.iso ?? null);
+  };
+
+  useEffect(() => {
+    let active = true;
+    storeApi
+      .products({ panditPages: true, limit: 8 })
+      .then((res: any) => active && setSamagri((res.data?.data ?? []).map(toStoreProduct)))
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const loadData = useCallback(async () => {
     if (!id) return;
@@ -203,8 +336,21 @@ export const PublicProviderDetailPage: React.FC = () => {
     }
   }, [loading, location.hash]);
 
+  useEffect(() => {
+    if (!bookingStartIso && daySlots && daySlots.length > 0) setBookingStartIso(daySlots[0].iso);
+  }, [daySlots, bookingStartIso]);
+
   const handleStartBooking = (offering: OfferingView) => {
+    // The pandit's calendar and the booking itself need an account: sign in first, then come back here.
+    if (!user) {
+      navigate(`/login?redirect=${encodeURIComponent(`${location.pathname}#services`)}`);
+      return;
+    }
     setSelectedOffering(offering);
+    setDeliveryMode("IN_PERSON");
+    setShowSteps(false);
+    setSlotsByDate({});
+    setBookingStartIso(null);
     setBookingDate(istDate(Date.now() + (offering.minNoticeHours ?? 0) * 3600 * 1000));
     setBookingResult(null);
     setBookingError(null);
@@ -228,8 +374,12 @@ export const PublicProviderDetailPage: React.FC = () => {
       setBookingError("Add the city and state for this address, or clear the address.");
       return;
     }
-    const start = new Date(`${bookingDate}T${bookingTime}:00+05:30`);
-    if (start.getTime() < earliestStart) {
+    if (!bookingStartIso) {
+      setBookingError("Please choose one of the available start times.");
+      return;
+    }
+    const start = new Date(bookingStartIso);
+    if (start.getTime() < Date.now() + minNoticeHours * 3600 * 1000) {
       setBookingError(
         minNoticeHours > 0
           ? `This service needs at least ${minNoticeHours} hours' notice. Please choose a later date or time.`
@@ -244,6 +394,7 @@ export const PublicProviderDetailPage: React.FC = () => {
       const payload: any = {
         offeringId: selectedOffering.id,
         scheduledStartAt: start.toISOString(),
+        deliveryMode,
         customerName: customerName.trim(),
         customerPhone: customerPhone.trim(),
       };
@@ -282,33 +433,38 @@ export const PublicProviderDetailPage: React.FC = () => {
       } else if (res.data?.blocker) {
         setPaymentBlocker(res.data.message || "Online payment is not available right now. Please try again later.");
       } else if (res.data?.configured && res.data?.data?.orderId) {
-        const rzpOptions = {
-          key: res.data.data.keyId,
-          amount: res.data.data.amount,
-          currency: res.data.data.currency,
-          name: "Tirvona",
-          description: `Puja Booking ${bookingResult.bookingNumber || ""}`,
-          order_id: res.data.data.orderId,
-          handler: async (response: any) => {
-            try {
-              const confirmRes = await pujaBookingService.confirmPayment(bookingResult.id, {
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              });
-              if (confirmRes.data?.success) {
-                setBookingResult({ ...bookingResult, status: "CONFIRMED" });
-                toast.success("Payment verified. Booking confirmed.");
-              }
-            } catch (err) {
-              toast.error(getErrorMessage(err, "Payment confirmation failed."));
-            }
-          },
-        };
-        if ((window as any).Razorpay) {
-          new (window as any).Razorpay(rzpOptions).open();
-        } else {
-          setPaymentBlocker("The payment window could not be loaded. Please refresh the page and try again.");
+        // The shared helper loads Razorpay's script on demand (nothing else on this page does), opens
+        // checkout, and itself tells the devotee if it was cancelled, failed or could not load.
+        let paid: RazorpayResult;
+        try {
+          paid = await openRazorpayCheckout(
+            {
+              orderId: res.data.data.orderId,
+              amount: res.data.data.amount,
+              currency: res.data.data.currency,
+              keyId: res.data.data.keyId,
+            },
+            { name: customerName.trim() || user?.name, email: user?.email, contact: customerPhone.trim() || user?.phone },
+            { name: "Tirvona", description: `Puja booking ${bookingResult.bookingNumber || ""}` },
+          );
+        } catch (err: any) {
+          if (/load the payment gateway/i.test(String(err?.message)))
+            setPaymentBlocker("The payment window could not be loaded. Check your internet connection and try again.");
+          return;
+        }
+        try {
+          const confirmRes = await pujaBookingService.confirmPayment(bookingResult.id, {
+            razorpay_order_id: paid.razorpay_order_id,
+            razorpay_payment_id: paid.razorpay_payment_id,
+            razorpay_signature: paid.razorpay_signature,
+          });
+          if (confirmRes.data?.success) {
+            setBookingResult({ ...bookingResult, status: "CONFIRMED" });
+            toast.success("Payment verified. Booking confirmed.");
+          }
+        } catch (err) {
+          // The money was taken; the gateway webhook still confirms the booking, so say that rather than "failed".
+          toast.error(getErrorMessage(err, "We received your payment but could not confirm it yet. It will update shortly; check My bookings."));
         }
       }
     } catch (err: any) {
@@ -392,6 +548,16 @@ export const PublicProviderDetailPage: React.FC = () => {
   }
 
   const verified = provider.verificationLevel && provider.verificationLevel !== "UNVERIFIED";
+  /** Side-panel points, each true for this pandit (nothing is claimed that the data does not show). */
+  const feePercent = offerings.find((o) => o.platformFee && o.platformFee.amountMinor > 0)?.platformFee?.percent;
+  const highlights = [
+    verified ? `${VERIFICATION_LEVEL_LABELS[provider.verificationLevel]} by Tirvona` : null,
+    (provider.stats?.completedBookings ?? 0) > 0 ? `${provider.stats!.completedBookings} puja${provider.stats!.completedBookings === 1 ? "" : "s"} completed on Tirvona` : null,
+    feePercent ? `Upfront price: pandit's fee + ${feePercent}% platform fee, nothing hidden` : "Upfront price shown before you pay",
+    offerings.some((o: any) => o.samagriIncluded) ? "Puja samagri included in some services" : null,
+    provider.travel?.willingToTravel ? "Comes to your home" : null,
+    provider.liveOnline ? "Live online katha on YouTube" : null,
+  ].filter(Boolean) as string[];
   const startingFee = formatMinor(provider.offerings?.minFeeMinor, provider.offerings?.currency || "INR");
   const consultFee = formatMinor(provider.consultation?.feeMinor ?? null, provider.consultation?.currency || "INR");
   const place = [provider.homeCity, provider.homeState].filter(Boolean).join(", ");
@@ -430,11 +596,22 @@ export const PublicProviderDetailPage: React.FC = () => {
                 {verified ? (
                   <StatusBadge status={provider.verificationLevel} label={VERIFICATION_LEVEL_LABELS[provider.verificationLevel]} tone="success" />
                 ) : null}
-                <span className="flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-[#92400E] dark:bg-slate-800 dark:text-amber-300">
-                  <span className="text-amber-500">★</span> 4.9 • Verified Vedic Pandit
-                </span>
+                {provider.liveOnline && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-600 px-2.5 py-0.5 text-xs font-black text-white">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white motion-reduce:animate-none" aria-hidden="true" />
+                    Live online available
+                  </span>
+                )}
+                {(provider.stats?.completedBookings ?? 0) > 0 && (
+                  <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+                    {provider.stats!.completedBookings} puja{provider.stats!.completedBookings === 1 ? "" : "s"} completed on Tirvona
+                  </span>
+                )}
               </div>
               <h1 className="break-words text-2xl font-black tracking-tight text-[#0B192C] sm:text-4xl dark:text-white">{provider.displayName}</h1>
+              {provider.liveOnline && provider.liveYoutubeUrl && (
+                <WatchLiveButton stream={{ youtubeUrl: provider.liveYoutubeUrl }} title={provider.displayName} label="Watch live on YouTube" className="!min-h-[38px] !px-4 !text-xs" />
+              )}
               {place && (
                 <p className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400">
                   <MapPin size={15} className="shrink-0 text-[#F28C28]" aria-hidden="true" />
@@ -583,10 +760,18 @@ export const PublicProviderDetailPage: React.FC = () => {
                             <div>
                               <p className="text-[11px] font-extrabold uppercase tracking-wider text-gray-400">Provider's fee</p>
                               <p className="text-xl sm:text-2xl font-black tracking-tight text-[#0B192C] dark:text-white">{fee ?? "On request"}</p>
+                              {off.platformFee && off.platformFee.amountMinor > 0 && (
+                                <p className="mt-0.5 text-[11px] font-semibold text-gray-500">
+                                  + {formatMinor(off.platformFee.amountMinor, offeringCurrency(off))} platform fee ({off.platformFee.percent}%)
+                                </p>
+                              )}
                             </div>
-                            <Button onClick={() => handleStartBooking(off)} className="shrink-0 !min-h-[44px] !px-7 !font-extrabold">
-                              Book now
-                            </Button>
+                            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                              <PujaProcessButton ritualId={(off as any).ritualId} title={offeringTitle(off)} viewer="DEVOTEE" />
+                              <Button onClick={() => handleStartBooking(off)} className="shrink-0 !min-h-[44px] !px-7 !font-extrabold">
+                                Book now
+                              </Button>
+                            </div>
                           </div>
                         </Card>
                       </li>
@@ -595,6 +780,111 @@ export const PublicProviderDetailPage: React.FC = () => {
                 </ul>
               )}
             </section>
+
+            {/* ── Home visits & travel ───────────────────────────────── */}
+            {(provider.travel?.willingToTravel || provider.liveOnline) && (
+              <SectionCard title="Home visits & online">
+                <ul className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+                  {provider.travel?.willingToTravel && (
+                    <li className="flex items-start gap-3">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F28C28]/10 text-[#F28C28]" aria-hidden="true">
+                        <Home size={16} />
+                      </span>
+                      <div>
+                        <p className="font-bold text-[#0B192C] dark:text-white">Comes to your home</p>
+                        <p className="text-xs text-gray-500">
+                          {(provider.travel.modes ?? []).length
+                            ? `Travels by ${(provider.travel.modes ?? []).map((m) => TRAVEL_MODE_LABELS[m] ?? m).join(", ")}`
+                            : "Travels to devotees"}
+                          {provider.travel.maxDistanceKm ? ` · up to ${provider.travel.maxDistanceKm} km` : ""}
+                        </p>
+                        {(provider.travel.modes ?? []).length > 0 && (
+                          <p className="mt-1.5 flex flex-wrap gap-1.5">
+                            {(provider.travel.modes ?? []).map((m) => (
+                              <span key={m} className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-bold text-gray-700 dark:bg-slate-800 dark:text-gray-300">
+                                {m === "ROAD" ? <Car size={12} aria-hidden="true" /> : m === "TRAIN" ? <Bus size={12} aria-hidden="true" /> : <span aria-hidden="true">✈</span>}
+                                {TRAVEL_MODE_LABELS[m] ?? m}
+                              </span>
+                            ))}
+                          </p>
+                        )}
+                      </div>
+                    </li>
+                  )}
+                  {provider.travel?.willingToTravel && provider.travel.overnightOk && (
+                    <li className="flex items-start gap-3">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F28C28]/10 text-[#F28C28]" aria-hidden="true">
+                        <Bed size={16} />
+                      </span>
+                      <div>
+                        <p className="font-bold text-[#0B192C] dark:text-white">Can stay overnight</p>
+                        <p className="text-xs text-gray-500">
+                          {provider.travel.stayArrangement ? STAY_ARRANGEMENT_LABELS[provider.travel.stayArrangement] ?? "" : "For multi-day kathas and pujas"}
+                        </p>
+                      </div>
+                    </li>
+                  )}
+                  {provider.liveOnline && (
+                    <li className="flex items-start gap-3">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950/40" aria-hidden="true">
+                        <Radio size={16} />
+                      </span>
+                      <div>
+                        <p className="font-bold text-[#0B192C] dark:text-white">Live online katha &amp; puja</p>
+                        <p className="text-xs text-gray-500">Join from anywhere on video. Choose "Live online" when you book.</p>
+                      </div>
+                    </li>
+                  )}
+                  {provider.travel?.willingToTravel && provider.travel.notes && (
+                    <li className="rounded-xl bg-gray-50 p-3 text-xs text-gray-600 dark:bg-slate-900/60 dark:text-gray-400">{provider.travel.notes}</li>
+                  )}
+                </ul>
+              </SectionCard>
+            )}
+
+            {/* ── Puja samagri from the Tirvona Marketplace (chosen by Tirvona) ── */}
+            {samagri.length > 0 && (
+              <section aria-labelledby="samagri-heading" className="space-y-3">
+                <div className="flex items-end justify-between gap-3">
+                  <div>
+                    <p className="mb-1 flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#B45309] dark:text-[#FFA44D]">
+                      <ShoppingBag size={14} className="text-[#F28C28]" aria-hidden="true" />
+                      Tirvona Marketplace
+                    </p>
+                    <h2 id="samagri-heading" className="text-lg font-black tracking-tight text-[#0B192C] dark:text-white">Puja samagri &amp; sacred items</h2>
+                  </div>
+                  <Link to="/marketplace" className="shrink-0 text-xs font-bold text-[#B45309] hover:underline dark:text-[#FFA44D]">
+                    View all
+                  </Link>
+                </div>
+                <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {samagri.map((item) => (
+                    <li key={item._id}>
+                      <Link
+                        to={`/marketplace/products/${item.slug}`}
+                        className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white transition-colors hover:border-[#F28C28]/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28] dark:border-slate-800 dark:bg-[#0B192C]"
+                      >
+                        <span className="block aspect-square bg-gray-50 dark:bg-slate-900">
+                          {item.images?.[0] ? (
+                            <img src={item.images[0]} alt="" loading="lazy" className="h-full w-full object-cover" />
+                          ) : (
+                            <span className="flex h-full items-center justify-center text-gray-300" aria-hidden="true">
+                              <ShoppingBag size={28} />
+                            </span>
+                          )}
+                        </span>
+                        <span className="flex flex-1 flex-col p-2.5">
+                          <span className="line-clamp-2 text-xs font-bold text-[#0B192C] dark:text-white">{item.name}</span>
+                          <span className="mt-auto pt-1 text-sm font-black text-[#0B192C] dark:text-white">
+                            {formatMinor(Math.round((item.sellingPrice ?? item.price) * 100))}
+                          </span>
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
           </div>
 
           {/* ── Side panel (desktop) ─────────────────────────────────── */}
@@ -612,18 +902,12 @@ export const PublicProviderDetailPage: React.FC = () => {
                 <p className="text-sm text-gray-600 dark:text-gray-400">No services are bookable yet.</p>
               )}
               <ul className="space-y-2 border-t border-b border-gray-100 py-3 text-xs text-gray-600 dark:border-slate-800 dark:text-gray-400">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 size={14} className="text-emerald-600" />
-                  <span>100% Verified Vedic Pandit</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 size={14} className="text-emerald-600" />
-                  <span>Transparent Dakshina, no hidden fees</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 size={14} className="text-emerald-600" />
-                  <span>Complete Shastra-based rituals</span>
-                </li>
+                {highlights.map((text) => (
+                  <li key={text} className="flex items-center gap-2">
+                    <CheckCircle2 size={14} className="shrink-0 text-emerald-600" />
+                    <span>{text}</span>
+                  </li>
+                ))}
               </ul>
               {offerings.length > 0 && (
                 <a href="#services" className="inline-flex min-h-[46px] w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#F28C28] to-[#E07B1A] px-5 text-sm font-extrabold text-white shadow-md shadow-[#F28C28]/25 hover:from-[#D97706] hover:to-[#C66A06] transition-all">
@@ -700,7 +984,7 @@ export const PublicProviderDetailPage: React.FC = () => {
               <Button variant="outline" onClick={() => setBookingModalOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" form="booking-form" loading={bookingSubmitting} disabled={notTravelling}>
+              <Button type="submit" form="booking-form" loading={bookingSubmitting} disabled={!canSubmitBooking}>
                 {bookingSubmitting ? "Holding your slot…" : "Confirm & hold slot"}
               </Button>
             </>
@@ -758,43 +1042,104 @@ export const PublicProviderDetailPage: React.FC = () => {
           <form id="booking-form" onSubmit={handleSubmitBooking} className="space-y-4" noValidate>
             {bookingError && <ErrorNotice message={bookingError} />}
             {notTravelling && <Notice tone="warning">This provider is not accepting travel bookings at the moment, so this service cannot be booked.</Notice>}
+
+            {provider.liveOnline && (
+              <div role="radiogroup" aria-label="How would you like it?">
+                <p className="mb-1.5 text-sm font-semibold text-gray-800 dark:text-gray-200">How would you like it?</p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {[
+                    { value: "IN_PERSON" as const, title: "In person", sub: selectedOffering.fulfilmentType === "LOCAL_HOME" || selectedOffering.fulfilmentType === "DESTINATION_PROVIDER_HOME" ? "Pandit ji comes to your home" : "As described for this service", icon: <Home size={16} aria-hidden="true" /> },
+                    { value: "LIVE_ONLINE" as const, title: "Live online", sub: "Watch live on YouTube from anywhere · no travel charge", icon: <Radio size={16} aria-hidden="true" /> },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={deliveryMode === opt.value}
+                      onClick={() => setDeliveryMode(opt.value)}
+                      className={cx(
+                        "flex min-h-[56px] items-start gap-2.5 rounded-xl border p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]",
+                        deliveryMode === opt.value
+                          ? "border-[#F28C28] bg-[#FFF4E5] dark:bg-[#F28C28]/15"
+                          : "border-gray-300 hover:border-[#F28C28] dark:border-slate-600",
+                      )}
+                    >
+                      <span className={cx("mt-0.5", opt.value === "LIVE_ONLINE" ? "text-rose-600" : "text-[#F28C28]")}>{opt.icon}</span>
+                      <span>
+                        <span className="block text-sm font-bold text-[#0B192C] dark:text-white">{opt.title}</span>
+                        <span className="block text-xs text-gray-500">{opt.sub}</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                {liveOnline && <p className="mt-1.5 text-xs text-gray-500">Watch it live on YouTube from My bookings; pandit ji's stream link appears there.</p>}
+              </div>
+            )}
             {selectedOffering.fulfilmentType === "LOCAL_HOME" && (provider.serviceCities?.length ?? 0) > 0 && (
               <p className="text-sm text-gray-600 dark:text-gray-400">Serves: {provider.serviceCities!.map((c) => c.city).join(", ")}</p>
             )}
-            {minNoticeHours > 0 && <Notice tone="info">This service needs at least <strong>{minNoticeHours} hours' notice</strong>. The earliest date is {earliestDate}.</Notice>}
+            {minNoticeHours > 0 && (
+              <Notice tone="info">
+                This service needs at least <strong>{minNoticeHours} hours' notice</strong>. The earliest possible start is{" "}
+                <strong>{whenIst(earliestStart)}</strong>.
+              </Notice>
+            )}
 
             <Field label="Date" required>
-              <input type="date" className={inputClass} min={earliestDate} value={bookingDate} onChange={(e) => setBookingDate(e.target.value)} />
+              <input type="date" className={inputClass} min={earliestDate} value={bookingDate} onChange={(e) => changeBookingDate(e.target.value)} />
             </Field>
 
-            {availableSlots.length > 0 ? (
+            {slotsLoading || (bookingDate && daySlots === undefined && !slotsError) ? (
+              <p className="flex items-center gap-2 text-sm text-gray-500" role="status">
+                <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                Checking the pandit's calendar…
+              </p>
+            ) : slotsError ? (
+              <ErrorNotice message={slotsError} />
+            ) : !scheduleConfigured ? (
+              <Notice tone="warning">This pandit has not published their available hours yet, so this service cannot be booked online right now. Please check back soon.</Notice>
+            ) : daySlots && daySlots.length > 0 ? (
               <div role="radiogroup" aria-labelledby={slotsId}>
                 <p id={slotsId} className="mb-1.5 text-sm font-semibold text-gray-800 dark:text-gray-200">
-                  Available start times
+                  Available start times <span className="font-normal text-gray-500">({daySlots.length})</span>
                 </p>
-                <div className="flex max-h-36 flex-wrap gap-2 overflow-y-auto p-0.5">
-                  {availableSlots.map((slot) => (
+                <div className="grid max-h-44 grid-cols-3 gap-2 overflow-y-auto p-0.5 sm:grid-cols-4">
+                  {daySlots.map((slot) => (
                     <button
-                      key={slot}
+                      key={slot.iso}
                       type="button"
                       role="radio"
-                      aria-checked={bookingTime === slot}
-                      onClick={() => setBookingTime(slot)}
+                      aria-checked={bookingStartIso === slot.iso}
+                      onClick={() => {
+                        setBookingStartIso(slot.iso);
+                        setBookingError(null);
+                      }}
                       className={cx(
-                        "min-h-[40px] rounded-xl border px-3.5 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]",
-                        bookingTime === slot ? "border-[#0B192C] bg-[#0B192C] text-white" : "border-gray-300 bg-white text-gray-800 hover:border-[#F28C28] dark:border-slate-600 dark:bg-slate-900 dark:text-gray-200",
+                        "min-h-[44px] rounded-xl border px-2 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]",
+                        bookingStartIso === slot.iso
+                          ? "border-[#F28C28] bg-[#F28C28] text-white"
+                          : "border-gray-300 bg-white text-gray-800 hover:border-[#F28C28] dark:border-slate-600 dark:bg-slate-900 dark:text-gray-200",
                       )}
                     >
-                      {bookingTime === slot && <Check size={13} className="mr-1 inline" aria-hidden="true" />}
-                      {slot}
+                      {slot.label}
                     </button>
                   ))}
                 </div>
               </div>
             ) : (
-              <Field label="Start time" required hint={slotsLoading ? "Checking the provider's calendar…" : "No open windows were found for this day. You can still request a time and the provider's calendar will be checked."}>
-                <input type="time" className={inputClass} value={bookingTime} onChange={(e) => setBookingTime(e.target.value)} />
-              </Field>
+              <Notice tone="warning">
+                The pandit is not available on {bookingDate ? whenIst(Date.parse(`${bookingDate}T12:00:00+05:30`), "date") : "this day"}.
+                {nextAvailableDate ? (
+                  <>
+                    {" "}
+                    <button type="button" className="font-bold text-[#B45309] underline" onClick={() => changeBookingDate(nextAvailableDate)}>
+                      Next available: {whenIst(Date.parse(`${nextAvailableDate}T12:00:00+05:30`), "date")}
+                    </button>
+                  </>
+                ) : (
+                  " Please choose another date."
+                )}
+              </Notice>
             )}
 
             <Field label="Yajaman / devotee name" required hint="The name used for the sankalp.">
@@ -827,12 +1172,55 @@ export const PublicProviderDetailPage: React.FC = () => {
               <input type="text" className={inputClass} value={specialInstructions} onChange={(e) => setSpecialInstructions(e.target.value)} placeholder="e.g. Kashyap gotra, English explanation requested" />
             </Field>
 
-            <div className="rounded-xl bg-gray-50 p-3 text-sm dark:bg-slate-900/60">
-              <div className="flex justify-between gap-4">
-                <span className="text-gray-600 dark:text-gray-400">Provider's fee</span>
-                <strong className="text-[#0B192C] dark:text-white">{formatMinor(offeringFeeMinor(selectedOffering), selectedOffering.indicativeFee?.currency || selectedOffering.currency || "INR") ?? "On request"}</strong>
-              </div>
-              <p className="mt-1 text-xs text-gray-500">The final payable total is confirmed by the server after you hold the slot.</p>
+            {(() => {
+              const currency = offeringCurrency(selectedOffering);
+              const professional = offeringFeeMinor(selectedOffering);
+              const travel = liveOnline ? 0 : offeringTravelMinor(selectedOffering);
+              const platform = selectedOffering.platformFee?.amountMinor ?? 0;
+              const total = professional == null ? null : professional + travel + platform;
+              const row = (label: string, minor: number) => (
+                <div className="flex justify-between gap-4">
+                  <span className="text-gray-600 dark:text-gray-400">{label}</span>
+                  <span className="font-semibold text-[#0B192C] dark:text-white">{formatMinor(minor, currency)}</span>
+                </div>
+              );
+              return (
+                <div className="space-y-1.5 rounded-xl bg-gray-50 p-3 text-sm dark:bg-slate-900/60">
+                  {professional == null ? (
+                    <p className="text-gray-600 dark:text-gray-400">Fee on request</p>
+                  ) : (
+                    <>
+                      {row("Professional fee", professional)}
+                      {travel > 0 && row("Travel charge", travel)}
+                      {platform > 0 && row(`Tirvona platform fee (${selectedOffering.platformFee!.percent}%)`, platform)}
+                      <div className="flex justify-between gap-4 border-t border-gray-200 pt-1.5 dark:border-slate-700">
+                        <strong className="text-[#0B192C] dark:text-white">You pay</strong>
+                        <strong className="text-[#0B192C] dark:text-white">{formatMinor(total, currency)}</strong>
+                      </div>
+                    </>
+                  )}
+                  {!liveOnline && (selectedOffering as any).travelCharge?.policy === "ACTUALS_AT_COST" && (
+                    <p className="text-xs text-gray-500">Travel is charged at actual cost and settled separately.</p>
+                  )}
+                </div>
+              );
+            })()}
+            <div className="rounded-xl border border-gray-200 dark:border-slate-800">
+              <button
+                type="button"
+                aria-expanded={showSteps}
+                onClick={() => setShowSteps((v) => !v)}
+                className="flex w-full items-center justify-between gap-2 p-3 text-left text-sm font-bold text-[#0B192C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28] rounded-xl dark:text-white"
+              >
+                How this puja works, step by step
+                <span className="text-xs font-semibold text-[#B45309] dark:text-[#FFA44D]">{showSteps ? "Hide" : "Show"}</span>
+              </button>
+              {showSteps && (
+                <div className="border-t border-gray-100 p-3 dark:border-slate-800">
+                  <PujaProcessGuide ritualId={(selectedOffering as any).ritualId} viewer="DEVOTEE" />
+                  <p className="mt-2 text-[11px] text-gray-400">If no steps appear, pandit ji explains the process after accepting your booking.</p>
+                </div>
+              )}
             </div>
           </form>
         ) : null}

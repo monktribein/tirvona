@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
-import { InjectModel } from "@nestjs/mongoose";
-import type { Model } from "mongoose";
+import { InjectModel } from "../../../database/orm-nest";
+import type { Model } from "../../../database/orm";
 import { ProviderBookingService } from "./provider-booking.service";
 import { ProviderConsultationService } from "./provider-consultation.service";
 import { ProviderVerificationService } from "./provider-verification.service";

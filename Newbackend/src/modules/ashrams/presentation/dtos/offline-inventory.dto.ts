@@ -2,7 +2,6 @@ import { Type } from "class-transformer";
 import {
   IsIn,
   IsInt,
-  IsMongoId,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -10,17 +9,18 @@ import {
   Min,
   MinLength,
 } from "class-validator";
+import { IsEntityId } from "../../../../common/decorators/is-entity-id.decorator";
 import { OFFLINE_ROOM_STATUSES } from "../../infrastructure/persistence/ashram.schemas";
 
 export class OfflineRoomQueryDto {
-  @IsOptional() @IsMongoId() ashramId?: string;
-  @IsOptional() @IsMongoId() roomId?: string;
+  @IsOptional() @IsEntityId() ashramId?: string;
+  @IsOptional() @IsEntityId() roomId?: string;
   @IsOptional() @IsIn([...OFFLINE_ROOM_STATUSES, "all"]) status?: string;
 }
 
 export class SaveOfflineRoomDto {
-  @IsMongoId() ashramId: string;
-  @IsMongoId() roomId: string;
+  @IsEntityId() ashramId: string;
+  @IsEntityId() roomId: string;
   @IsString() @MinLength(2) label: string;
   @Type(() => Number) @IsInt() @Min(0) totalUnits: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) blockedUnits?: number;
@@ -37,7 +37,7 @@ export class UpdateOfflineRoomDto {
 }
 
 export class TransferOfflineInventoryDto {
-  @IsOptional() @IsMongoId() roomId?: string;
+  @IsOptional() @IsEntityId() roomId?: string;
   @Type(() => Number) @IsInt() @Min(1) @Max(1000) units: number;
   @IsString() @IsNotEmpty() fromDate: string;
   @IsString() @IsNotEmpty() toDate: string;
@@ -45,8 +45,8 @@ export class TransferOfflineInventoryDto {
 }
 
 export class OfflineTransferHistoryQueryDto {
-  @IsOptional() @IsMongoId() ashramId?: string;
-  @IsOptional() @IsMongoId() offlineRoomId?: string;
+  @IsOptional() @IsEntityId() ashramId?: string;
+  @IsOptional() @IsEntityId() offlineRoomId?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(200) limit = 50;
 }
 
@@ -63,8 +63,8 @@ export class DecideReturnRequestDto {
 }
 
 export class DirectReturnRequestDto {
-  @IsMongoId() ashramId: string;
-  @IsMongoId() roomId: string;
+  @IsEntityId() ashramId: string;
+  @IsEntityId() roomId: string;
   @Type(() => Number) @IsInt() @Min(1) @Max(1000) units: number;
   @IsString() @IsNotEmpty() fromDate: string;
   @IsString() @IsNotEmpty() toDate: string;
@@ -72,8 +72,8 @@ export class DirectReturnRequestDto {
 }
 
 export class ReturnRequestQueryDto {
-  @IsOptional() @IsMongoId() ashramId?: string;
-  @IsOptional() @IsMongoId() offlineRoomId?: string;
+  @IsOptional() @IsEntityId() ashramId?: string;
+  @IsOptional() @IsEntityId() offlineRoomId?: string;
   @IsOptional()
   @IsIn(["pending", "approved", "rejected", "cancelled", "all"])
   status?: string;

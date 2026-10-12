@@ -1,5 +1,5 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
-import { Types } from "mongoose";
+import { Types } from "../../../database/orm";
 import { GovernanceService } from "./governance.service";
 
 describe("super admin room console writes", () => {

@@ -8,8 +8,8 @@ import { ConfigService } from "@nestjs/config";
 import type { INestApplication } from "@nestjs/common";
 import { createHmac } from "node:crypto";
 import Razorpay from "razorpay";
-import { getModelToken } from "@nestjs/mongoose";
-import { Types } from "mongoose";
+import { getModelToken } from "../../database/orm-nest";
+import { Types } from "../../database/orm";
 import request from "supertest";
 import { WalletService } from "../wallet/application/wallet.service";
 import { ProviderBookingPaymentService } from "./application/provider-booking-payment.service";
@@ -604,11 +604,13 @@ describe("Providers API (real Postgres)", () => {
       expect(res.body.data).toMatchObject({
         status: "PAYMENT_PENDING",
         fulfilmentType: "LOCAL_HOME",
-        pricing: { status: "PROVIDER_ESTIMATE", currency: "INR", totalMinor: 300000 },
+        pricing: { status: "PROVIDER_ESTIMATE", currency: "INR", providerSubtotalMinor: 300000, platformFeeMinor: 25000, totalMinor: 325000 },
         provider: { displayName: "Pt Ramesh Sharma" },
       });
       expect(res.body.data.bookingNumber).toMatch(/^PJ-\d{6}-[A-Z0-9]{6}$/);
       expect(res.body.data.holdExpiresAt).toBeTruthy();
+      // Tirvona's 10% fee is on top of the professional fee only; the pandit never sees it.
+      expect(res.body.data.pricing.lines.find((l: any) => l.code === "PLATFORM_FEE")).toMatchObject({ amountMinor: 25000, rateBps: 1000 });
       expect(res.body.data.nextActions.map((a: any) => a.command)).toEqual(["cancel"]);
       // The price is the server's, whatever the client sends.
       const forged = await post("/bookings", newUser(), { ...bookBody(slot(5)), totalMinor: 1, pricing: { totalMinor: 1 } }).expect(400);
@@ -1124,12 +1126,12 @@ describe("Providers API (real Postgres)", () => {
       const res = await post(`/bookings/${id}/payment/order`, buyer, { amount: 1, totalMinor: 1 }).expect(400); // unknown fields refused
       expect(res.body.success).toBe(false);
       const order = await post(`/bookings/${id}/payment/order`, buyer, {}).expect(201);
-      expect(mocks().create).toHaveBeenCalledWith(expect.objectContaining({ amount: 300000, currency: "INR" }));
+      expect(mocks().create).toHaveBeenCalledWith(expect.objectContaining({ amount: 325000, currency: "INR" }));
       expect(order.body.configured).toBe(true);
-      expect(order.body.data).toMatchObject({ amount: 300000, currency: "INR" });
+      expect(order.body.data).toMatchObject({ amount: 325000, currency: "INR" });
       expect(JSON.stringify(order.body)).not.toContain(KEY_SECRET);
       const stored = (await Booking().findById(id).lean()) as any;
-      expect(stored.paymentOrder).toMatchObject({ gatewayMinor: 300000, walletMinor: 0 });
+      expect(stored.paymentOrder).toMatchObject({ gatewayMinor: 325000, walletMinor: 0 });
       expect(stored.status).toBe("PAYMENT_PENDING"); // opening an order confirms nothing
     });
 
@@ -1172,13 +1174,13 @@ describe("Providers API (real Postgres)", () => {
       const svc = app.get(ProviderBookingPaymentService);
       const { buyer, id } = await newBooking(34);
       const order = (await post(`/bookings/${id}/payment/order`, buyer, {}).expect(201)).body.data.orderId;
-      expect(await svc.confirmPaymentFromWebhook("order_UNKNOWN", "pay_X", { amountPaise: 300000 })).toBe(false);
+      expect(await svc.confirmPaymentFromWebhook("order_UNKNOWN", "pay_X", { amountPaise: 325000 })).toBe(false);
       expect(await svc.confirmPaymentFromWebhook(order, "pay_QA4", { amountPaise: 100 })).toBe(true); // claimed, not confirmed
       expect(await svc.confirmPaymentFromWebhook(order, "pay_QA4", undefined)).toBe(true); // no amount: refuse to guess
       expect(((await Booking().findById(id).lean()) as any).status).toBe("PAYMENT_PENDING");
-      expect(await svc.confirmPaymentFromWebhook(order, "pay_QA4", { amountPaise: 300000, currency: "INR" })).toBe(true);
+      expect(await svc.confirmPaymentFromWebhook(order, "pay_QA4", { amountPaise: 325000, currency: "INR" })).toBe(true);
       expect(((await Booking().findById(id).lean()) as any).status).toBe("CONFIRMED");
-      expect(await svc.confirmPaymentFromWebhook(order, "pay_QA4", { amountPaise: 300000 })).toBe(true); // duplicate
+      expect(await svc.confirmPaymentFromWebhook(order, "pay_QA4", { amountPaise: 325000 })).toBe(true); // duplicate
       const rows = await Booking().db.collection("provider_booking_state_history").countDocuments({ bookingId: new Types.ObjectId(id), toState: "CONFIRMED" });
       expect(rows).toBe(1);
     });
@@ -1188,7 +1190,7 @@ describe("Providers API (real Postgres)", () => {
       const { buyer, id } = await newBooking(35);
       const order = (await post(`/bookings/${id}/payment/order`, buyer, {}).expect(201)).body.data.orderId;
       await post(`/bookings/${id}:cancel`, buyer, { reasonCode: "CHANGE_OF_PLAN" }).expect(201);
-      expect(await svc.confirmPaymentFromWebhook(order, "pay_QA5", { amountPaise: 300000 })).toBe(true);
+      expect(await svc.confirmPaymentFromWebhook(order, "pay_QA5", { amountPaise: 325000 })).toBe(true);
       expect(((await Booking().findById(id).lean()) as any).status).toBe("CANCELLED_BY_CUSTOMER");
     });
 
@@ -1198,8 +1200,8 @@ describe("Providers API (real Postgres)", () => {
       await wallet.credit({ userId: buyer.id, amount: 1000, module: "admin", category: "admin_credit", description: "QA credit", idempotencyKey: `qa-credit-${buyer.id}` });
       const { id } = await newBooking(36, buyer);
       const order = await post(`/bookings/${id}/payment/order`, buyer, { useWallet: true }).expect(201);
-      expect(order.body.wallet).toMatchObject({ applied: 1000, gatewayAmount: 2000, total: 3000 });
-      expect(mocks().create).toHaveBeenCalledWith(expect.objectContaining({ amount: 200000 }));
+      expect(order.body.wallet).toMatchObject({ applied: 1000, gatewayAmount: 2250, total: 3250 });
+      expect(mocks().create).toHaveBeenCalledWith(expect.objectContaining({ amount: 225000 }));
       expect(await wallet.availableBalance(buyer.id)).toBe(0); // reserved while the gateway payment is pending
 
       const orderId = order.body.data.orderId;
@@ -1213,11 +1215,11 @@ describe("Providers API (real Postgres)", () => {
 
       await post(`/bookings/${id}:cancel`, panditUser, { reasonCode: "UNAVAILABLE" }).expect(201);
       expect(mocks().refund).toHaveBeenCalledTimes(1);
-      expect(mocks().refund).toHaveBeenCalledWith("pay_SPLIT1", expect.objectContaining({ amount: 200000 })); // only the gateway part
+      expect(mocks().refund).toHaveBeenCalledWith("pay_SPLIT1", expect.objectContaining({ amount: 225000 })); // only the gateway part
       expect(await wallet.availableBalance(buyer.id)).toBe(1000); // only the wallet part
       const refund = ((await Booking().findById(id).lean()) as any).refund;
       expect(refund.wallet).toMatchObject({ status: "CREDITED", amountMinor: 100000 });
-      expect(refund.gateway).toMatchObject({ status: "PENDING", amountMinor: 200000, paymentId: "pay_SPLIT1" }); // the gateway's word, not "refunded"
+      expect(refund.gateway).toMatchObject({ status: "PENDING", amountMinor: 225000, paymentId: "pay_SPLIT1" }); // the gateway's word, not "refunded"
     });
 
     it("pays entirely from the wallet, and reverses the spend if the booking cannot be confirmed", async () => {
@@ -1229,7 +1231,7 @@ describe("Providers API (real Postgres)", () => {
       expect(res.body.walletPaid).toBe(true);
       expect(mocks().create).not.toHaveBeenCalled(); // no gateway order for a wallet-only payment
       expect(((await Booking().findById(id).lean()) as any).status).toBe("CONFIRMED");
-      expect(await wallet.availableBalance(buyer.id)).toBe(2000);
+      expect(await wallet.availableBalance(buyer.id)).toBe(1750);
       await post(`/bookings/${id}:cancel`, buyer, { reasonCode: "CHANGE_OF_PLAN" }).expect(201);
       expect(await wallet.availableBalance(buyer.id)).toBe(5000);
       expect(mocks().refund).not.toHaveBeenCalled();
@@ -1670,7 +1672,7 @@ describe("Providers API (real Postgres)", () => {
       expect(after.pendingMinor - before.pendingMinor).toBe(300000);
       expect(after.availableMinor).toBe(before.availableMinor);
       const entry: any = await Entry().findOne({ bookingId: id, type: "EARNING" }).lean();
-      expect(entry).toMatchObject({ status: "PENDING", amountMinor: 300000, grossMinor: 300000, paymentMethod: "RAZORPAY" });
+      expect(entry).toMatchObject({ status: "PENDING", amountMinor: 300000, grossMinor: 325000, platformFeeMinor: 25000, paymentMethod: "RAZORPAY" });
       const holdMs = new Date(entry.availableAt).getTime() - new Date(entry.createdAt).getTime();
       expect(Math.round(holdMs / 3_600_000)).toBe(72);
       expect(after.rules.holdHours).toBe(72);
@@ -1793,6 +1795,90 @@ describe("Providers API (real Postgres)", () => {
       const res = await get("/admin/provider-wallets/overview", finance).expect(200);
       expect(res.body.data.wallets).toBeGreaterThanOrEqual(1);
       expect(res.body.data.paidOutMinor).toBeGreaterThanOrEqual(100000);
+    });
+  });
+
+  describe("live online katha, home travel and the puja process guide", () => {
+    const devotee = newUser("customer", "Live Devotee");
+    const onlineBody = (daysAhead: number, extra: object = {}) => ({
+      offeringId, scheduledStartAt: slot(daysAhead), customerName: "Live Devotee", customerPhone: "9876500030", ...extra,
+    });
+
+    it("lets a pandit go live online with their YouTube live link", async () => {
+      // No YouTube link yet: cannot go live.
+      expect((await patch("/provider/profile/live", panditUser, { enabled: true }).expect(400)).body.code).toBe("YOUTUBE_LINK_REQUIRED");
+      expect((await patch("/provider/profile/live", panditUser, { enabled: true, youtubeUrl: "https://zoom.us/j/1" }).expect(400)).body.code).toBe("INVALID_YOUTUBE_LINK");
+      const on = await patch("/provider/profile/live", panditUser, { enabled: true, youtubeUrl: "https://www.youtube.com/@PtRamesh/live" }).expect(200);
+      expect(on.body.data.liveOnline).toMatchObject({ enabled: true, youtubeUrl: "https://www.youtube.com/@PtRamesh/live" });
+      const pub = (await get(`/providers/${panditId}`).expect(200)).body.data;
+      expect(pub).toMatchObject({ liveOnline: true, liveYoutubeUrl: "https://www.youtube.com/@PtRamesh/live" });
+      expect(typeof pub.stats.completedBookings).toBe("number");
+      await patch("/provider/profile/live", panditUser, { enabled: "yes" }).expect(400);
+    });
+
+    it("books a live online katha without an address or travel charge", async () => {
+      const res = await post("/bookings", devotee, onlineBody(80, { deliveryMode: "LIVE_ONLINE" })).expect(201);
+      expect(res.body.data.deliveryMode).toBe("LIVE_ONLINE");
+      const travel = res.body.data.pricing.lines.find((l: any) => l.code === "TRAVEL");
+      expect(travel.amountMinor).toBe(0);
+      // ₹2,500 professional fee + 10% platform fee, nothing for travel.
+      expect(res.body.data.pricing.totalMinor).toBe(275000);
+      // The devotee watches on the pandit's YouTube live page until a specific stream is set.
+      expect(res.body.data.liveStream).toMatchObject({ youtubeUrl: "https://www.youtube.com/@PtRamesh/live", videoId: null });
+      const id = res.body.data.id;
+      await post(`/bookings/${id}/live-stream`, panditUser, { youtubeUrl: "https://youtu.be/dQw4w9WgXcQ" }).expect(409); // not paid yet
+      await app.get(ProviderBookingService).confirmPayment(id, "pay_live_80");
+      await post(`/bookings/${id}/live-stream`, devotee, { youtubeUrl: "https://youtu.be/dQw4w9WgXcQ" }).expect(403);
+      await post(`/bookings/${id}/live-stream`, panditUser, { youtubeUrl: "https://example.com/live" }).expect(400);
+      const set = await post(`/bookings/${id}/live-stream`, panditUser, { youtubeUrl: "https://youtu.be/dQw4w9WgXcQ" }).expect(201);
+      expect(set.body.data.liveStream).toMatchObject({ videoId: "dQw4w9WgXcQ" });
+      expect((await get(`/bookings/${id}`, devotee).expect(200)).body.data.liveStream.videoId).toBe("dQw4w9WgXcQ");
+      expect(ctx.notifications.some((n) => n.kind === "provider.booking.live_stream" && n.userIds.includes(devotee.id))).toBe(true);
+      // An in-person home booking of the same offering still needs the address.
+      await post("/bookings", devotee, onlineBody(81)).expect(422);
+    });
+
+    it("refuses live online bookings while the switch is off", async () => {
+      await patch("/provider/profile/live", panditUser, { enabled: false }).expect(200);
+      expect((await get(`/providers/${panditId}`).expect(200)).body.data.liveOnline).toBe(false);
+      const refused = await post("/bookings", devotee, onlineBody(82, { deliveryMode: "LIVE_ONLINE" })).expect(409);
+      expect(refused.body.code).toBe("LIVE_ONLINE_UNAVAILABLE");
+    });
+
+    it("saves how the pandit travels to a home and shows it publicly", async () => {
+      await patch("/provider/profile", panditUser, {
+        travelProfile: {
+          willingToTravel: true, overnightOk: true, modes: ["TRAIN", "FLIGHT", "ROAD"],
+          maxDistanceKm: 800, stayArrangement: "HOST_PROVIDES", notes: "I bring all samagri.",
+        },
+      }).expect(200);
+      const travel = (await get(`/providers/${panditId}`).expect(200)).body.data.travel;
+      expect(travel).toMatchObject({
+        willingToTravel: true, overnightOk: true, modes: ["TRAIN", "FLIGHT", "ROAD"],
+        maxDistanceKm: 800, stayArrangement: "HOST_PROVIDES", notes: "I bring all samagri.",
+      });
+      await patch("/provider/profile", panditUser, { travelProfile: { modes: ["HELICOPTER"] } }).expect(400);
+      await patch("/provider/profile", panditUser, { travelProfile: { stayArrangement: "HOTEL_5_STAR" } }).expect(400);
+    });
+
+    it("lets Tirvona set the puja process guide, live for devotees at once", async () => {
+      const guide = {
+        before: [{ title: "Keep the puja space clean", owner: "DEVOTEE" }, { title: "Pandit confirms the samagri list", detail: "Shared a day before.", owner: "PANDIT" }],
+        during: [{ title: "Sankalp", owner: "BOTH" }, { title: "Main ritual" }],
+        after: [{ title: "Aarti and prasad distribution", owner: "BOTH" }],
+      };
+      await put(`/admin/rituals/${ritualId}/process`, panditUser, guide).expect(403);
+      await put(`/admin/rituals/${ritualId}/process`, root, { before: [{ title: "x", owner: "ANYONE" }] }).expect(400);
+      const saved = await put(`/admin/rituals/${ritualId}/process`, root, guide).expect(200);
+      expect(saved.body.data.process.before).toHaveLength(2);
+      const pub = (await get(`/rituals/${ritualId}`).expect(200)).body.data;
+      expect(pub.process.during.map((s: any) => s.title)).toEqual(["Sankalp", "Main ritual"]);
+      expect(pub.process.during[1].owner).toBe("BOTH"); // default owner
+      expect(pub.process.before[1].detail).toBe("Shared a day before.");
+      // Clearing every step removes the guide.
+      await put(`/admin/rituals/${ritualId}/process`, root, { before: [], during: [], after: [] }).expect(200);
+      expect((await get(`/rituals/${ritualId}`).expect(200)).body.data.process).toBeNull();
+      await put(`/admin/rituals/${ritualId}/process`, root, guide).expect(200);
     });
   });
 

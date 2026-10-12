@@ -4,9 +4,9 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
+import { InjectModel } from "../../../database/orm-nest";
 import { randomUUID } from "node:crypto";
-import { Types, type Model } from "mongoose";
+import { Types, type Model } from "../../../database/orm";
 import { TransactionService } from "../../../common/database/transaction.service";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { InAppNotificationService } from "../../notifications/application/in-app-notification.service";

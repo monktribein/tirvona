@@ -11,12 +11,16 @@ jobs:
   backend:
     runs-on: ubuntu-latest
     services:
-      mongodb:
-        image: mongo:8
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tirvona_test
         ports:
-          - 27017:27017
+          - 5432:5432
         options: >-
-          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 })'"
+          --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 10
@@ -34,7 +38,8 @@ jobs:
         working-directory: Newbackend
     env:
       NODE_ENV: test
-      MONGODB_URI: mongodb://127.0.0.1:27017/tirvona_test
+      SUPABASE_DB_URL: postgres://postgres:postgres@127.0.0.1:5432/tirvona_test?sslmode=disable
+      PG_TEST_URL: postgres://postgres:postgres@127.0.0.1:5432/tirvona_test?sslmode=disable
       REDIS_URL: redis://127.0.0.1:6379
       JWT_SECRET: ci-only-jwt-secret-with-at-least-32-characters
       PARKING_QR_SECRET: ci-only-parking-secret-with-at-least-32-chars
@@ -48,6 +53,7 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
+      - run: npm run db:migrate
       - run: npm test -- --runInBand
       - run: npm run test:e2e -- --runInBand
       - run: npm run build

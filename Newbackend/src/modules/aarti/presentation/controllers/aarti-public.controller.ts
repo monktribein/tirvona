@@ -9,8 +9,8 @@ import {
   Query,
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import { InjectModel } from "@nestjs/mongoose";
-import type { Model } from "mongoose";
+import { InjectModel } from "../../../../database/orm-nest";
+import type { Model } from "../../../../database/orm";
 import { Public } from "../../../../common/decorators/public.decorator";
 import { AARTI_MODEL } from "../../domain/aarti.constants";
 import { AartiDiscoveryService } from "../../application/aarti-discovery.service";

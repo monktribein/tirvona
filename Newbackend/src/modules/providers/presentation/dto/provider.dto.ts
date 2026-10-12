@@ -7,7 +7,6 @@ import {
   IsEmail,
   IsIn,
   IsInt,
-  IsMongoId,
   IsOptional,
   IsString,
   IsUrl,
@@ -18,6 +17,7 @@ import {
   MinLength,
   ValidateNested,
 } from "class-validator";
+import { IsEntityId } from "../../../../common/decorators/is-entity-id.decorator";
 import {
   CONSULTATION_CHANNELS,
   FULFILMENT_TYPES,
@@ -31,6 +31,7 @@ import {
   SUSPENSION_REASON_CODES,
   TRAVEL_CHARGE_POLICIES,
   TRAVEL_MODES,
+  STAY_ARRANGEMENTS,
 } from "../../domain/provider.constants";
 import { PageQueryDto, QueryBoolean } from "./common.dto";
 
@@ -62,6 +63,18 @@ export class TravelProfileDto {
   @IsOptional() @IsArray() @ArrayMaxSize(3) @IsIn(TRAVEL_MODES, { each: true }) modes?: string[];
   @IsOptional() @IsInt() @Min(0) @Max(24 * 30) minNoticeHours?: number;
   @IsOptional() @apply(...STRING_LIST(20, 80)) regions?: string[];
+  /** How far the pandit will travel for a home visit. */
+  @IsOptional() @IsInt() @Min(0) @Max(5000) maxDistanceKm?: number;
+  /** Where the pandit stays when the puja needs an overnight visit. */
+  @IsOptional() @IsIn(STAY_ARRANGEMENTS) stayArrangement?: string;
+  /** e.g. "Travel and stay are arranged by the family; I bring all samagri." */
+  @IsOptional() @trim() @IsString() @MaxLength(300) notes?: string;
+}
+
+export class LiveOnlineDto {
+  @IsBoolean() enabled: boolean;
+  /** The pandit's YouTube live link (channel live page or a stream). Required to switch on, unless already saved. */
+  @IsOptional() @trim() @IsString() @MaxLength(300) youtubeUrl?: string;
 }
 
 export class ConsultationSettingsDto {
@@ -106,7 +119,7 @@ export class UpdateProviderProfileDto extends PartialType(CreateProviderProfileD
 /** Super Admin onboarding: an existing account plus the usual profile fields. No status or verification can be supplied. */
 export class AdminCreateProviderDto extends CreateProviderProfileDto {
   /** An existing account to attach the profile to. Omit it to create a new login with email, phone and password. */
-  @IsOptional() @IsMongoId() userId?: string;
+  @IsOptional() @IsEntityId() userId?: string;
   /** Login email of the new account (new accounts only). */
   @IsOptional() @IsEmail() @MaxLength(160) email?: string;
   /** Login mobile number of the new account (new accounts only). */
@@ -126,7 +139,7 @@ export class AdminOfferingStatusDto {
 }
 
 export class AdminOfferingQueryDto extends PageQueryDto {
-  @IsOptional() @IsMongoId() providerId?: string;
+  @IsOptional() @IsEntityId() providerId?: string;
   @IsOptional() @IsIn(OFFERING_STATUSES) status?: string;
 }
 
@@ -153,7 +166,7 @@ export class OfferingDestinationDto {
 }
 
 export class CreateOfferingDto {
-  @IsMongoId() ritualVariantId: string;
+  @IsEntityId() ritualVariantId: string;
   @IsIn(OFFERABLE_FULFILMENT_TYPES) fulfilmentType: string;
   @IsOptional() @trim() @IsString() @MaxLength(120) title?: string;
   @IsOptional() @trim() @IsString() @MaxLength(1000) description?: string;
@@ -234,7 +247,7 @@ export class ProviderSearchQueryDto extends PageQueryDto {
   @IsOptional() @trim() @IsString() @MaxLength(80) q?: string;
   /** Ritual id or slug. */
   @IsOptional() @trim() @IsString() @MaxLength(80) ritual?: string;
-  @IsOptional() @IsMongoId() ritualVariantId?: string;
+  @IsOptional() @IsEntityId() ritualVariantId?: string;
   @IsOptional() @IsIn(SUPPORTED_LANGUAGES) language?: string;
   @IsOptional() @IsIn(PROVIDER_TYPES) providerType?: string;
   @IsOptional() @IsIn(FULFILMENT_TYPES) fulfilmentType?: string;
@@ -253,5 +266,5 @@ export class ProviderSearchQueryDto extends PageQueryDto {
 
 export class PublicOfferingsQueryDto {
   @IsOptional() @IsIn(FULFILMENT_TYPES) fulfilmentType?: string;
-  @IsOptional() @IsMongoId() ritualVariantId?: string;
+  @IsOptional() @IsEntityId() ritualVariantId?: string;
 }

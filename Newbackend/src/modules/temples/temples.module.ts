@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
-import { MongooseModule } from "@nestjs/mongoose";
-import { Schema } from "mongoose";
+import { OrmModule } from "../../database/orm-nest";
+import { Schema } from "../../database/orm";
 import { TemplesController } from "./presentation/temples.controller";
 import { TemplesService } from "./application/temples.service";
 import { TempleSchema, TempleAartiSchema, TempleFestivalSchema } from "./infrastructure/persistence/temple.schemas";
@@ -10,7 +10,7 @@ import { PARKING_MODEL } from "../parking/domain/parking.constants";
 
 @Module({
   imports: [
-    MongooseModule.forFeature([
+    OrmModule.forFeature([
       { name: "Temple", schema: TempleSchema },
       { name: "TempleAarti", schema: TempleAartiSchema },
       { name: "TempleFestival", schema: TempleFestivalSchema },
@@ -24,6 +24,6 @@ import { PARKING_MODEL } from "../parking/domain/parking.constants";
   ],
   controllers: [TemplesController],
   providers: [TemplesService],
-  exports: [MongooseModule, TemplesService]
+  exports: [OrmModule, TemplesService]
 })
 export class TemplesModule {}

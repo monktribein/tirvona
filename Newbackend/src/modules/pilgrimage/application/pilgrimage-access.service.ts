@@ -1,6 +1,6 @@
 import { ForbiddenException, Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import type { Model } from "mongoose";
+import { InjectModel } from "../../../database/orm-nest";
+import type { Model } from "../../../database/orm";
 import {
   PILGRIMAGE_ASHRAM_ADMIN_CAPABILITIES,
   PILGRIMAGE_ASHRAM_OWNER_CAPABILITIES,

@@ -3,10 +3,10 @@ import {
   Logger,
   type OnApplicationBootstrap,
 } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
+import { InjectModel } from "../../database/orm-nest";
 import { Processor, WorkerHost } from "@nestjs/bullmq";
 import type { Job } from "bullmq";
-import type { Model } from "mongoose";
+import type { Model } from "../../database/orm";
 import { Resend } from "resend";
 import QRCode from "qrcode";
 import { ConfigService } from "@nestjs/config";
@@ -759,7 +759,7 @@ export class NotificationWorker
       .findById(String(bookingId))
       // `checkInCode` is a normally selected field, so it is listed plainly. A
       // "+checkInCode" prefix only forces in fields marked select:false; on this
-      // field Mongoose drops it from an inclusive projection, which sent "-"
+      // field the model layer drops it from an inclusive projection, which sent "-"
       // instead of the stored code the check-in QR and counter use.
       .select(
         "checkInCode bookingId checkInDate checkOutDate guestsCount roomsBookedCount pricing walkInGuest reservationExpiresAt checkedInAt checkedOutAt assignedRoomNumbers cancellation rooms",

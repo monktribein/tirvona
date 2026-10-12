@@ -1,4 +1,4 @@
-import { Schema } from "mongoose";
+import { Schema } from "../../../database/orm";
 import {
   DEFAULT_PLATFORM_FEE_SCOPES,
   PLATFORM_FEE_SCOPE_VALUES,

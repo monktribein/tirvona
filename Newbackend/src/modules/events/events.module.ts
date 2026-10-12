@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { MongooseModule } from "@nestjs/mongoose";
+import { OrmModule } from "../../database/orm-nest";
 import { EVENT_MODEL } from "./domain/event.constants";
 import { EVENT_REPOSITORY } from "./domain/event.repository";
 import { EventAccessService } from "./application/event-access.service";
@@ -14,7 +14,7 @@ import { EventRegistrationController } from "./presentation/controllers/event-re
 import { EventGateController } from "./presentation/controllers/event-gate.controller";
 import { EventOwnerController } from "./presentation/controllers/event-owner.controller";
 import { EventAdminController } from "./presentation/controllers/event-admin.controller";
-import { MongooseEventRepository } from "./infrastructure/persistence/mongoose-event.repository";
+import { PgEventRepository } from "./infrastructure/persistence/pg-event.repository";
 import {
   EventAshramRefSchema,
   EventAvailabilitySchema,
@@ -40,7 +40,7 @@ const schemas = [
 ].map(([name, schema]) => ({ name: name as string, schema: schema as any }));
 
 @Module({
-  imports: [MongooseModule.forFeature(schemas)],
+  imports: [OrmModule.forFeature(schemas)],
   controllers: [
     EventPublicController,
     EventRegistrationController,
@@ -56,10 +56,10 @@ const schemas = [
     EventRegistrationService,
     EventScanService,
     EventManagementService,
-    { provide: EVENT_REPOSITORY, useClass: MongooseEventRepository },
+    { provide: EVENT_REPOSITORY, useClass: PgEventRepository },
   ],
   exports: [
-    MongooseModule,
+    OrmModule,
     EventAccessService,
     EventCapabilityGuard,
     EventSettingsService,

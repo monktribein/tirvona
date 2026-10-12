@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { Interval } from "@nestjs/schedule";
-import { InjectModel } from "@nestjs/mongoose";
-import type { Model } from "mongoose";
+import { InjectModel } from "../../../database/orm-nest";
+import type { Model } from "../../../database/orm";
 
 const REMINDER_WINDOW_START_MS = 23 * 60 * 60 * 1000;
 const REMINDER_WINDOW_END_MS = 24 * 60 * 60 * 1000;

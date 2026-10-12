@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ClipboardCheck, ExternalLink, Search } from "lucide-react";
+import { ClipboardCheck, ExternalLink, Flame, Search } from "lucide-react";
 import { EnterprisePageHeader } from "../../shared/components/EnterprisePageHeader";
 import { EnterpriseButton } from "../../shared/components/EnterpriseButton";
 import { EnterpriseModal } from "../../shared/components/EnterpriseModal";
@@ -15,6 +15,7 @@ const FILTERS = [
   { value: "rejected", label: "Rejected" },
   { value: "not_submitted", label: "Drafts" },
   { value: "", label: "All" },
+  { value: "pandit_pages", label: "On pandit pages" },
 ];
 
 interface AdminProduct {
@@ -30,6 +31,7 @@ interface AdminProduct {
   listingStatus: string;
   status: string;
   adminDisabled?: boolean;
+  showOnPanditPages?: boolean;
   submittedAt?: string;
   updatedAt: string;
   vendorId?: { _id: string; storeName: string; slug: string; status: string } | null;
@@ -42,8 +44,15 @@ export const MarketplaceProductApprovalsPage: React.FC = () => {
   const openId = params.get("open") ?? "";
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const { isSuper } = useMarketplaceRoles();
+  const { busy, run } = useAction();
   const { data, meta, state, error, reload } = useRemote<AdminProduct[]>(
-    () => marketplaceAdminApi.products({ approvalStatus: status, search: search.trim(), page, limit: 20 }),
+    () =>
+      marketplaceAdminApi.products(
+        status === "pandit_pages"
+          ? { panditPages: true, search: search.trim(), page, limit: 20 }
+          : { approvalStatus: status, search: search.trim(), page, limit: 20 },
+      ),
     [status, search, page],
   );
   const setParam = (k: string, v: string) => {
@@ -57,7 +66,7 @@ export const MarketplaceProductApprovalsPage: React.FC = () => {
     <div className="space-y-5">
       <EnterprisePageHeader
         title="Product approvals"
-        subtitle="Vendor products stay hidden until approved. Content edits send approved products back here."
+        subtitle="Vendor products stay hidden until approved. Use the Pandit pages switch to show a product to devotees on pandit pages."
         icon={<ClipboardCheck size={20} />}
       />
       <Panel>
@@ -95,6 +104,24 @@ export const MarketplaceProductApprovalsPage: React.FC = () => {
                       </span>
                     ),
                   },
+                  {
+                    header: "Pandit pages",
+                    cell: (p) => (
+                      <PanditPagesSwitch
+                        on={Boolean(p.showOnPanditPages)}
+                        disabled={!isSuper}
+                        busy={busy === `pandit-${p._id}`}
+                        onChange={(next) =>
+                          run(
+                            `pandit-${p._id}`,
+                            () => marketplaceAdminApi.setPanditPages(p._id, next),
+                            reload,
+                            next ? "Now shown on pandit pages" : "Removed from pandit pages",
+                          )
+                        }
+                      />
+                    ),
+                  },
                 ]}
               />
               <Pager page={meta.page} limit={meta.limit} total={meta.total} onPage={setPage} />
@@ -112,7 +139,7 @@ export const MarketplaceProductApprovalsPage: React.FC = () => {
 const ProductReview: React.FC<{ id: string; onChanged: () => void }> = ({ id, onChanged }) => {
   const { data: p, state, error, reload } = useRemote<any>(() => marketplaceAdminApi.product(id), [id]);
   const { busy, run } = useAction();
-  const { canOperate } = useMarketplaceRoles();
+  const { canOperate, isSuper } = useMarketplaceRoles();
   if (state !== "ready" || !p) return <PanelState state={state} error={error} onRetry={reload} />;
   const refresh = async () => {
     await reload();
@@ -167,6 +194,20 @@ const ProductReview: React.FC<{ id: string; onChanged: () => void }> = ({ id, on
           ))}
         </ul>
       )}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-100 p-3 dark:border-slate-800">
+        <div>
+          <p className="flex items-center gap-1.5 font-black text-[#0B192C] dark:text-white">
+            <Flame size={13} className="text-[#F28C28]" /> Show on pandit pages
+          </p>
+          <p className="text-gray-500">Devotees see it as puja samagri on pandit profiles. Only while the product is approved and live.</p>
+        </div>
+        <PanditPagesSwitch
+          on={Boolean(p.showOnPanditPages)}
+          disabled={!isSuper}
+          busy={busy === "pandit"}
+          onChange={(next) => run("pandit", () => marketplaceAdminApi.setPanditPages(id, next), refresh, next ? "Now shown on pandit pages" : "Removed from pandit pages")}
+        />
+      </div>
       {p.rejectionReason && <p className="text-rose-600 font-bold">Rejected: {p.rejectionReason}</p>}
       {p.adminDisabledReason && <p className="text-rose-600 font-bold">Disabled: {p.adminDisabledReason}</p>}
 
@@ -212,5 +253,29 @@ const ProductReview: React.FC<{ id: string; onChanged: () => void }> = ({ id, on
     </div>
   );
 };
+
+/** On/off switch; only a super admin may flip it. */
+const PanditPagesSwitch: React.FC<{ on: boolean; disabled?: boolean; busy?: boolean; onChange: (next: boolean) => void }> = ({
+  on,
+  disabled,
+  busy,
+  onChange,
+}) => (
+  <button
+    type="button"
+    role="switch"
+    aria-checked={on}
+    aria-label="Show on pandit pages"
+    title={disabled ? "Only a super admin can change this" : on ? "Shown on pandit pages" : "Not shown on pandit pages"}
+    disabled={disabled || busy}
+    onClick={(e) => {
+      e.stopPropagation(); // the row opens the review dialog
+      onChange(!on);
+    }}
+    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28] disabled:cursor-not-allowed disabled:opacity-60 ${on ? "bg-[#F28C28]" : "bg-gray-300 dark:bg-slate-600"}`}
+  >
+    <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${on ? "translate-x-5" : "translate-x-0.5"}`} />
+  </button>
+);
 
 export default MarketplaceProductApprovalsPage;

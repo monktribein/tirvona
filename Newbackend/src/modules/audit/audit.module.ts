@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
-import { MongooseModule } from "@nestjs/mongoose";
-import { Schema, SchemaTypes } from "mongoose";
+import { OrmModule } from "../../database/orm-nest";
+import { Schema, SchemaTypes } from "../../database/orm";
 
 export const AuditLogSchema = new Schema(
   {
@@ -21,8 +21,8 @@ AuditLogSchema.index({ module: 1, action: 1, timestamp: -1 });
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: "AuditLog", schema: AuditLogSchema }]),
+    OrmModule.forFeature([{ name: "AuditLog", schema: AuditLogSchema }]),
   ],
-  exports: [MongooseModule],
+  exports: [OrmModule],
 })
 export class AuditModule {}

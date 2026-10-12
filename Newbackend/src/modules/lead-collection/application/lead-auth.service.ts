@@ -1,8 +1,8 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { InjectModel } from "@nestjs/mongoose";
+import { InjectModel } from "../../../database/orm-nest";
 import { compare, hash } from "bcryptjs";
-import type { Model } from "mongoose";
+import type { Model } from "../../../database/orm";
 import { leadCollectionConfig } from "../config/lead-collection.config";
 import {
   LEAD_CONNECTION,

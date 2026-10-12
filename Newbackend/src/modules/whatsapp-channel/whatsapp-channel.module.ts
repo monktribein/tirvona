@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
 import { BullModule } from "@nestjs/bullmq";
 import { ConfigModule } from "@nestjs/config";
-import { MongooseModule } from "@nestjs/mongoose";
+import { OrmModule } from "../../database/orm-nest";
 import { whatsappConfig } from "../../integrations/whatsapp/config/whatsapp.config";
 import { MetaCloudWhatsAppClient } from "../../integrations/whatsapp/providers/meta-cloud/meta-cloud-whatsapp.client";
 import { AshramsModule } from "../ashrams/ashrams.module";
@@ -49,7 +49,7 @@ import { WhatsAppInboundWorker } from "./whatsapp-inbound.worker";
     // matched against an existing registered account by phone number. This
     // module never writes to it — see WhatsAppIdentityService.findWebsiteAccount.
     UsersModule,
-    MongooseModule.forFeature([
+    OrmModule.forFeature([
       {
         name: WHATSAPP_CHANNEL_MODEL.Customer,
         schema: WhatsAppCustomerSchema,
@@ -76,6 +76,6 @@ import { WhatsAppInboundWorker } from "./whatsapp-inbound.worker";
     WhatsAppWebhookService,
     WhatsAppInboundWorker,
   ],
-  exports: [WhatsAppIdentityService, MongooseModule],
+  exports: [WhatsAppIdentityService, OrmModule],
 })
 export class WhatsAppChannelModule {}

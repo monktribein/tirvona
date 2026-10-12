@@ -5,7 +5,6 @@ import {
   IsBoolean,
   IsIn,
   IsInt,
-  IsMongoId,
   IsNumber,
   IsOptional,
   IsString,
@@ -15,6 +14,7 @@ import {
   MinLength,
   ValidateNested,
 } from "class-validator";
+import { IsEntityId } from "../../../../common/decorators/is-entity-id.decorator";
 import {
   LEAD_INTERESTS,
   LEAD_MEETING_MODES,
@@ -124,7 +124,7 @@ export class LeadQueryDto {
   @IsOptional() @IsIn(LEAD_STATUSES as unknown as string[]) status?: string;
   @IsOptional() @IsIn(LEAD_INTERESTS as unknown as string[]) interest?: string;
   @IsOptional() @IsString() @MaxLength(120) city?: string;
-  @IsOptional() @IsMongoId() capturedBy?: string;
+  @IsOptional() @IsEntityId() capturedBy?: string;
   @IsOptional() @IsString() @MaxLength(120) search?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number = 1;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit?: number =

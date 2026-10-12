@@ -1,12 +1,12 @@
 import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import type { ClientSession, Model } from "mongoose";
+import { InjectModel } from "../../../../database/orm-nest";
+import type { ClientSession, Model } from "../../../../database/orm";
 import { AARTI_MODEL } from "../../domain/aarti.constants";
 import type { AartiRepository } from "../../domain/aarti.repository";
 import { toDateKey } from "../../domain/aarti.utils";
 
 @Injectable()
-export class MongooseAartiRepository implements AartiRepository {
+export class PgAartiRepository implements AartiRepository {
   constructor(
     @InjectModel(AARTI_MODEL.Session) private readonly sessions: Model<any>,
     @InjectModel(AARTI_MODEL.PassType) private readonly passTypes: Model<any>,

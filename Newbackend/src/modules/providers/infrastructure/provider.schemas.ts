@@ -1,7 +1,7 @@
 /**
  * Provider-domain persistence (Data Dictionary v2.0 sections 7.17-7.23, 7.27,
  * 7.28, 7.31, 7.32, 7.47, 7.53). Collection names follow the dictionary so the
- * model stays traceable to the approved design; Mongoose model names carry a
+ * model stays traceable to the approved design; model names carry a
  * `Provider` prefix because model names are global in this application.
  *
  * Storage is the platform Postgres driver (one table per collection, generated
@@ -9,7 +9,7 @@
  * (project policy), so referential integrity is enforced by the services inside
  * transactions and audited by `ProviderIntegrityService`.
  */
-import { Schema, SchemaTypes } from "mongoose";
+import { Schema, SchemaTypes } from "../../../database/orm";
 import {
   BOOKING_STATUSES,
   CALENDAR_BLOCK_STATUSES,
@@ -17,6 +17,7 @@ import {
   CONSULTATION_CHANNELS,
   CONSULTATION_STATUSES,
   CONSULTATION_TYPES,
+  DELIVERY_MODES,
   EVIDENCE_TYPES,
   FULFILMENT_TYPES,
   MALWARE_SCAN_STATUSES,
@@ -70,6 +71,14 @@ export const ProviderRitualSchema = new Schema(
      */
     publishedContent: { type: SchemaTypes.Mixed, default: null },
     publishedAt: Date,
+    /**
+     * Step-by-step guide shown to devotee and pandit: { before, during, after },
+     * each a list of { title, detail, owner }. Operational guidance, edited by
+     * Tirvona admins directly and live at once (outside the content review).
+     */
+    process: { type: SchemaTypes.Mixed, default: null },
+    processUpdatedAt: { type: Date, default: null },
+    processUpdatedBy: id("User", { default: null }),
     /** Search-safe lowercase text built from the published content. */
     searchText: { type: String, default: "" },
     /** True when published content exists and the ritual is not archived. */
@@ -133,6 +142,8 @@ export const ProviderProfileSchema = new Schema(
     travelProfile: { type: SchemaTypes.Mixed, default: {} },
     /** Ask-a-Pandit / Ask-a-Jyotishi settings: { enabled, feeMinor, currency, slotMinutes, channels }. */
     consultation: { type: SchemaTypes.Mixed, default: { enabled: false } },
+    /** "Live online available" switch on the dashboard: { enabled, updatedAt }. Lets devotees book a live video katha / puja. */
+    liveOnline: { type: SchemaTypes.Mixed, default: { enabled: false } },
 
     verificationLevel: { type: String, enum: VERIFICATION_LEVELS, default: "UNVERIFIED" },
     verificationRank: { type: Number, default: 0 },
@@ -381,6 +392,10 @@ export const ProviderBookingSchema = new Schema(
     ritualId: id("ProviderRitual", { required: true }),
     ritualVariantId: id("ProviderRitualVariant", { required: true }),
     fulfilmentType: { type: String, enum: FULFILMENT_TYPES, required: true },
+    /** In person (the offering's fulfilment) or live online on video. */
+    deliveryMode: { type: String, enum: DELIVERY_MODES, default: "IN_PERSON" },
+    /** YouTube link the devotee watches: { youtubeUrl, videoId, source: PROFILE | BOOKING, addedAt }. */
+    liveStream: { type: SchemaTypes.Mixed, default: null },
     /** Quote and payment live in the commerce/payments domains; only opaque references are kept here. */
     quoteId: { type: SchemaTypes.ObjectId, default: null },
     paymentRefs: { type: [String], default: [] },
