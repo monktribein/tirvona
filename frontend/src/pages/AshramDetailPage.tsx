@@ -402,6 +402,8 @@ export const AshramDetailPage: React.FC = () => {
   const [showOvernightBooking, setShowOvernightBooking] = useState<boolean | null>(
     qMode === "daystay" ? false : true
   );
+  // Short stay is offered only while the property itself is open for booking.
+  const shortStayOpen = Boolean(ashram?.dayStayConfig?.enabled) && checkAshramBookingAvailable(ashram);
   // "No, … is fine" on the switch-mode question card hides it until the mode changes.
   const [modePromptDismissed, setModePromptDismissed] = useState(false);
   useEffect(() => setModePromptDismissed(false), [showOvernightBooking]);
@@ -1947,7 +1949,7 @@ export const AshramDetailPage: React.FC = () => {
                           </button>
                         </div>
 
-                        {ashram?.dayStayConfig?.enabled && r.dayStayConfig?.enabled === true && (
+                        {shortStayOpen && r.dayStayConfig?.enabled === true && (
                           <button
                             type="button"
                             onClick={() => {
@@ -2196,7 +2198,7 @@ export const AshramDetailPage: React.FC = () => {
 
         <div className="space-y-6">
           {/* Short Stay card — only when user explicitly chose short-stay mode */}
-          {ashram?.dayStayConfig?.enabled && showOvernightBooking === false && (
+          {shortStayOpen && showOvernightBooking === false && (
             <DayStayBookingCard
               ashram={ashram}
               rooms={rooms}
@@ -2208,7 +2210,7 @@ export const AshramDetailPage: React.FC = () => {
           )}
 
           {/* Question card: switch to overnight (shown below short stay) */}
-          {ashram?.dayStayConfig?.enabled && showOvernightBooking === false && !modePromptDismissed && (
+          {shortStayOpen && showOvernightBooking === false && !modePromptDismissed && (
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-5 shadow-sm space-y-4 relative overflow-hidden">
               <div className="absolute top-0 inset-x-0 h-1 bg-[#F28C28]/40 rounded-t-[28px]" />
               <div className="flex flex-col gap-3">
@@ -2247,7 +2249,7 @@ export const AshramDetailPage: React.FC = () => {
           )}
 
           {/* Overnight booking panel — visible when no dayStay or user chose overnight */}
-          {(!ashram?.dayStayConfig?.enabled || showOvernightBooking === true) && (
+          {(!shortStayOpen || showOvernightBooking === true) && (
           <div id="booking-engine" className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-4 sm:p-6 shadow-sm space-y-6 relative overflow-visible z-40">
             <div className="absolute top-0 inset-x-0 h-1 bg-[#F28C28]" />
             <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
@@ -2919,7 +2921,7 @@ export const AshramDetailPage: React.FC = () => {
           )}
 
           {/* Question card: switch to short stay (shown below overnight panel) */}
-          {ashram?.dayStayConfig?.enabled && showOvernightBooking === true && !modePromptDismissed && (
+          {shortStayOpen && showOvernightBooking === true && !modePromptDismissed && (
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-5 shadow-sm space-y-4 relative overflow-hidden">
               <div className="absolute top-0 inset-x-0 h-1 bg-[#F28C28]/40 rounded-t-[28px]" />
               <div className="flex flex-col gap-3">

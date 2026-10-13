@@ -16,6 +16,23 @@ const buildGoogleMapsUrl = (lat?: number | null, lng?: number | null) => {
   return `https://www.google.com/maps?q=${lat},${lng}`;
 };
 
+const finiteOrNull = (value: unknown): number | null => {
+  const n = typeof value === "string" ? Number(value) : (value as number);
+  return typeof n === "number" && Number.isFinite(n) ? n : null;
+};
+
+/** The device fix sent with a check-in or check-out, or nulls when there was none. */
+const readCoords = (dto: any) => {
+  const lat = finiteOrNull(dto?.coords?.lat ?? dto?.latitude);
+  const lng = finiteOrNull(dto?.coords?.lng ?? dto?.longitude);
+  const valid = lat !== null && lng !== null && !(lat === 0 && lng === 0);
+  return {
+    lat: valid ? lat : null,
+    lng: valid ? lng : null,
+    accuracy: valid ? finiteOrNull(dto?.coords?.accuracy ?? dto?.accuracy) : null,
+  };
+};
+
 const getTodayDateString = () => {
   // Keyed in IST so the attendance day rolls over at local midnight,
   // not UTC midnight (which would flip "today" at 5:30am IST).
@@ -40,9 +57,9 @@ export class LeadAttendanceService {
   ) {}
 
   async markCheckIn(agent: AuthenticatedLeadUser, dto: any) {
-    const lat = dto.coords?.lat ?? dto.latitude ?? (agent.district === "Mathura" ? 27.4924 : 27.5806);
-    const lng = dto.coords?.lng ?? dto.longitude ?? (agent.district === "Mathura" ? 77.6737 : 77.7006);
-    const accuracy = dto.coords?.accuracy ?? dto.accuracy ?? 10;
+    // Only a real device fix is stored. An invented point would show up on the
+    // route map and add a phantom leg to the day's distance.
+    const { lat, lng, accuracy } = readCoords(dto);
 
     const today = getTodayDateString();
     const now = new Date();
@@ -114,9 +131,7 @@ export class LeadAttendanceService {
   }
 
   async markCheckOut(agent: AuthenticatedLeadUser, dto: any) {
-    const lat = dto.coords?.lat ?? dto.latitude ?? (agent.district === "Mathura" ? 27.4930 : 27.5810);
-    const lng = dto.coords?.lng ?? dto.longitude ?? (agent.district === "Mathura" ? 77.6740 : 77.7010);
-    const accuracy = dto.coords?.accuracy ?? dto.accuracy ?? 10;
+    const { lat, lng, accuracy } = readCoords(dto);
 
     const today = getTodayDateString();
     const now = new Date();
@@ -217,20 +232,29 @@ export class LeadAttendanceService {
     const totalMinutesWorked = allRecords.reduce((sum, r) => sum + (r.totalWorkingMinutes || 0), 0);
     const totalHoursNum = Number((totalMinutesWorked / 60).toFixed(1));
 
-    const defaultLat = user.district === "Mathura" ? 27.4924 : 27.5806;
-    const defaultLng = user.district === "Mathura" ? 77.6737 : 77.7006;
     const defaultAddress = `${user.district || "Mathura"}, ${user.state || "Uttar Pradesh"}, India`;
 
-    const records = rawItems.map((r: any) => {
-      const inLat = r.checkInCoords?.lat ?? (r.checkInLocation?.latitude ?? defaultLat);
-      const inLng = r.checkInCoords?.lng ?? (r.checkInLocation?.longitude ?? defaultLng);
-      const inAddr = r.checkInAddress || (r.checkInLocation?.address || defaultAddress);
-      const inMap = r.checkInMapsUrl || (r.checkInLocation?.mapsUrl || buildGoogleMapsUrl(inLat, inLng));
+    // A missing fix stays missing: the dashboards say "No GPS coords" rather
+    // than plot an invented point.
+    const location = (coords: any, legacy: any, address: string, mapsUrl: string) => {
+      const latitude = coords?.lat ?? legacy?.latitude ?? null;
+      const longitude = coords?.lng ?? legacy?.longitude ?? null;
+      if (latitude === null || longitude === null) return null;
+      return {
+        latitude,
+        longitude,
+        accuracy: coords?.accuracy ?? legacy?.accuracy ?? null,
+        address: address || legacy?.address || defaultAddress,
+        mapsUrl: mapsUrl || legacy?.mapsUrl || buildGoogleMapsUrl(latitude, longitude),
+      };
+    };
 
-      const outLat = r.checkOutCoords?.lat ?? (r.checkOutLocation?.latitude ?? (inLat ? inLat + 0.002 : defaultLat + 0.002));
-      const outLng = r.checkOutCoords?.lng ?? (r.checkOutLocation?.longitude ?? (inLng ? inLng + 0.002 : defaultLng + 0.002));
-      const outAddr = r.checkOutAddress || (r.checkOutLocation?.address || defaultAddress);
-      const outMap = r.checkOutMapsUrl || (r.checkOutLocation?.mapsUrl || buildGoogleMapsUrl(outLat, outLng));
+    const records = rawItems.map((r: any) => {
+      const checkInLocation = location(r.checkInCoords, r.checkInLocation, r.checkInAddress, r.checkInMapsUrl);
+      const checkOutLocation = r.checkedOut
+        ? location(r.checkOutCoords, r.checkOutLocation, r.checkOutAddress, r.checkOutMapsUrl)
+        : null;
+      const toCoords = (loc: any) => (loc ? { lat: loc.latitude, lng: loc.longitude, accuracy: loc.accuracy } : null);
 
       return {
         _id: r._id,
@@ -238,28 +262,16 @@ export class LeadAttendanceService {
         checkedIn: Boolean(r.checkedIn),
         checkInTime: r.checkInTime,
         checkInFormattedTime: r.checkInFormattedTime,
-        checkInCoords: { lat: inLat, lng: inLng, accuracy: r.checkInCoords?.accuracy || 12 },
-        checkInLocation: {
-          latitude: inLat,
-          longitude: inLng,
-          accuracy: r.checkInCoords?.accuracy || 12,
-          address: inAddr,
-          mapsUrl: inMap,
-        },
+        checkInCoords: toCoords(checkInLocation),
+        checkInLocation,
         checkedOut: Boolean(r.checkedOut),
         checkOutTime: r.checkOutTime,
         checkOutFormattedTime: r.checkOutFormattedTime,
-        checkOutCoords: r.checkedOut ? { lat: outLat, lng: outLng, accuracy: r.checkOutCoords?.accuracy || 12 } : null,
-        checkOutLocation: r.checkedOut ? {
-          latitude: outLat,
-          longitude: outLng,
-          accuracy: r.checkOutCoords?.accuracy || 12,
-          address: outAddr,
-          mapsUrl: outMap,
-        } : null,
+        checkOutCoords: toCoords(checkOutLocation),
+        checkOutLocation,
         totalWorkingMinutes: r.totalWorkingMinutes || 0,
         formattedWorkingHours: r.formattedWorkingHours || "",
-        totalHours: r.totalWorkingMinutes ? Number((r.totalWorkingMinutes / 60).toFixed(1)) : (r.checkedOut ? 7.5 : 0),
+        totalHours: r.totalWorkingMinutes ? Number((r.totalWorkingMinutes / 60).toFixed(1)) : 0,
         status: r.status || (r.checkedOut ? "present" : "checked_in"),
         notes: r.notes || "",
       };

@@ -19,7 +19,6 @@ import {
   Radio,
   Share2,
   ShieldCheck,
-  ShoppingBag,
   Sparkles,
   Users,
 } from "lucide-react";
@@ -27,7 +26,7 @@ import { providerPublicService, pujaBookingService, consultationService } from "
 import { ConsultationChatModal } from "../components/ConsultationChatModal";
 import { PujaProcessButton, PujaProcessGuide } from "../components/PujaProcessGuide";
 import { WatchLiveButton } from "../components/YouTubeLive";
-import { storeApi, toStoreProduct, type StoreProduct } from "../../../services/marketplace.service";
+import { PujaSamagriSection } from "./PujaSamagriSection";
 import { getErrorMessage } from "../../../lib/api";
 import { useAuth } from "../../../contexts/AuthContext";
 import { toast } from "../../../lib/toast";
@@ -165,8 +164,6 @@ export const PublicProviderDetailPage: React.FC = () => {
   const [useWallet, setUseWallet] = useState(true);
   /** In person (home / temple), or live online on video when the pandit is live. */
   const [deliveryMode, setDeliveryMode] = useState<"IN_PERSON" | "LIVE_ONLINE">("IN_PERSON");
-  /** Marketplace products a super admin chose to show on pandit pages. */
-  const [samagri, setSamagri] = useState<StoreProduct[]>([]);
   const [showSteps, setShowSteps] = useState(false);
 
   // Consultation dialog
@@ -292,16 +289,6 @@ export const PublicProviderDetailPage: React.FC = () => {
     setBookingStartIso(slotsByDate[date]?.[0]?.iso ?? null);
   };
 
-  useEffect(() => {
-    let active = true;
-    storeApi
-      .products({ panditPages: true, limit: 8 })
-      .then((res: any) => active && setSamagri((res.data?.data ?? []).map(toStoreProduct)))
-      .catch(() => undefined);
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const loadData = useCallback(async () => {
     if (!id) return;
@@ -571,64 +558,67 @@ export const PublicProviderDetailPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FBF8F3] pb-28 dark:bg-[#071322] lg:pb-16 font-['Inter',sans-serif]">
+    <div className="min-h-screen bg-white pb-28 dark:bg-[#071322] lg:pb-16 font-['Inter',sans-serif]">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 pb-3 pt-5 sm:px-6">
-        <Link to="/pandits" className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full text-sm font-bold text-[#B45309] transition-colors hover:text-[#D97706] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28] dark:text-[#FFA44D]">
-          <ChevronLeft size={18} aria-hidden="true" />
+        <Link to="/pandits" className="inline-flex min-h-[38px] items-center gap-1.5 rounded-full text-xs sm:text-sm font-semibold text-[#B45309] transition-colors hover:text-[#D97706] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28] dark:text-[#FFA44D]">
+          <ChevronLeft size={16} aria-hidden="true" />
           All pandits &amp; acharyas
         </Link>
-        <Button variant="outline" className="!min-h-[40px] !px-5" onClick={handleShare}>
-          <Share2 size={15} aria-hidden="true" />
+        <Button variant="outline" className="!min-h-[36px] !px-4 !text-xs !font-bold rounded-full" onClick={handleShare}>
+          <Share2 size={13} aria-hidden="true" />
           Share
         </Button>
       </div>
 
       <div className="mx-auto max-w-6xl space-y-6 px-4 sm:px-6">
         {/* ── Identity ─────────────────────────────────────────────────── */}
-        <Card as="section" className="rounded-[28px] border border-amber-100/90 bg-white p-6 sm:p-8 shadow-sm dark:border-slate-800 dark:bg-[#0B192C]">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-            <Avatar name={provider.displayName} src={provider.avatarUrl} size={96} className="!rounded-2xl ring-4 ring-[#F28C28]/20 shadow-md" />
-            <div className="min-w-0 flex-1 space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full border border-[#FFE4C4] bg-gradient-to-r from-[#FFF4E5] to-[#FFF9F0] px-3 py-1 text-xs font-extrabold text-[#92400E] dark:border-[#F28C28]/40 dark:from-[#F28C28]/15 dark:to-[#F28C28]/10 dark:text-[#FFA44D]">
-                  {PROVIDER_TYPE_LABELS[provider.providerType] || provider.providerType}
-                </span>
-                {verified ? (
-                  <StatusBadge status={provider.verificationLevel} label={VERIFICATION_LEVEL_LABELS[provider.verificationLevel]} tone="success" />
-                ) : null}
-                {provider.liveOnline && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-600 px-2.5 py-0.5 text-xs font-black text-white">
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white motion-reduce:animate-none" aria-hidden="true" />
-                    Live online available
+        <Card as="section" className="rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-[#0B192C]">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-4 sm:gap-5">
+              <Avatar name={provider.displayName} src={provider.avatarUrl} size={62} className="!rounded-2xl ring-1 ring-slate-200 dark:ring-slate-700 shadow-xs shrink-0" />
+              <div className="min-w-0 space-y-1">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="rounded-full border border-amber-200/70 bg-amber-50/90 px-2.5 py-0.5 text-[11px] font-semibold text-amber-900 dark:border-[#F28C28]/40 dark:bg-[#F28C28]/15 dark:text-[#FFA44D]">
+                    {PROVIDER_TYPE_LABELS[provider.providerType] || provider.providerType}
                   </span>
+                  {verified ? (
+                    <StatusBadge status={provider.verificationLevel} label={VERIFICATION_LEVEL_LABELS[provider.verificationLevel]} tone="success" className="!text-[11px] !py-0.5 !px-2.5 !font-semibold" />
+                  ) : null}
+                  {provider.liveOnline && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-rose-600 px-2.5 py-0.5 text-[10px] font-semibold text-white">
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white motion-reduce:animate-none" aria-hidden="true" />
+                      Live online available
+                    </span>
+                  )}
+                  {(provider.stats?.completedBookings ?? 0) > 0 && (
+                    <span className="rounded-full border border-emerald-200/60 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+                      {provider.stats!.completedBookings} puja{provider.stats!.completedBookings === 1 ? "" : "s"} completed
+                    </span>
+                  )}
+                </div>
+                <h1 className="break-words text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{provider.displayName}</h1>
+                {provider.liveOnline && provider.liveYoutubeUrl && (
+                  <WatchLiveButton stream={{ youtubeUrl: provider.liveYoutubeUrl }} title={provider.displayName} label="Watch live on YouTube" className="!min-h-[32px] !px-3 !text-xs rounded-full" />
                 )}
-                {(provider.stats?.completedBookings ?? 0) > 0 && (
-                  <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
-                    {provider.stats!.completedBookings} puja{provider.stats!.completedBookings === 1 ? "" : "s"} completed on Tirvona
-                  </span>
+                {place && (
+                  <p className="flex items-center gap-1 text-xs font-normal text-slate-500 dark:text-slate-400">
+                    <MapPin size={13} className="shrink-0 text-[#F28C28]" aria-hidden="true" />
+                    {place}
+                  </p>
                 )}
               </div>
-              <h1 className="break-words text-2xl font-black tracking-tight text-[#0B192C] sm:text-4xl dark:text-white">{provider.displayName}</h1>
-              {provider.liveOnline && provider.liveYoutubeUrl && (
-                <WatchLiveButton stream={{ youtubeUrl: provider.liveYoutubeUrl }} title={provider.displayName} label="Watch live on YouTube" className="!min-h-[38px] !px-4 !text-xs" />
-              )}
-              {place && (
-                <p className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400">
-                  <MapPin size={15} className="shrink-0 text-[#F28C28]" aria-hidden="true" />
-                  {place}
-                </p>
-              )}
             </div>
-            <div className="flex flex-col gap-2.5 sm:w-60">
+
+            <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-center pt-1 sm:pt-0">
               {offerings.length > 0 && (
-                <a href="#services" className="inline-flex min-h-[46px] items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#F28C28] to-[#E07B1A] px-6 text-sm font-extrabold text-white shadow-md shadow-[#F28C28]/25 hover:from-[#D97706] hover:to-[#C66A06] transition-all">
-                  <CalendarDays size={16} aria-hidden="true" />
+                <a href="#services" className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-[#F28C28] to-[#E07B1A] px-5 text-xs font-semibold text-white shadow-xs hover:shadow hover:brightness-105 transition-all">
+                  <CalendarDays size={14} aria-hidden="true" />
                   View services
                 </a>
               )}
               {provider.consultation?.enabled && (
-                <Button variant="outline" onClick={openChatOrAsk} className="!min-h-[46px] !font-extrabold">
-                  <MessageSquare size={16} className="text-[#F28C28]" aria-hidden="true" />
+                <Button variant="outline" onClick={openChatOrAsk} className="!h-9 !px-4 !text-xs !font-semibold rounded-full border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200">
+                  <MessageSquare size={14} className="text-[#F28C28]" aria-hidden="true" />
                   {activeConsultationId ? "Open chat" : "Ask for guidance"}
                 </Button>
               )}
@@ -636,15 +626,15 @@ export const PublicProviderDetailPage: React.FC = () => {
           </div>
 
           {facts.length > 0 && (
-            <div className="mt-7 grid grid-cols-1 gap-3.5 border-t border-[#F28C28]/10 pt-6 sm:grid-cols-3 dark:border-slate-800">
+            <div className="mt-5 grid grid-cols-1 gap-2.5 border-t border-slate-100 pt-4 sm:grid-cols-3 dark:border-slate-800">
               {facts.map((f) => (
-                <div key={f.label} className="flex items-center gap-3.5 rounded-2xl border border-amber-100/80 bg-gradient-to-br from-[#FFF9F0] to-white p-4 shadow-xs dark:border-slate-800 dark:from-slate-900/60 dark:to-transparent">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F28C28]/10 text-[#F28C28]">
+                <div key={f.label} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3.5 py-2.5 shadow-xs dark:border-slate-800 dark:bg-slate-900/50">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-[#F28C28] dark:bg-amber-950/40">
                     {f.icon}
                   </div>
                   <div className="min-w-0">
-                    <span className="block text-[11px] font-extrabold uppercase tracking-wider text-gray-400">{f.label}</span>
-                    <span className="truncate text-sm font-black text-[#0B192C] dark:text-white">{f.value}</span>
+                    <span className="block text-[10px] font-medium uppercase tracking-wider text-slate-400">{f.label}</span>
+                    <span className="truncate text-xs sm:text-sm font-semibold text-slate-800 dark:text-white">{f.value}</span>
                   </div>
                 </div>
               ))}
@@ -652,290 +642,198 @@ export const PublicProviderDetailPage: React.FC = () => {
           )}
         </Card>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr,22rem] lg:items-start">
-          <div className="min-w-0 space-y-6">
-            {/* ── About ──────────────────────────────────────────────── */}
-            {(provider.bio || provider.specializations?.length > 0 || (provider.serviceCities?.length ?? 0) > 0) && (
-              <SectionCard title="About Pandit Ji">
-                {provider.bio && <p className="whitespace-pre-line text-sm leading-relaxed text-gray-700 dark:text-gray-300">{provider.bio}</p>}
-                {provider.specializations?.length > 0 && (
-                  <div className="mt-4">
-                    <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500">Specialties</h3>
-                    <ul className="flex flex-wrap gap-2">
-                      {provider.specializations.map((s) => (
-                        <li key={s} className="rounded-lg border border-[#F28C28]/15 bg-[#FFF9F0] px-3 py-1 text-xs font-medium text-[#92400E] dark:border-slate-700 dark:bg-slate-900 dark:text-gray-300">
-                          {s}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {(provider.serviceCities?.length ?? 0) > 0 && (
-                  <div className="mt-4">
-                    <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500">Service areas</h3>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{provider.serviceCities!.map((c) => c.city).join(", ")}</p>
-                  </div>
-                )}
-              </SectionCard>
-            )}
+        {/* ── Main Content Container (Wider layout with no sidebar) ── */}
+        <div className="w-full space-y-6">
+          {/* ── About ──────────────────────────────────────────────── */}
+          {(provider.bio || provider.specializations?.length > 0 || (provider.serviceCities?.length ?? 0) > 0) && (
+            <SectionCard title="About Pandit Ji">
+              {provider.bio && <p className="whitespace-pre-line text-sm leading-relaxed text-slate-600 dark:text-slate-300">{provider.bio}</p>}
+              {provider.specializations?.length > 0 && (
+                <div className="mt-3.5">
+                  <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">Specialties</h3>
+                  <ul className="flex flex-wrap gap-1.5">
+                    {provider.specializations.map((s) => (
+                      <li key={s} className="rounded-md border border-amber-200/60 bg-amber-50/70 px-2.5 py-0.5 text-xs font-medium text-amber-900 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-300">
+                        {s}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {(provider.serviceCities?.length ?? 0) > 0 && (
+                <div className="mt-3.5">
+                  <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Service areas</h3>
+                  <p className="text-xs sm:text-sm font-medium text-slate-700 dark:text-gray-300">{provider.serviceCities!.map((c) => c.city).join(", ")}</p>
+                </div>
+              )}
+            </SectionCard>
+          )}
 
-            {/* ── Services ───────────────────────────────────────────── */}
-            <section id="services" aria-labelledby="services-heading" className="scroll-mt-24 space-y-4">
-              <div>
-                <p className="mb-1 flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#B45309] dark:text-[#FFA44D]">
-                  <Flame size={14} className="text-[#F28C28]" aria-hidden="true" />
-                  Ceremonies
-                </p>
-                <h2 id="services-heading" className="text-xl font-black tracking-tight text-[#0B192C] sm:text-2xl dark:text-white">
-                  Pujas &amp; services offered
-                </h2>
-              </div>
+          {/* ── Services (Wider 2-to-3 column compact cards layout) ─────────── */}
+          <section id="services" aria-labelledby="services-heading" className="scroll-mt-24 space-y-3.5">
+            <div>
+              <p className="mb-0.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#B45309] dark:text-[#FFA44D]">
+                <Flame size={13} className="text-[#F28C28]" aria-hidden="true" />
+                Ceremonies
+              </p>
+              <h2 id="services-heading" className="text-lg sm:text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                Pujas &amp; services offered
+              </h2>
+            </div>
 
-              {offerings.length === 0 ? (
-                <Card>
-                  <EmptyState
-                    icon={<Flame size={24} />}
-                    title="No services listed yet"
-                    description={provider.consultation?.enabled ? "You can still send this provider a question." : "Check back later, or browse other providers."}
-                  />
-                </Card>
-              ) : (
-                <ul className="grid grid-cols-1 gap-5">
-                  {offerings.map((off) => {
-                    const fee = formatMinor(offeringFeeMinor(off), off.indicativeFee?.currency || off.currency || "INR");
-                    return (
-                      <li key={off.id} className="flex">
-                        <Card as="article" className="flex w-full flex-col justify-between rounded-[24px] border border-amber-100/90 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-[#F28C28]/10 hover:-translate-y-0.5 hover:border-[#F28C28]/35 dark:border-slate-800 dark:bg-[#0B192C]">
-                          <div className="space-y-3.5">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="rounded-full border border-[#FFC88A] bg-gradient-to-r from-[#FFF4E5] to-[#FFF9F0] px-3 py-1 text-[11px] font-extrabold text-[#92400E] dark:border-[#F28C28]/25 dark:from-[#F28C28]/15 dark:to-[#F28C28]/10 dark:text-[#FFC88A]">
-                                {FULFILMENT_LABELS[off.fulfilmentType] || off.fulfilmentType}
+            {offerings.length === 0 ? (
+              <Card className="p-6">
+                <EmptyState
+                  icon={<Flame size={24} />}
+                  title="No services listed yet"
+                  description={provider.consultation?.enabled ? "You can still send this provider a question." : "Check back later, or browse other providers."}
+                />
+              </Card>
+            ) : (
+              <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {offerings.map((off) => {
+                  const fee = formatMinor(offeringFeeMinor(off), off.indicativeFee?.currency || off.currency || "INR");
+                  return (
+                    <li key={off.id} className="flex">
+                      <Card as="article" className="flex w-full flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5 shadow-xs transition-all duration-200 hover:shadow-md hover:border-[#F28C28]/40 dark:border-slate-800 dark:bg-[#0B192C]">
+                        <div className="space-y-3">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="rounded-full border border-amber-200/70 bg-amber-50/80 px-2.5 py-0.5 text-[10px] font-semibold text-amber-900 dark:border-[#F28C28]/25 dark:bg-[#F28C28]/15 dark:text-[#FFC88A]">
+                              {FULFILMENT_LABELS[off.fulfilmentType] || off.fulfilmentType}
+                            </span>
+                            {off.samagriIncluded && (
+                              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+                                Puja samagri included
                               </span>
-                              {off.samagriIncluded && (
-                                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
-                                  Puja samagri included
-                                </span>
-                              )}
-                            </div>
-                            <div>
-                              <h3 className="break-words text-lg font-black tracking-tight text-[#0B192C] dark:text-white">{offeringTitle(off)}</h3>
-                              {off.variant?.titles?.en && <p className="text-xs font-medium text-gray-500">{off.variant.titles.en}</p>}
-                            </div>
-                            {off.description && <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-300">{off.description}</p>}
-                            <ul className="flex flex-wrap gap-x-5 gap-y-1.5 rounded-xl border border-[#F28C28]/10 bg-[#FBF8F3]/70 px-3.5 py-2.5 text-xs text-gray-600 dark:border-slate-800 dark:bg-slate-900/40 dark:text-gray-400">
-                              {off.durationMinutes != null && (
-                                <li className="flex items-center gap-1 font-semibold text-[#0B192C] dark:text-white">
-                                  <Clock size={13} className="text-[#B45309]" aria-hidden="true" />
-                                  {off.durationMinutes} min
-                                </li>
-                              )}
-                              {off.teamSize != null && (
-                                <li className="flex items-center gap-1">
-                                  <Users size={13} className="text-[#F28C28]" aria-hidden="true" />
-                                  {off.teamSize} priest{off.teamSize === 1 ? "" : "s"}
-                                </li>
-                              )}
-                              {off.minNoticeHours ? (
-                                <li className="flex items-center gap-1">
-                                  <CalendarDays size={13} className="text-[#B45309]" aria-hidden="true" />
-                                  Book {off.minNoticeHours}h ahead
-                                </li>
-                              ) : null}
-                            </ul>
-                            {off.inclusions && off.inclusions.length > 0 && (
-                              <div className="pt-1">
-                                <h4 className="mb-1.5 text-xs font-bold uppercase tracking-wider text-gray-400">Includes</h4>
-                                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs text-gray-700 dark:text-gray-300">
-                                  {off.inclusions.slice(0, 4).map((inc, i) => (
-                                    <li key={i} className="flex items-start gap-1.5">
-                                      <Check size={13} className="mt-0.5 shrink-0 text-emerald-600" aria-hidden="true" />
-                                      <span className="break-words">{inc}</span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
                             )}
                           </div>
-                          <div className="mt-5 flex items-center justify-between gap-4 border-t border-[#F28C28]/10 pt-4 dark:border-slate-800">
-                            <div>
-                              <p className="text-[11px] font-extrabold uppercase tracking-wider text-gray-400">Provider's fee</p>
-                              <p className="text-xl sm:text-2xl font-black tracking-tight text-[#0B192C] dark:text-white">{fee ?? "On request"}</p>
-                              {off.platformFee && off.platformFee.amountMinor > 0 && (
-                                <p className="mt-0.5 text-[11px] font-semibold text-gray-500">
-                                  + {formatMinor(off.platformFee.amountMinor, offeringCurrency(off))} platform fee ({off.platformFee.percent}%)
-                                </p>
-                              )}
-                            </div>
-                            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-                              <PujaProcessButton ritualId={(off as any).ritualId} title={offeringTitle(off)} viewer="DEVOTEE" />
-                              <Button onClick={() => handleStartBooking(off)} className="shrink-0 !min-h-[44px] !px-7 !font-extrabold">
-                                Book now
-                              </Button>
-                            </div>
+                          <div>
+                            <h3 className="break-words text-base font-semibold tracking-tight text-slate-900 dark:text-white">{offeringTitle(off)}</h3>
+                            {off.variant?.titles?.en && <p className="text-xs font-normal text-slate-500">{off.variant.titles.en}</p>}
                           </div>
-                        </Card>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </section>
-
-            {/* ── Home visits & travel ───────────────────────────────── */}
-            {(provider.travel?.willingToTravel || provider.liveOnline) && (
-              <SectionCard title="Home visits & online">
-                <ul className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
-                  {provider.travel?.willingToTravel && (
-                    <li className="flex items-start gap-3">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F28C28]/10 text-[#F28C28]" aria-hidden="true">
-                        <Home size={16} />
-                      </span>
-                      <div>
-                        <p className="font-bold text-[#0B192C] dark:text-white">Comes to your home</p>
-                        <p className="text-xs text-gray-500">
-                          {(provider.travel.modes ?? []).length
-                            ? `Travels by ${(provider.travel.modes ?? []).map((m) => TRAVEL_MODE_LABELS[m] ?? m).join(", ")}`
-                            : "Travels to devotees"}
-                          {provider.travel.maxDistanceKm ? ` · up to ${provider.travel.maxDistanceKm} km` : ""}
-                        </p>
-                        {(provider.travel.modes ?? []).length > 0 && (
-                          <p className="mt-1.5 flex flex-wrap gap-1.5">
-                            {(provider.travel.modes ?? []).map((m) => (
-                              <span key={m} className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-bold text-gray-700 dark:bg-slate-800 dark:text-gray-300">
-                                {m === "ROAD" ? <Car size={12} aria-hidden="true" /> : m === "TRAIN" ? <Bus size={12} aria-hidden="true" /> : <span aria-hidden="true">✈</span>}
-                                {TRAVEL_MODE_LABELS[m] ?? m}
-                              </span>
-                            ))}
-                          </p>
-                        )}
-                      </div>
-                    </li>
-                  )}
-                  {provider.travel?.willingToTravel && provider.travel.overnightOk && (
-                    <li className="flex items-start gap-3">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F28C28]/10 text-[#F28C28]" aria-hidden="true">
-                        <Bed size={16} />
-                      </span>
-                      <div>
-                        <p className="font-bold text-[#0B192C] dark:text-white">Can stay overnight</p>
-                        <p className="text-xs text-gray-500">
-                          {provider.travel.stayArrangement ? STAY_ARRANGEMENT_LABELS[provider.travel.stayArrangement] ?? "" : "For multi-day kathas and pujas"}
-                        </p>
-                      </div>
-                    </li>
-                  )}
-                  {provider.liveOnline && (
-                    <li className="flex items-start gap-3">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950/40" aria-hidden="true">
-                        <Radio size={16} />
-                      </span>
-                      <div>
-                        <p className="font-bold text-[#0B192C] dark:text-white">Live online katha &amp; puja</p>
-                        <p className="text-xs text-gray-500">Join from anywhere on video. Choose "Live online" when you book.</p>
-                      </div>
-                    </li>
-                  )}
-                  {provider.travel?.willingToTravel && provider.travel.notes && (
-                    <li className="rounded-xl bg-gray-50 p-3 text-xs text-gray-600 dark:bg-slate-900/60 dark:text-gray-400">{provider.travel.notes}</li>
-                  )}
-                </ul>
-              </SectionCard>
-            )}
-
-            {/* ── Puja samagri from the Tirvona Marketplace (chosen by Tirvona) ── */}
-            {samagri.length > 0 && (
-              <section aria-labelledby="samagri-heading" className="space-y-3">
-                <div className="flex items-end justify-between gap-3">
-                  <div>
-                    <p className="mb-1 flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#B45309] dark:text-[#FFA44D]">
-                      <ShoppingBag size={14} className="text-[#F28C28]" aria-hidden="true" />
-                      Tirvona Marketplace
-                    </p>
-                    <h2 id="samagri-heading" className="text-lg font-black tracking-tight text-[#0B192C] dark:text-white">Puja samagri &amp; sacred items</h2>
-                  </div>
-                  <Link to="/marketplace" className="shrink-0 text-xs font-bold text-[#B45309] hover:underline dark:text-[#FFA44D]">
-                    View all
-                  </Link>
-                </div>
-                <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  {samagri.map((item) => (
-                    <li key={item._id}>
-                      <Link
-                        to={`/marketplace/products/${item.slug}`}
-                        className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white transition-colors hover:border-[#F28C28]/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28] dark:border-slate-800 dark:bg-[#0B192C]"
-                      >
-                        <span className="block aspect-square bg-gray-50 dark:bg-slate-900">
-                          {item.images?.[0] ? (
-                            <img src={item.images[0]} alt="" loading="lazy" className="h-full w-full object-cover" />
-                          ) : (
-                            <span className="flex h-full items-center justify-center text-gray-300" aria-hidden="true">
-                              <ShoppingBag size={28} />
-                            </span>
+                          {off.description && <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300 line-clamp-2">{off.description}</p>}
+                          <ul className="flex flex-wrap gap-x-3 gap-y-1 rounded-lg border border-slate-100 bg-slate-50/80 px-2.5 py-1.5 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-900/40 dark:text-gray-400">
+                            {off.durationMinutes != null && (
+                              <li className="flex items-center gap-1 font-semibold text-slate-800 dark:text-white">
+                                <Clock size={12} className="text-[#F28C28]" aria-hidden="true" />
+                                {off.durationMinutes} min
+                              </li>
+                            )}
+                            {off.teamSize != null && (
+                              <li className="flex items-center gap-1">
+                                <Users size={12} className="text-slate-400" aria-hidden="true" />
+                                {off.teamSize} priest{off.teamSize === 1 ? "" : "s"}
+                              </li>
+                            )}
+                            {off.minNoticeHours ? (
+                              <li className="flex items-center gap-1">
+                                <CalendarDays size={12} className="text-slate-400" aria-hidden="true" />
+                                Book {off.minNoticeHours}h ahead
+                              </li>
+                            ) : null}
+                          </ul>
+                          {off.inclusions && off.inclusions.length > 0 && (
+                            <div className="pt-0.5">
+                              <h4 className="mb-1 text-[10px] font-medium uppercase tracking-wider text-slate-400">Includes</h4>
+                              <ul className="space-y-1 text-xs text-slate-600 dark:text-gray-300">
+                                {off.inclusions.slice(0, 2).map((inc, i) => (
+                                  <li key={i} className="flex items-center gap-1.5 text-[11px] truncate">
+                                    <Check size={12} className="shrink-0 text-emerald-600" aria-hidden="true" />
+                                    <span className="truncate">{inc}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
                           )}
-                        </span>
-                        <span className="flex flex-1 flex-col p-2.5">
-                          <span className="line-clamp-2 text-xs font-bold text-[#0B192C] dark:text-white">{item.name}</span>
-                          <span className="mt-auto pt-1 text-sm font-black text-[#0B192C] dark:text-white">
-                            {formatMinor(Math.round((item.sellingPrice ?? item.price) * 100))}
-                          </span>
-                        </span>
-                      </Link>
+                        </div>
+                        <div className="mt-3.5 flex items-center justify-between gap-3 border-t border-slate-100 pt-3 dark:border-slate-800">
+                          <div>
+                            <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Dakshina</p>
+                            <p className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white">{fee ?? "On request"}</p>
+                            {off.platformFee && off.platformFee.amountMinor > 0 && (
+                              <p className="text-[10px] text-slate-400">
+                                + {formatMinor(off.platformFee.amountMinor, offeringCurrency(off))} fee
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex shrink-0 items-center gap-2">
+                            <PujaProcessButton ritualId={(off as any).ritualId} title={offeringTitle(off)} viewer="DEVOTEE" />
+                            <Button onClick={() => handleStartBooking(off)} className="shrink-0 !h-8 !px-4 !text-xs !font-semibold rounded-full bg-gradient-to-r from-[#F28C28] to-[#E07B1A] text-white shadow-xs hover:shadow hover:brightness-105 transition-all">
+                              Book now
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
                     </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-          </div>
-
-          {/* ── Side panel (desktop) ─────────────────────────────────── */}
-          <aside aria-label="Booking and consultation" className="hidden space-y-4 lg:sticky lg:top-24 lg:block">
-            <Card className="space-y-4 rounded-[24px] border border-amber-100/90 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-[#0B192C]">
-              <div>
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-gray-400">Dakshina</span>
-                <h2 className="text-lg font-black text-[#0B192C] dark:text-white">Book a Vedic Puja</h2>
-              </div>
-              {startingFee ? (
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Services starting from <strong className="text-2xl font-black tracking-tight text-[#0B192C] dark:text-white">{startingFee}</strong>
-                </p>
-              ) : (
-                <p className="text-sm text-gray-600 dark:text-gray-400">No services are bookable yet.</p>
-              )}
-              <ul className="space-y-2 border-t border-b border-gray-100 py-3 text-xs text-gray-600 dark:border-slate-800 dark:text-gray-400">
-                {highlights.map((text) => (
-                  <li key={text} className="flex items-center gap-2">
-                    <CheckCircle2 size={14} className="shrink-0 text-emerald-600" />
-                    <span>{text}</span>
-                  </li>
-                ))}
+                  );
+                })}
               </ul>
-              {offerings.length > 0 && (
-                <a href="#services" className="inline-flex min-h-[46px] w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#F28C28] to-[#E07B1A] px-5 text-sm font-extrabold text-white shadow-md shadow-[#F28C28]/25 hover:from-[#D97706] hover:to-[#C66A06] transition-all">
-                  <CalendarDays size={16} />
-                  Choose a ceremony
-                </a>
-              )}
-            </Card>
-            {provider.consultation?.enabled && (
-              <Card className="space-y-4 rounded-[24px] border border-amber-100/90 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-[#0B192C]">
-                <h2 className="flex items-center gap-2 text-base font-extrabold text-[#0B192C] dark:text-white">
-                  <Sparkles size={16} className="text-[#F28C28]" aria-hidden="true" />
-                  Ask for guidance
-                </h2>
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                  Send a question and chat with {provider.displayName}.{consultFee ? <> Consultation fee: <strong>{consultFee}</strong>.</> : null}
-                </p>
-                <Button variant="outline" className="w-full !min-h-[44px] !font-extrabold" onClick={openChatOrAsk}>
-                  <MessageSquare size={16} className="text-[#F28C28]" aria-hidden="true" />
-                  {activeConsultationId ? "Open chat" : "Ask a question"}
-                </Button>
-              </Card>
             )}
-            <p className="flex items-start gap-2 px-1 text-xs text-gray-500">
-              <ShieldCheck size={14} className="mt-0.5 shrink-0 text-[#F28C28]" aria-hidden="true" />
-              {verified ? `${VERIFICATION_LEVEL_LABELS[provider.verificationLevel]} by Tirvona.` : "Verification pending."}
-            </p>
-          </aside>
+          </section>
+
+          {/* ── Home visits & travel ───────────────────────────────── */}
+          {(provider.travel?.willingToTravel || provider.liveOnline) && (
+            <SectionCard title="Home visits & online">
+              <ul className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+                {provider.travel?.willingToTravel && (
+                  <li className="flex items-start gap-3">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F28C28]/10 text-[#F28C28]" aria-hidden="true">
+                      <Home size={15} />
+                    </span>
+                    <div>
+                      <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-white">Comes to your home</p>
+                      <p className="text-xs text-gray-500">
+                        {(provider.travel.modes ?? []).length
+                          ? `Travels by ${(provider.travel.modes ?? []).map((m) => TRAVEL_MODE_LABELS[m] ?? m).join(", ")}`
+                          : "Travels to devotees"}
+                        {provider.travel.maxDistanceKm ? ` · up to ${provider.travel.maxDistanceKm} km` : ""}
+                      </p>
+                      {(provider.travel.modes ?? []).length > 0 && (
+                        <p className="mt-1 flex flex-wrap gap-1.5">
+                          {(provider.travel.modes ?? []).map((m) => (
+                            <span key={m} className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-slate-800 dark:text-gray-300">
+                              {m === "ROAD" ? <Car size={11} aria-hidden="true" /> : m === "TRAIN" ? <Bus size={11} aria-hidden="true" /> : <span aria-hidden="true">✈</span>}
+                              {TRAVEL_MODE_LABELS[m] ?? m}
+                            </span>
+                          ))}
+                        </p>
+                      )}
+                    </div>
+                  </li>
+                )}
+                {provider.travel?.willingToTravel && provider.travel.overnightOk && (
+                  <li className="flex items-start gap-3">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F28C28]/10 text-[#F28C28]" aria-hidden="true">
+                      <Bed size={15} />
+                    </span>
+                    <div>
+                      <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-white">Can stay overnight</p>
+                      <p className="text-xs text-gray-500">
+                        {provider.travel.stayArrangement ? STAY_ARRANGEMENT_LABELS[provider.travel.stayArrangement] ?? "" : "For multi-day kathas and pujas"}
+                      </p>
+                    </div>
+                  </li>
+                )}
+                {provider.liveOnline && (
+                  <li className="flex items-start gap-3">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-950/40" aria-hidden="true">
+                      <Radio size={15} />
+                    </span>
+                    <div>
+                      <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-white">Live online katha &amp; puja</p>
+                      <p className="text-xs text-gray-500">Join from anywhere on video. Choose "Live online" when you book.</p>
+                    </div>
+                  </li>
+                )}
+                {provider.travel?.willingToTravel && provider.travel.notes && (
+                  <li className="rounded-lg bg-gray-50 p-2.5 text-xs text-gray-600 dark:bg-slate-900/60 dark:text-gray-400">{provider.travel.notes}</li>
+                )}
+              </ul>
+            </SectionCard>
+          )}
+
+          {/* ── Puja samagri from the Tirvona Marketplace ── */}
+          <PujaSamagriSection />
         </div>
       </div>
 
@@ -945,7 +843,7 @@ export const PublicProviderDetailPage: React.FC = () => {
           <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="text-xs text-gray-500">{startingFee ? "Services from" : "Guidance"}</p>
-              <p className="truncate text-lg font-black text-[#0B192C] dark:text-white">{startingFee ?? consultFee ?? "Ask a question"}</p>
+              <p className="truncate text-lg font-bold text-slate-900 dark:text-white">{startingFee ?? consultFee ?? "Ask a question"}</p>
             </div>
             {offerings.length > 0 ? (
               <a href="#services" className="inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-full bg-[#F28C28] px-6 text-sm font-bold text-white hover:bg-[#D97706] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28] focus-visible:ring-offset-2">
@@ -1018,7 +916,7 @@ export const PublicProviderDetailPage: React.FC = () => {
               ))}
               <div className="flex justify-between gap-4 p-3">
                 <dt className="font-bold text-[#0B192C] dark:text-white">Total payable</dt>
-                <dd className="text-right text-base font-black text-[#0B192C] dark:text-white">
+                <dd className="text-right text-base font-bold text-slate-900 dark:text-white">
                   {formatMinor((bookingResult as any).pricing?.totalMinor, (bookingResult as any).pricing?.currency || "INR") ?? "—"}
                 </dd>
               </div>

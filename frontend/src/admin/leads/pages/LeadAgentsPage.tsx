@@ -32,6 +32,7 @@ import {
   Pencil,
   Plus,
   RefreshCw,
+  Route,
   Search,
   Trash2,
   UserCheck,
@@ -96,6 +97,30 @@ const DEFAULT_REGIONS: LeadRegion[] = [
   { state: "Uttarakhand", district: "Haridwar", source: "tirvona" },
 ];
 
+/** A From/To date filter for attendance; empty strings mean "no limit". */
+interface AttendanceRange {
+  startDate: string;
+  endDate: string;
+}
+
+const NO_RANGE: AttendanceRange = { startDate: "", endDate: "" };
+
+/** YYYY-MM-DD in IST, matching how attendance days are keyed. */
+const istDay = (date: Date) => date.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+
+const daysAgo = (n: number) => istDay(new Date(Date.now() - n * 86_400_000));
+
+const RANGE_PRESETS: { label: string; range: () => AttendanceRange }[] = [
+  { label: "Today", range: () => ({ startDate: daysAgo(0), endDate: daysAgo(0) }) },
+  { label: "Last 7 days", range: () => ({ startDate: daysAgo(6), endDate: daysAgo(0) }) },
+  { label: "This month", range: () => ({ startDate: `${daysAgo(0).slice(0, 8)}01`, endDate: daysAgo(0) }) },
+  { label: "Last 30 days", range: () => ({ startDate: daysAgo(29), endDate: daysAgo(0) }) },
+  { label: "All time", range: () => NO_RANGE },
+];
+
+const prettyDay = (value: string) =>
+  new Date(`${value}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+
 export const LeadAgentsPage: React.FC = () => {
   const [agents, setAgents] = useState<LeadUser[]>([]);
   const [total, setTotal] = useState(0);
@@ -121,6 +146,9 @@ export const LeadAgentsPage: React.FC = () => {
   const [attendanceAgent, setAttendanceAgent] = useState<LeadUser | null>(null);
   const [attendanceData, setAttendanceData] = useState<any | null>(null);
   const [loadingAttendance, setLoadingAttendance] = useState(false);
+  // The applied date filter, and the one being edited in the From/To inputs.
+  const [attendanceRange, setAttendanceRange] = useState<AttendanceRange>(NO_RANGE);
+  const [rangeDraft, setRangeDraft] = useState<AttendanceRange>(NO_RANGE);
   const [attendanceSummaryMap, setAttendanceSummaryMap] = useState<Record<string, any>>({});
   const [attendanceTodayMap, setAttendanceTodayMap] = useState<Record<string, any>>({});
 
@@ -165,18 +193,48 @@ export const LeadAgentsPage: React.FC = () => {
     }
   }, [page, debouncedSearch, loadAttendanceSummary]);
 
-  const openAttendanceModal = async (agent: LeadUser) => {
-    setAttendanceAgent(agent);
+  /** Today's open shift (checked in, not out) for an agent, if any. */
+  const onDutyShift = (agentId: string) => {
+    const today = attendanceTodayMap[String(agentId)];
+    return today?.checkedIn && !today?.checkedOut && today?._id ? today : null;
+  };
+
+  /** The monitoring page for today's shift, zoomed to where the agent is now. */
+  const liveLink = (agentId: string) =>
+    `/admin/lead-collection/agents/${agentId}/shifts/${onDutyShift(agentId)?._id}?live=1`;
+
+  const loadAttendance = async (agent: LeadUser, range: AttendanceRange) => {
     setLoadingAttendance(true);
-    setAttendanceData(null);
     try {
-      const res = await leadCollectionService.getAgentAttendance(agent._id);
+      const params: Record<string, string | number> = { limit: 100 };
+      if (range.startDate) params.startDate = range.startDate;
+      if (range.endDate) params.endDate = range.endDate;
+      const res = await leadCollectionService.getAgentAttendance(agent._id, params);
       setAttendanceData(res.data.data);
     } catch (err) {
       toast.error(getErrorMessage(err, "Could not load attendance records."));
     } finally {
       setLoadingAttendance(false);
     }
+  };
+
+  const openAttendanceModal = async (agent: LeadUser) => {
+    setAttendanceAgent(agent);
+    setAttendanceData(null);
+    setAttendanceRange(NO_RANGE);
+    setRangeDraft(NO_RANGE);
+    await loadAttendance(agent, NO_RANGE);
+  };
+
+  const applyAttendanceRange = (range: AttendanceRange) => {
+    if (!attendanceAgent) return;
+    if (range.startDate && range.endDate && range.startDate > range.endDate) {
+      toast.error("The 'From' date must be on or before the 'To' date.");
+      return;
+    }
+    setAttendanceRange(range);
+    setRangeDraft(range);
+    void loadAttendance(attendanceAgent, range);
   };
 
   const loadRegions = useCallback(async () => {
@@ -506,6 +564,16 @@ export const LeadAgentsPage: React.FC = () => {
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex items-center justify-end gap-1.5">
+                        {onDutyShift(agent._id) && (
+                          <Link
+                            to={liveLink(agent._id)}
+                            title="Where is this agent right now?"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black whitespace-nowrap"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                            Live
+                          </Link>
+                        )}
                         {(agent.role === 'field_agent' || agent.role === 'field_executive') && (
                           <button
                             title="View Attendance & GPS Location"
@@ -883,7 +951,8 @@ export const LeadAgentsPage: React.FC = () => {
         title={`Attendance & GPS Logs — ${attendanceAgent?.name || ""}`}
         subtitle={`${attendanceAgent?.role?.replace(/_/g, " ").toUpperCase() || "FIELD AGENT"} • Phone: ${attendanceAgent?.phone || "—"} • District: ${attendanceAgent?.region || "—"}`}
         icon={<MapPin size={18} className="text-[#F28C28]" />}
-        maxWidth="3xl"
+        maxWidth="7xl"
+        bodyMaxHeight="max-h-[calc(100vh-16rem)]"
         footer={
           <div className="flex justify-end">
             <EnterpriseButton
@@ -898,53 +967,171 @@ export const LeadAgentsPage: React.FC = () => {
           </div>
         }
       >
-        {loadingAttendance ? (
-          <div className="py-16 flex flex-col items-center justify-center gap-3">
-            <Loader2 className="w-7 h-7 text-[#F28C28] animate-spin" />
-            <p className="text-xs font-bold text-gray-400">Loading attendance & GPS tracking data...</p>
+        <div className="space-y-5">
+          {/* Date filter: totals below cover exactly these dates */}
+          <div className="p-3.5 rounded-xl border border-gray-100 dark:border-slate-800 bg-gray-50/60 dark:bg-slate-900/40 space-y-3">
+            <div className="flex flex-wrap gap-1.5">
+              {RANGE_PRESETS.map((preset) => {
+                const range = preset.range();
+                const active =
+                  range.startDate === attendanceRange.startDate && range.endDate === attendanceRange.endDate;
+                return (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => applyAttendanceRange(range)}
+                    disabled={loadingAttendance}
+                    className={`px-3 py-1.5 rounded-full text-[11px] font-extrabold border transition-colors disabled:opacity-60 ${
+                      active
+                        ? "bg-[#F28C28] border-[#F28C28] text-white"
+                        : "bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:border-[#F28C28]"
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                );
+              })}
+            </div>
+            <form
+              className="flex flex-col sm:flex-row sm:items-end gap-2.5"
+              onSubmit={(e) => {
+                e.preventDefault();
+                applyAttendanceRange(rangeDraft);
+              }}
+            >
+              <label className="flex-1 min-w-0">
+                <span className="block text-[10px] font-black uppercase text-gray-400 mb-1">From</span>
+                <input
+                  type="date"
+                  value={rangeDraft.startDate}
+                  max={rangeDraft.endDate || istDay(new Date())}
+                  onChange={(e) => setRangeDraft((r) => ({ ...r, startDate: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0B192C] dark:text-white"
+                />
+              </label>
+              <label className="flex-1 min-w-0">
+                <span className="block text-[10px] font-black uppercase text-gray-400 mb-1">To</span>
+                <input
+                  type="date"
+                  value={rangeDraft.endDate}
+                  min={rangeDraft.startDate || undefined}
+                  max={istDay(new Date())}
+                  onChange={(e) => setRangeDraft((r) => ({ ...r, endDate: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0B192C] dark:text-white"
+                />
+              </label>
+              <EnterpriseButton type="submit" disabled={loadingAttendance}>
+                Apply
+              </EnterpriseButton>
+            </form>
+            <p className="text-[11px] font-semibold text-gray-500">
+              Showing:{" "}
+              <strong className="text-[#0B192C] dark:text-white">
+                {attendanceRange.startDate || attendanceRange.endDate
+                  ? `${attendanceRange.startDate ? prettyDay(attendanceRange.startDate) : "the beginning"} – ${
+                      attendanceRange.endDate ? prettyDay(attendanceRange.endDate) : "today"
+                    }`
+                  : "All time"}
+              </strong>
+            </p>
           </div>
-        ) : (
-          <div className="space-y-5">
-            {/* Top Stat Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+
+          {loadingAttendance ? (
+            <div className="py-16 flex flex-col items-center justify-center gap-3">
+              <Loader2 className="w-7 h-7 text-[#F28C28] animate-spin" />
+              <p className="text-xs font-bold text-gray-400">Loading attendance & GPS tracking data...</p>
+            </div>
+          ) : (
+          <>
+            {/* Totals for the selected dates */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="p-3.5 rounded-xl border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-950/20">
+                <div className="flex items-center gap-2 text-xs font-bold text-indigo-700 dark:text-indigo-400 mb-1">
+                  <Route size={14} />
+                  Total Distance
+                </div>
+                <div className="text-2xl font-black text-[#0B192C] dark:text-white">
+                  {Number(attendanceData?.summary?.totalDistanceKm ?? 0).toFixed(1)} <span className="text-xs font-semibold text-gray-400">km</span>
+                </div>
+              </div>
+
               <div className="p-3.5 rounded-xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/50 dark:bg-blue-950/20">
                 <div className="flex items-center gap-2 text-xs font-bold text-[#F28C28] dark:text-amber-400 mb-1">
                   <Calendar size={14} />
-                  Total Days Present
+                  Days Present
                 </div>
                 <div className="text-2xl font-black text-[#0B192C] dark:text-white">
                   {attendanceData?.summary?.totalDaysPresent ?? 0} <span className="text-xs font-semibold text-gray-400">Days</span>
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-xl border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-950/20">
-                <div className="flex items-center gap-2 text-xs font-bold text-indigo-700 dark:text-indigo-400 mb-1">
-                  <Clock size={14} />
-                  Total Hours Logged
+              <div className="p-3.5 rounded-xl border border-sky-100 dark:border-sky-900/40 bg-sky-50/50 dark:bg-sky-950/20">
+                <div className="flex items-center gap-2 text-xs font-bold text-sky-700 dark:text-sky-400 mb-1">
+                  <MapPinned size={14} />
+                  Average per Day
                 </div>
                 <div className="text-2xl font-black text-[#0B192C] dark:text-white">
-                  {Number(attendanceData?.summary?.totalWorkingHours ?? 0).toFixed(1)} <span className="text-xs font-semibold text-gray-400">Hours</span>
+                  {Number(attendanceData?.summary?.averageKmPerDay ?? 0).toFixed(1)} <span className="text-xs font-semibold text-gray-400">km</span>
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-950/20">
-                <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-1">
-                  <CheckCircle2 size={14} />
-                  Today's Status
+              <div className="p-3.5 rounded-xl border border-violet-100 dark:border-violet-900/40 bg-violet-50/50 dark:bg-violet-950/20">
+                <div className="flex items-center gap-2 text-xs font-bold text-violet-700 dark:text-violet-400 mb-1">
+                  <Clock size={14} />
+                  Hours Worked
                 </div>
-                <div className="text-sm font-black text-[#0B192C] dark:text-white">
-                  {attendanceData?.records?.[0]?.date === new Date().toISOString().split("T")[0] ? (
-                    attendanceData.records[0].checkOutTime ? (
-                      <span className="text-gray-500 font-bold">Checked Out (Shift Done)</span>
-                    ) : (
-                      <span className="text-emerald-600 font-bold flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        Currently Active (Checked In)
-                      </span>
-                    )
-                  ) : (
-                    <span className="text-gray-400 font-bold">Not Logged In Today</span>
-                  )}
+                <div className="text-2xl font-black text-[#0B192C] dark:text-white">
+                  {Number(attendanceData?.summary?.totalWorkingHours ?? 0).toFixed(1)} <span className="text-xs font-semibold text-gray-400">hrs</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+              <div className="px-3.5 py-2.5 rounded-xl border border-gray-100 dark:border-slate-800">
+                <div className="text-[10px] font-black uppercase text-gray-400">Longest Day</div>
+                <div className="font-black text-[#0B192C] dark:text-white">
+                  {attendanceData?.summary?.longestDayDate
+                    ? `${Number(attendanceData.summary.longestDayKm ?? 0).toFixed(1)} km · ${prettyDay(attendanceData.summary.longestDayDate)}`
+                    : "—"}
+                </div>
+              </div>
+              <div className="px-3.5 py-2.5 rounded-xl border border-gray-100 dark:border-slate-800">
+                <div className="text-[10px] font-black uppercase text-gray-400">Days with GPS Route</div>
+                <div className="font-black text-[#0B192C] dark:text-white">
+                  {attendanceData?.summary?.daysWithRoute ?? 0} of {attendanceData?.summary?.totalDaysPresent ?? 0}
+                </div>
+              </div>
+              <div className="px-3.5 py-2.5 rounded-xl border border-gray-100 dark:border-slate-800">
+                <div className="text-[10px] font-black uppercase text-gray-400">Present / Half Day</div>
+                <div className="font-black text-[#0B192C] dark:text-white">
+                  {attendanceData?.summary?.presentDays ?? 0} / {attendanceData?.summary?.halfDays ?? 0}
+                </div>
+              </div>
+              <div className="px-3.5 py-2.5 rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/40 dark:bg-emerald-950/20">
+                <div className="text-[10px] font-black uppercase text-gray-400">Today&apos;s Status</div>
+                <div className="font-black">
+                  {(() => {
+                    const today = attendanceAgent ? attendanceTodayMap[String(attendanceAgent._id)] : null;
+                    if (!today?.checkedIn) return <span className="text-gray-400">Not checked in today</span>;
+                    if (today.checkedOut) return <span className="text-gray-500">Checked out</span>;
+                    return (
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-emerald-600 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                          On duty · location on
+                        </span>
+                        {attendanceAgent && onDutyShift(attendanceAgent._id) && (
+                          <Link
+                            to={liveLink(attendanceAgent._id)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black whitespace-nowrap"
+                          >
+                            <MapPin size={11} />
+                            Live location
+                          </Link>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
@@ -953,7 +1140,7 @@ export const LeadAgentsPage: React.FC = () => {
             <div>
               <div className="text-xs font-black text-[#0B192C] dark:text-white mb-2 flex items-center justify-between">
                 <span>Check-in & Check-out Records ({attendanceData?.records?.length || 0})</span>
-                <span className="text-[10px] font-semibold text-gray-400">Click Google Maps to verify exact on-field GPS location</span>
+                <span className="text-[10px] font-semibold text-gray-400">Location is on from check-in to check-out · click Monitor to see the full path</span>
               </div>
 
               {(!attendanceData?.records || attendanceData.records.length === 0) ? (
@@ -963,21 +1150,22 @@ export const LeadAgentsPage: React.FC = () => {
                   <p className="text-[11px] text-gray-400 mt-0.5">When the executive checks in from the mobile lead app, GPS coordinates and check-in times will appear here.</p>
                 </div>
               ) : (
-                <div className="border border-gray-100 dark:border-slate-800 rounded-xl overflow-x-auto max-h-96">
-                  <table className="w-full text-left border-collapse min-w-[650px]">
+                <div className="border border-gray-100 dark:border-slate-800 rounded-xl overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[760px]">
                     <thead>
                       <tr className="border-b border-gray-100 dark:border-slate-800 bg-gray-50/75 dark:bg-slate-900/50 text-[10px] font-black uppercase text-gray-400">
                         <th className="px-3.5 py-2.5">Date</th>
                         <th className="px-3.5 py-2.5">Check In (Time & Location)</th>
                         <th className="px-3.5 py-2.5">Check Out (Time & Location)</th>
-                        <th className="px-3.5 py-2.5">Total Duration</th>
-                        <th className="px-3.5 py-2.5 text-right">Status</th>
+                        <th className="px-3.5 py-2.5">Distance</th>
+                        <th className="px-3.5 py-2.5">Status</th>
+                        <th className="px-3.5 py-2.5 text-right">Monitoring</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
                       {attendanceData.records.map((rec: any) => (
                         <tr key={rec._id} className="hover:bg-gray-50/50 dark:hover:bg-slate-900/30 transition-colors">
-                          <td className="px-3.5 py-3 text-xs font-bold text-[#0B192C] dark:text-white align-top">
+                          <td className="px-3.5 py-3 text-xs font-bold text-[#0B192C] dark:text-white align-top whitespace-nowrap">
                             {rec.date}
                           </td>
                           <td className="px-3.5 py-3 text-xs align-top space-y-1">
@@ -1036,10 +1224,15 @@ export const LeadAgentsPage: React.FC = () => {
                               </span>
                             )}
                           </td>
-                          <td className="px-3.5 py-3 text-xs font-bold text-gray-700 dark:text-gray-300 align-top">
-                            {rec.totalHours ? `${rec.totalHours.toFixed(1)} hrs` : "—"}
+                          <td className="px-3.5 py-3 text-xs align-top">
+                            <div className="font-black text-[#0B192C] dark:text-white whitespace-nowrap">
+                              {Number(rec.distanceKm ?? 0).toFixed(2)} km
+                            </div>
+                            <div className="text-[10px] font-semibold text-gray-400 whitespace-nowrap">
+                              {rec.trackedPoints ? `${rec.trackedPoints} GPS points` : "No route recorded"}
+                            </div>
                           </td>
-                          <td className="px-3.5 py-3 text-right align-top">
+                          <td className="px-3.5 py-3 align-top">
                             <span
                               className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
                                 rec.status === "present"
@@ -1052,6 +1245,19 @@ export const LeadAgentsPage: React.FC = () => {
                               {rec.status}
                             </span>
                           </td>
+                          <td className="px-3.5 py-3 text-right align-top">
+                            {rec.checkInTime && attendanceAgent?._id ? (
+                              <Link
+                                to={`/admin/lead-collection/agents/${attendanceAgent._id}/shifts/${rec._id}`}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#F28C28] hover:bg-[#E07B1A] text-white text-[11px] font-extrabold whitespace-nowrap transition-colors"
+                              >
+                                <Route size={12} />
+                                Monitor
+                              </Link>
+                            ) : (
+                              <span className="text-[10px] text-gray-400">—</span>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -1059,8 +1265,9 @@ export const LeadAgentsPage: React.FC = () => {
                 </div>
               )}
             </div>
-          </div>
-        )}
+          </>
+          )}
+        </div>
       </EnterpriseModal>
     </div>
   );

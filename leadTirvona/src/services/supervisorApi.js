@@ -101,5 +101,9 @@ export const supervisorApi = {
     ).toString();
     return request(`/agents/${agentId}/attendance${query ? `?${query}` : ''}`);
   },
+
+  /** One check-in → check-out shift: its full path, distance, start and end. */
+  getShiftRoute: (agentId, attendanceId) =>
+    request(`/agents/${agentId}/shifts/${attendanceId}/route`),
 };
 
