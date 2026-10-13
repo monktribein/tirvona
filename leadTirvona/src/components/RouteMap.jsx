@@ -1,10 +1,12 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import GoogleRouteMap from './GoogleRouteMap';
+import { isGoogleMapsConfigured } from '../utils/googleMaps';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 /**
- * The same Leaflet + OpenStreetMap combination the main Tirvona app uses, so
- * the two surfaces render identical tiles from one provider. Kept small on
+ * Leaflet + OpenStreetMap: the fallback when no Google Maps key is configured,
+ * or Google fails to load. Kept small on
  * purpose: this app only ever draws one agent's route for one day.
  */
 const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -18,7 +20,7 @@ const pin = (colour, label) =>
     iconAnchor: [11, 11]
   });
 
-export default function RouteMap({ route = [], stops = [], height = '360px' }) {
+function LeafletRouteMap({ route = [], stops = [], height = '360px' }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const layerRef = useRef(null);
@@ -95,5 +97,18 @@ export default function RouteMap({ route = [], stops = [], height = '360px' }) {
       role="img"
       aria-label="Route travelled by the field agent"
     />
+  );
+}
+
+/**
+ * One agent's route. Google Maps (same as the main Tirvona admin) when
+ * VITE_GOOGLE_MAPS_API_KEY is set; OpenStreetMap otherwise or if Google fails.
+ */
+export default function RouteMap(props) {
+  const [useGoogle, setUseGoogle] = useState(isGoogleMapsConfigured);
+  return useGoogle ? (
+    <GoogleRouteMap {...props} onLoadError={() => setUseGoogle(false)} />
+  ) : (
+    <LeafletRouteMap {...props} />
   );
 }

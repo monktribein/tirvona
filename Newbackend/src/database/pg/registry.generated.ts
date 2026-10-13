@@ -21687,6 +21687,21 @@ export const REGISTRY: Registry = {
      "field": "userId",
      "column": "user_id",
      "kind": "objectId"
+    },
+    {
+     "field": "distanceKm",
+     "column": "distance_km",
+     "kind": "number"
+    },
+    {
+     "field": "trackedPoints",
+     "column": "tracked_points",
+     "kind": "number"
+    },
+    {
+     "field": "distanceMeasuredAt",
+     "column": "distance_measured_at",
+     "kind": "date"
     }
    ],
    "indexes": [

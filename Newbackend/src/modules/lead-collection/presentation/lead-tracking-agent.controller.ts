@@ -32,6 +32,8 @@ export class LeadTrackingAgentController {
       success: true,
       data: {
         consent: await this.tracking.getConsent(agent.id),
+        // Tracking follows the shift: on from check-in, off at check-out.
+        onDuty: await this.tracking.isOnDuty(agent.id),
         settings: this.tracking.settings(),
       },
     };

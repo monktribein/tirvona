@@ -69,7 +69,14 @@ export class DayStayBookingService {
    */
   async holdSlot(dto: DayStayHoldDto, customerId: string): Promise<any> {
     const ashram = await this.ashramModel.findById(dto.ashramId).lean();
-    if (!ashram) throw new NotFoundException("Property not found");
+    if (!ashram || ashram.deletedAt) throw new NotFoundException("Property not found");
+    // Same gate as overnight bookings: a short stay is never bookable while the stay itself is not.
+    if (ashram.status !== "approved") {
+      throw new BadRequestException("This stay is not currently accepting bookings.");
+    }
+    if (ashram.bookingPaused) {
+      throw new BadRequestException("This stay's owner has temporarily marked it unavailable for booking.");
+    }
     if (!ashram.dayStayConfig?.enabled) {
       throw new BadRequestException("Day Stay is currently disabled for this property");
     }

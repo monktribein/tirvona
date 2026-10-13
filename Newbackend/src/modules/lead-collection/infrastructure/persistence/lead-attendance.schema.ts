@@ -53,6 +53,13 @@ export const LeadAttendanceSchema = new Schema(
       index: true,
     },
     notes: { type: String, default: "" },
+
+    // Distance travelled during the shift, saved once it ends. Raw location
+    // points expire after the retention period; this total does not.
+    // null = not measured yet (still on duty, or late points arrived).
+    distanceKm: { type: Number, default: null },
+    trackedPoints: { type: Number, default: null },
+    distanceMeasuredAt: { type: Date, default: null },
   },
   {
     timestamps: true,

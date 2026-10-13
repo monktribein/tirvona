@@ -138,6 +138,34 @@ export interface TrackingAgent {
   };
 }
 
+/** One check-in → check-out shift and the route recorded during it. */
+export interface ShiftPoint {
+  at: string;
+  lat: number | null;
+  lng: number | null;
+  address: string;
+}
+
+export interface ShiftRoute {
+  attendanceId: string;
+  date: string;
+  status: string;
+  onDuty: boolean;
+  checkIn: ShiftPoint;
+  checkOut: ShiftPoint | null;
+  shiftMinutes: number;
+  summary: TrackingDay;
+}
+
+export interface ShiftRouteAgent {
+  id: string;
+  name: string;
+  phone?: string;
+  role?: string;
+  state?: string;
+  district?: string;
+}
+
 export interface TrackingLivePosition {
   agentId: string;
   agentName: string;
@@ -221,4 +249,9 @@ export const leadCollectionService = {
     ),
   getLiveTracking: () =>
     api.get<{ data: TrackingLivePosition[] }>(`${BASE}/tracking/live`),
+  /** The full route of one attendance shift, for the monitoring page. */
+  getShiftRoute: (agentId: string, attendanceId: string) =>
+    api.get<{ data: { agent: ShiftRouteAgent; shift: ShiftRoute } }>(
+      `${BASE}/agents/${agentId}/shifts/${attendanceId}/route`,
+    ),
 };

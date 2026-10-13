@@ -278,9 +278,36 @@ export class LeadSupervisorController {
       supervisor.district,
     );
 
+    const history = await this.attendance.getAgentAttendanceHistory(agentId, query);
     return {
       success: true,
-      data: await this.attendance.getAgentAttendanceHistory(agentId, query),
+      data: await this.tracking.withAttendanceDistances(agentId, history, query),
+    };
+  }
+
+  /** The full route of one shift. `findOneInDistrict` keeps it to this supervisor's agents. */
+  @Get("agents/:agentId/shifts/:attendanceId/route")
+  async getShiftRoute(
+    @CurrentLeadAgent() supervisor: AuthenticatedLeadUser,
+    @Param("agentId") agentId: string,
+    @Param("attendanceId") attendanceId: string,
+  ) {
+    const agent = await this.leadUsers.findOneInDistrict(
+      agentId,
+      supervisor.state,
+      supervisor.district,
+    );
+    return {
+      success: true,
+      data: {
+        agent: {
+          id: String(agent._id),
+          name: agent.name,
+          phone: agent.phone,
+          district: agent.district,
+        },
+        shift: await this.tracking.shiftRoute(agentId, attendanceId),
+      },
     };
   }
 

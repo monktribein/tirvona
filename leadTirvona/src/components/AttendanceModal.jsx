@@ -9,7 +9,8 @@ import { leadApi } from '../services/leadApi';
 export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpdated }) {
   const { t } = useLanguage();
   const { isCapturing, gpsError, captureCurrentLocation } = useGeolocation();
-  const { updateConsent } = useMovementTracker();
+  // Tied to the signed-in agent: tracking stops on sign-out and resumes on sign-in.
+  const { startShift, endShift, screenKeptOn } = useMovementTracker(user?.id || user?._id || null);
   const [attendance, setAttendance] = useState({
     checkedIn: false,
     checkInTime: null,
@@ -149,8 +150,8 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
         setAttendance(record);
         setStatusMsg('✅ Check-In Attendance Saved to Server with GPS Location!');
         if (onAttendanceUpdated) onAttendanceUpdated(record);
-        // Auto-start movement tracking on check-in
-        try { await updateConsent(true); } catch { /* non-blocking */ }
+        // Check-in turns location tracking on for the shift.
+        try { await startShift(); } catch { /* non-blocking */ }
       } catch (err) {
         console.error('[AttendanceModal] check-in failed:', err);
         setStatusMsg('❌ Check-in failed. Please try again.');
@@ -165,6 +166,9 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
     captureCurrentLocation(async (coords) => {
       setSubmitting(true);
       try {
+        // Upload the rest of today's route and turn location off before the
+        // shift closes, so the path ends where the agent checked out.
+        try { await endShift(); } catch { /* non-blocking */ }
         const res = await leadApi.checkOut({
           coords: {
             lat: coords.lat,
@@ -185,11 +189,11 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
         setAttendance(record);
         setStatusMsg('✅ Check-Out Saved to Server with GPS Location!');
         if (onAttendanceUpdated) onAttendanceUpdated(record);
-        // Auto-stop movement tracking on check-out
-        try { await updateConsent(false); } catch { /* non-blocking */ }
       } catch (err) {
         console.error('[AttendanceModal] check-out failed:', err);
         setStatusMsg('❌ Check-out failed. Please try again.');
+        // Still on duty, so keep recording the route.
+        try { await startShift(); } catch { /* non-blocking */ }
       } finally {
         setSubmitting(false);
       }
@@ -261,6 +265,17 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
           <div className="p-3 bg-[#0A4DA6]/5 border border-[#0A4DA6]/20 rounded-xl text-xs font-bold text-[#0A4DA6] flex items-center gap-2">
             <CheckCircle2 size={14} className="shrink-0 text-[#0A4DA6]" />
             <span>{statusMsg}</span>
+          </div>
+        )}
+
+        {/* While on duty: the route is only recorded while this app is open. */}
+        {attendance.checkedIn && !attendance.checkedOut && (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] font-semibold text-amber-800 flex items-start gap-2">
+            <Navigation size={14} className="shrink-0 mt-0.5" />
+            <span>
+              {t('Location is on for your shift. Keep this app open on screen until you check out — if you switch apps or lock the phone, your route pauses until you come back.')}
+              {screenKeptOn ? ` ${t('Screen will stay on while the app is open.')}` : ''}
+            </span>
           </div>
         )}
 

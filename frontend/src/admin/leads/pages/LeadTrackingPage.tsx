@@ -317,6 +317,7 @@ export const LeadTrackingPage: React.FC = () => {
           <TirvonaMapView
             markers={markers}
             path={day.route}
+            followRoads
             height="420px"
             fitToMarkers
             ariaLabel={`Route travelled by ${agent?.name ?? "the agent"} on ${date}`}

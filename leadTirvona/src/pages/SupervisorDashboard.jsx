@@ -36,12 +36,14 @@ import {
   ChevronDown,
   ArrowRight,
   Check,
-  CheckCheck
+  CheckCheck,
+  Route
 } from 'lucide-react';
 import { supervisorApi } from '../services/supervisorApi';
 import { formatDate } from '../utils/formatDate';
 import { useLanguage } from '../context/LanguageContext';
 import AgentTrackingView from '../components/AgentTrackingView';
+import ShiftRouteModal from '../components/ShiftRouteModal';
 
 export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldPortal }) {
   const { language: selectedLanguage, setLanguage: setSelectedLanguage, t } = useLanguage();
@@ -89,6 +91,8 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
 
   // Attendance state
   const [attendanceAgent, setAttendanceAgent] = useState(null);
+  // The shift whose route is open in the monitoring view.
+  const [routeShiftId, setRouteShiftId] = useState(null);
   const [attendanceData, setAttendanceData] = useState(null);
   const [loadingAttendance, setLoadingAttendance] = useState(false);
   const [attendanceSummaryMap, setAttendanceSummaryMap] = useState({});
@@ -1543,11 +1547,11 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
 
                   <div className="p-4 rounded-2xl border border-indigo-100 bg-indigo-50/50">
                     <div className="flex items-center gap-2 text-xs font-bold text-indigo-700 mb-1">
-                      <Clock size={14} />
-                      Total Hours Logged
+                      <Route size={14} />
+                      Total Distance Covered
                     </div>
                     <div className="text-2xl font-black text-[#0F172A]">
-                      {Number(attendanceData?.summary?.totalWorkingHours ?? 0).toFixed(1)} <span className="text-xs font-medium text-gray-500">Hours</span>
+                      {Number(attendanceData?.summary?.totalDistanceKm ?? 0).toFixed(1)} <span className="text-xs font-medium text-gray-500">km</span>
                     </div>
                   </div>
 
@@ -1557,7 +1561,7 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                       Today's Status
                     </div>
                     <div className="text-sm font-black text-[#0F172A]">
-                      {attendanceData?.records?.[0]?.date === new Date().toISOString().split('T')[0] ? (
+                      {attendanceData?.records?.[0]?.date === new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) ? (
                         attendanceData.records[0].checkOutTime ? (
                           <span className="text-gray-500 font-bold">Checked Out (Shift Ended)</span>
                         ) : (
@@ -1597,8 +1601,9 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                             <th className="px-4 py-3">Date</th>
                             <th className="px-4 py-3">Check In (Time &amp; GPS)</th>
                             <th className="px-4 py-3">Check Out (Time &amp; GPS)</th>
-                            <th className="px-4 py-3">Duration</th>
-                            <th className="px-4 py-3 text-right">Status</th>
+                            <th className="px-4 py-3">Distance</th>
+                            <th className="px-4 py-3">Status</th>
+                            <th className="px-4 py-3 text-right">Monitoring</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-[#E2E8F0] text-xs">
@@ -1663,10 +1668,15 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                                   </span>
                                 )}
                               </td>
-                              <td className="px-4 py-3 font-extrabold text-[#0F172A] align-top">
-                                {rec.totalHours ? `${rec.totalHours.toFixed(1)} hrs` : '—'}
+                              <td className="px-4 py-3 align-top">
+                                <div className="font-extrabold text-[#0F172A] whitespace-nowrap">
+                                  {Number(rec.distanceKm ?? 0).toFixed(2)} km
+                                </div>
+                                <div className="text-[10px] text-[#94A3B8] whitespace-nowrap">
+                                  {rec.trackedPoints ? `${rec.trackedPoints} GPS points` : 'No route recorded'}
+                                </div>
                               </td>
-                              <td className="px-4 py-3 text-right align-top">
+                              <td className="px-4 py-3 align-top">
                                 <span
                                   className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
                                     rec.status === 'present'
@@ -1678,6 +1688,20 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                                 >
                                   {rec.status}
                                 </span>
+                              </td>
+                              <td className="px-4 py-3 text-right align-top">
+                                {rec.checkInTime ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setRouteShiftId(rec._id)}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#0A4DA6] hover:bg-[#083D85] text-white text-[11px] font-extrabold whitespace-nowrap"
+                                  >
+                                    <Route size={12} />
+                                    Monitor
+                                  </button>
+                                ) : (
+                                  <span className="text-[10px] text-[#94A3B8]">—</span>
+                                )}
                               </td>
                             </tr>
                           ))}
@@ -1703,6 +1727,15 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
             </div>
           </div>
         </div>
+      )}
+
+      {attendanceAgent && routeShiftId && (
+        <ShiftRouteModal
+          agentId={attendanceAgent._id}
+          agentName={attendanceAgent.name}
+          attendanceId={routeShiftId}
+          onClose={() => setRouteShiftId(null)}
+        />
       )}
     </div>
   );

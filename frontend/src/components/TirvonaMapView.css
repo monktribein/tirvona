@@ -42,3 +42,17 @@
 .tirvona-map .leaflet-popup-content {
   margin: 10px 12px;
 }
+
+/* Google Maps: badge floating above a pin (the marker's label). */
+.tirvona-map .tirvona-gmap-badge {
+  background: #0b192c;
+  padding: 2px 6px;
+  border-radius: 9999px;
+  white-space: nowrap;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.tirvona-map .gm-style .gm-style-iw-c {
+  border-radius: 14px;
+  box-shadow: 0 6px 20px rgba(11, 25, 44, 0.15);
+}

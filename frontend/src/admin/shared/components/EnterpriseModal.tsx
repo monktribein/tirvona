@@ -10,6 +10,8 @@ interface EnterpriseModalProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   maxWidth?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl" | "5xl" | "6xl" | "7xl" | "full";
+  /** Height cap of the scrolling body; defaults to 70vh. */
+  bodyMaxHeight?: string;
 }
 
 export const EnterpriseModal: React.FC<EnterpriseModalProps> = ({
@@ -21,6 +23,7 @@ export const EnterpriseModal: React.FC<EnterpriseModalProps> = ({
   children,
   footer,
   maxWidth = "md",
+  bodyMaxHeight = "max-h-[70vh]",
 }) => {
   if (!isOpen) return null;
 
@@ -75,7 +78,7 @@ export const EnterpriseModal: React.FC<EnterpriseModalProps> = ({
           </button>
         </div>
 
-        <div className="max-h-[70vh] overflow-y-auto pr-1 text-xs space-y-4">
+        <div className={`${bodyMaxHeight} overflow-y-auto pr-1 text-xs space-y-4`}>
           {children}
         </div>
 

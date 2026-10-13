@@ -132,6 +132,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
       mockAshramModel.findById.mockReturnValue({
         lean: jest.fn().mockResolvedValue({
           _id: "ashram_01",
+          status: "approved",
           dayStayConfig: {
             enabled: true,
             operatingHours: { start: "08:00", end: "14:00" },
@@ -203,6 +204,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
       mockAshramModel.findById.mockReturnValue({
         lean: jest.fn().mockResolvedValue({
           _id: "ashram_01",
+          status: "approved",
           dayStayConfig: { enabled: true, operatingHours: { start: "08:00", end: "12:00" } },
         }),
       });
@@ -287,6 +289,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
       mockAshramModel.findById.mockReturnValue({
         lean: jest.fn().mockResolvedValue({
           _id: "ashram_01",
+          status: "approved",
           dayStayConfig: {
             enabled: true,
             operatingHours: { start: "06:00", end: "20:00" },
@@ -359,6 +362,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
       mockAshramModel.findById.mockReturnValue({
         lean: jest.fn().mockResolvedValue({
           _id: "ashram_01",
+          status: "approved",
           dayStayConfig: { enabled: true, operatingHours: { start: "06:00", end: "20:00" } },
         }),
       });
@@ -412,10 +416,31 @@ describe("DayStay Engine Unit & Integration Tests", () => {
       );
     });
 
+    it.each([
+      ["the stay is not approved", { status: "pending" }, /not currently accepting bookings/],
+      ["the owner paused bookings", { status: "approved", bookingPaused: true }, /temporarily marked it unavailable/],
+    ])("rejects a short stay hold when %s", async (_label, availability, message) => {
+      mockAshramModel.findById.mockReturnValue({
+        lean: jest.fn().mockResolvedValue({
+          _id: "ashram_01",
+          ...availability,
+          dayStayConfig: { enabled: true, operatingHours: { start: "06:00", end: "20:00" } },
+        }),
+      });
+
+      await expect(
+        bookingService.holdSlot(
+          { ashramId: "ashram_01", roomId: "room_01", productCode: "DAY_REST_4H", date: "2030-10-01", startTime: "09:00", guestsCount: 2 },
+          "user_01",
+        ),
+      ).rejects.toThrow(message);
+    });
+
     it("rejects hold if another user just took the final remaining slot", async () => {
       mockAshramModel.findById.mockReturnValue({
         lean: jest.fn().mockResolvedValue({
           _id: "ashram_01",
+          status: "approved",
           dayStayConfig: {
             enabled: true,
             operatingHours: { start: "06:00", end: "20:00" },
@@ -476,6 +501,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
       mockAshramModel.findById.mockReturnValue({
         lean: jest.fn().mockResolvedValue({
           _id: "ashram_01",
+          status: "approved",
           dayStayConfig: { enabled: true, operatingHours: { start: "06:00", end: "20:00" } },
         }),
       });
@@ -513,6 +539,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
     const makeAshramDoc = (): any => ({
       _id: ASHRAM_ID,
       ownerId: "owner_01",
+      status: "approved",
       dayStayConfig: { enabled: true, blackoutDates: [] },
       save: jest.fn().mockResolvedValue(true),
       markModified: jest.fn(),
@@ -697,6 +724,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
       mockAshramModel.findById.mockReturnValue({
         lean: jest.fn().mockResolvedValue({
           _id: "ashram_01",
+          status: "approved",
           dayStayConfig: { enabled: true, operatingHours: { start: "06:00", end: "20:00" } },
         }),
       });
@@ -784,6 +812,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
       mockAshramModel.findById.mockReturnValue({
         lean: jest.fn().mockResolvedValue({
           _id: "ashram_01",
+          status: "approved",
           dayStayConfig: { enabled: true, operatingHours: { start: "06:00", end: "20:00" } },
         }),
       });
@@ -872,7 +901,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
 
     it("S4. Hold fails instead of issuing a mock order when Razorpay is down", async () => {
       mockAshramModel.findById.mockReturnValue({
-        lean: jest.fn().mockResolvedValue({ _id: "ashram_01", dayStayConfig: { enabled: true } }),
+        lean: jest.fn().mockResolvedValue({ _id: "ashram_01", status: "approved", dayStayConfig: { enabled: true } }),
       });
       mockRoomModel.findOne.mockReturnValue({
         lean: jest.fn().mockResolvedValue({
@@ -899,7 +928,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
 
     it("S5. Past slots are never bookable", async () => {
       mockAshramModel.findById.mockReturnValue({
-        lean: jest.fn().mockResolvedValue({ _id: "ashram_01", dayStayConfig: { enabled: true } }),
+        lean: jest.fn().mockResolvedValue({ _id: "ashram_01", status: "approved", dayStayConfig: { enabled: true } }),
       });
       mockRoomModel.findOne.mockReturnValue({
         lean: jest.fn().mockResolvedValue({
@@ -916,7 +945,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
 
     it("S6. Slot times are IST wall-clock", async () => {
       mockAshramModel.findById.mockReturnValue({
-        lean: jest.fn().mockResolvedValue({ _id: "ashram_01", dayStayConfig: { enabled: true, operatingHours: { start: "06:00", end: "20:00" } } }),
+        lean: jest.fn().mockResolvedValue({ _id: "ashram_01", status: "approved", dayStayConfig: { enabled: true, operatingHours: { start: "06:00", end: "20:00" } } }),
       });
       mockRoomModel.findOne.mockReturnValue({
         lean: jest.fn().mockResolvedValue({
@@ -949,6 +978,7 @@ describe("DayStay Engine Unit & Integration Tests", () => {
       mockAshramModel.findById.mockReturnValue({
         lean: jest.fn().mockResolvedValue({
           _id: "ashram_01",
+          status: "approved",
           dayStayConfig: { enabled: true, operatingHours: { start: "06:00", end: "20:00" } },
         }),
       });

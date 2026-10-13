@@ -3969,6 +3969,9 @@ export const leadsLeadAttendances = leadsSchema.table("lead_attendances", {
   "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
   "version": doublePrecision("version"), // model: __v
   "userId": text("user_id"), // model: userId
+  "distanceKm": doublePrecision("distance_km"), // model: distanceKm
+  "trackedPoints": doublePrecision("tracked_points"), // model: trackedPoints
+  "distanceMeasuredAt": timestamp("distance_measured_at", { withTimezone: true, mode: "date" }), // model: distanceMeasuredAt
   _nulls: text("_nulls").array(),
   _extra: jsonb("_extra"),
 });

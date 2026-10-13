@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { leadApi } from '../services/leadApi';
 
 /**
- * Records the agent's route while they work, but only ever with their consent.
+ * Records the agent's route during a shift: location goes on at check-in and
+ * off at check-out, and only ever with their consent.
  *
  * Two things shape the design. Field agents work in villages with patchy
  * signal, so fixes are queued locally and uploaded in batches rather than one
@@ -14,15 +15,22 @@ import { leadApi } from '../services/leadApi';
  * a security control; it is battery and bandwidth economy.
  */
 
+// Each agent has their own queue, so points recorded on a shared phone are
+// never uploaded under whoever signs in next.
 const QUEUE_KEY = 'tirvona_lead_track_queue';
-const SAMPLE_MS = 60_000; // one fix a minute
-const FLUSH_EVERY = 10; // or sooner, once ten are queued
-const FLUSH_MS = 5 * 60_000;
-const MAX_QUEUE = 100; // matches the server's batch cap
+const LEGACY_QUEUE_KEY = QUEUE_KEY; // the old, unscoped queue (owner unknown)
+const SAMPLE_MS = 30_000; // one fix every 30 seconds, enough to draw the road taken
+const FLUSH_EVERY = 4; // upload every ~2 minutes so supervisors see a near-live path
+const FLUSH_MS = 2 * 60_000;
+const BATCH_SIZE = 100; // the server's cap per upload
+const MAX_QUEUE = 2000; // ~16 hours offline at one fix every 30 seconds
 
-const readQueue = () => {
+const queueKey = (agentId) => (agentId ? `${QUEUE_KEY}:${agentId}` : null);
+
+const readQueue = (key) => {
+  if (!key) return [];
   try {
-    const raw = localStorage.getItem(QUEUE_KEY);
+    const raw = localStorage.getItem(key);
     const parsed = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed : [];
   } catch {
@@ -30,41 +38,63 @@ const readQueue = () => {
   }
 };
 
-const writeQueue = (fixes) => {
+const writeQueue = (key, fixes) => {
+  if (!key) return;
   try {
-    localStorage.setItem(QUEUE_KEY, JSON.stringify(fixes.slice(-MAX_QUEUE)));
+    if (fixes.length) localStorage.setItem(key, JSON.stringify(fixes.slice(-MAX_QUEUE)));
+    else localStorage.removeItem(key);
   } catch {
     // A full or blocked storage must not take tracking down with it.
   }
 };
 
-export function useMovementTracker() {
+try {
+  // Points in the old shared queue cannot be attributed to an agent safely.
+  localStorage.removeItem(LEGACY_QUEUE_KEY);
+} catch {
+  /* storage unavailable */
+}
+
+/** `agentId` is the signed-in agent; with none, nothing is recorded. */
+export function useMovementTracker(agentId) {
   const [consent, setConsent] = useState(null);
+  const [onDuty, setOnDuty] = useState(false);
   const [tracking, setTracking] = useState(false);
   const [error, setError] = useState('');
-  const [pending, setPending] = useState(() => readQueue().length);
+  const [pending, setPending] = useState(() => readQueue(queueKey(agentId)).length);
   const [lastFixAt, setLastFixAt] = useState(null);
+  const [screenKeptOn, setScreenKeptOn] = useState(false);
 
   const watchRef = useRef(null);
+  const wakeLockRef = useRef(null);
   const timerRef = useRef(null);
-  const queueRef = useRef(readQueue());
+  const keyRef = useRef(queueKey(agentId));
+  const queueRef = useRef(readQueue(keyRef.current));
   const flushingRef = useRef(false);
 
   const persist = useCallback((fixes) => {
     queueRef.current = fixes;
-    writeQueue(fixes);
+    writeQueue(keyRef.current, fixes);
     setPending(fixes.length);
   }, []);
 
   const flush = useCallback(async () => {
-    if (flushingRef.current) return;
-    const batch = queueRef.current;
-    if (!batch.length) return;
+    if (flushingRef.current || !keyRef.current) return;
+    const owner = keyRef.current;
 
     flushingRef.current = true;
     try {
-      await leadApi.sendTrackingFixes(batch);
-      persist([]);
+      // Drain in server-sized batches (a long stretch offline leaves many).
+      for (let round = 0; round < MAX_QUEUE / BATCH_SIZE; round += 1) {
+        const batch = queueRef.current.slice(0, BATCH_SIZE);
+        if (!batch.length || keyRef.current !== owner) break;
+        const result = await leadApi.sendTrackingFixes(batch);
+        if (keyRef.current !== owner) break; // signed out mid-upload
+        // Points recorded while the batch was uploading stay queued.
+        persist(queueRef.current.slice(batch.length));
+        // The server knows the shift ended (e.g. checked out on another device).
+        if (result && result.onDuty === false) setOnDuty(false);
+      }
       setError('');
     } catch (err) {
       // Keep the queue: the points are still valid, the network was not.
@@ -75,9 +105,11 @@ export function useMovementTracker() {
   }, [persist]);
 
   const loadConsent = useCallback(async () => {
+    if (!keyRef.current) return null;
     try {
       const data = await leadApi.getTrackingConsent();
       setConsent(data?.consent ?? null);
+      setOnDuty(Boolean(data?.onDuty));
       return data?.consent ?? null;
     } catch (err) {
       setError(err.message || 'Could not read your tracking setting.');
@@ -85,9 +117,46 @@ export function useMovementTracker() {
     }
   }, []);
 
+  // Sign-in, sign-out and switching agents: swap to that agent's own queue
+  // and status. Signed out, nothing is recorded.
   useEffect(() => {
-    void loadConsent();
-  }, [loadConsent]);
+    keyRef.current = queueKey(agentId);
+    queueRef.current = readQueue(keyRef.current);
+    setPending(queueRef.current.length);
+    setConsent(null);
+    setOnDuty(false);
+    setError('');
+    if (agentId) void loadConsent();
+  }, [agentId, loadConsent]);
+
+  /**
+   * A browser stops reporting location once the phone locks. Holding a screen
+   * wake lock during the shift keeps the screen (and so the route) alive while
+   * the app is open. The browser drops it whenever the app is hidden, so it is
+   * taken again each time the agent comes back.
+   */
+  const acquireWakeLock = useCallback(async () => {
+    if (!('wakeLock' in navigator) || document.hidden || wakeLockRef.current) return;
+    try {
+      const lock = await navigator.wakeLock.request('screen');
+      wakeLockRef.current = lock;
+      setScreenKeptOn(true);
+      lock.addEventListener('release', () => {
+        if (wakeLockRef.current === lock) wakeLockRef.current = null;
+        setScreenKeptOn(false);
+      });
+    } catch {
+      // Battery saver or an unsupported browser: tracking still runs while open.
+      setScreenKeptOn(false);
+    }
+  }, []);
+
+  const releaseWakeLock = useCallback(() => {
+    const lock = wakeLockRef.current;
+    wakeLockRef.current = null;
+    setScreenKeptOn(false);
+    lock?.release().catch(() => undefined);
+  }, []);
 
   const stop = useCallback(() => {
     if (watchRef.current != null) {
@@ -98,8 +167,9 @@ export function useMovementTracker() {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
+    releaseWakeLock();
     setTracking(false);
-  }, []);
+  }, [releaseWakeLock]);
 
   const start = useCallback(() => {
     if (!navigator.geolocation) {
@@ -112,6 +182,7 @@ export function useMovementTracker() {
 
     watchRef.current = navigator.geolocation.watchPosition(
       (position) => {
+        if (!keyRef.current) return; // signed out: record nothing
         const now = Date.now();
         // watchPosition fires far more often than we need to store.
         if (now - lastSampleAt < SAMPLE_MS) return;
@@ -159,7 +230,8 @@ export function useMovementTracker() {
 
     timerRef.current = setInterval(() => void flush(), FLUSH_MS);
     setTracking(true);
-  }, [flush, persist, stop]);
+    void acquireWakeLock();
+  }, [flush, persist, stop, acquireWakeLock]);
 
   /** Turning consent on starts the watch; turning it off stops it at once. */
   const updateConsent = useCallback(
@@ -184,20 +256,44 @@ export function useMovementTracker() {
     [persist, start, stop]
   );
 
-  // Resume automatically for an agent who already consented, and push any
-  // fixes left over from a previous session.
+  /** Check-in: location on. Consent is recorded the first time. */
+  const startShift = useCallback(async () => {
+    if (!consent?.granted) await updateConsent(true);
+    setOnDuty(true);
+    start();
+  }, [consent?.granted, start, updateConsent]);
+
+  /**
+   * Check-out: upload everything recorded during the shift first, then turn
+   * location off. Call this before the check-out request so the last stretch
+   * of the route is not lost.
+   */
+  const endShift = useCallback(async () => {
+    await flush();
+    stop();
+    setOnDuty(false);
+  }, [flush, stop]);
+
+  // Push fixes left over from an earlier visit, then resume the watch only
+  // while the agent is checked in: no location is collected off duty.
   useEffect(() => {
-    if (consent?.granted) {
-      start();
-      void flush();
-    }
+    if (!consent?.granted) return undefined;
+    void flush();
+    if (onDuty) start();
+    else stop();
     return stop;
-  }, [consent?.granted, start, stop, flush]);
+  }, [consent?.granted, onDuty, start, stop, flush]);
 
   // A backgrounded tab may be frozen without warning; send what we have.
+  // Coming back during a shift keeps the screen on again and uploads anything
+  // queued while away.
   useEffect(() => {
     const onHide = () => {
       if (document.hidden) void flush();
+      else if (watchRef.current != null) {
+        void acquireWakeLock();
+        void flush();
+      }
     };
     document.addEventListener('visibilitychange', onHide);
     window.addEventListener('pagehide', onHide);
@@ -205,15 +301,19 @@ export function useMovementTracker() {
       document.removeEventListener('visibilitychange', onHide);
       window.removeEventListener('pagehide', onHide);
     };
-  }, [flush]);
+  }, [flush, acquireWakeLock]);
 
   return {
     consent,
+    onDuty,
     tracking,
     error,
     pending,
     lastFixAt,
+    screenKeptOn,
     updateConsent,
+    startShift,
+    endShift,
     flush,
     reload: loadConsent
   };

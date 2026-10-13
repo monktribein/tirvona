@@ -247,9 +247,33 @@ export class LeadAdminController {
     @Param("id") id: string,
     @Query() query: AttendanceQueryDto,
   ) {
+    const history = await this.attendanceService.getAgentAttendanceHistory(id, query);
     return {
       success: true,
-      data: await this.attendanceService.getAgentAttendanceHistory(id, query),
+      data: await this.tracking.withAttendanceDistances(id, history, query),
+    };
+  }
+
+  /** The full route of one check-in → check-out shift, for the monitoring map. */
+  @Get("agents/:agentId/shifts/:attendanceId/route")
+  async shiftRoute(
+    @Param("agentId") agentId: string,
+    @Param("attendanceId") attendanceId: string,
+  ) {
+    const agent = await this.leadUsers.findOne(agentId);
+    return {
+      success: true,
+      data: {
+        agent: {
+          id: String(agent._id),
+          name: agent.name,
+          phone: agent.phone,
+          role: agent.role,
+          state: agent.state,
+          district: agent.district,
+        },
+        shift: await this.tracking.shiftRoute(agentId, attendanceId),
+      },
     };
   }
 

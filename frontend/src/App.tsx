@@ -260,6 +260,9 @@ const LeadTrackingPage = lazy(
   () => import("./admin/leads/pages/LeadTrackingPage"),
 );
 const LeadAgentsPage = lazy(() => import("./admin/leads/pages/LeadAgentsPage"));
+const LeadShiftRoutePage = lazy(
+  () => import("./admin/leads/pages/LeadShiftRoutePage"),
+);
 const TempleSearchPage = lazy(() => import("./pages/temples/TempleSearchPage"));
 const TempleDetailPage = lazy(() => import("./pages/temples/TempleDetailPage"));
 const TempleManagementPage = lazy(() => import("./admin/temples/pages/TempleManagementPage"));
@@ -1207,6 +1210,10 @@ const AppContent: React.FC = () => {
             <Route
               path="/admin/lead-collection/agents"
               element={<LeadAgentsPage />}
+            />
+            <Route
+              path="/admin/lead-collection/agents/:agentId/shifts/:attendanceId"
+              element={<LeadShiftRoutePage />}
             />
             <Route path="/admin/temples" element={<TempleManagementPage />} />
             <Route path="/admin/temples/new" element={<AddEditTemplePage />} />
