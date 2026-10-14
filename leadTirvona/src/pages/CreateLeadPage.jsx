@@ -69,10 +69,6 @@ export default function CreateLeadPage({
   const agentNotesRecognitionRef = useRef(null);
   const notesBaseRef = useRef('');
   const agentNotesBaseRef = useRef('');
-  const formDataRef = useRef(formData);
-  useEffect(() => {
-    formDataRef.current = formData;
-  }, [formData]);
 
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
@@ -133,6 +129,9 @@ export default function CreateLeadPage({
     }
     return INITIAL_FORM;
   });
+
+  const formDataRef = useRef(formData);
+  formDataRef.current = formData;
 
   useEffect(() => {
     setFormData(getFreshFormData(editingLead, assignedJurisdiction));
