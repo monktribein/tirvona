@@ -46,6 +46,7 @@ import {
   Clock,
   Send,
   BookOpen,
+  SlidersHorizontal,
 } from "lucide-react";
 import {
   checkAshramBookingAvailable,
@@ -796,6 +797,16 @@ export const DashboardLayout: React.FC = () => {
         { label: "Bookings", path: "/admin/pandits/bookings" },
         { label: "Consultations", path: "/admin/pandits/consultations" },
         { label: "Pandit Withdrawals", path: "/admin/pandits/withdrawals" },
+      ],
+    },
+    {
+      groupName: "System Settings",
+      icon: <SlidersHorizontal size={15} />,
+      links: [
+        {
+          label: "Total Rooms",
+          path: "/admin/system-settings/total-rooms",
+        },
       ],
     },
     {

@@ -26,6 +26,18 @@ export const PlatformSettingsSchema = new Schema(
       fileName: { type: String, default: "" },
       volume: { type: Number, default: 0.7, min: 0, max: 1 },
     },
+    totalRoomsOverride: {
+      enabled: { type: Boolean, default: false },
+      totalRooms: { type: Number, default: null },
+      registeredRooms: { type: Number, default: null },
+      onlineRooms: { type: Number, default: null },
+      offlineRooms: { type: Number, default: null },
+      availableRooms: { type: Number, default: null },
+      bookedRooms: { type: Number, default: null },
+      occupiedRooms: { type: Number, default: null },
+      blockedRooms: { type: Number, default: null },
+      heldRooms: { type: Number, default: null },
+    },
     updatedBy: { type: Schema.Types.ObjectId, ref: "User" },
   },
   {

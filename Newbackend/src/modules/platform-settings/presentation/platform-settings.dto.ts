@@ -43,6 +43,20 @@ export class NotificationSoundDto {
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(1) volume?: number;
 }
 
+export class TotalRoomsOverrideDto {
+  @IsOptional() @IsBoolean() enabled?: boolean;
+  @IsOptional() @Type(() => Number) @IsNumber() totalRooms?: number | null;
+  @IsOptional() @Type(() => Number) @IsNumber() registeredRooms?: number | null;
+  @IsOptional() @Type(() => Number) @IsNumber() onlineRooms?: number | null;
+  @IsOptional() @Type(() => Number) @IsNumber() offlineRooms?: number | null;
+  @IsOptional() @Type(() => Number) @IsNumber() availableRooms?: number | null;
+  @IsOptional() @Type(() => Number) @IsNumber() bookedRooms?: number | null;
+  @IsOptional() @Type(() => Number) @IsNumber() occupiedRooms?: number | null;
+  @IsOptional() @Type(() => Number) @IsNumber() blockedRooms?: number | null;
+  @IsOptional() @Type(() => Number) @IsNumber() heldRooms?: number | null;
+  @IsOptional() @IsString() updatedAt?: string | null;
+}
+
 export class UpdatePlatformSettingsDto {
   @IsOptional()
   @ValidateNested()
@@ -65,4 +79,8 @@ export class UpdatePlatformSettingsDto {
   @ValidateNested()
   @Type(() => NotificationSoundDto)
   notificationSound?: NotificationSoundDto;
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => TotalRoomsOverrideDto)
+  totalRoomsOverride?: TotalRoomsOverrideDto;
 }

@@ -596,7 +596,8 @@ export const dayStayService = {
 
 export const platformSettingsService = {
   getSettings: () => api.get("/platform-settings"),
-  updateSettings: (data: unknown) => api.put("/platform-settings", data),
+  updateSettings: (data: unknown, options?: { skipToast?: boolean }) =>
+    api.put("/platform-settings", data, options),
 };
 
 /**

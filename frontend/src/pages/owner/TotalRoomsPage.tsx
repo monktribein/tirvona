@@ -1,6 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { LayoutGrid, Loader2, RefreshCw } from "lucide-react";
 import { roomService } from "../../services";
+import {
+  totalRoomsSettingsService,
+  getLocalOverride,
+  OVERRIDE_EVENT_KEY,
+  type TotalRoomsOverrideConfig,
+} from "../../services/totalRoomsSettings.service";
 import { getErrorMessage } from "../../lib/api";
 import { useNotifications } from "../../contexts/NotificationContext";
 import { EnterprisePageHeader } from "../../admin/shared/components/EnterprisePageHeader";
@@ -75,6 +81,7 @@ export const TotalRoomsPage: React.FC = () => {
   const { addNotification } = useNotifications();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [override, setOverride] = useState<TotalRoomsOverrideConfig>(getLocalOverride());
   const [filters, setFilters] = useState({
     ashramId: "",
     date: today(),
@@ -83,6 +90,27 @@ export const TotalRoomsPage: React.FC = () => {
     status: "all",
     search: "",
   });
+
+  useEffect(() => {
+    setOverride(totalRoomsSettingsService.getOverride());
+    const handleOverrideChange = (e: Event) => {
+      const customEvent = e as CustomEvent<TotalRoomsOverrideConfig>;
+      if (customEvent.detail) {
+        setOverride(customEvent.detail);
+      } else {
+        setOverride(getLocalOverride());
+      }
+    };
+    const syncFromStorage = () => {
+      setOverride(getLocalOverride());
+    };
+    window.addEventListener(OVERRIDE_EVENT_KEY, handleOverrideChange);
+    window.addEventListener("storage", syncFromStorage);
+    return () => {
+      window.removeEventListener(OVERRIDE_EVENT_KEY, handleOverrideChange);
+      window.removeEventListener("storage", syncFromStorage);
+    };
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -122,9 +150,77 @@ export const TotalRoomsPage: React.FC = () => {
   const field =
     "w-full px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-[#F28C28]";
 
-  const totals = summary?.totals;
+  const rawTotals = summary?.totals;
   const rooms = summary?.rooms ?? [];
   const showAshramColumn = !filters.ashramId;
+
+  const totals = useMemo(() => {
+    if (!rawTotals) return null;
+    const hasAnyOverride =
+      Boolean(override.enabled) &&
+      (override.offlineRooms !== null && override.offlineRooms !== undefined ||
+        override.totalRooms !== null && override.totalRooms !== undefined ||
+        override.registeredRooms !== null && override.registeredRooms !== undefined ||
+        override.onlineRooms !== null && override.onlineRooms !== undefined ||
+        override.availableRooms !== null && override.availableRooms !== undefined ||
+        override.bookedRooms !== null && override.bookedRooms !== undefined ||
+        override.occupiedRooms !== null && override.occupiedRooms !== undefined ||
+        override.blockedRooms !== null && override.blockedRooms !== undefined ||
+        override.heldRooms !== null && override.heldRooms !== undefined);
+
+    if (!hasAnyOverride) return rawTotals;
+
+    const effOnline =
+      override.onlineRooms !== null && override.onlineRooms !== undefined
+        ? override.onlineRooms
+        : rawTotals.onlineRooms;
+    const effOffline =
+      override.offlineRooms !== null && override.offlineRooms !== undefined
+        ? override.offlineRooms
+        : rawTotals.offlineRooms;
+    const effTotal =
+      override.totalRooms !== null && override.totalRooms !== undefined
+        ? override.totalRooms
+        : effOnline + effOffline;
+    const effBooked =
+      override.bookedRooms !== null && override.bookedRooms !== undefined
+        ? override.bookedRooms
+        : rawTotals.bookedRooms;
+    const effOccupied =
+      override.occupiedRooms !== null && override.occupiedRooms !== undefined
+        ? override.occupiedRooms
+        : rawTotals.occupiedRooms;
+    const effOccupancy =
+      effTotal > 0
+        ? Math.min(100, Math.round(((effBooked + effOccupied) / effTotal) * 100))
+        : rawTotals.occupancyRate;
+
+    return {
+      ...rawTotals,
+      totalRooms: effTotal,
+      registeredRooms:
+        override.registeredRooms !== null && override.registeredRooms !== undefined
+          ? override.registeredRooms
+          : effTotal,
+      onlineRooms: effOnline,
+      offlineRooms: effOffline,
+      availableRooms:
+        override.availableRooms !== null && override.availableRooms !== undefined
+          ? override.availableRooms
+          : rawTotals.availableRooms,
+      bookedRooms: effBooked,
+      occupiedRooms: effOccupied,
+      blockedRooms:
+        override.blockedRooms !== null && override.blockedRooms !== undefined
+          ? override.blockedRooms
+          : rawTotals.blockedRooms,
+      heldRooms:
+        override.heldRooms !== null && override.heldRooms !== undefined
+          ? override.heldRooms
+          : rawTotals.heldRooms,
+      occupancyRate: effOccupancy,
+    };
+  }, [rawTotals, override]);
 
   const tiles = useMemo(
     () =>

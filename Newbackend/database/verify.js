@@ -4,7 +4,7 @@
  * check the API runs at startup), and that no migration is pending.
  */
 const path = require("path");
-const { BACKEND_DIR, loadEnv, registerTypeScript, redact, migrationFiles, connect } = require("./lib");
+const { BACKEND_DIR, registerTypeScript, redact, migrationFiles, connect, databaseUrl } = require("./lib");
 
 registerTypeScript();
 const { REGISTRY } = require(path.join(BACKEND_DIR, "src/database/pg/registry.generated.ts"));
@@ -12,8 +12,7 @@ const { PgStore } = require(path.join(BACKEND_DIR, "src/database/pg/pg-store.ts"
 const { nodePgPool } = require(path.join(BACKEND_DIR, "src/database/pg/pool.ts"));
 
 (async () => {
-  const url = loadEnv().SUPABASE_DB_URL;
-  if (!url) throw new Error("SUPABASE_DB_URL is not set");
+  const url = databaseUrl();
   const pool = nodePgPool(url, { max: 1, applicationName: "tirvona-db-verify" });
   try {
     await new PgStore(pool, REGISTRY).verifySchema();

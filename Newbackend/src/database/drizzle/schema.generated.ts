@@ -3081,6 +3081,7 @@ export const platformSettings = pgTable("platform_settings", {
   "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
   "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
   "version": doublePrecision("version"), // model: __v
+  "totalRoomsOverride": jsonb("total_rooms_override"), // model: totalRoomsOverride
   _nulls: text("_nulls").array(),
   _extra: jsonb("_extra"),
 });
