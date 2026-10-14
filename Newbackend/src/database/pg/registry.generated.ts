@@ -17026,6 +17026,11 @@ export const REGISTRY: Registry = {
      "field": "__v",
      "column": "version",
      "kind": "number"
+    },
+    {
+     "field": "totalRoomsOverride",
+     "column": "total_rooms_override",
+     "kind": "json"
     }
    ],
    "indexes": [

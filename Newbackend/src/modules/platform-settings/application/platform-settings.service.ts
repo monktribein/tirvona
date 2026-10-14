@@ -32,6 +32,18 @@ export class PlatformSettingsService {
             fileName: "",
             volume: 0.7,
           },
+          totalRoomsOverride: {
+            enabled: false,
+            totalRooms: null,
+            registeredRooms: null,
+            onlineRooms: null,
+            offlineRooms: null,
+            availableRooms: null,
+            bookedRooms: null,
+            occupiedRooms: null,
+            blockedRooms: null,
+            heldRooms: null,
+          },
         },
       },
       { upsert: true, returnDocument: "after" },
@@ -84,6 +96,21 @@ export class PlatformSettingsService {
         (sound.enabled !== undefined
           ? sound.enabled
           : Boolean(row.notificationSound?.enabled)) && Boolean(nextUrl);
+    }
+
+    if (dto.totalRoomsOverride) {
+      const ov = dto.totalRoomsOverride;
+      if (ov.enabled !== undefined) update["totalRoomsOverride.enabled"] = ov.enabled;
+      if (ov.totalRooms !== undefined) update["totalRoomsOverride.totalRooms"] = ov.totalRooms;
+      if (ov.registeredRooms !== undefined) update["totalRoomsOverride.registeredRooms"] = ov.registeredRooms;
+      if (ov.onlineRooms !== undefined) update["totalRoomsOverride.onlineRooms"] = ov.onlineRooms;
+      if (ov.offlineRooms !== undefined) update["totalRoomsOverride.offlineRooms"] = ov.offlineRooms;
+      if (ov.availableRooms !== undefined) update["totalRoomsOverride.availableRooms"] = ov.availableRooms;
+      if (ov.bookedRooms !== undefined) update["totalRoomsOverride.bookedRooms"] = ov.bookedRooms;
+      if (ov.occupiedRooms !== undefined) update["totalRoomsOverride.occupiedRooms"] = ov.occupiedRooms;
+      if (ov.blockedRooms !== undefined) update["totalRoomsOverride.blockedRooms"] = ov.blockedRooms;
+      if (ov.heldRooms !== undefined) update["totalRoomsOverride.heldRooms"] = ov.heldRooms;
+      update["totalRoomsOverride.updatedAt"] = ov.updatedAt || new Date().toISOString();
     }
 
     return this.settings.findOneAndUpdate(

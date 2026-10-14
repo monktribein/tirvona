@@ -200,6 +200,9 @@ const EnterpriseModulePage = lazy(
 const AdminPlatformSettingsPage = lazy(
   () => import("./pages/admin/AdminPlatformSettingsPage"),
 );
+const TotalRoomsSettingsPage = lazy(
+  () => import("./pages/admin/TotalRoomsSettingsPage"),
+);
 const EnterpriseNotificationCenterPage = lazy(() =>
   import("./admin/notifications/pages/EnterpriseNotificationCenterPage").then(
     (m) => ({ default: m.EnterpriseNotificationCenterPage }),
@@ -1249,6 +1252,14 @@ const AppContent: React.FC = () => {
             <Route
               path="/admin/manage/platform-settings"
               element={<AdminPlatformSettingsPage />}
+            />
+            <Route
+              path="/admin/system-settings/total-rooms"
+              element={<TotalRoomsSettingsPage />}
+            />
+            <Route
+              path="/admin/system-settings"
+              element={<Navigate to="/admin/system-settings/total-rooms" replace />}
             />
             <Route
               path="/admin/enterprise-notifications/:subSection?"
