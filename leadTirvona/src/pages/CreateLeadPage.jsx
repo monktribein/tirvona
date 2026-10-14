@@ -236,6 +236,42 @@ export default function CreateLeadPage({
     }));
   };
 
+  // Mobile Chrome emits cumulative/overlapping results; merge them without repeats.
+  const mergeSpeechResults = (results) => {
+    const finals = [];
+    let interim = '';
+    const norm = (s) => s.toLowerCase().replace(/\s+/g, ' ').trim();
+    for (let i = 0; i < results.length; i++) {
+      const res = results[i];
+      const text = (res[0]?.transcript || '').trim();
+      if (!text) continue;
+      if (!res.isFinal) {
+        interim = text;
+        continue;
+      }
+      const last = finals[finals.length - 1];
+      if (last !== undefined) {
+        const a = norm(last);
+        const b = norm(text);
+        if (b === a || a.startsWith(b)) continue;
+        if (b.startsWith(a)) { finals[finals.length - 1] = text; continue; }
+      }
+      finals.push(text);
+    }
+    // Drop interim text that merely repeats what is already final
+    const finalText = finals.join(' ');
+    const nf = norm(finalText);
+    const ni = norm(interim);
+    if (ni && (nf.endsWith(ni) || nf.includes(ni))) interim = '';
+    else if (ni && finals.length) {
+      const lastN = norm(finals[finals.length - 1]);
+      if (ni.startsWith(lastN)) {
+        finals.pop();
+      }
+    }
+    return [finals.join(' '), interim].filter(Boolean).join(' ');
+  };
+
   const toggleVoiceDictation = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -271,26 +307,7 @@ export default function CreateLeadPage({
       };
 
       recognition.onresult = (event) => {
-        let sessionFinal = '';
-        let sessionInterim = '';
-
-        for (let i = 0; i < event.results.length; i++) {
-          const res = event.results[i];
-          const text = (res[0]?.transcript || '').trim();
-          if (!text) continue;
-
-          if (res.isFinal) {
-            if (!sessionFinal.endsWith(text)) {
-              sessionFinal = sessionFinal ? `${sessionFinal} ${text}` : text;
-            }
-          } else {
-            sessionInterim = sessionInterim ? `${sessionInterim} ${text}` : text;
-          }
-        }
-
-        const dictation = sessionFinal
-          ? (sessionInterim ? `${sessionFinal} ${sessionInterim}` : sessionFinal)
-          : sessionInterim;
+        const dictation = mergeSpeechResults(event.results);
 
         const base = notesBaseRef.current;
         const newNotes = base ? (dictation ? `${base} ${dictation}` : base) : dictation;
@@ -356,26 +373,7 @@ export default function CreateLeadPage({
       };
 
       recognition.onresult = (event) => {
-        let sessionFinal = '';
-        let sessionInterim = '';
-
-        for (let i = 0; i < event.results.length; i++) {
-          const res = event.results[i];
-          const text = (res[0]?.transcript || '').trim();
-          if (!text) continue;
-
-          if (res.isFinal) {
-            if (!sessionFinal.endsWith(text)) {
-              sessionFinal = sessionFinal ? `${sessionFinal} ${text}` : text;
-            }
-          } else {
-            sessionInterim = sessionInterim ? `${sessionInterim} ${text}` : text;
-          }
-        }
-
-        const dictation = sessionFinal
-          ? (sessionInterim ? `${sessionFinal} ${sessionInterim}` : sessionFinal)
-          : sessionInterim;
+        const dictation = mergeSpeechResults(event.results);
 
         const base = agentNotesBaseRef.current;
         const newNotes = base ? (dictation ? `${base} ${dictation}` : base) : dictation;
