@@ -67,6 +67,12 @@ export default function CreateLeadPage({
   const [isListeningAgentNotes, setIsListeningAgentNotes] = useState(false);
   const recognitionRef = useRef(null);
   const agentNotesRecognitionRef = useRef(null);
+  const notesBaseRef = useRef('');
+  const agentNotesBaseRef = useRef('');
+  const formDataRef = useRef(formData);
+  useEffect(() => {
+    formDataRef.current = formData;
+  }, [formData]);
 
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
@@ -205,6 +211,12 @@ export default function CreateLeadPage({
 
   useEffect(() => () => {
     cameraStreamRef.current?.getTracks().forEach(track => track.stop());
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch (e) {}
+    }
+    if (agentNotesRecognitionRef.current) {
+      try { agentNotesRecognitionRef.current.stop(); } catch (e) {}
+    }
   }, []);
 
   useEffect(() => {
@@ -234,11 +246,20 @@ export default function CreateLeadPage({
 
     if (isListening) {
       if (recognitionRef.current) {
-        recognitionRef.current.stop();
+        try { recognitionRef.current.stop(); } catch (e) {}
       }
       setIsListening(false);
       return;
     }
+
+    // Stop agent notes recognition if active
+    if (agentNotesRecognitionRef.current) {
+      try { agentNotesRecognitionRef.current.stop(); } catch (e) {}
+      setIsListeningAgentNotes(false);
+    }
+
+    // Snapshot base text so speech dictation appends cleanly without repeating
+    notesBaseRef.current = (formDataRef.current?.notes || '').trim();
 
     try {
       const recognition = new SpeechRecognition();
@@ -251,28 +272,46 @@ export default function CreateLeadPage({
       };
 
       recognition.onresult = (event) => {
-        let finalTranscript = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript + ' ';
+        let sessionFinal = '';
+        let sessionInterim = '';
+
+        for (let i = 0; i < event.results.length; i++) {
+          const res = event.results[i];
+          const text = (res[0]?.transcript || '').trim();
+          if (!text) continue;
+
+          if (res.isFinal) {
+            if (!sessionFinal.endsWith(text)) {
+              sessionFinal = sessionFinal ? `${sessionFinal} ${text}` : text;
+            }
+          } else {
+            sessionInterim = sessionInterim ? `${sessionInterim} ${text}` : text;
           }
         }
-        if (finalTranscript) {
-          setFormData(prev => ({
-            ...prev,
-            notes: (prev.notes ? prev.notes + ' ' : '') + finalTranscript
-          }));
-        }
+
+        const dictation = sessionFinal
+          ? (sessionInterim ? `${sessionFinal} ${sessionInterim}` : sessionFinal)
+          : sessionInterim;
+
+        const base = notesBaseRef.current;
+        const newNotes = base ? (dictation ? `${base} ${dictation}` : base) : dictation;
+
+        setFormData(prev => ({
+          ...prev,
+          notes: newNotes
+        }));
       };
 
       recognition.onerror = (err) => {
-        console.error('Speech recognition error:', err);
-        setIsListening(false);
+        console.warn('Speech recognition notice/error:', err?.error || err);
+        if (err?.error === 'not-allowed' || err?.error === 'audio-capture') {
+          setIsListening(false);
+        }
       };
 
       recognition.onend = () => {
         setIsListening(false);
+        recognitionRef.current = null;
       };
 
       recognitionRef.current = recognition;
@@ -292,11 +331,20 @@ export default function CreateLeadPage({
 
     if (isListeningAgentNotes) {
       if (agentNotesRecognitionRef.current) {
-        agentNotesRecognitionRef.current.stop();
+        try { agentNotesRecognitionRef.current.stop(); } catch (e) {}
       }
       setIsListeningAgentNotes(false);
       return;
     }
+
+    // Stop discussion notes recognition if active
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch (e) {}
+      setIsListening(false);
+    }
+
+    // Snapshot base text so speech dictation appends cleanly without repeating
+    agentNotesBaseRef.current = (formDataRef.current?.agentNotes || '').trim();
 
     try {
       const recognition = new SpeechRecognition();
@@ -309,28 +357,46 @@ export default function CreateLeadPage({
       };
 
       recognition.onresult = (event) => {
-        let finalTranscript = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript + ' ';
+        let sessionFinal = '';
+        let sessionInterim = '';
+
+        for (let i = 0; i < event.results.length; i++) {
+          const res = event.results[i];
+          const text = (res[0]?.transcript || '').trim();
+          if (!text) continue;
+
+          if (res.isFinal) {
+            if (!sessionFinal.endsWith(text)) {
+              sessionFinal = sessionFinal ? `${sessionFinal} ${text}` : text;
+            }
+          } else {
+            sessionInterim = sessionInterim ? `${sessionInterim} ${text}` : text;
           }
         }
-        if (finalTranscript) {
-          setFormData(prev => ({
-            ...prev,
-            agentNotes: (prev.agentNotes ? prev.agentNotes + ' ' : '') + finalTranscript
-          }));
-        }
+
+        const dictation = sessionFinal
+          ? (sessionInterim ? `${sessionFinal} ${sessionInterim}` : sessionFinal)
+          : sessionInterim;
+
+        const base = agentNotesBaseRef.current;
+        const newNotes = base ? (dictation ? `${base} ${dictation}` : base) : dictation;
+
+        setFormData(prev => ({
+          ...prev,
+          agentNotes: newNotes
+        }));
       };
 
       recognition.onerror = (err) => {
-        console.error('Speech recognition error:', err);
-        setIsListeningAgentNotes(false);
+        console.warn('Speech recognition notice/error:', err?.error || err);
+        if (err?.error === 'not-allowed' || err?.error === 'audio-capture') {
+          setIsListeningAgentNotes(false);
+        }
       };
 
       recognition.onend = () => {
         setIsListeningAgentNotes(false);
+        agentNotesRecognitionRef.current = null;
       };
 
       agentNotesRecognitionRef.current = recognition;
