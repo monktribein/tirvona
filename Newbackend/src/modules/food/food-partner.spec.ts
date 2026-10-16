@@ -2,7 +2,6 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
-  NotFoundException,
 } from "@nestjs/common";
 import bcrypt from "bcryptjs";
 import { FoodPartnerService } from "./application/food-partner.service";

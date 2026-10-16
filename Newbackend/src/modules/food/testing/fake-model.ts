@@ -33,7 +33,10 @@ export function fakeModel(initial: any[] = []) {
         return row;
       },
       toObject() {
-        const { set, save, toObject, ...plain } = row;
+        const plain = { ...row };
+        delete plain.set;
+        delete plain.save;
+        delete plain.toObject;
         return plain;
       },
     });

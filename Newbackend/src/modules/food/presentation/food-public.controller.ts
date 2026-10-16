@@ -7,7 +7,6 @@ import {
   Param,
   Post,
   Query,
-  Req,
 } from "@nestjs/common";
 import { Public } from "../../../common/decorators/public.decorator";
 import { CurrentUser } from "../../../common/decorators/current-user.decorator";

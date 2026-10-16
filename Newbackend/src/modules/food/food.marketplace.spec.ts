@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   ForbiddenException,
-  NotFoundException,
 } from "@nestjs/common";
 import { FoodCatalogService } from "./application/food-catalog.service";
 import { FoodQuoteService } from "./application/food-quote.service";
@@ -11,10 +10,8 @@ import { FoodPaymentService } from "./application/food-payment.service";
 import { FoodVendorService } from "./application/food-vendor.service";
 import { FoodAdminService } from "./application/food-admin.service";
 import {
-  FOOD_ORDER_STATUSES,
   LAUNCH_BOWLS,
   LAUNCH_COMBOS,
-  PILOT_SERVICE_ZONES,
   THALI_VARIANTS,
 } from "./domain/food.constants";
 

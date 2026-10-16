@@ -10,7 +10,6 @@ import type { Model } from "../../../database/orm";
 import { FoodQuoteService } from "./food-quote.service";
 import { FoodFinanceService } from "./food-finance.service";
 import { randomBytes } from "crypto";
-import { FOOD_ORDER_STATUSES } from "../domain/food.constants";
 
 export interface CreateOrderDto {
   quoteId: string;
