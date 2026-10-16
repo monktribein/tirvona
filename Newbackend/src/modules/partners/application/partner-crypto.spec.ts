@@ -1,5 +1,5 @@
 import { PartnerCryptoService } from "../application/partner-crypto.service";
-import { ConfigService } from "@nestjs/config";
+import type { ConfigService } from "@nestjs/config";
 
 describe("PartnerCryptoService", () => {
   let service: PartnerCryptoService;

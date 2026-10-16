@@ -1,6 +1,5 @@
 import { Module } from "@nestjs/common";
 import { BullModule } from "@nestjs/bullmq";
-import { ConfigService } from "@nestjs/config";
 import { OrmModule } from "../../database/orm-nest";
 import { PARTNER_WEBHOOK_QUEUE } from "./domain/partner.constants";
 import {

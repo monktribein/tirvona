@@ -25,7 +25,7 @@ export class PartnerWebhookWorker extends WorkerHost {
   }
 
   async process(job: Job<WebhookDispatchJobData>): Promise<void> {
-    const { eventId, webhookId, partnerId, eventType } = job.data;
+    const { eventId, webhookId, eventType } = job.data;
     const attemptNumber = job.attemptsMade + 1;
     const startedAt = Date.now();
 
