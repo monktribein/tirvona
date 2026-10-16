@@ -4614,3 +4614,105 @@ export const providerWithdrawals = pgTable("provider_withdrawals", {
   _nulls: text("_nulls").array(),
   _extra: jsonb("_extra"),
 });
+
+/** public.partner_api_keys */
+export const partnerApiKeys = pgTable("partner_api_keys", {
+  id: text("id").primaryKey(), // model: _id
+  "partnerId": text("partner_id"), // model: partnerId
+  "name": text("name"), // model: name
+  "keyPrefix": text("key_prefix"), // model: keyPrefix
+  "secretHash": text("secret_hash"), // model: secretHash
+  "environment": text("environment"), // model: environment
+  "permissions": text("permissions").array(), // model: permissions
+  "status": text("status"), // model: status
+  "expiresAt": timestamp("expires_at", { withTimezone: true, mode: "date" }), // model: expiresAt
+  "lastUsedAt": timestamp("last_used_at", { withTimezone: true, mode: "date" }), // model: lastUsedAt
+  "revokedAt": timestamp("revoked_at", { withTimezone: true, mode: "date" }), // model: revokedAt
+  "revokedBy": text("revoked_by"), // model: revokedBy
+  "createdBy": text("created_by"), // model: createdBy
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.partner_webhook_delivery_logs */
+export const partnerWebhookDeliveryLogs = pgTable("partner_webhook_delivery_logs", {
+  id: text("id").primaryKey(), // model: _id
+  "eventId": text("event_id"), // model: eventId
+  "webhookId": text("webhook_id"), // model: webhookId
+  "partnerId": text("partner_id"), // model: partnerId
+  "url": text("url"), // model: url
+  "eventType": text("event_type"), // model: eventType
+  "status": text("status"), // model: status
+  "attemptNumber": doublePrecision("attempt_number"), // model: attemptNumber
+  "responseStatusCode": doublePrecision("response_status_code"), // model: responseStatusCode
+  "responseBody": text("response_body"), // model: responseBody
+  "errorMessage": text("error_message"), // model: errorMessage
+  "durationMs": doublePrecision("duration_ms"), // model: durationMs
+  "deliveredAt": timestamp("delivered_at", { withTimezone: true, mode: "date" }), // model: deliveredAt
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.partner_webhook_events */
+export const partnerWebhookEvents = pgTable("partner_webhook_events", {
+  id: text("id").primaryKey(), // model: _id
+  "eventId": text("event_id"), // model: eventId
+  "partnerId": text("partner_id"), // model: partnerId
+  "webhookId": text("webhook_id"), // model: webhookId
+  "eventType": text("event_type"), // model: eventType
+  "payload": jsonb("payload"), // model: payload
+  "status": text("status"), // model: status
+  "attempts": doublePrecision("attempts"), // model: attempts
+  "nextAttemptAt": timestamp("next_attempt_at", { withTimezone: true, mode: "date" }), // model: nextAttemptAt
+  "lastAttemptAt": timestamp("last_attempt_at", { withTimezone: true, mode: "date" }), // model: lastAttemptAt
+  "lastError": text("last_error"), // model: lastError
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.partner_webhooks */
+export const partnerWebhooks = pgTable("partner_webhooks", {
+  id: text("id").primaryKey(), // model: _id
+  "partnerId": text("partner_id"), // model: partnerId
+  "url": text("url"), // model: url
+  "description": text("description"), // model: description
+  "subscribedEvents": text("subscribed_events").array(), // model: subscribedEvents
+  "status": text("status"), // model: status
+  "secretCiphertext": text("secret_ciphertext"), // model: secretCiphertext
+  "secretIv": text("secret_iv"), // model: secretIv
+  "secretTag": text("secret_tag"), // model: secretTag
+  "secretLast4": text("secret_last4"), // model: secretLast4
+  "createdBy": text("created_by"), // model: createdBy
+  "updatedBy": text("updated_by"), // model: updatedBy
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.partners */
+export const partners = pgTable("partners", {
+  id: text("id").primaryKey(), // model: _id
+  "name": text("name"), // model: name
+  "slug": text("slug"), // model: slug
+  "contactEmail": text("contact_email"), // model: contactEmail
+  "contactPhone": text("contact_phone"), // model: contactPhone
+  "description": text("description"), // model: description
+  "environment": text("environment"), // model: environment
+  "status": text("status"), // model: status
+  "allowedPermissions": text("allowed_permissions").array(), // model: allowedPermissions
+  "scopedAshramIds": text("scoped_ashram_ids").array(), // model: scopedAshramIds
+  "rateLimitPerMinute": doublePrecision("rate_limit_per_minute"), // model: rateLimitPerMinute
+  "createdBy": text("created_by"), // model: createdBy
+  "updatedBy": text("updated_by"), // model: updatedBy
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});

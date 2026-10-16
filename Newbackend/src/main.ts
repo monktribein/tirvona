@@ -91,9 +91,16 @@ async function bootstrap(): Promise<void> {
   if (config.get<boolean>("swaggerEnabled")) {
     const swagger = new DocumentBuilder()
       .setTitle("Tirvona API")
-      .setDescription("Frontend-compatible Tirvona platform API")
+      .setDescription(
+        "Tirvona Platform API and Partner Developer Platform (v1)\n\n" +
+          "### Partner Authentication\n" +
+          "Partner endpoints under `/api/v1/` require an API Key supplied in the `X-API-Key` header with either `tv_test_` or `tv_live_` prefix.\n\n" +
+          "### Webhook Signatures\n" +
+          "Webhook event deliveries contain the header `X-Tirvona-Signature: t=<timestamp>,v1=<signature>`, where signature is an HMAC-SHA256 hex digest of `t=<timestamp>.<rawPayload>` keyed by your webhook signing secret (`whsec_...`).",
+      )
       .setVersion("1.0")
       .addBearerAuth()
+      .addApiKey({ type: "apiKey", name: "X-API-Key", in: "header" }, "ApiKeyAuth")
       .build();
     SwaggerModule.setup(
       "api/docs",

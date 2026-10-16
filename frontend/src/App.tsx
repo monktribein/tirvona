@@ -332,6 +332,9 @@ const SmartContactProfileDetailPage = lazy(
 const SmartContactAnalyticsPage = lazy(
   () => import("./admin/smart-contact/pages/SmartContactAnalyticsPage"),
 );
+const DeveloperApiPage = lazy(
+  () => import("./admin/developer-api/DeveloperApiPage"),
+);
 
 const namedPage = <T extends Record<string, React.ComponentType<any>>>(
   loader: () => Promise<T>,
@@ -1264,6 +1267,10 @@ const AppContent: React.FC = () => {
             <Route
               path="/admin/enterprise-notifications/:subSection?"
               element={<EnterpriseNotificationCenterPage />}
+            />
+            <Route
+              path="/admin/developer-api"
+              element={<DeveloperApiPage />}
             />
             <Route
               path="/admin/parking/control"

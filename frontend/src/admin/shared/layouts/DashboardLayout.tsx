@@ -47,6 +47,7 @@ import {
   Send,
   BookOpen,
   SlidersHorizontal,
+  Code,
 } from "lucide-react";
 import {
   checkAshramBookingAvailable,
@@ -91,6 +92,7 @@ const SIDEBAR_SEQUENCE = [
   "reports",
   "system",
   "notification",
+  "developer api",
 ] as const;
 
 const MATERIAL_ICON_BY_SECTION: Array<[string, string]> = [
@@ -124,6 +126,7 @@ const MATERIAL_ICON_BY_SECTION: Array<[string, string]> = [
   ["reports", "analytics"],
   ["system", "admin_panel_settings"],
   ["notification", "notifications"],
+  ["developer api", "code"],
 ];
 
 const materialIconFor = (label: string): string => {
@@ -817,6 +820,13 @@ export const DashboardLayout: React.FC = () => {
           label: "Notification Center",
           path: "/admin/enterprise-notifications",
         },
+      ],
+    },
+    {
+      groupName: "Developer API",
+      icon: <Code size={15} />,
+      links: [
+        { label: "Developer API", path: "/admin/developer-api" },
       ],
     },
   ];
