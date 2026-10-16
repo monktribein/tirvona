@@ -48,6 +48,7 @@ import {
   BookOpen,
   SlidersHorizontal,
   Code,
+  UtensilsCrossed,
 } from "lucide-react";
 import {
   checkAshramBookingAvailable,
@@ -79,6 +80,7 @@ const SIDEBAR_SEQUENCE = [
   "support",
   "offers",
   "marketplace",
+  "food",
   "local services",
   "content",
   "homepage",
@@ -113,6 +115,7 @@ const MATERIAL_ICON_BY_SECTION: Array<[string, string]> = [
   ["support", "support_agent"],
   ["offers", "sell"],
   ["marketplace", "storefront"],
+  ["food", "restaurant"],
   ["local services", "home_repair_service"],
   ["content", "campaign"],
   ["homepage", "image"],
@@ -233,6 +236,14 @@ const SUPPORT_ADMIN_LINKS = [
   { label: "Support Staff", path: "/admin/support/staff" },
   { label: "Support Categories", path: "/admin/support/categories" },
 ];
+/** Super Admin food console: restaurants, approvals, menus, orders and payouts. */
+const FOOD_ADMIN_LINKS = [
+  { label: "Restaurants", path: "/admin/food/vendors" },
+  { label: "Awaiting Approval", path: "/admin/food/vendors?status=pending_verification" },
+  { label: "Create Restaurant", path: "/admin/food/vendors?new=1" },
+  { label: "Orders, Exceptions & Payouts", path: "/admin/food" },
+];
+
 /** For roles that only handle some categories (marketplace/finance/service managers, national admin). */
 const SUPPORT_HANDLER_GROUP: NavGroup = {
   groupName: "Support Tickets",
@@ -241,6 +252,27 @@ const SUPPORT_HANDLER_GROUP: NavGroup = {
     ["/admin/support", "/admin/support/tickets", "/admin/support/tickets?view=mine", "/admin/support/tickets?view=unassigned"].includes(l.path),
   ),
 };
+
+/** Restaurant owner console; shown on every /restaurant page (the restaurant belongs to the user, not to a role). */
+const RESTAURANT_GROUPS: NavGroup[] = [
+  {
+    groupName: "Kitchen Orders",
+    icon: <ClipboardList size={15} />,
+    links: [
+      { label: "Live Orders", path: "/restaurant/dashboard" },
+    ],
+  },
+  {
+    groupName: "Menu & Inventory",
+    icon: <UtensilsCrossed size={15} />,
+    links: [{ label: "Dishes, Prices & Stock", path: "/restaurant/menu" }],
+  },
+  {
+    groupName: "My Restaurant",
+    icon: <Building2 size={15} />,
+    links: [{ label: "Profile, Kitchens & Payout", path: "/restaurant/profile" }],
+  },
+];
 
 /** Seller console; shown on every /vendor page (the store belongs to the user, not to a role). */
 const VENDOR_GROUPS: NavGroup[] = [
@@ -316,7 +348,9 @@ export const DashboardLayout: React.FC = () => {
   const roleLabel =
     location.pathname.startsWith("/vendor") && ["customer", "pilgrim"].includes(String(user?.role))
       ? "Seller"
-      : getFormattedRole(user?.role);
+      : location.pathname.startsWith("/restaurant") && ["customer", "pilgrim"].includes(String(user?.role))
+        ? "Restaurant Owner"
+        : getFormattedRole(user?.role);
 
   const refreshOwnerStays = React.useCallback(async () => {
     if (!isStayOwnerOrAdmin) return;
@@ -702,6 +736,11 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
+      groupName: "Food & Dining",
+      icon: <UtensilsCrossed size={15} />,
+      links: FOOD_ADMIN_LINKS,
+    },
+    {
       groupName: "Homepage Banners",
       icon: <Image size={15} />,
       links: [
@@ -1029,6 +1068,16 @@ export const DashboardLayout: React.FC = () => {
           icon: <LayoutDashboard size={16} className="text-[#F28C28]" />,
         },
         groups: VENDOR_GROUPS,
+      };
+    }
+    if (location.pathname.startsWith("/restaurant")) {
+      return {
+        topLink: {
+          label: "Restaurant Dashboard",
+          path: "/restaurant/dashboard",
+          icon: <LayoutDashboard size={16} className="text-[#F28C28]" />,
+        },
+        groups: RESTAURANT_GROUPS,
       };
     }
     if (location.pathname.startsWith("/provider")) {

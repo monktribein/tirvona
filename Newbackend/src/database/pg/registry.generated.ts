@@ -25731,6 +25731,1666 @@ export const REGISTRY: Registry = {
      "enforced": true
     }
    ]
+  },
+  {
+   "database": "test",
+   "collection": "food_cart_items",
+   "schema": "public",
+   "table": "food_cart_items",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "cartId",
+     "column": "cart_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "variantId",
+     "column": "variant_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "quantity",
+     "column": "quantity",
+     "kind": "number"
+    },
+    {
+     "field": "customerNotes",
+     "column": "customer_notes",
+     "kind": "string"
+    },
+    {
+     "field": "addedPricePaise",
+     "column": "added_price_paise",
+     "kind": "number"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": []
+  },
+  {
+   "database": "test",
+   "collection": "food_carts",
+   "schema": "public",
+   "table": "food_carts",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "customerId",
+     "column": "customer_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "sessionId",
+     "column": "session_id",
+     "kind": "string"
+    },
+    {
+     "field": "outletId",
+     "column": "outlet_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "specialInstructions",
+     "column": "special_instructions",
+     "kind": "string"
+    },
+    {
+     "field": "expiresAt",
+     "column": "expires_at",
+     "kind": "date"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "sessionId_1",
+     "keys": {
+      "sessionId": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "expiresAt_1",
+     "keys": {
+      "expiresAt": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "food_delivery_tasks",
+   "schema": "public",
+   "table": "food_delivery_tasks",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "orderId",
+     "column": "order_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "outletId",
+     "column": "outlet_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "fulfilmentMode",
+     "column": "fulfilment_mode",
+     "kind": "string"
+    },
+    {
+     "field": "pickupAddress",
+     "column": "pickup_address",
+     "kind": "string"
+    },
+    {
+     "field": "destinationAddress",
+     "column": "destination_address",
+     "kind": "string"
+    },
+    {
+     "field": "stayId",
+     "column": "stay_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "roomNumber",
+     "column": "room_number",
+     "kind": "string"
+    },
+    {
+     "field": "otpCode",
+     "column": "otp_code",
+     "kind": "string"
+    },
+    {
+     "field": "proofUrl",
+     "column": "proof_url",
+     "kind": "string"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "deliveredAt",
+     "column": "delivered_at",
+     "kind": "date"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "status_1",
+     "keys": {
+      "status": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "food_ledger_entries",
+   "schema": "public",
+   "table": "food_ledger_entries",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "entryId",
+     "column": "entry_id",
+     "kind": "string"
+    },
+    {
+     "field": "orderId",
+     "column": "order_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "entryType",
+     "column": "entry_type",
+     "kind": "string"
+    },
+    {
+     "field": "account",
+     "column": "account",
+     "kind": "string"
+    },
+    {
+     "field": "debitPaise",
+     "column": "debit_paise",
+     "kind": "number"
+    },
+    {
+     "field": "creditPaise",
+     "column": "credit_paise",
+     "kind": "number"
+    },
+    {
+     "field": "description",
+     "column": "description",
+     "kind": "string"
+    },
+    {
+     "field": "referenceId",
+     "column": "reference_id",
+     "kind": "string"
+    },
+    {
+     "field": "actorId",
+     "column": "actor_id",
+     "kind": "string"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "entryId_1",
+     "keys": {
+      "entryId": 1
+     },
+     "unique": true,
+     "enforced": true
+    },
+    {
+     "name": "entryType_1",
+     "keys": {
+      "entryType": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "account_1",
+     "keys": {
+      "account": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "food_order_events",
+   "schema": "public",
+   "table": "food_order_events",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "orderId",
+     "column": "order_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "fromStatus",
+     "column": "from_status",
+     "kind": "string"
+    },
+    {
+     "field": "toStatus",
+     "column": "to_status",
+     "kind": "string"
+    },
+    {
+     "field": "actorType",
+     "column": "actor_type",
+     "kind": "string"
+    },
+    {
+     "field": "actorId",
+     "column": "actor_id",
+     "kind": "string"
+    },
+    {
+     "field": "reason",
+     "column": "reason",
+     "kind": "string"
+    },
+    {
+     "field": "metadata",
+     "column": "metadata",
+     "kind": "json"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": []
+  },
+  {
+   "database": "test",
+   "collection": "food_order_items",
+   "schema": "public",
+   "table": "food_order_items",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "orderId",
+     "column": "order_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "variantId",
+     "column": "variant_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "sku",
+     "column": "sku",
+     "kind": "string"
+    },
+    {
+     "field": "name",
+     "column": "name",
+     "kind": "string"
+    },
+    {
+     "field": "quantity",
+     "column": "quantity",
+     "kind": "number"
+    },
+    {
+     "field": "unitPricePaise",
+     "column": "unit_price_paise",
+     "kind": "number"
+    },
+    {
+     "field": "totalPricePaise",
+     "column": "total_price_paise",
+     "kind": "number"
+    },
+    {
+     "field": "dietaryTags",
+     "column": "dietary_tags",
+     "kind": "string[]"
+    },
+    {
+     "field": "contents",
+     "column": "contents",
+     "kind": "string"
+    },
+    {
+     "field": "portion",
+     "column": "portion",
+     "kind": "string"
+    },
+    {
+     "field": "customerNotes",
+     "column": "customer_notes",
+     "kind": "string"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": []
+  },
+  {
+   "database": "test",
+   "collection": "food_orders",
+   "schema": "public",
+   "table": "food_orders",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "orderNumber",
+     "column": "order_number",
+     "kind": "string"
+    },
+    {
+     "field": "quoteId",
+     "column": "quote_id",
+     "kind": "string"
+    },
+    {
+     "field": "customerId",
+     "column": "customer_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "sessionId",
+     "column": "session_id",
+     "kind": "string"
+    },
+    {
+     "field": "customerName",
+     "column": "customer_name",
+     "kind": "string"
+    },
+    {
+     "field": "customerPhone",
+     "column": "customer_phone",
+     "kind": "string"
+    },
+    {
+     "field": "customerEmail",
+     "column": "customer_email",
+     "kind": "string"
+    },
+    {
+     "field": "outletId",
+     "column": "outlet_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "bookingId",
+     "column": "booking_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "stayRoomNumber",
+     "column": "stay_room_number",
+     "kind": "string"
+    },
+    {
+     "field": "fulfilmentType",
+     "column": "fulfilment_type",
+     "kind": "string"
+    },
+    {
+     "field": "deliveryAddress",
+     "column": "delivery_address",
+     "kind": "string"
+    },
+    {
+     "field": "deliveryInstructions",
+     "column": "delivery_instructions",
+     "kind": "string"
+    },
+    {
+     "field": "orderStatus",
+     "column": "order_status",
+     "kind": "string"
+    },
+    {
+     "field": "paymentStatus",
+     "column": "payment_status",
+     "kind": "string"
+    },
+    {
+     "field": "rejectionReason",
+     "column": "rejection_reason",
+     "kind": "string"
+    },
+    {
+     "field": "subtotalPaise",
+     "column": "subtotal_paise",
+     "kind": "number"
+    },
+    {
+     "field": "deliveryFeePaise",
+     "column": "delivery_fee_paise",
+     "kind": "number"
+    },
+    {
+     "field": "packagingFeePaise",
+     "column": "packaging_fee_paise",
+     "kind": "number"
+    },
+    {
+     "field": "taxPaise",
+     "column": "tax_paise",
+     "kind": "number"
+    },
+    {
+     "field": "discountPaise",
+     "column": "discount_paise",
+     "kind": "number"
+    },
+    {
+     "field": "totalPaise",
+     "column": "total_paise",
+     "kind": "number"
+    },
+    {
+     "field": "vendorAcceptanceDeadline",
+     "column": "vendor_acceptance_deadline",
+     "kind": "date"
+    },
+    {
+     "field": "vendorAcceptedAt",
+     "column": "vendor_accepted_at",
+     "kind": "date"
+    },
+    {
+     "field": "preparedAt",
+     "column": "prepared_at",
+     "kind": "date"
+    },
+    {
+     "field": "readyAt",
+     "column": "ready_at",
+     "kind": "date"
+    },
+    {
+     "field": "outForDeliveryAt",
+     "column": "out_for_delivery_at",
+     "kind": "date"
+    },
+    {
+     "field": "deliveredAt",
+     "column": "delivered_at",
+     "kind": "date"
+    },
+    {
+     "field": "completedAt",
+     "column": "completed_at",
+     "kind": "date"
+    },
+    {
+     "field": "cancelledAt",
+     "column": "cancelled_at",
+     "kind": "date"
+    },
+    {
+     "field": "idempotencyKey",
+     "column": "idempotency_key",
+     "kind": "string"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "orderNumber_1",
+     "keys": {
+      "orderNumber": 1
+     },
+     "unique": true,
+     "enforced": true
+    },
+    {
+     "name": "orderStatus_1",
+     "keys": {
+      "orderStatus": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "paymentStatus_1",
+     "keys": {
+      "paymentStatus": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "vendorAcceptanceDeadline_1",
+     "keys": {
+      "vendorAcceptanceDeadline": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "idempotencyKey_1",
+     "keys": {
+      "idempotencyKey": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "food_outlets",
+   "schema": "public",
+   "table": "food_outlets",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "vendorId",
+     "column": "vendor_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "brandName",
+     "column": "brand_name",
+     "kind": "string"
+    },
+    {
+     "field": "address",
+     "column": "address",
+     "kind": "string"
+    },
+    {
+     "field": "lat",
+     "column": "lat",
+     "kind": "number"
+    },
+    {
+     "field": "lng",
+     "column": "lng",
+     "kind": "number"
+    },
+    {
+     "field": "openTime",
+     "column": "open_time",
+     "kind": "string"
+    },
+    {
+     "field": "closeTime",
+     "column": "close_time",
+     "kind": "string"
+    },
+    {
+     "field": "serviceZoneCodes",
+     "column": "service_zone_codes",
+     "kind": "string[]"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "fulfilmentModes",
+     "column": "fulfilment_modes",
+     "kind": "string[]"
+    },
+    {
+     "field": "contactPhone",
+     "column": "contact_phone",
+     "kind": "string"
+    },
+    {
+     "field": "capacityPerHour",
+     "column": "capacity_per_hour",
+     "kind": "number"
+    },
+    {
+     "field": "commissionRateBps",
+     "column": "commission_rate_bps",
+     "kind": "number"
+    },
+    {
+     "field": "minOrderPaise",
+     "column": "min_order_paise",
+     "kind": "number"
+    },
+    {
+     "field": "avgPrepMinutes",
+     "column": "avg_prep_minutes",
+     "kind": "number"
+    },
+    {
+     "field": "isPaused",
+     "column": "is_paused",
+     "kind": "boolean"
+    },
+    {
+     "field": "rating",
+     "column": "rating",
+     "kind": "number"
+    },
+    {
+     "field": "ratingCount",
+     "column": "rating_count",
+     "kind": "number"
+    },
+    {
+     "field": "imageUrl",
+     "column": "image_url",
+     "kind": "string"
+    },
+    {
+     "field": "description",
+     "column": "description",
+     "kind": "string"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "status_1",
+     "keys": {
+      "status": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "isPaused_1",
+     "keys": {
+      "isPaused": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "food_payment_attempts",
+   "schema": "public",
+   "table": "food_payment_attempts",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "orderId",
+     "column": "order_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "gatewayProvider",
+     "column": "gateway_provider",
+     "kind": "string"
+    },
+    {
+     "field": "gatewayOrderId",
+     "column": "gateway_order_id",
+     "kind": "string"
+    },
+    {
+     "field": "gatewayPaymentId",
+     "column": "gateway_payment_id",
+     "kind": "string"
+    },
+    {
+     "field": "gatewaySignature",
+     "column": "gateway_signature",
+     "kind": "string"
+    },
+    {
+     "field": "amountPaise",
+     "column": "amount_paise",
+     "kind": "number"
+    },
+    {
+     "field": "currency",
+     "column": "currency",
+     "kind": "string"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "webhookReference",
+     "column": "webhook_reference",
+     "kind": "string"
+    },
+    {
+     "field": "idempotencyKey",
+     "column": "idempotency_key",
+     "kind": "string"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "gatewayOrderId_1",
+     "keys": {
+      "gatewayOrderId": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "gatewayPaymentId_1",
+     "keys": {
+      "gatewayPaymentId": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "status_1",
+     "keys": {
+      "status": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "idempotencyKey_1",
+     "keys": {
+      "idempotencyKey": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "food_product_variants",
+   "schema": "public",
+   "table": "food_product_variants",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "outletId",
+     "column": "outlet_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "productId",
+     "column": "product_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "sku",
+     "column": "sku",
+     "kind": "string"
+    },
+    {
+     "field": "label",
+     "column": "label",
+     "kind": "string"
+    },
+    {
+     "field": "contents",
+     "column": "contents",
+     "kind": "string"
+    },
+    {
+     "field": "dietaryTags",
+     "column": "dietary_tags",
+     "kind": "string[]"
+    },
+    {
+     "field": "pricePaise",
+     "column": "price_paise",
+     "kind": "number"
+    },
+    {
+     "field": "prepMinutes",
+     "column": "prep_minutes",
+     "kind": "number"
+    },
+    {
+     "field": "portion",
+     "column": "portion",
+     "kind": "string"
+    },
+    {
+     "field": "isAvailable",
+     "column": "is_available",
+     "kind": "boolean"
+    },
+    {
+     "field": "dailyCapacity",
+     "column": "daily_capacity",
+     "kind": "number"
+    },
+    {
+     "field": "cutOffTime",
+     "column": "cut_off_time",
+     "kind": "string"
+    },
+    {
+     "field": "imageUrl",
+     "column": "image_url",
+     "kind": "string"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "sku_1",
+     "keys": {
+      "sku": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "isAvailable_1",
+     "keys": {
+      "isAvailable": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "food_products",
+   "schema": "public",
+   "table": "food_products",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "family",
+     "column": "family",
+     "kind": "string"
+    },
+    {
+     "field": "canonicalName",
+     "column": "canonical_name",
+     "kind": "string"
+    },
+    {
+     "field": "description",
+     "column": "description",
+     "kind": "string"
+    },
+    {
+     "field": "defaultImageUrl",
+     "column": "default_image_url",
+     "kind": "string"
+    },
+    {
+     "field": "approvedStatus",
+     "column": "approved_status",
+     "kind": "string"
+    },
+    {
+     "field": "skuFamily",
+     "column": "sku_family",
+     "kind": "string"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "family_1",
+     "keys": {
+      "family": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "approvedStatus_1",
+     "keys": {
+      "approvedStatus": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "skuFamily_1",
+     "keys": {
+      "skuFamily": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "food_quotes",
+   "schema": "public",
+   "table": "food_quotes",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "quoteId",
+     "column": "quote_id",
+     "kind": "string"
+    },
+    {
+     "field": "quoteHash",
+     "column": "quote_hash",
+     "kind": "string"
+    },
+    {
+     "field": "customerId",
+     "column": "customer_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "sessionId",
+     "column": "session_id",
+     "kind": "string"
+    },
+    {
+     "field": "outletId",
+     "column": "outlet_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "items",
+     "column": "items",
+     "kind": "json"
+    },
+    {
+     "field": "subtotalPaise",
+     "column": "subtotal_paise",
+     "kind": "number"
+    },
+    {
+     "field": "deliveryFeePaise",
+     "column": "delivery_fee_paise",
+     "kind": "number"
+    },
+    {
+     "field": "packagingFeePaise",
+     "column": "packaging_fee_paise",
+     "kind": "number"
+    },
+    {
+     "field": "taxPaise",
+     "column": "tax_paise",
+     "kind": "number"
+    },
+    {
+     "field": "discountPaise",
+     "column": "discount_paise",
+     "kind": "number"
+    },
+    {
+     "field": "totalPaise",
+     "column": "total_paise",
+     "kind": "number"
+    },
+    {
+     "field": "fulfilmentType",
+     "column": "fulfilment_type",
+     "kind": "string"
+    },
+    {
+     "field": "destinationAddress",
+     "column": "destination_address",
+     "kind": "string"
+    },
+    {
+     "field": "stayBookingId",
+     "column": "stay_booking_id",
+     "kind": "string"
+    },
+    {
+     "field": "stayRoomNumber",
+     "column": "stay_room_number",
+     "kind": "string"
+    },
+    {
+     "field": "expiresAt",
+     "column": "expires_at",
+     "kind": "date"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "quoteId_1",
+     "keys": {
+      "quoteId": 1
+     },
+     "unique": true,
+     "enforced": true
+    },
+    {
+     "name": "expiresAt_1",
+     "keys": {
+      "expiresAt": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "food_refunds",
+   "schema": "public",
+   "table": "food_refunds",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "orderId",
+     "column": "order_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "paymentAttemptId",
+     "column": "payment_attempt_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "amountPaise",
+     "column": "amount_paise",
+     "kind": "number"
+    },
+    {
+     "field": "reason",
+     "column": "reason",
+     "kind": "string"
+    },
+    {
+     "field": "gatewayRefundId",
+     "column": "gateway_refund_id",
+     "kind": "string"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "failureReason",
+     "column": "failure_reason",
+     "kind": "string"
+    },
+    {
+     "field": "initiatedBy",
+     "column": "initiated_by",
+     "kind": "string"
+    },
+    {
+     "field": "resolvedAt",
+     "column": "resolved_at",
+     "kind": "date"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "gatewayRefundId_1",
+     "keys": {
+      "gatewayRefundId": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "status_1",
+     "keys": {
+      "status": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "food_reviews_and_complaints",
+   "schema": "public",
+   "table": "food_reviews_and_complaints",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "orderId",
+     "column": "order_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "customerId",
+     "column": "customer_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "outletId",
+     "column": "outlet_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "rating",
+     "column": "rating",
+     "kind": "number"
+    },
+    {
+     "field": "tags",
+     "column": "tags",
+     "kind": "string[]"
+    },
+    {
+     "field": "comment",
+     "column": "comment",
+     "kind": "string"
+    },
+    {
+     "field": "complaintCategory",
+     "column": "complaint_category",
+     "kind": "string"
+    },
+    {
+     "field": "complaintStatus",
+     "column": "complaint_status",
+     "kind": "string"
+    },
+    {
+     "field": "resolutionNotes",
+     "column": "resolution_notes",
+     "kind": "string"
+    },
+    {
+     "field": "resolvedBy",
+     "column": "resolved_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "complaintStatus_1",
+     "keys": {
+      "complaintStatus": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "food_service_zones",
+   "schema": "public",
+   "table": "food_service_zones",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "zoneCode",
+     "column": "zone_code",
+     "kind": "string"
+    },
+    {
+     "field": "name",
+     "column": "name",
+     "kind": "string"
+    },
+    {
+     "field": "description",
+     "column": "description",
+     "kind": "string"
+    },
+    {
+     "field": "active",
+     "column": "active",
+     "kind": "boolean"
+    },
+    {
+     "field": "deliveryFeePaise",
+     "column": "delivery_fee_paise",
+     "kind": "number"
+    },
+    {
+     "field": "minOrderPaise",
+     "column": "min_order_paise",
+     "kind": "number"
+    },
+    {
+     "field": "boundaryGeoJson",
+     "column": "boundary_geo_json",
+     "kind": "json"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "zoneCode_1",
+     "keys": {
+      "zoneCode": 1
+     },
+     "unique": true,
+     "enforced": true
+    },
+    {
+     "name": "active_1",
+     "keys": {
+      "active": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "food_settlements",
+   "schema": "public",
+   "table": "food_settlements",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "outletId",
+     "column": "outlet_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "vendorId",
+     "column": "vendor_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "periodStart",
+     "column": "period_start",
+     "kind": "date"
+    },
+    {
+     "field": "periodEnd",
+     "column": "period_end",
+     "kind": "date"
+    },
+    {
+     "field": "grossFoodValuePaise",
+     "column": "gross_food_value_paise",
+     "kind": "number"
+    },
+    {
+     "field": "commissionRateBps",
+     "column": "commission_rate_bps",
+     "kind": "number"
+    },
+    {
+     "field": "commissionAmountPaise",
+     "column": "commission_amount_paise",
+     "kind": "number"
+    },
+    {
+     "field": "taxOnCommissionPaise",
+     "column": "tax_on_commission_paise",
+     "kind": "number"
+    },
+    {
+     "field": "deliveryRetainedPaise",
+     "column": "delivery_retained_paise",
+     "kind": "number"
+    },
+    {
+     "field": "adjustmentsPaise",
+     "column": "adjustments_paise",
+     "kind": "number"
+    },
+    {
+     "field": "netPayablePaise",
+     "column": "net_payable_paise",
+     "kind": "number"
+    },
+    {
+     "field": "orderCount",
+     "column": "order_count",
+     "kind": "number"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "approvedBy",
+     "column": "approved_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "approvedAt",
+     "column": "approved_at",
+     "kind": "date"
+    },
+    {
+     "field": "payoutReference",
+     "column": "payout_reference",
+     "kind": "string"
+    },
+    {
+     "field": "paidAt",
+     "column": "paid_at",
+     "kind": "date"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "status_1",
+     "keys": {
+      "status": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "food_vendor_documents",
+   "schema": "public",
+   "table": "food_vendor_documents",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "vendorId",
+     "column": "vendor_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "docType",
+     "column": "doc_type",
+     "kind": "string"
+    },
+    {
+     "field": "fileUrl",
+     "column": "file_url",
+     "kind": "string"
+    },
+    {
+     "field": "storagePath",
+     "column": "storage_path",
+     "kind": "string"
+    },
+    {
+     "field": "expiryDate",
+     "column": "expiry_date",
+     "kind": "date"
+    },
+    {
+     "field": "verificationStatus",
+     "column": "verification_status",
+     "kind": "string"
+    },
+    {
+     "field": "verifiedBy",
+     "column": "verified_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "notes",
+     "column": "notes",
+     "kind": "string"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "verificationStatus_1",
+     "keys": {
+      "verificationStatus": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "food_vendors",
+   "schema": "public",
+   "table": "food_vendors",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "businessName",
+     "column": "business_name",
+     "kind": "string"
+    },
+    {
+     "field": "ownerUserId",
+     "column": "owner_user_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "fssaiReference",
+     "column": "fssai_reference",
+     "kind": "string"
+    },
+    {
+     "field": "fssaiExpiry",
+     "column": "fssai_expiry",
+     "kind": "date"
+    },
+    {
+     "field": "complianceStatus",
+     "column": "compliance_status",
+     "kind": "string"
+    },
+    {
+     "field": "bankAccountNumber",
+     "column": "bank_account_number",
+     "kind": "string"
+    },
+    {
+     "field": "bankIfscCode",
+     "column": "bank_ifsc_code",
+     "kind": "string"
+    },
+    {
+     "field": "bankAccountHolderName",
+     "column": "bank_account_holder_name",
+     "kind": "string"
+    },
+    {
+     "field": "bankName",
+     "column": "bank_name",
+     "kind": "string"
+    },
+    {
+     "field": "contactName",
+     "column": "contact_name",
+     "kind": "string"
+    },
+    {
+     "field": "contactPhone",
+     "column": "contact_phone",
+     "kind": "string"
+    },
+    {
+     "field": "contactEmail",
+     "column": "contact_email",
+     "kind": "string"
+    },
+    {
+     "field": "settlementProfileId",
+     "column": "settlement_profile_id",
+     "kind": "string"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "complianceStatus_1",
+     "keys": {
+      "complianceStatus": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "status_1",
+     "keys": {
+      "status": 1
+     },
+     "enforced": true
+    }
+   ]
   }
  ]
 };

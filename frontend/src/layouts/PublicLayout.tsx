@@ -11,6 +11,7 @@ import FloatingSupportBox from "../components/shared/FloatingSupportBox";
 import { setGuestPendingIntent } from "../utils/guestGate";
 import { getRoleDefaultDashboard, isParkingRole } from "../utils/roleRedirect";
 import { vendorApi } from "../services/marketplace.service";
+import { foodPartnerService } from "../services/foodPartner.service";
 import { providerSelfService } from "../modules/pandit";
 import { useCurrency } from "../contexts/CurrencyContext";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -36,6 +37,7 @@ import {
   Sparkles,
   PhoneCall,
   Package,
+  Utensils,
   LifeBuoy,
   Wallet,
   Flame,
@@ -257,6 +259,23 @@ export const PublicLayout: React.FC = () => {
       .profile()
       .then((res) => {
         if (!cancelled && res.data?.data?._id) setHasStore(true);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  // Restaurant owners are normal accounts with a restaurant; same way back to their kitchen console.
+  const [hasRestaurant, setHasRestaurant] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    setHasRestaurant(false);
+    if (!user) return;
+    foodPartnerService
+      .myProfile()
+      .then((profile) => {
+        if (!cancelled && profile) setHasRestaurant(true);
       })
       .catch(() => undefined);
     return () => {
@@ -559,6 +578,17 @@ export const PublicLayout: React.FC = () => {
                     </Link>
                   )}
 
+                  {!hasOperationalDashboard() && hasRestaurant && (
+                    <Link
+                      to="/restaurant/dashboard"
+                      aria-label="Restaurant Dashboard"
+                      className="hidden sm:flex text-xs font-extrabold px-3 py-1.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white shadow-sm transition-all items-center gap-1.5 shrink-0"
+                    >
+                      <LayoutDashboard size={13} />
+                      <span className="hidden md:inline">Restaurant Dashboard</span>
+                    </Link>
+                  )}
+
                   {!hasOperationalDashboard() && hasProviderProfile && (
                     <Link
                       to="/provider/dashboard"
@@ -694,6 +724,19 @@ export const PublicLayout: React.FC = () => {
                                 </div>
                                 <span className="text-xs font-bold">
                                   {hasStore ? "Seller Dashboard" : "Sell on Tirvona"}
+                                </span>
+                              </Link>
+
+                              <Link
+                                to={hasRestaurant ? "/restaurant/dashboard" : "/restaurant/profile"}
+                                onClick={() => setProfileDropdownOpen(false)}
+                                className="px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                              >
+                                <div className="w-6 h-6 rounded-md bg-emerald-100/60 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center shrink-0">
+                                  <Utensils size={13} />
+                                </div>
+                                <span className="text-xs font-bold">
+                                  {hasRestaurant ? "Restaurant Dashboard" : "List your restaurant"}
                                 </span>
                               </Link>
 
@@ -862,6 +905,19 @@ export const PublicLayout: React.FC = () => {
               >
                 <span className="flex items-center gap-2">
                   <LayoutDashboard size={15} /> Seller Dashboard
+                </span>
+                <ChevronRight size={14} className="text-primary/50" />
+              </Link>
+            )}
+
+            {user && hasRestaurant && !hasOperationalDashboard() && (
+              <Link
+                to="/restaurant/dashboard"
+                onClick={() => setDrawerOpen(false)}
+                className="flex items-center justify-between py-3.5 px-3 rounded-xl text-sm font-bold text-primary hover:bg-primary/5 transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  <Utensils size={15} /> Restaurant Dashboard
                 </span>
                 <ChevronRight size={14} className="text-primary/50" />
               </Link>

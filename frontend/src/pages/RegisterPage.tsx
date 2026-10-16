@@ -7,6 +7,7 @@ import PhoneInput, { phoneProblem } from "../components/PhoneInput";
 import useGoogleAuth from "../hooks/useGoogleAuth";
 import { isGoogleConfigured } from "../lib/googleAuth";
 import { vendorApi } from "../services/marketplace.service";
+import { foodPartnerService } from "../services/foodPartner.service";
 import {
   ShieldCheck,
   Mail,
@@ -20,6 +21,7 @@ import {
   Landmark,
   Zap,
   Store,
+  Utensils,
   Car,
   Eye,
   EyeOff,
@@ -59,13 +61,14 @@ export const RegisterPage: React.FC = () => {
   // "seller" is a normal Tirvona account plus a marketplace store: it signs up
   // as a customer (never a stay owner) and its store is then approved by the
   // Super Admin in Admin > Marketplace > Pending Sellers.
-  const [accountType, setAccountType] = useState<"customer" | "owner" | "seller">("customer");
+  const [accountType, setAccountType] = useState<"customer" | "owner" | "seller" | "restaurant">("customer");
   const role: "customer" | "owner" = accountType === "owner" ? "owner" : "customer";
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const [storeName, setStoreName] = useState("");
+  const [restaurantName, setRestaurantName] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -97,6 +100,19 @@ export const RegisterPage: React.FC = () => {
         // Already has a store, or the name needs fixing: onboarding handles it.
       }
       navigate("/vendor/onboarding", { replace: true });
+      return;
+    }
+    if (accountType === "restaurant") {
+      try {
+        await foodPartnerService.register({
+          businessName: restaurantName.trim(),
+          contactName: name.trim() || undefined,
+          contactPhone: phone.replace(/[s-]/g, "") || undefined,
+        });
+      } catch {
+        // Already registered, or the name needs fixing: the setup page handles it.
+      }
+      navigate("/restaurant/profile", { replace: true });
       return;
     }
     const target = getPostLoginRedirect(userRole || role, redirect);
@@ -163,6 +179,13 @@ export const RegisterPage: React.FC = () => {
       title: "Marketplace Seller",
       desc: "Sell spiritual items, puja samagri & books",
       icon: <Store size={16} />,
+      disabled: false,
+    },
+    {
+      id: "restaurant" as const,
+      title: "Restaurant / Food Partner",
+      desc: "Sell satvik thalis, bowls & combos to pilgrims",
+      icon: <Utensils size={16} />,
       disabled: false,
     },
     {
@@ -493,6 +516,34 @@ export const RegisterPage: React.FC = () => {
                       </div>
                       <p className="text-[10px] text-gray-400 leading-normal pl-0.5">
                         Your shop is verified and approved by Tirvona before going live.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Restaurant Name */}
+                  {accountType === "restaurant" && (
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-gray-700 dark:text-gray-300 block">
+                        Restaurant Name <span className="text-[#F28C28]">*</span>
+                      </label>
+                      <div className="relative">
+                        <Utensils
+                          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+                          size={15}
+                        />
+                        <input
+                          type="text"
+                          required
+                          minLength={2}
+                          maxLength={120}
+                          placeholder="e.g. Brijwasi Satvik Rasoi"
+                          value={restaurantName}
+                          onChange={(e) => setRestaurantName(e.target.value)}
+                          className="w-full h-10 pl-10 pr-3.5 bg-gray-50/60 dark:bg-slate-900/60 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-medium text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:bg-white dark:focus:bg-slate-900 focus:border-[#F28C28] focus:ring-2 focus:ring-[#F28C28]/20 transition-all outline-none"
+                        />
+                      </div>
+                      <p className="text-[10px] text-gray-400 leading-normal pl-0.5">
+                        You will add your kitchen, menu and inventory next. Tirvona approves the restaurant before it goes live.
                       </p>
                     </div>
                   )}

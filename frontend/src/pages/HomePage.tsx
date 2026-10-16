@@ -550,7 +550,7 @@ export const HomePage: React.FC = () => {
       label: "Food & Dining",
       icon: Utensils,
       category: "food",
-      target: "/restaurants",
+      target: "/food",
       isHighlight: false,
     },
     {

@@ -25,6 +25,7 @@ import { authService } from "../services";
 import { getErrorMessage } from "../lib/api";
 import { getPostLoginRedirect } from "../utils/roleRedirect";
 import { vendorApi } from "../services/marketplace.service";
+import { foodPartnerService } from "../services/foodPartner.service";
 
 const GoogleIcon: React.FC = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
@@ -83,12 +84,21 @@ export const LoginPage: React.FC = () => {
       parkingRoles,
       userEmail,
     );
-    // Sellers are normal accounts with a marketplace store: with nowhere else
-    // to go, send them to their shop dashboard instead of the profile page.
+    // Sellers and restaurant owners are normal accounts with a store or
+    // restaurant: with nowhere else to go, send them to their own dashboard
+    // instead of the profile page.
     if (target.url === "/profile" && !target.hasPendingIntent && !redirect) {
-      const store = await vendorApi.profile().catch(() => null);
+      const [store, restaurant] = await Promise.all([
+        vendorApi.profile().catch(() => null),
+        foodPartnerService.myProfile().catch(() => null),
+      ]);
       if (store?.data?.data?._id) {
         navigate("/vendor/dashboard", { replace: true });
+        return;
+      }
+      // Restaurant owners land on their kitchen console, like sellers do.
+      if (restaurant) {
+        navigate("/restaurant/dashboard", { replace: true });
         return;
       }
     }
