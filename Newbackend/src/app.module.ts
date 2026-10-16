@@ -53,6 +53,7 @@ import { WalletApiModule } from "./modules/wallet/wallet-api.module";
 // puja bookings and consultations. Served under /api/v2; see modules/providers/README.md.
 import { ProvidersModule } from "./modules/providers/providers.module";
 import { PartnersModule } from "./modules/partners/partners.module";
+import { FoodModule } from "./modules/food/food.module";
 import {
   hybridRateLimitTracker,
   ipRateLimitTracker,
@@ -154,6 +155,7 @@ import {
     WalletApiModule,
     ProvidersModule,
     PartnersModule,
+    FoodModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

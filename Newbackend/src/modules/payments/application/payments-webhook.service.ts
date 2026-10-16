@@ -8,6 +8,7 @@ import { ParkingBookingService } from "../../parking/application/parking-booking
 import { AartiBookingService } from "../../aarti/application/aarti-booking.service";
 import { DayStayBookingService } from "../../day-stay/application/day-stay-booking.service";
 import { OrderService as VendorMarketplaceOrderService } from "../../marketplace/application/order.service";
+import { FoodPaymentService } from "../../food/application/food-payment.service";
 import { ProviderBookingPaymentService } from "../../providers/application/provider-booking-payment.service";
 
 /// Server-to-server reconciliation for Razorpay payments, independent of the
@@ -35,6 +36,7 @@ export class PaymentsWebhookService {
     private readonly dayStay: DayStayBookingService,
     private readonly vendorMarketplace: VendorMarketplaceOrderService,
     private readonly providerBookings: ProviderBookingPaymentService,
+    private readonly food: FoodPaymentService,
   ) {}
 
   /// Verifies Razorpay's `X-Razorpay-Signature` header: HMAC-SHA256 of the
@@ -143,6 +145,8 @@ export class PaymentsWebhookService {
       return "vendor_marketplace";
     if (await this.providerBookings.confirmPaymentFromWebhook(orderId, paymentId, captured))
       return "provider_bookings";
+    if (await this.food.confirmPaymentFromWebhook(orderId, paymentId, captured))
+      return "food";
     return null;
   }
 }

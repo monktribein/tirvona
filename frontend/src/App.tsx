@@ -341,6 +341,33 @@ const namedPage = <T extends Record<string, React.ComponentType<any>>>(
   name: keyof T,
 ) => lazy(() => loader().then((module) => ({ default: module[name] })));
 
+const FoodMarketplacePage = namedPage(
+  () => import("./pages/food/FoodMarketplacePage"),
+  "FoodMarketplacePage",
+);
+const FoodOrderTrackingPage = namedPage(
+  () => import("./pages/food/FoodOrderTrackingPage"),
+  "FoodOrderTrackingPage",
+);
+const FoodVendorDashboardPage = namedPage(
+  () => import("./pages/food/FoodVendorDashboardPage"),
+  "FoodVendorDashboardPage",
+);
+const AdminFoodVendorsPage = lazy(() => import("./admin/food/AdminFoodVendorsPage"));
+const AdminFoodVendorDetailPage = lazy(() => import("./admin/food/AdminFoodVendorDetailPage"));
+const RestaurantProfilePage = namedPage(
+  () => import("./modules/food/RestaurantPages"),
+  "RestaurantProfilePage",
+);
+const RestaurantMenuPage = namedPage(
+  () => import("./modules/food/RestaurantPages"),
+  "RestaurantMenuPage",
+);
+const FoodAdminOperationsPage = namedPage(
+  () => import("./pages/food/FoodAdminOperationsPage"),
+  "FoodAdminOperationsPage",
+);
+
 const SacredDirectoryModulePage = namedPage(
   () => import("./pages/SacredDirectoryModulePage"),
   "SacredDirectoryModulePage",
@@ -697,9 +724,12 @@ const AppContent: React.FC = () => {
               element={<SacredDirectoryModulePage />}
             />
             <Route path="/transport" element={<SacredDirectoryModulePage />} />
+            <Route path="/food" element={<FoodMarketplacePage />} />
+            <Route path="/food/orders/:id" element={<FoodOrderTrackingPage />} />
+            <Route path="/food/vendor" element={<Navigate to="/restaurant/dashboard" replace />} />
             <Route
               path="/restaurants"
-              element={<SacredDirectoryModulePage />}
+              element={<FoodMarketplacePage />}
             />
             <Route path="/shops" element={<SacredDirectoryModulePage />} />
             <Route path="/puja-items" element={<SacredDirectoryModulePage />} />
@@ -1273,6 +1303,12 @@ const AppContent: React.FC = () => {
               element={<DeveloperApiPage />}
             />
             <Route
+              path="/admin/food"
+              element={<FoodAdminOperationsPage />}
+            />
+            <Route path="/admin/food/vendors" element={<AdminFoodVendorsPage />} />
+            <Route path="/admin/food/vendors/:vendorId" element={<AdminFoodVendorDetailPage />} />
+            <Route
               path="/admin/parking/control"
               element={<ParkingControlCenterPage />}
             />
@@ -1427,6 +1463,21 @@ const AppContent: React.FC = () => {
             <Route path="/vendor/earnings" element={<VendorEarningsPage />} />
             <Route path="/vendor/payouts" element={<VendorPayoutsPage />} />
             <Route path="/vendor/reviews" element={<VendorReviewsPage />} />
+          </Route>
+
+          {/* Restaurant owner console: any signed-in user; the backend scopes every call to the caller's own restaurant. */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/restaurant" element={<Navigate to="/restaurant/dashboard" replace />} />
+            <Route path="/restaurant/dashboard" element={<FoodVendorDashboardPage />} />
+            <Route path="/restaurant/orders" element={<FoodVendorDashboardPage />} />
+            <Route path="/restaurant/menu" element={<RestaurantMenuPage />} />
+            <Route path="/restaurant/profile" element={<RestaurantProfilePage />} />
           </Route>
 
           {/* Pandit / Provider console: any signed-in user; backend scopes calls to caller's own profile. */}

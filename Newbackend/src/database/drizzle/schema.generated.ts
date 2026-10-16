@@ -4716,3 +4716,375 @@ export const partners = pgTable("partners", {
   _nulls: text("_nulls").array(),
   _extra: jsonb("_extra"),
 });
+
+/** public.food_cart_items */
+export const foodCartItems = pgTable("food_cart_items", {
+  id: text("id").primaryKey(), // model: _id
+  "cartId": text("cart_id"), // model: cartId
+  "variantId": text("variant_id"), // model: variantId
+  "quantity": doublePrecision("quantity"), // model: quantity
+  "customerNotes": text("customer_notes"), // model: customerNotes
+  "addedPricePaise": doublePrecision("added_price_paise"), // model: addedPricePaise
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.food_carts */
+export const foodCarts = pgTable("food_carts", {
+  id: text("id").primaryKey(), // model: _id
+  "customerId": text("customer_id"), // model: customerId
+  "sessionId": text("session_id"), // model: sessionId
+  "outletId": text("outlet_id"), // model: outletId
+  "specialInstructions": text("special_instructions"), // model: specialInstructions
+  "expiresAt": timestamp("expires_at", { withTimezone: true, mode: "date" }), // model: expiresAt
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.food_delivery_tasks */
+export const foodDeliveryTasks = pgTable("food_delivery_tasks", {
+  id: text("id").primaryKey(), // model: _id
+  "orderId": text("order_id"), // model: orderId
+  "outletId": text("outlet_id"), // model: outletId
+  "fulfilmentMode": text("fulfilment_mode"), // model: fulfilmentMode
+  "pickupAddress": text("pickup_address"), // model: pickupAddress
+  "destinationAddress": text("destination_address"), // model: destinationAddress
+  "stayId": text("stay_id"), // model: stayId
+  "roomNumber": text("room_number"), // model: roomNumber
+  "otpCode": text("otp_code"), // model: otpCode
+  "proofUrl": text("proof_url"), // model: proofUrl
+  "status": text("status"), // model: status
+  "deliveredAt": timestamp("delivered_at", { withTimezone: true, mode: "date" }), // model: deliveredAt
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.food_ledger_entries */
+export const foodLedgerEntries = pgTable("food_ledger_entries", {
+  id: text("id").primaryKey(), // model: _id
+  "entryId": text("entry_id"), // model: entryId
+  "orderId": text("order_id"), // model: orderId
+  "entryType": text("entry_type"), // model: entryType
+  "account": text("account"), // model: account
+  "debitPaise": doublePrecision("debit_paise"), // model: debitPaise
+  "creditPaise": doublePrecision("credit_paise"), // model: creditPaise
+  "description": text("description"), // model: description
+  "referenceId": text("reference_id"), // model: referenceId
+  "actorId": text("actor_id"), // model: actorId
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.food_order_events */
+export const foodOrderEvents = pgTable("food_order_events", {
+  id: text("id").primaryKey(), // model: _id
+  "orderId": text("order_id"), // model: orderId
+  "fromStatus": text("from_status"), // model: fromStatus
+  "toStatus": text("to_status"), // model: toStatus
+  "actorType": text("actor_type"), // model: actorType
+  "actorId": text("actor_id"), // model: actorId
+  "reason": text("reason"), // model: reason
+  "metadata": jsonb("metadata"), // model: metadata
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.food_order_items */
+export const foodOrderItems = pgTable("food_order_items", {
+  id: text("id").primaryKey(), // model: _id
+  "orderId": text("order_id"), // model: orderId
+  "variantId": text("variant_id"), // model: variantId
+  "sku": text("sku"), // model: sku
+  "name": text("name"), // model: name
+  "quantity": doublePrecision("quantity"), // model: quantity
+  "unitPricePaise": doublePrecision("unit_price_paise"), // model: unitPricePaise
+  "totalPricePaise": doublePrecision("total_price_paise"), // model: totalPricePaise
+  "dietaryTags": text("dietary_tags").array(), // model: dietaryTags
+  "contents": text("contents"), // model: contents
+  "portion": text("portion"), // model: portion
+  "customerNotes": text("customer_notes"), // model: customerNotes
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.food_orders */
+export const foodOrders = pgTable("food_orders", {
+  id: text("id").primaryKey(), // model: _id
+  "orderNumber": text("order_number"), // model: orderNumber
+  "quoteId": text("quote_id"), // model: quoteId
+  "customerId": text("customer_id"), // model: customerId
+  "sessionId": text("session_id"), // model: sessionId
+  "customerName": text("customer_name"), // model: customerName
+  "customerPhone": text("customer_phone"), // model: customerPhone
+  "customerEmail": text("customer_email"), // model: customerEmail
+  "outletId": text("outlet_id"), // model: outletId
+  "bookingId": text("booking_id"), // model: bookingId
+  "stayRoomNumber": text("stay_room_number"), // model: stayRoomNumber
+  "fulfilmentType": text("fulfilment_type"), // model: fulfilmentType
+  "deliveryAddress": text("delivery_address"), // model: deliveryAddress
+  "deliveryInstructions": text("delivery_instructions"), // model: deliveryInstructions
+  "orderStatus": text("order_status"), // model: orderStatus
+  "paymentStatus": text("payment_status"), // model: paymentStatus
+  "rejectionReason": text("rejection_reason"), // model: rejectionReason
+  "subtotalPaise": doublePrecision("subtotal_paise"), // model: subtotalPaise
+  "deliveryFeePaise": doublePrecision("delivery_fee_paise"), // model: deliveryFeePaise
+  "packagingFeePaise": doublePrecision("packaging_fee_paise"), // model: packagingFeePaise
+  "taxPaise": doublePrecision("tax_paise"), // model: taxPaise
+  "discountPaise": doublePrecision("discount_paise"), // model: discountPaise
+  "totalPaise": doublePrecision("total_paise"), // model: totalPaise
+  "vendorAcceptanceDeadline": timestamp("vendor_acceptance_deadline", { withTimezone: true, mode: "date" }), // model: vendorAcceptanceDeadline
+  "vendorAcceptedAt": timestamp("vendor_accepted_at", { withTimezone: true, mode: "date" }), // model: vendorAcceptedAt
+  "preparedAt": timestamp("prepared_at", { withTimezone: true, mode: "date" }), // model: preparedAt
+  "readyAt": timestamp("ready_at", { withTimezone: true, mode: "date" }), // model: readyAt
+  "outForDeliveryAt": timestamp("out_for_delivery_at", { withTimezone: true, mode: "date" }), // model: outForDeliveryAt
+  "deliveredAt": timestamp("delivered_at", { withTimezone: true, mode: "date" }), // model: deliveredAt
+  "completedAt": timestamp("completed_at", { withTimezone: true, mode: "date" }), // model: completedAt
+  "cancelledAt": timestamp("cancelled_at", { withTimezone: true, mode: "date" }), // model: cancelledAt
+  "idempotencyKey": text("idempotency_key"), // model: idempotencyKey
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.food_outlets */
+export const foodOutlets = pgTable("food_outlets", {
+  id: text("id").primaryKey(), // model: _id
+  "vendorId": text("vendor_id"), // model: vendorId
+  "brandName": text("brand_name"), // model: brandName
+  "address": text("address"), // model: address
+  "lat": doublePrecision("lat"), // model: lat
+  "lng": doublePrecision("lng"), // model: lng
+  "openTime": text("open_time"), // model: openTime
+  "closeTime": text("close_time"), // model: closeTime
+  "serviceZoneCodes": text("service_zone_codes").array(), // model: serviceZoneCodes
+  "status": text("status"), // model: status
+  "fulfilmentModes": text("fulfilment_modes").array(), // model: fulfilmentModes
+  "contactPhone": text("contact_phone"), // model: contactPhone
+  "capacityPerHour": doublePrecision("capacity_per_hour"), // model: capacityPerHour
+  "commissionRateBps": doublePrecision("commission_rate_bps"), // model: commissionRateBps
+  "minOrderPaise": doublePrecision("min_order_paise"), // model: minOrderPaise
+  "avgPrepMinutes": doublePrecision("avg_prep_minutes"), // model: avgPrepMinutes
+  "isPaused": boolean("is_paused"), // model: isPaused
+  "rating": doublePrecision("rating"), // model: rating
+  "ratingCount": doublePrecision("rating_count"), // model: ratingCount
+  "imageUrl": text("image_url"), // model: imageUrl
+  "description": text("description"), // model: description
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.food_payment_attempts */
+export const foodPaymentAttempts = pgTable("food_payment_attempts", {
+  id: text("id").primaryKey(), // model: _id
+  "orderId": text("order_id"), // model: orderId
+  "gatewayProvider": text("gateway_provider"), // model: gatewayProvider
+  "gatewayOrderId": text("gateway_order_id"), // model: gatewayOrderId
+  "gatewayPaymentId": text("gateway_payment_id"), // model: gatewayPaymentId
+  "gatewaySignature": text("gateway_signature"), // model: gatewaySignature
+  "amountPaise": doublePrecision("amount_paise"), // model: amountPaise
+  "currency": text("currency"), // model: currency
+  "status": text("status"), // model: status
+  "webhookReference": text("webhook_reference"), // model: webhookReference
+  "idempotencyKey": text("idempotency_key"), // model: idempotencyKey
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.food_product_variants */
+export const foodProductVariants = pgTable("food_product_variants", {
+  id: text("id").primaryKey(), // model: _id
+  "outletId": text("outlet_id"), // model: outletId
+  "productId": text("product_id"), // model: productId
+  "sku": text("sku"), // model: sku
+  "label": text("label"), // model: label
+  "contents": text("contents"), // model: contents
+  "dietaryTags": text("dietary_tags").array(), // model: dietaryTags
+  "pricePaise": doublePrecision("price_paise"), // model: pricePaise
+  "prepMinutes": doublePrecision("prep_minutes"), // model: prepMinutes
+  "portion": text("portion"), // model: portion
+  "isAvailable": boolean("is_available"), // model: isAvailable
+  "dailyCapacity": doublePrecision("daily_capacity"), // model: dailyCapacity
+  "cutOffTime": text("cut_off_time"), // model: cutOffTime
+  "imageUrl": text("image_url"), // model: imageUrl
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.food_products */
+export const foodProducts = pgTable("food_products", {
+  id: text("id").primaryKey(), // model: _id
+  "family": text("family"), // model: family
+  "canonicalName": text("canonical_name"), // model: canonicalName
+  "description": text("description"), // model: description
+  "defaultImageUrl": text("default_image_url"), // model: defaultImageUrl
+  "approvedStatus": text("approved_status"), // model: approvedStatus
+  "skuFamily": text("sku_family"), // model: skuFamily
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.food_quotes */
+export const foodQuotes = pgTable("food_quotes", {
+  id: text("id").primaryKey(), // model: _id
+  "quoteId": text("quote_id"), // model: quoteId
+  "quoteHash": text("quote_hash"), // model: quoteHash
+  "customerId": text("customer_id"), // model: customerId
+  "sessionId": text("session_id"), // model: sessionId
+  "outletId": text("outlet_id"), // model: outletId
+  "items": jsonb("items"), // model: items
+  "subtotalPaise": doublePrecision("subtotal_paise"), // model: subtotalPaise
+  "deliveryFeePaise": doublePrecision("delivery_fee_paise"), // model: deliveryFeePaise
+  "packagingFeePaise": doublePrecision("packaging_fee_paise"), // model: packagingFeePaise
+  "taxPaise": doublePrecision("tax_paise"), // model: taxPaise
+  "discountPaise": doublePrecision("discount_paise"), // model: discountPaise
+  "totalPaise": doublePrecision("total_paise"), // model: totalPaise
+  "fulfilmentType": text("fulfilment_type"), // model: fulfilmentType
+  "destinationAddress": text("destination_address"), // model: destinationAddress
+  "stayBookingId": text("stay_booking_id"), // model: stayBookingId
+  "stayRoomNumber": text("stay_room_number"), // model: stayRoomNumber
+  "expiresAt": timestamp("expires_at", { withTimezone: true, mode: "date" }), // model: expiresAt
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.food_refunds */
+export const foodRefunds = pgTable("food_refunds", {
+  id: text("id").primaryKey(), // model: _id
+  "orderId": text("order_id"), // model: orderId
+  "paymentAttemptId": text("payment_attempt_id"), // model: paymentAttemptId
+  "amountPaise": doublePrecision("amount_paise"), // model: amountPaise
+  "reason": text("reason"), // model: reason
+  "gatewayRefundId": text("gateway_refund_id"), // model: gatewayRefundId
+  "status": text("status"), // model: status
+  "failureReason": text("failure_reason"), // model: failureReason
+  "initiatedBy": text("initiated_by"), // model: initiatedBy
+  "resolvedAt": timestamp("resolved_at", { withTimezone: true, mode: "date" }), // model: resolvedAt
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.food_reviews_and_complaints */
+export const foodReviewsAndComplaints = pgTable("food_reviews_and_complaints", {
+  id: text("id").primaryKey(), // model: _id
+  "orderId": text("order_id"), // model: orderId
+  "customerId": text("customer_id"), // model: customerId
+  "outletId": text("outlet_id"), // model: outletId
+  "rating": doublePrecision("rating"), // model: rating
+  "tags": text("tags").array(), // model: tags
+  "comment": text("comment"), // model: comment
+  "complaintCategory": text("complaint_category"), // model: complaintCategory
+  "complaintStatus": text("complaint_status"), // model: complaintStatus
+  "resolutionNotes": text("resolution_notes"), // model: resolutionNotes
+  "resolvedBy": text("resolved_by"), // model: resolvedBy
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.food_service_zones */
+export const foodServiceZones = pgTable("food_service_zones", {
+  id: text("id").primaryKey(), // model: _id
+  "zoneCode": text("zone_code"), // model: zoneCode
+  "name": text("name"), // model: name
+  "description": text("description"), // model: description
+  "active": boolean("active"), // model: active
+  "deliveryFeePaise": doublePrecision("delivery_fee_paise"), // model: deliveryFeePaise
+  "minOrderPaise": doublePrecision("min_order_paise"), // model: minOrderPaise
+  "boundaryGeoJson": jsonb("boundary_geo_json"), // model: boundaryGeoJson
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.food_settlements */
+export const foodSettlements = pgTable("food_settlements", {
+  id: text("id").primaryKey(), // model: _id
+  "outletId": text("outlet_id"), // model: outletId
+  "vendorId": text("vendor_id"), // model: vendorId
+  "periodStart": timestamp("period_start", { withTimezone: true, mode: "date" }), // model: periodStart
+  "periodEnd": timestamp("period_end", { withTimezone: true, mode: "date" }), // model: periodEnd
+  "grossFoodValuePaise": doublePrecision("gross_food_value_paise"), // model: grossFoodValuePaise
+  "commissionRateBps": doublePrecision("commission_rate_bps"), // model: commissionRateBps
+  "commissionAmountPaise": doublePrecision("commission_amount_paise"), // model: commissionAmountPaise
+  "taxOnCommissionPaise": doublePrecision("tax_on_commission_paise"), // model: taxOnCommissionPaise
+  "deliveryRetainedPaise": doublePrecision("delivery_retained_paise"), // model: deliveryRetainedPaise
+  "adjustmentsPaise": doublePrecision("adjustments_paise"), // model: adjustmentsPaise
+  "netPayablePaise": doublePrecision("net_payable_paise"), // model: netPayablePaise
+  "orderCount": doublePrecision("order_count"), // model: orderCount
+  "status": text("status"), // model: status
+  "approvedBy": text("approved_by"), // model: approvedBy
+  "approvedAt": timestamp("approved_at", { withTimezone: true, mode: "date" }), // model: approvedAt
+  "payoutReference": text("payout_reference"), // model: payoutReference
+  "paidAt": timestamp("paid_at", { withTimezone: true, mode: "date" }), // model: paidAt
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.food_vendor_documents */
+export const foodVendorDocuments = pgTable("food_vendor_documents", {
+  id: text("id").primaryKey(), // model: _id
+  "vendorId": text("vendor_id"), // model: vendorId
+  "docType": text("doc_type"), // model: docType
+  "fileUrl": text("file_url"), // model: fileUrl
+  "storagePath": text("storage_path"), // model: storagePath
+  "expiryDate": timestamp("expiry_date", { withTimezone: true, mode: "date" }), // model: expiryDate
+  "verificationStatus": text("verification_status"), // model: verificationStatus
+  "verifiedBy": text("verified_by"), // model: verifiedBy
+  "notes": text("notes"), // model: notes
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.food_vendors */
+export const foodVendors = pgTable("food_vendors", {
+  id: text("id").primaryKey(), // model: _id
+  "businessName": text("business_name"), // model: businessName
+  "ownerUserId": text("owner_user_id"), // model: ownerUserId
+  "fssaiReference": text("fssai_reference"), // model: fssaiReference
+  "fssaiExpiry": timestamp("fssai_expiry", { withTimezone: true, mode: "date" }), // model: fssaiExpiry
+  "complianceStatus": text("compliance_status"), // model: complianceStatus
+  "bankAccountNumber": text("bank_account_number"), // model: bankAccountNumber
+  "bankIfscCode": text("bank_ifsc_code"), // model: bankIfscCode
+  "bankAccountHolderName": text("bank_account_holder_name"), // model: bankAccountHolderName
+  "bankName": text("bank_name"), // model: bankName
+  "contactName": text("contact_name"), // model: contactName
+  "contactPhone": text("contact_phone"), // model: contactPhone
+  "contactEmail": text("contact_email"), // model: contactEmail
+  "settlementProfileId": text("settlement_profile_id"), // model: settlementProfileId
+  "status": text("status"), // model: status
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
