@@ -25204,6 +25204,533 @@ export const REGISTRY: Registry = {
      "enforced": true
     }
    ]
+  },
+  {
+   "database": "test",
+   "collection": "partner_api_keys",
+   "schema": "public",
+   "table": "partner_api_keys",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "partnerId",
+     "column": "partner_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "name",
+     "column": "name",
+     "kind": "string"
+    },
+    {
+     "field": "keyPrefix",
+     "column": "key_prefix",
+     "kind": "string"
+    },
+    {
+     "field": "secretHash",
+     "column": "secret_hash",
+     "kind": "string"
+    },
+    {
+     "field": "environment",
+     "column": "environment",
+     "kind": "string"
+    },
+    {
+     "field": "permissions",
+     "column": "permissions",
+     "kind": "string[]"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "expiresAt",
+     "column": "expires_at",
+     "kind": "date"
+    },
+    {
+     "field": "lastUsedAt",
+     "column": "last_used_at",
+     "kind": "date"
+    },
+    {
+     "field": "revokedAt",
+     "column": "revoked_at",
+     "kind": "date"
+    },
+    {
+     "field": "revokedBy",
+     "column": "revoked_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "createdBy",
+     "column": "created_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "keyPrefix_1",
+     "keys": {
+      "keyPrefix": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "secretHash_1",
+     "keys": {
+      "secretHash": 1
+     },
+     "unique": true,
+     "enforced": true
+    },
+    {
+     "name": "status_1",
+     "keys": {
+      "status": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "partnerId_1_status_1",
+     "keys": {
+      "partnerId": 1,
+      "status": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "secretHash_1_status_1",
+     "keys": {
+      "secretHash": 1,
+      "status": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "partner_webhook_delivery_logs",
+   "schema": "public",
+   "table": "partner_webhook_delivery_logs",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "eventId",
+     "column": "event_id",
+     "kind": "string"
+    },
+    {
+     "field": "webhookId",
+     "column": "webhook_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "partnerId",
+     "column": "partner_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "url",
+     "column": "url",
+     "kind": "string"
+    },
+    {
+     "field": "eventType",
+     "column": "event_type",
+     "kind": "string"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "attemptNumber",
+     "column": "attempt_number",
+     "kind": "number"
+    },
+    {
+     "field": "responseStatusCode",
+     "column": "response_status_code",
+     "kind": "number"
+    },
+    {
+     "field": "responseBody",
+     "column": "response_body",
+     "kind": "string"
+    },
+    {
+     "field": "errorMessage",
+     "column": "error_message",
+     "kind": "string"
+    },
+    {
+     "field": "durationMs",
+     "column": "duration_ms",
+     "kind": "number"
+    },
+    {
+     "field": "deliveredAt",
+     "column": "delivered_at",
+     "kind": "date"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "eventId_1",
+     "keys": {
+      "eventId": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "webhookId_1_deliveredAt_-1",
+     "keys": {
+      "webhookId": 1,
+      "deliveredAt": -1
+     },
+     "enforced": true
+    },
+    {
+     "name": "partnerId_1_deliveredAt_-1",
+     "keys": {
+      "partnerId": 1,
+      "deliveredAt": -1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "partner_webhook_events",
+   "schema": "public",
+   "table": "partner_webhook_events",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "eventId",
+     "column": "event_id",
+     "kind": "string"
+    },
+    {
+     "field": "partnerId",
+     "column": "partner_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "webhookId",
+     "column": "webhook_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "eventType",
+     "column": "event_type",
+     "kind": "string"
+    },
+    {
+     "field": "payload",
+     "column": "payload",
+     "kind": "json"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "attempts",
+     "column": "attempts",
+     "kind": "number"
+    },
+    {
+     "field": "nextAttemptAt",
+     "column": "next_attempt_at",
+     "kind": "date"
+    },
+    {
+     "field": "lastAttemptAt",
+     "column": "last_attempt_at",
+     "kind": "date"
+    },
+    {
+     "field": "lastError",
+     "column": "last_error",
+     "kind": "string"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "eventId_1",
+     "keys": {
+      "eventId": 1
+     },
+     "unique": true,
+     "enforced": true
+    },
+    {
+     "name": "eventType_1",
+     "keys": {
+      "eventType": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "status_1",
+     "keys": {
+      "status": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "status_1_nextAttemptAt_1",
+     "keys": {
+      "status": 1,
+      "nextAttemptAt": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "partnerId_1_eventType_1",
+     "keys": {
+      "partnerId": 1,
+      "eventType": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "partner_webhooks",
+   "schema": "public",
+   "table": "partner_webhooks",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "partnerId",
+     "column": "partner_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "url",
+     "column": "url",
+     "kind": "string"
+    },
+    {
+     "field": "description",
+     "column": "description",
+     "kind": "string"
+    },
+    {
+     "field": "subscribedEvents",
+     "column": "subscribed_events",
+     "kind": "string[]"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "secretCiphertext",
+     "column": "secret_ciphertext",
+     "kind": "string"
+    },
+    {
+     "field": "secretIv",
+     "column": "secret_iv",
+     "kind": "string"
+    },
+    {
+     "field": "secretTag",
+     "column": "secret_tag",
+     "kind": "string"
+    },
+    {
+     "field": "secretLast4",
+     "column": "secret_last4",
+     "kind": "string"
+    },
+    {
+     "field": "createdBy",
+     "column": "created_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "updatedBy",
+     "column": "updated_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "status_1",
+     "keys": {
+      "status": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "partnerId_1_status_1",
+     "keys": {
+      "partnerId": 1,
+      "status": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "partners",
+   "schema": "public",
+   "table": "partners",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "name",
+     "column": "name",
+     "kind": "string"
+    },
+    {
+     "field": "slug",
+     "column": "slug",
+     "kind": "string"
+    },
+    {
+     "field": "contactEmail",
+     "column": "contact_email",
+     "kind": "string"
+    },
+    {
+     "field": "contactPhone",
+     "column": "contact_phone",
+     "kind": "string"
+    },
+    {
+     "field": "description",
+     "column": "description",
+     "kind": "string"
+    },
+    {
+     "field": "environment",
+     "column": "environment",
+     "kind": "string"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "allowedPermissions",
+     "column": "allowed_permissions",
+     "kind": "string[]"
+    },
+    {
+     "field": "scopedAshramIds",
+     "column": "scoped_ashram_ids",
+     "kind": "objectId[]"
+    },
+    {
+     "field": "rateLimitPerMinute",
+     "column": "rate_limit_per_minute",
+     "kind": "number"
+    },
+    {
+     "field": "createdBy",
+     "column": "created_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "updatedBy",
+     "column": "updated_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "slug_1",
+     "keys": {
+      "slug": 1
+     },
+     "unique": true,
+     "enforced": true
+    },
+    {
+     "name": "status_1",
+     "keys": {
+      "status": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "status_1_environment_1",
+     "keys": {
+      "status": 1,
+      "environment": 1
+     },
+     "enforced": true
+    }
+   ]
   }
  ]
 };

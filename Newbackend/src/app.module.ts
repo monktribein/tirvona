@@ -52,6 +52,7 @@ import { WalletApiModule } from "./modules/wallet/wallet-api.module";
 // Pandit / Purohit / Acharya / Jyotishi providers, ritual catalogue, verification, availability,
 // puja bookings and consultations. Served under /api/v2; see modules/providers/README.md.
 import { ProvidersModule } from "./modules/providers/providers.module";
+import { PartnersModule } from "./modules/partners/partners.module";
 import {
   hybridRateLimitTracker,
   ipRateLimitTracker,
@@ -152,6 +153,7 @@ import {
     WhatsAppChannelModule,
     WalletApiModule,
     ProvidersModule,
+    PartnersModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

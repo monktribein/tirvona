@@ -265,3 +265,5 @@ export const Link2 = materialIcon("add_link");
 export const Paperclip = materialIcon("attach_file");
 export const Timer = materialIcon("timer");
 export const UserMinus = materialIcon("person_off");
+export const Code = materialIcon("code");
+export const Webhook = materialIcon("webhook");

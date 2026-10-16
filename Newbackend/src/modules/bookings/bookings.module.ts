@@ -4,6 +4,7 @@ import { AshramsModule } from "../ashrams/ashrams.module";
 import { UsersModule } from "../users/users.module";
 import { PlatformSettingsModule } from "../platform-settings/platform-settings.module";
 import { WalletModule } from "../wallet/wallet.module";
+import { PartnersModule } from "../partners/partners.module";
 import { BookingPricingService } from "./application/booking-pricing.service";
 import { BookingsService } from "./application/bookings.service";
 import { SelfBookingService } from "./application/self-booking.service";
@@ -96,6 +97,7 @@ const models = [
     UsersModule,
     PlatformSettingsModule,
     WalletModule,
+    PartnersModule,
     OrmModule.forFeature(models),
   ],
   controllers: [

@@ -45,5 +45,37 @@ describe("hybrid rate-limit trackers", () => {
     expect(first).toBe(second);
     expect(first).not.toContain("user@example.com");
   });
+
+  it("gives authenticated partners independent rate limit buckets on the same IP", () => {
+    const partner1Tracker = hybridRateLimitTracker(
+      request({ partner: { partnerId: "partner-123" } }),
+    );
+    const partner2Tracker = hybridRateLimitTracker(
+      request({ partner: { partnerId: "partner-456" } }),
+    );
+
+    expect(partner1Tracker).toBe("partner:partner-123");
+    expect(partner2Tracker).toBe("partner:partner-456");
+    expect(partner1Tracker).not.toBe(partner2Tracker);
+  });
+
+  it("prevents partner from bypassing rate limits by changing IP addresses", () => {
+    const ip1Tracker = hybridRateLimitTracker(
+      request({
+        ip: "203.0.113.10",
+        partner: { partnerId: "partner-123" },
+      }),
+    );
+    const ip2Tracker = hybridRateLimitTracker(
+      request({
+        ip: "198.51.100.22",
+        partner: { partnerId: "partner-123" },
+      }),
+    );
+
+    expect(ip1Tracker).toBe("partner:partner-123");
+    expect(ip2Tracker).toBe("partner:partner-123");
+    expect(ip1Tracker).toBe(ip2Tracker);
+  });
 });
 

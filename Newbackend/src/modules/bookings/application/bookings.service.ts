@@ -6,8 +6,10 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  Optional,
   ServiceUnavailableException,
 } from "@nestjs/common";
+import { PartnerWebhookDispatcherService } from "../../partners/application/partner-webhook-dispatcher.service";
 import { InjectModel } from "../../../database/orm-nest";
 import { ConfigService } from "@nestjs/config";
 import type { Model } from "../../../database/orm";
@@ -113,6 +115,8 @@ export class BookingsService {
     @InjectModel("User") private readonly userModel: Model<any>,
     @InjectModel("Room") private readonly roomModel: Model<any>,
     private readonly wallet: WalletService,
+    @Optional()
+    private readonly partnerWebhookDispatcher?: PartnerWebhookDispatcherService,
   ) {}
 
   private async scopedAshrams(
@@ -277,6 +281,40 @@ export class BookingsService {
       }
     } catch {
       // safe fire-and-forget
+    }
+  }
+
+  private async emitPartnerWebhook(
+    eventType: "booking.created" | "booking.status_changed" | "booking.cancelled" | "payment.succeeded" | "payment.failed",
+    payload: Record<string, any>,
+  ): Promise<void> {
+    try {
+      if (this.partnerWebhookDispatcher) {
+        await this.partnerWebhookDispatcher.publishEvent(eventType, payload);
+        return;
+      }
+      const eventsCol = this.bookings.db?.collection("partner_webhook_events");
+      const webhooksCol = this.bookings.db?.collection("partner_webhooks");
+      if (!eventsCol || !webhooksCol) return;
+      const activeWebhooks = await webhooksCol.find({ status: "active", subscribedEvents: eventType }).toArray();
+      if (!activeWebhooks?.length) return;
+      const now = new Date();
+      for (const wh of activeWebhooks) {
+        await eventsCol.insertOne({
+          eventId: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
+          partnerId: wh.partnerId,
+          webhookId: wh._id,
+          eventType,
+          payload,
+          status: "pending",
+          attempts: 0,
+          nextAttemptAt: now,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+    } catch (err) {
+      this.logger.warn(`Could not stage partner webhook event: ${String(err)}`);
     }
   }
 
@@ -523,6 +561,17 @@ export class BookingsService {
       "BOOKINGS",
       { bookingId: booking._id, ashramId: dto.ashramId },
     );
+    void this.emitPartnerWebhook("booking.created", {
+      bookingId: String(booking.bookingId),
+      id: String(booking._id),
+      ashramId: String(booking.ashramId),
+      status: booking.status,
+      checkInDate: booking.checkInDate,
+      checkOutDate: booking.checkOutDate,
+      guestsCount: booking.guestsCount,
+      totalAmount: booking.pricing?.totalAmount ?? booking.totalAmount,
+      createdAt: booking.createdAt,
+    });
     return booking;
   }
 
@@ -902,6 +951,11 @@ export class BookingsService {
         "PAYMENTS",
         { bookingId: id },
       );
+      void this.emitPartnerWebhook("payment.failed", {
+        bookingId: id,
+        reason: "Payment signature verification failed",
+        failedAt: new Date(),
+      });
       throw new BadRequestException("Payment signature verification failed");
     }
     return this.transactions.run(async (session) => {
@@ -1211,6 +1265,20 @@ export class BookingsService {
         { session },
       ),
     ]);
+    void this.emitPartnerWebhook("payment.succeeded", {
+      bookingId: String(booking.bookingId),
+      ashramId: String(booking.ashramId),
+      amount: booking.pricing.totalAmount,
+      transactionId: payment.transactionId,
+      paidAt: payment.paidAt,
+    });
+    void this.emitPartnerWebhook("booking.status_changed", {
+      bookingId: String(booking.bookingId),
+      ashramId: String(booking.ashramId),
+      previousStatus: "pending",
+      currentStatus: "confirmed",
+      updatedAt: new Date(),
+    });
     this.logger.log(
       JSON.stringify({
         event: "booking.outbox_event_staged",
@@ -2803,6 +2871,13 @@ export class BookingsService {
         "BOOKINGS",
         { bookingId: existing._id, ashramId: existing.ashramId },
       );
+      void this.emitPartnerWebhook("booking.cancelled", {
+        bookingId: String(existing.bookingId),
+        ashramId: String(existing.ashramId),
+        reason: dto.reason,
+        refundAmount,
+        cancelledAt: new Date(),
+      });
       return {
         booking: existing,
         refundAmount,
@@ -2827,6 +2902,14 @@ export class BookingsService {
     const from = row.status;
     row.status = dto.status;
     await row.save();
+    void this.emitPartnerWebhook("booking.status_changed", {
+      bookingId: String(row.bookingId),
+      ashramId: String(row.ashramId),
+      previousStatus: from,
+      currentStatus: dto.status,
+      note: dto.note,
+      updatedAt: new Date(),
+    });
     await this.history.create({
       bookingId: row._id,
       fromStatus: from,

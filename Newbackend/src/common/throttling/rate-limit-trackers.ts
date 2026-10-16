@@ -6,6 +6,7 @@ interface RateLimitRequest extends Request {
   user?: AuthenticatedUser;
   leadUser?: { id?: string };
   rateLimitLeadUserId?: string;
+  partner?: { partnerId?: string; id?: string };
 }
 
 const compact = (value: unknown): string =>
@@ -25,6 +26,11 @@ export const hybridRateLimitTracker = (
   rawRequest: Record<string, any>,
 ): string => {
   const request = rawRequest as RateLimitRequest;
+  const partnerId = compact(
+    request.partner?.partnerId || request.partner?.id,
+  );
+  if (partnerId) return `partner:${partnerId}`;
+
   const platformId = compact(request.user?.id || request.user?._id);
   if (platformId) return `platform-user:${platformId}`;
 
