@@ -2073,10 +2073,25 @@ export class BookingsService {
     const scope = await this.scopedAshrams(user);
     if (query.ashramId && scope !== null && !scope.includes(query.ashramId))
       throw new ForbiddenException("You do not have access to this ashram.");
+    // Default (guests who dropped off mid-payment): status+payment both
+    // "pending". Callers may widen it with comma-separated `status` /
+    // `paymentStatus` lists, or `status=all` for every booking status.
+    const listOf = (value: string | undefined, fallback: string) =>
+      (value ?? fallback)
+        .split(",")
+        .map((v) => v.trim())
+        .filter(Boolean);
+    const statuses = listOf(query.status, "pending");
+    const paymentStatuses = listOf(query.paymentStatus, "pending");
     const filter: any = {
       deletedAt: null,
-      status: "pending",
-      paymentStatus: "pending",
+      ...(statuses.includes("all")
+        ? {}
+        : { status: statuses.length === 1 ? statuses[0] : { $in: statuses } }),
+      paymentStatus:
+        paymentStatuses.length === 1
+          ? paymentStatuses[0]
+          : { $in: paymentStatuses },
       ...(query.ashramId
         ? { ashramId: query.ashramId }
         : scope === null

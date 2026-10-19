@@ -1,3 +1,4 @@
+import { Paginated } from "../../components/shared/Pagination";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../lib/api";
@@ -286,53 +287,57 @@ export default function TempleSearchPage() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {temples.map(temple => (
-              <div
-                key={temple._id}
-                onClick={() => navigate(`/temples/${temple.slug}`)}
-                className="bg-white dark:bg-[#0B192C] rounded-2xl p-6 shadow-xs border border-slate-200 dark:border-slate-800 cursor-pointer hover:shadow-lg hover:border-[#E58C28]/60 hover:-translate-y-0.5 transition-all duration-200 group flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <div className="w-11 h-11 rounded-xl bg-orange-50 dark:bg-orange-950/50 text-[#E58C28] flex items-center justify-center">
-                      <Building2 className="w-6 h-6" />
+          <Paginated items={temples} pageSize={12}>
+            {(pageItems) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {pageItems.map(temple => (
+                <div
+                  key={temple._id}
+                  onClick={() => navigate(`/temples/${temple.slug}`)}
+                  className="bg-white dark:bg-[#0B192C] rounded-2xl p-6 shadow-xs border border-slate-200 dark:border-slate-800 cursor-pointer hover:shadow-lg hover:border-[#E58C28]/60 hover:-translate-y-0.5 transition-all duration-200 group flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <div className="w-11 h-11 rounded-xl bg-orange-50 dark:bg-orange-950/50 text-[#E58C28] flex items-center justify-center">
+                        <Building2 className="w-6 h-6" />
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                        {temple.isVerified && (
+                          <span className="bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                            ✓ Verified
+                          </span>
+                        )}
+                        {temple.deity && (
+                          <span className="bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
+                            {temple.deity}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                      {temple.isVerified && (
-                        <span className="bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
-                          ✓ Verified
-                        </span>
-                      )}
-                      {temple.deity && (
-                        <span className="bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
-                          {temple.deity}
-                        </span>
-                      )}
+
+                    <h3 className="font-bold text-lg text-gray-900 dark:text-white group-hover:text-[#F28C28] dark:group-hover:text-blue-400 transition-colors line-clamp-1 mb-1.5">
+                      {temple.name}
+                    </h3>
+
+                    <div className="flex items-center gap-1.5 text-gray-500 dark:text-slate-400 text-xs font-semibold mb-3">
+                      <MapPin className="w-3.5 h-3.5 text-[#E58C28]" />
+                      {temple.address?.city}, {temple.address?.state}
                     </div>
+
+                    <p className="text-gray-600 dark:text-slate-300 text-xs sm:text-sm line-clamp-3 leading-relaxed mb-4">
+                      {temple.shortDescription || temple.description || "Sacred pilgrimage temple with daily darshan and rituals."}
+                    </p>
                   </div>
 
-                  <h3 className="font-bold text-lg text-gray-900 dark:text-white group-hover:text-[#F28C28] dark:group-hover:text-blue-400 transition-colors line-clamp-1 mb-1.5">
-                    {temple.name}
-                  </h3>
-
-                  <div className="flex items-center gap-1.5 text-gray-500 dark:text-slate-400 text-xs font-semibold mb-3">
-                    <MapPin className="w-3.5 h-3.5 text-[#E58C28]" />
-                    {temple.address?.city}, {temple.address?.state}
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-[#E58C28]">
+                    <span>Explore Temple & Rituals</span>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </div>
-
-                  <p className="text-gray-600 dark:text-slate-300 text-xs sm:text-sm line-clamp-3 leading-relaxed mb-4">
-                    {temple.shortDescription || temple.description || "Sacred pilgrimage temple with daily darshan and rituals."}
-                  </p>
                 </div>
-
-                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-[#E58C28]">
-                  <span>Explore Temple & Rituals</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            )}
+          </Paginated>
         )}
       </div>
     </div>

@@ -1,3 +1,4 @@
+import { Paginated } from "../../components/shared/Pagination";
 import React, { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -625,144 +626,148 @@ export const FoodMarketplacePage: React.FC = () => {
 
         {/* Meals Grid */}
         {!loading && !error && filteredMeals.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredMeals.map((meal) => {
-              const inCart = cart.find((c) => c.meal.id === meal.id);
-              const isThali = meal.family === "THALI";
-              const isCombo = meal.family === "COMBO";
+          <Paginated items={filteredMeals} pageSize={12}>
+            {(pageItems) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {pageItems.map((meal) => {
+                const inCart = cart.find((c) => c.meal.id === meal.id);
+                const isThali = meal.family === "THALI";
+                const isCombo = meal.family === "COMBO";
 
-              return (
-                <div
-                  key={meal.id}
-                  className="group bg-white dark:bg-[#0B192C] rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
-                >
-                  <div>
-                    {/* Meal Image & Badge */}
-                    <div className="relative h-48 w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
-                      <img
-                        src={meal.imageUrl}
-                        alt={meal.label}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        loading="lazy"
-                      />
-                      <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-slate-900/80 backdrop-blur-md text-amber-300 border border-amber-400/30">
-                          {isThali
-                            ? "थाली Thali"
-                            : isCombo
-                            ? "कॉम्बो Combo"
-                            : "बाउल Bowl"}
-                        </span>
-                        {meal.dietaryTags?.includes("satvik") && (
-                          <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-emerald-600/90 text-white backdrop-blur-xs flex items-center gap-1">
-                            <Sparkles size={10} /> सात्विक
+                return (
+                  <div
+                    key={meal.id}
+                    className="group bg-white dark:bg-[#0B192C] rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+                  >
+                    <div>
+                      {/* Meal Image & Badge */}
+                      <div className="relative h-48 w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
+                        <img
+                          src={meal.imageUrl}
+                          alt={meal.label}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          loading="lazy"
+                        />
+                        <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-slate-900/80 backdrop-blur-md text-amber-300 border border-amber-400/30">
+                            {isThali
+                              ? "थाली Thali"
+                              : isCombo
+                              ? "कॉम्बो Combo"
+                              : "बाउल Bowl"}
                           </span>
-                        )}
-                        {meal.dietaryTags?.includes("no_onion_garlic") && (
-                          <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-blue-600/90 text-white backdrop-blur-xs">
-                            No Onion/Garlic
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="absolute bottom-3 right-3 px-2 py-1 rounded-full bg-black/70 backdrop-blur-xs text-[10px] font-bold text-slate-200 flex items-center gap-1">
-                        <Clock size={11} className="text-amber-400" />
-                        <span>{meal.prepMinutes} mins</span>
-                      </div>
-                    </div>
-
-                    {/* Meal Information */}
-                    <div className="p-5">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <h3 className="text-base font-extrabold text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                            {meal.label}
-                          </h3>
-                          {meal.outlet && (
-                            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
-                              <span>By {meal.outlet.brandName}</span>
-                              <span className="text-amber-500 font-bold">
-                                ★ {meal.outlet.rating}
-                              </span>
-                            </p>
+                          {meal.dietaryTags?.includes("satvik") && (
+                            <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-emerald-600/90 text-white backdrop-blur-xs flex items-center gap-1">
+                              <Sparkles size={10} /> सात्विक
+                            </span>
                           )}
+                          {meal.dietaryTags?.includes("no_onion_garlic") && (
+                            <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-blue-600/90 text-white backdrop-blur-xs">
+                              No Onion/Garlic
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="absolute bottom-3 right-3 px-2 py-1 rounded-full bg-black/70 backdrop-blur-xs text-[10px] font-bold text-slate-200 flex items-center gap-1">
+                          <Clock size={11} className="text-amber-400" />
+                          <span>{meal.prepMinutes} mins</span>
                         </div>
                       </div>
 
-                      {/* Contents / Description */}
-                      <p className="mt-2.5 text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
-                        {meal.contents}
-                      </p>
+                      {/* Meal Information */}
+                      <div className="p-5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <h3 className="text-base font-extrabold text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                              {meal.label}
+                            </h3>
+                            {meal.outlet && (
+                              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                                <span>By {meal.outlet.brandName}</span>
+                                <span className="text-amber-500 font-bold">
+                                  ★ {meal.outlet.rating}
+                                </span>
+                              </p>
+                            )}
+                          </div>
+                        </div>
 
-                      {/* Portion Declaration */}
-                      <div className="mt-3 flex items-center gap-2 text-[11px] font-bold text-slate-400">
-                        <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800">
-                          {meal.portion}
-                        </span>
-                        {isCombo && (
-                          <span className="text-amber-600 dark:text-amber-400">
-                            Includes Sides &amp; Accompaniments
+                        {/* Contents / Description */}
+                        <p className="mt-2.5 text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                          {meal.contents}
+                        </p>
+
+                        {/* Portion Declaration */}
+                        <div className="mt-3 flex items-center gap-2 text-[11px] font-bold text-slate-400">
+                          <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800">
+                            {meal.portion}
                           </span>
-                        )}
+                          {isCombo && (
+                            <span className="text-amber-600 dark:text-amber-400">
+                              Includes Sides &amp; Accompaniments
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Pricing & Add-to-Cart Action */}
-                  <div className="p-5 pt-0 border-t border-slate-100 dark:border-slate-800/80 mt-2 flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] uppercase font-bold text-slate-400 block">
-                        Price
-                      </span>
-                      <span className="text-lg font-black text-slate-900 dark:text-white">
-                        ₹{meal.priceRupees}
-                      </span>
-                    </div>
-
-                    {isThali ? (
-                      <button
-                        type="button"
-                        onClick={() => handleOpenThaliCustomizer(meal)}
-                        className="px-4 py-2 rounded-full bg-amber-500 hover:bg-amber-600 text-white text-xs font-extrabold shadow-sm transition-all flex items-center gap-1"
-                      >
-                        <span>Customize Thali</span>
-                        <ChevronRight size={14} />
-                      </button>
-                    ) : inCart ? (
-                      <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-400/50 rounded-full px-2 py-1">
-                        <button
-                          type="button"
-                          onClick={() => updateQuantity(inCart.variantId, -1)}
-                          className="p-1 rounded-full hover:bg-amber-200 dark:hover:bg-amber-800 text-amber-900 dark:text-amber-200"
-                        >
-                          <Minus size={14} />
-                        </button>
-                        <span className="text-xs font-black px-1.5 text-slate-900 dark:text-white">
-                          {inCart.quantity}
+                    {/* Pricing & Add-to-Cart Action */}
+                    <div className="p-5 pt-0 border-t border-slate-100 dark:border-slate-800/80 mt-2 flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                          Price
                         </span>
+                        <span className="text-lg font-black text-slate-900 dark:text-white">
+                          ₹{meal.priceRupees}
+                        </span>
+                      </div>
+
+                      {isThali ? (
                         <button
                           type="button"
-                          onClick={() => updateQuantity(inCart.variantId, 1)}
-                          className="p-1 rounded-full hover:bg-amber-200 dark:hover:bg-amber-800 text-amber-900 dark:text-amber-200"
+                          onClick={() => handleOpenThaliCustomizer(meal)}
+                          className="px-4 py-2 rounded-full bg-amber-500 hover:bg-amber-600 text-white text-xs font-extrabold shadow-sm transition-all flex items-center gap-1"
+                        >
+                          <span>Customize Thali</span>
+                          <ChevronRight size={14} />
+                        </button>
+                      ) : inCart ? (
+                        <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-400/50 rounded-full px-2 py-1">
+                          <button
+                            type="button"
+                            onClick={() => updateQuantity(inCart.variantId, -1)}
+                            className="p-1 rounded-full hover:bg-amber-200 dark:hover:bg-amber-800 text-amber-900 dark:text-amber-200"
+                          >
+                            <Minus size={14} />
+                          </button>
+                          <span className="text-xs font-black px-1.5 text-slate-900 dark:text-white">
+                            {inCart.quantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => updateQuantity(inCart.variantId, 1)}
+                            className="p-1 rounded-full hover:bg-amber-200 dark:hover:bg-amber-800 text-amber-900 dark:text-amber-200"
+                          >
+                            <Plus size={14} />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => addToCart(meal)}
+                          className="px-5 py-2 rounded-full bg-slate-900 dark:bg-amber-500 hover:bg-amber-600 dark:hover:bg-amber-600 text-white text-xs font-extrabold shadow-sm transition-all flex items-center gap-1.5"
                         >
                           <Plus size={14} />
+                          <span>Add</span>
                         </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => addToCart(meal)}
-                        className="px-5 py-2 rounded-full bg-slate-900 dark:bg-amber-500 hover:bg-amber-600 dark:hover:bg-amber-600 text-white text-xs font-extrabold shadow-sm transition-all flex items-center gap-1.5"
-                      >
-                        <Plus size={14} />
-                        <span>Add</span>
-                      </button>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+            )}
+          </Paginated>
         )}
       </main>
 

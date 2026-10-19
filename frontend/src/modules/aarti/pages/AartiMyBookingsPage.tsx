@@ -1,3 +1,4 @@
+import { Paginated } from "../../../components/shared/Pagination";
 import React, { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -122,58 +123,62 @@ export const AartiMyBookingsPage: React.FC = () => {
             </Link>
           </div>
         ) : (
-          <div className="space-y-3">
-            {bookings.map((booking) => {
-              const session =
-                typeof booking.sessionId === "object"
-                  ? (booking.sessionId as AartiSession)
-                  : null;
-              return (
-                <Link
-                  key={booking._id}
-                  to={`/aarti/booking/${booking._id}`}
-                  className="group flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-4 sm:p-5 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
-                >
-                  <div className="min-w-0 flex-1 space-y-1.5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white truncate">
-                        {session?.name ?? "Aarti"}
-                      </h3>
-                      <AartiStatusBadge status={booking.status} size="sm" />
+          <Paginated items={bookings} pageSize={10}>
+            {(pageItems) => (
+            <div className="space-y-3">
+              {pageItems.map((booking) => {
+                const session =
+                  typeof booking.sessionId === "object"
+                    ? (booking.sessionId as AartiSession)
+                    : null;
+                return (
+                  <Link
+                    key={booking._id}
+                    to={`/aarti/booking/${booking._id}`}
+                    className="group flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-4 sm:p-5 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
+                  >
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white truncate">
+                          {session?.name ?? "Aarti"}
+                        </h3>
+                        <AartiStatusBadge status={booking.status} size="sm" />
+                      </div>
+                      <p className="font-mono text-[10px] font-bold text-gray-400 tracking-wider">
+                        {booking.bookingReference}
+                      </p>
+                      <div className="flex flex-wrap gap-4 text-[11px] font-medium text-gray-500 dark:text-gray-400 pt-0.5">
+                        <span className="inline-flex items-center gap-1.5">
+                          <Clock size={11} className="stroke-[2.5]" />
+                          {formatDateTime(booking.startsAt)}
+                        </span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <Users size={11} className="stroke-[2.5]" />
+                          {booking.passCount} pass
+                          {booking.passCount === 1 ? "" : "es"}
+                        </span>
+                      </div>
                     </div>
-                    <p className="font-mono text-[10px] font-bold text-gray-400 tracking-wider">
-                      {booking.bookingReference}
-                    </p>
-                    <div className="flex flex-wrap gap-4 text-[11px] font-medium text-gray-500 dark:text-gray-400 pt-0.5">
-                      <span className="inline-flex items-center gap-1.5">
-                        <Clock size={11} className="stroke-[2.5]" />
-                        {formatDateTime(booking.startsAt)}
-                      </span>
-                      <span className="inline-flex items-center gap-1.5">
-                        <Users size={11} className="stroke-[2.5]" />
-                        {booking.passCount} pass
-                        {booking.passCount === 1 ? "" : "es"}
-                      </span>
-                    </div>
-                  </div>
 
-                  <div className="flex items-center gap-4 shrink-0">
-                    <div className="text-right">
-                      <span className="block text-[9px] tracking-wider font-bold text-gray-400">
-                        Total
-                      </span>
-                      <span className="text-base font-black text-[#0B192C] dark:text-white">
-                        {formatCurrency(booking.pricing.totalAmount)}
+                    <div className="flex items-center gap-4 shrink-0">
+                      <div className="text-right">
+                        <span className="block text-[9px] tracking-wider font-bold text-gray-400">
+                          Total
+                        </span>
+                        <span className="text-base font-black text-[#0B192C] dark:text-white">
+                          {formatCurrency(booking.pricing.totalAmount)}
+                        </span>
+                      </div>
+                      <span className="w-8 h-8 rounded-full bg-[#F28C28] text-white flex items-center justify-center shadow-md transition-transform group-hover:translate-x-0.5">
+                        <ArrowRight size={13} className="stroke-[3]" />
                       </span>
                     </div>
-                    <span className="w-8 h-8 rounded-full bg-[#F28C28] text-white flex items-center justify-center shadow-md transition-transform group-hover:translate-x-0.5">
-                      <ArrowRight size={13} className="stroke-[3]" />
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
+                  </Link>
+                );
+              })}
+            </div>
+            )}
+          </Paginated>
         )}
       </section>
     </div>

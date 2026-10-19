@@ -11,6 +11,7 @@ import {
   RotateCcw,
   Search,
   ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 import { providerPublicService, ritualCatalogService } from "../services/provider.service";
 import type { ProviderSearchParams } from "../types/provider.types";
@@ -289,53 +290,35 @@ export const PublicPanditDirectoryPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#071322] pb-20 font-['Inter',sans-serif]">
-      {/* ── Intro and search with Sacred Vedic Banner (All Corners Rounded) ── */}
-      <div className="px-3 pt-3 sm:px-6 sm:pt-6 lg:px-8">
-        <section className="relative overflow-hidden rounded-[28px] sm:rounded-[40px] lg:rounded-[48px] border border-slate-800/60 bg-[#0B192C] px-4 py-16 text-white shadow-2xl sm:px-8 sm:py-20 lg:py-24">
-          {/* Background Banner with Sacred Saffron & Navy Atmospheric Gradient */}
-          <div className="absolute inset-0 z-0">
-            <img
-              src="/banner/pandit_puja_banner.jpg"
-              alt="Sacred Vedic Puja & Havan by Revered Pandits and Sadhus"
-              className="h-full w-full object-cover object-center transition-transform duration-1000 scale-[1.02]"
-              loading="eager"
+      {/* ── Page header: same look as the other storefront pages ── */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
+        <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
+          <h1 className="font-['Kalam'] text-3xl sm:text-5xl font-bold text-[#E58C28]">
+            Verified Vedic Pandits &amp; Acharyas
+          </h1>
+          <div className="flex items-center justify-center gap-2.5 my-1.5">
+            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
+            <Sparkles
+              size={14}
+              className="text-[#E58C28] fill-[#E58C28] shrink-0"
+              aria-hidden="true"
             />
-            {/* Multi-stage spiritual gradients for optimal text contrast & divine saffron warmth */}
-            <div className="absolute inset-0 bg-[#071322]/70 sm:bg-[#071322]/60" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#071322] via-[#071322]/40 to-[#071322]/75" />
-            <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:radial-gradient(#F28C28_1.5px,transparent_1.5px)] [background-size:28px_28px]" />
-            <div aria-hidden="true" className="pointer-events-none absolute -right-10 top-0 h-96 w-96 rounded-full bg-[#F28C28]/25 blur-3xl" />
-            <div aria-hidden="true" className="pointer-events-none absolute left-10 bottom-0 h-80 w-80 rounded-full bg-[#E07B1A]/20 blur-2xl" />
+            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
           </div>
+          <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-2xl mx-auto leading-relaxed">
+            Book authentic temple &amp; home pujas, havans, and Vedic sanskaras with certified purohits. Every listed provider's identity is verified by Tirvona; lineage and institution checks show as extra badges.
+          </p>
+        </div>
 
-          <div className="relative z-10 mx-auto max-w-5xl flex flex-col items-center justify-center text-center space-y-6 sm:space-y-8">
-            <div className="max-w-3xl mx-auto text-center">
-              <h1
-                className="text-3xl sm:text-5xl lg:text-[54px] font-bold leading-[1.25] drop-shadow-md text-center"
-                style={{
-                  fontFamily: "'Kalam', cursive, sans-serif",
-                  letterSpacing: "0.01em",
-                }}
-              >
-                <span className="block text-white">Verified Vedic</span>
-                <span className="block text-[#E58C28] mt-1 sm:mt-1.5">
-                  Pandits &amp; Acharyas
-                </span>
-              </h1>
-              <p className="mt-3.5 mx-auto max-w-2xl text-sm leading-relaxed text-slate-200 sm:text-base drop-shadow-sm font-medium text-center">
-                Book authentic temple &amp; home pujas, havans, and Vedic sanskaras with certified purohits. Every listed provider's identity is verified by Tirvona; lineage and institution checks show as extra badges.
-              </p>
-            </div>
-
-            {/* Slim Floating Pill Search Bar (Sleek, refined, and compact) */}
-            <div className="w-full max-w-2xl sm:max-w-3xl mx-auto">
+        {/* Search */}
+        <div className="w-full max-w-2xl sm:max-w-3xl mx-auto mt-5">
               <form
                 role="search"
                 onSubmit={(e) => {
                   e.preventDefault();
                   updateFilters({ q: queryInput });
                 }}
-                className="relative isolate bg-white/95 dark:bg-[#0B192C]/95 backdrop-blur-md rounded-full shadow-xl shadow-black/20 border border-gray-100 dark:border-slate-800 p-1 sm:p-1.5 flex items-center gap-1 sm:gap-2 mx-auto w-full transition-all focus-within:ring-2 focus-within:ring-[#E58C28]/40"
+                className="relative isolate bg-white dark:bg-[#0B192C] rounded-full tv-soft-surface border border-gray-100 dark:border-slate-800 p-1 sm:p-1.5 flex items-center gap-1 sm:gap-2 mx-auto w-full transition-all focus-within:ring-2 focus-within:ring-[#E58C28]/40"
               >
                 {/* Pandit / Ritual input */}
                 <div className="flex-1 flex items-center gap-2.5 min-w-0 pl-3 sm:pl-4 pr-1 py-1">
@@ -392,9 +375,7 @@ export const PublicPanditDirectoryPage: React.FC = () => {
                   <Search size={15} className="stroke-[2.5]" />
                 </button>
               </form>
-            </div>
-          </div>
-        </section>
+        </div>
       </div>
 
       <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">

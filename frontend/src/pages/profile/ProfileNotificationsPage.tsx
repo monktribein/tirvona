@@ -1,3 +1,4 @@
+import { Paginated } from "../../components/shared/Pagination";
 import React from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, Tag, Calendar } from "lucide-react";
@@ -54,24 +55,28 @@ export const ProfileNotificationsPage: React.FC = () => {
             </button>
           </div>
 
-          <div className="divide-y divide-gray-100 dark:divide-slate-800">
-            {notificationsList.map((n, idx) => (
-              <div key={idx} className="py-4 flex items-start gap-4 text-xs">
-                <div className="p-2.5 bg-gray-50 dark:bg-slate-900 rounded-2xl shrink-0">
-                  {n.icon}
+          <Paginated items={notificationsList} pageSize={15}>
+            {(pageItems) => (
+            <div className="divide-y divide-gray-100 dark:divide-slate-800">
+              {pageItems.map((n, idx) => (
+                <div key={idx} className="py-4 flex items-start gap-4 text-xs">
+                  <div className="p-2.5 bg-gray-50 dark:bg-slate-900 rounded-2xl shrink-0">
+                    {n.icon}
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="font-extrabold text-[#0B192C] dark:text-white">
+                      {n.title}
+                    </h4>
+                    <p className="text-gray-500 font-medium">{n.desc}</p>
+                    <span className="text-[10px] text-gray-400 font-bold block pt-1">
+                      {n.time}
+                    </span>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <h4 className="font-extrabold text-[#0B192C] dark:text-white">
-                    {n.title}
-                  </h4>
-                  <p className="text-gray-500 font-medium">{n.desc}</p>
-                  <span className="text-[10px] text-gray-400 font-bold block pt-1">
-                    {n.time}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            )}
+          </Paginated>
         </div>
       </div>
     </div>

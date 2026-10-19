@@ -1,3 +1,4 @@
+import { Paginated } from "../../components/shared/Pagination";
 import React, { useState, useEffect } from "react";
 import {
   Key,
@@ -16,6 +17,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { EnterprisePageHeader } from "../shared/components/EnterprisePageHeader";
+import { IntegrationGuide } from "./IntegrationGuide";
 import {
   partnerApiService,
   type Partner,
@@ -36,6 +38,7 @@ export const DeveloperApiPage: React.FC = () => {
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [retryingDeliveryId, setRetryingDeliveryId] = useState<string | null>(null);
+  const [testingWebhookId, setTestingWebhookId] = useState<string | null>(null);
 
   // Modals & Secrets
   const [revealedSecrets, setRevealedSecrets] = useState<Record<string, boolean>>({});
@@ -243,6 +246,40 @@ export const DeveloperApiPage: React.FC = () => {
       setActionSuccess("Webhook endpoint deleted.");
     } catch (err: any) {
       setActionError(err.response?.data?.message || err.message || "Failed to delete webhook");
+    }
+  };
+
+  const refreshDeliveries = async (partnerId: string) => {
+    setDeliveries(await partnerApiService.listDeliveries({ partnerId }));
+  };
+
+  const handleTestWebhook = async (id: string) => {
+    setTestingWebhookId(id);
+    setActionError(null);
+    try {
+      await partnerApiService.testWebhook(id);
+      setActionSuccess("Test event queued. Its result appears in Webhook Deliveries in a few seconds.");
+      if (selectedPartner) {
+        // the worker delivers asynchronously: look again shortly after
+        setTimeout(() => void refreshDeliveries(selectedPartner._id).catch(() => undefined), 2500);
+      }
+    } catch (err: any) {
+      setActionError(err.response?.data?.message || err.message || "Failed to send test event");
+    } finally {
+      setTestingWebhookId(null);
+    }
+  };
+
+  const handleToggleWebhook = async (w: WebhookItem) => {
+    setActionError(null);
+    try {
+      const updated = await partnerApiService.updateWebhook(w._id, {
+        status: w.status === "active" ? "inactive" : "active",
+      });
+      setWebhooks(webhooks.map((x) => (x._id === w._id ? updated : x)));
+      setActionSuccess(`Webhook ${updated.status === "active" ? "activated" : "paused"}.`);
+    } catch (err: any) {
+      setActionError(err.response?.data?.message || err.message || "Failed to update webhook");
     }
   };
 
@@ -508,6 +545,20 @@ export const DeveloperApiPage: React.FC = () => {
                   <span>Signing Secret: ••••{w.secretLast4}</span>
                   <div className="flex items-center gap-1">
                     <button
+                      onClick={() => handleTestWebhook(w._id)}
+                      disabled={w.status !== "active" || testingWebhookId === w._id}
+                      title={w.status === "active" ? "Send a signed test event" : "Activate the webhook to send a test"}
+                      className="inline-flex items-center gap-1 rounded-lg bg-purple-50 px-2 py-1 text-[11px] font-bold text-purple-700 transition-colors hover:bg-purple-100 disabled:opacity-50 dark:bg-purple-950/40 dark:text-purple-300"
+                    >
+                      <Send size={11} className={testingWebhookId === w._id ? "animate-pulse" : ""} /> Send test
+                    </button>
+                    <button
+                      onClick={() => handleToggleWebhook(w)}
+                      className="rounded-lg px-2 py-1 text-[11px] font-bold text-gray-500 transition-colors hover:bg-gray-100 dark:hover:bg-slate-800"
+                    >
+                      {w.status === "active" ? "Pause" : "Activate"}
+                    </button>
+                    <button
                       onClick={() => handleRotateWebhookSecret(w._id)}
                       title="Rotate signing secret"
                       className="p-1 rounded text-gray-400 hover:text-amber-500 transition-colors"
@@ -531,6 +582,8 @@ export const DeveloperApiPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <IntegrationGuide />
 
       {/* ─── Webhook Deliveries List ─── */}
       <div className="bg-white dark:bg-[#0B192C] rounded-[22px] border border-gray-100 dark:border-slate-800 p-5 shadow-sm">
@@ -561,57 +614,61 @@ export const DeveloperApiPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-gray-100 dark:border-slate-800 text-gray-400 font-bold">
-                <th className="pb-3">Event</th>
-                <th className="pb-3">Destination</th>
-                <th className="pb-3">Status</th>
-                <th className="pb-3">HTTP Code</th>
-                <th className="pb-3">Latency</th>
-                <th className="pb-3">Delivered At</th>
-                <th className="pb-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50 dark:divide-slate-800/50 font-medium">
-              {filteredDeliveries.map((d) => (
-                <tr key={d._id} className="hover:bg-gray-50/50 dark:hover:bg-slate-900/30">
-                  <td className="py-3 font-mono font-bold text-[#0B192C] dark:text-white">{d.eventType}</td>
-                  <td className="py-3 text-gray-500 truncate max-w-[200px]">{d.url}</td>
-                  <td className="py-3">{statusBadge(d.status)}</td>
-                  <td className="py-3 font-mono">{d.responseStatusCode ?? "—"}</td>
-                  <td className="py-3 text-gray-400">{d.durationMs}ms</td>
-                  <td className="py-3 text-gray-400">{new Date(d.deliveredAt).toLocaleTimeString()}</td>
-                  <td className="py-3 text-right">
-                    <button
-                      onClick={() => handleRetryDelivery(d._id)}
-                      disabled={retryingDeliveryId === d._id}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#F28C28]/10 hover:bg-[#F28C28]/20 text-[#F28C28] dark:bg-[#F28C28]/15 dark:text-[#F28C28] text-[11px] font-bold transition-all disabled:opacity-50"
-                      title="Retry webhook delivery"
-                    >
-                      <RefreshCw size={11} className={retryingDeliveryId === d._id ? "animate-spin" : ""} />
-                      Retry
-                    </button>
-                  </td>
+        <Paginated items={filteredDeliveries} pageSize={15}>
+          {(pageItems) => (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-gray-100 dark:border-slate-800 text-gray-400 font-bold">
+                  <th className="pb-3">Event</th>
+                  <th className="pb-3">Destination</th>
+                  <th className="pb-3">Status</th>
+                  <th className="pb-3">HTTP Code</th>
+                  <th className="pb-3">Latency</th>
+                  <th className="pb-3">Delivered At</th>
+                  <th className="pb-3 text-right">Actions</th>
                 </tr>
-              ))}
-              {filteredDeliveries.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="py-6 text-center text-gray-400">
-                    No delivery logs found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-50 dark:divide-slate-800/50 font-medium">
+                {pageItems.map((d) => (
+                  <tr key={d._id} className="hover:bg-gray-50/50 dark:hover:bg-slate-900/30">
+                    <td className="py-3 font-mono font-bold text-[#0B192C] dark:text-white">{d.eventType}</td>
+                    <td className="py-3 text-gray-500 truncate max-w-[200px]">{d.url}</td>
+                    <td className="py-3">{statusBadge(d.status)}</td>
+                    <td className="py-3 font-mono">{d.responseStatusCode ?? "—"}</td>
+                    <td className="py-3 text-gray-400">{d.durationMs}ms</td>
+                    <td className="py-3 text-gray-400">{new Date(d.deliveredAt).toLocaleTimeString()}</td>
+                    <td className="py-3 text-right">
+                      <button
+                        onClick={() => handleRetryDelivery(d._id)}
+                        disabled={retryingDeliveryId === d._id}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#F28C28]/10 hover:bg-[#F28C28]/20 text-[#F28C28] dark:bg-[#F28C28]/15 dark:text-[#F28C28] text-[11px] font-bold transition-all disabled:opacity-50"
+                        title="Retry webhook delivery"
+                      >
+                        <RefreshCw size={11} className={retryingDeliveryId === d._id ? "animate-spin" : ""} />
+                        Retry
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {filteredDeliveries.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="py-6 text-center text-gray-400">
+                      No delivery logs found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          )}
+        </Paginated>
       </div>
 
       {/* ─── Modal: Create Partner ─── */}
       {showCreatePartner && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#0B192C] rounded-[24px] border border-gray-100 dark:border-slate-800 p-6 w-full max-w-md shadow-2xl space-y-4">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="tv-drawer-panel bg-white dark:bg-[#0B192C] rounded-[24px] border border-gray-100 dark:border-slate-800 p-6 w-full max-w-md shadow-2xl space-y-4">
             <h3 className="text-base font-black text-[#0B192C] dark:text-white">Add New Partner</h3>
             <div className="space-y-3 text-xs">
               <div>
@@ -699,8 +756,8 @@ export const DeveloperApiPage: React.FC = () => {
 
       {/* ─── Modal: Create API Key ─── */}
       {showCreateKey && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#0B192C] rounded-[24px] border border-gray-100 dark:border-slate-800 p-6 w-full max-w-md shadow-2xl space-y-4">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="tv-drawer-panel bg-white dark:bg-[#0B192C] rounded-[24px] border border-gray-100 dark:border-slate-800 p-6 w-full max-w-md shadow-2xl space-y-4">
             <h3 className="text-base font-black text-[#0B192C] dark:text-white">
               {createdKeySecret ? "API Key Secret" : "Generate API Key"}
             </h3>
@@ -803,8 +860,8 @@ export const DeveloperApiPage: React.FC = () => {
 
       {/* ─── Modal: Create Webhook ─── */}
       {showCreateWebhook && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#0B192C] rounded-[24px] border border-gray-100 dark:border-slate-800 p-6 w-full max-w-md shadow-2xl space-y-4">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="tv-drawer-panel bg-white dark:bg-[#0B192C] rounded-[24px] border border-gray-100 dark:border-slate-800 p-6 w-full max-w-md shadow-2xl space-y-4">
             <h3 className="text-base font-black text-[#0B192C] dark:text-white">
               {createdWebhookSecret ? "Webhook Signing Secret" : "Add Webhook Endpoint"}
             </h3>

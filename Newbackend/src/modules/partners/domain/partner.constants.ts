@@ -27,6 +27,20 @@ export const WEBHOOK_EVENT_TYPES = [
 ] as const;
 export type WebhookEventType = (typeof WEBHOOK_EVENT_TYPES)[number];
 
+/** Events a partner can subscribe to plus the synthetic "webhook.test" ping sent from the admin console. */
+export const WEBHOOK_TEST_EVENT = "webhook.test" as const;
+export const WEBHOOK_ALL_EVENT_TYPES = [...WEBHOOK_EVENT_TYPES, WEBHOOK_TEST_EVENT] as const;
+export type WebhookDeliveredEventType = (typeof WEBHOOK_ALL_EVENT_TYPES)[number];
+
+/** Permission a partner needs before it may receive a given event. */
+export const WEBHOOK_EVENT_PERMISSION: Record<WebhookEventType, PartnerPermission> = {
+  "booking.created": "bookings.read",
+  "booking.status_changed": "bookings.read",
+  "booking.cancelled": "bookings.read",
+  "payment.succeeded": "payments.read",
+  "payment.failed": "payments.read",
+};
+
 export const WEBHOOK_DELIVERY_STATUSES = ["pending", "success", "failed"] as const;
 export type WebhookDeliveryStatus = (typeof WEBHOOK_DELIVERY_STATUSES)[number];
 

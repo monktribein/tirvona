@@ -1,5 +1,5 @@
+import { Paginated } from "../../components/shared/Pagination";
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import { useNotifications } from "../../contexts/NotificationContext";
 import { bookingService } from "../../services";
 import { getErrorMessage } from "../../lib/api";
@@ -25,14 +25,26 @@ export default function AdminPendingPaymentsPage() {
   const [transactionReference, setTransactionReference] = useState("");
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [search, setSearch] = useState("");
 
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      const res = await bookingService.paymentPending();
-      if (res.data?.success) {
-        setBookings(res.data.data);
+      // Every booking with money still due, in any status, across all pages.
+      const all: any[] = [];
+      for (let page = 1; page <= 50; page += 1) {
+        const res = await bookingService.paymentPending({
+          status: "all",
+          paymentStatus: "pending,partially_paid",
+          page: String(page),
+          limit: "100",
+        });
+        const rows =
+          res.data?.success && Array.isArray(res.data.data) ? res.data.data : [];
+        all.push(...rows);
+        if (rows.length < 100) break;
       }
+      setBookings(all);
     } catch (err) {
       addNotification(
         "Error",
@@ -81,6 +93,34 @@ export default function AdminPendingPaymentsPage() {
     }
   };
 
+  const guestOf = (b: any) => ({
+    name:
+      b.customerId?.name ||
+      b.walkInGuest?.name ||
+      b.whatsappCustomerId?.name ||
+      "Unknown Guest",
+    phone:
+      b.customerId?.phone ||
+      b.walkInGuest?.phone ||
+      b.whatsappCustomerId?.phone ||
+      "",
+  });
+  const dueOf = (b: any) =>
+    Math.max(
+      0,
+      Number(b.pricing?.totalAmount || 0) - Number(b.pricing?.amountPaid || 0),
+    );
+  const needle = search.trim().toLowerCase();
+  const visible = needle
+    ? bookings.filter((b) => {
+        const g = guestOf(b);
+        return [b.bookingId, b.reservationNumber, g.name, g.phone, b.ashramId?.name]
+          .filter(Boolean)
+          .some((v) => String(v).toLowerCase().includes(needle));
+      })
+    : bookings;
+  const totalDue = visible.reduce((sum, b) => sum + dueOf(b), 0);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center bg-white dark:bg-[#0B192C] p-6 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm">
@@ -119,66 +159,132 @@ export default function AdminPendingPaymentsPage() {
           <p className="text-gray-500">No pending payment bookings found.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {bookings.map((b) => (
-            <div
-              key={b._id}
-              className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4 flex flex-col"
-            >
-              <div className="flex justify-between items-start border-b border-gray-50 dark:border-slate-800 pb-3">
-                <div className="space-y-1">
-                  <span className="text-xs font-bold text-[#F28C28]">
-                    {b.bookingId}
-                  </span>
-                  <h3 className="font-bold text-sm text-[#0B192C] dark:text-white line-clamp-1">
-                    {b.customerId?.name || b.walkInGuest?.name || "Unknown Guest"}
-                  </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                    <MapPin size={12} /> {b.ashramId?.name}
-                  </p>
-                </div>
-                <EnterpriseStatusBadge status={b.status} />
+        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 dark:border-slate-800 px-4 py-3">
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search ref, guest, phone, property…"
+              className="w-full sm:w-80 border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm focus:outline-none focus:border-[#F28C28]"
+            />
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+              {visible.length} of {bookings.length} bookings · Total due{" "}
+              <span className="text-rose-600">{formatCurrency(totalDue)}</span>
+            </p>
+          </div>
+          <Paginated items={visible} pageSize={15}>
+            {(pageItems) => (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[980px] text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                      <th className="px-4 py-3">Booking Ref</th>
+                      <th className="px-4 py-3">Guest</th>
+                      <th className="px-4 py-3">Property</th>
+                      <th className="px-4 py-3">Stay</th>
+                      <th className="px-4 py-3">Rooms</th>
+                      <th className="px-4 py-3 text-right">Total</th>
+                      <th className="px-4 py-3 text-right">Paid</th>
+                      <th className="px-4 py-3 text-right">Due</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3">Payment</th>
+                      <th className="px-4 py-3 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pageItems.map((b) => {
+                      const guest = guestOf(b);
+                      const rooms = (b.rooms || [])
+                        .map((r: any) => r.roomId?.name)
+                        .filter(Boolean)
+                        .join(", ");
+                      return (
+                        <tr
+                          key={b._id}
+                          className="border-b border-gray-50 dark:border-slate-800/70 align-top hover:bg-gray-50/60 dark:hover:bg-slate-900/40"
+                        >
+                          <td className="px-4 py-3 font-bold text-[#F28C28] whitespace-nowrap">
+                            {b.bookingId}
+                            <span className="block text-[10px] font-medium text-gray-400">
+                              {b.createdAt ? new Date(b.createdAt).toLocaleDateString() : ""}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="block font-semibold text-[#0B192C] dark:text-white">
+                              {guest.name}
+                            </span>
+                            {guest.phone && (
+                              <span className="block text-xs text-gray-500">{guest.phone}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                            <span className="inline-flex items-start gap-1">
+                              <MapPin size={12} className="mt-0.5 shrink-0" />
+                              {b.ashramId?.name || "—"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-xs whitespace-nowrap">
+                            <span className="flex items-center gap-1">
+                              <Calendar size={12} className="text-[#F28C28]" />
+                              {b.checkInDate ? new Date(b.checkInDate).toLocaleDateString() : "—"}
+                            </span>
+                            <span className="mt-0.5 flex items-center gap-1 text-gray-500">
+                              <Calendar size={12} />
+                              {b.checkOutDate ? new Date(b.checkOutDate).toLocaleDateString() : "—"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300 max-w-[180px]">
+                            {rooms || "—"}
+                          </td>
+                          <td className="px-4 py-3 text-right whitespace-nowrap">
+                            {formatCurrency(b.pricing?.totalAmount || 0)}
+                          </td>
+                          <td className="px-4 py-3 text-right whitespace-nowrap">
+                            {formatCurrency(b.pricing?.amountPaid || 0)}
+                          </td>
+                          <td className="px-4 py-3 text-right font-bold whitespace-nowrap text-rose-600">
+                            {formatCurrency(dueOf(b))}
+                          </td>
+                          <td className="px-4 py-3">
+                            <EnterpriseStatusBadge status={b.status} />
+                          </td>
+                          <td className="px-4 py-3">
+                            <EnterpriseStatusBadge status={b.paymentStatus} />
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            {["pending", "payment_pending", "confirmed", "checked_in"].includes(b.status) ? (
+                              <button
+                                onClick={() => setSelectedBooking(b)}
+                                className="px-3 py-1.5 bg-[#F28C28] text-white text-xs font-bold hover:bg-opacity-90 transition-colors whitespace-nowrap"
+                              >
+                                Confirm Payment
+                              </button>
+                            ) : (
+                              <span className="text-[11px] text-gray-400">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {pageItems.length === 0 && (
+                      <tr>
+                        <td colSpan={11} className="px-4 py-10 text-center text-sm text-gray-500">
+                          No bookings match your search.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
-
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <span className="text-gray-400 block text-[10px]">Check In</span>
-                  <span className="font-semibold flex items-center gap-1">
-                    <Calendar size={12} className="text-[#F28C28]" />
-                    {new Date(b.checkInDate).toLocaleDateString()}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-400 block text-[10px]">Check Out</span>
-                  <span className="font-semibold flex items-center gap-1">
-                    <Calendar size={12} className="text-[#F28C28]" />
-                    {new Date(b.checkOutDate).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-gray-50 dark:border-slate-800 mt-auto flex justify-between items-center bg-gray-50 dark:bg-slate-900/50 -mx-5 -mb-5 px-5 py-3 rounded-b-2xl">
-                <div>
-                  <span className="text-[10px] text-gray-500 block">Amount Due</span>
-                  <span className="font-bold text-base text-[#0B192C] dark:text-white">
-                    {formatCurrency(b.pricing?.totalAmount)}
-                  </span>
-                </div>
-                <button
-                  onClick={() => setSelectedBooking(b)}
-                  className="px-4 py-2 bg-[#F28C28] text-white text-xs font-bold rounded-lg hover:bg-opacity-90 transition-colors shadow-sm"
-                >
-                  Confirm Payment
-                </button>
-              </div>
-            </div>
-          ))}
+            )}
+          </Paginated>
         </div>
       )}
 
       {selectedBooking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-[#0B192C] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl border border-gray-100 dark:border-slate-800">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="tv-drawer-panel bg-white dark:bg-[#0B192C] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl border border-gray-100 dark:border-slate-800">
             <div className="p-4 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-slate-900/50">
               <h3 className="font-bold text-[#0B192C] dark:text-white flex items-center gap-2">
                 <CreditCard size={18} className="text-[#F28C28]" />

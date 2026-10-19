@@ -1,3 +1,4 @@
+import { Paginated } from "../../../components/shared/Pagination";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Car,
@@ -381,80 +382,84 @@ export const ParkingControlCenterPage: React.FC = () => {
 
           {tab === "partners" && (
             <div className={`${card} overflow-hidden`}>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[820px]">
-                  <thead className="bg-gray-50 dark:bg-slate-900/60">
-                    <tr>
-                      <th className={th}>Business</th>
-                      <th className={th}>Code</th>
-                      <th className={th}>Contact</th>
-                      <th className={th}>Commission</th>
-                      <th className={th}>Status</th>
-                      <th className={th}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-                    {partners.map((partner) => (
-                      <tr key={partner._id}>
-                        <td className={`${td} font-bold`}>
-                          {partner.businessName}
-                          <span className="block text-xs text-gray-400 font-semibold">
-                            {partner.address?.city || "—"}
-                          </span>
-                        </td>
-                        <td className={td}>{partner.partnerCode}</td>
-                        <td className={td}>
-                          {partner.contactPhone || "—"}
-                          <span className="block text-xs text-gray-400">
-                            {partner.contactEmail || ""}
-                          </span>
-                        </td>
-                        <td className={td}>
-                          {partner.commissionPercent == null
-                            ? "Platform default"
-                            : `${partner.commissionPercent}%`}
-                        </td>
-                        <td className={td}>
-                          <EnterpriseStatusBadge status={partner.status} />
-                        </td>
-                        <td className={td}>
-                          <div className="flex flex-wrap gap-1.5">
-                            {PARTNER_ACTIONS.filter(
-                              (action) => action.status !== partner.status,
-                            ).map((action) => (
-                              <button
-                                key={action.status}
-                                disabled={busyId === partner._id}
-                                onClick={() =>
-                                  setPartnerStatus(
-                                    partner,
-                                    action.status,
-                                    action.confirm,
-                                  )
-                                }
-                                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold disabled:opacity-50 ${action.tone}`}
-                              >
-                                {action.icon}
-                                {action.label}
-                              </button>
-                            ))}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {!partners.length && (
+              <Paginated items={partners} pageSize={15}>
+                {(pageItems) => (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[820px]">
+                    <thead className="bg-gray-50 dark:bg-slate-900/60">
                       <tr>
-                        <td
-                          colSpan={6}
-                          className="px-4 py-12 text-center text-sm font-bold text-gray-400"
-                        >
-                          No parking partners registered yet.
-                        </td>
+                        <th className={th}>Business</th>
+                        <th className={th}>Code</th>
+                        <th className={th}>Contact</th>
+                        <th className={th}>Commission</th>
+                        <th className={th}>Status</th>
+                        <th className={th}>Actions</th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+                      {pageItems.map((partner) => (
+                        <tr key={partner._id}>
+                          <td className={`${td} font-bold`}>
+                            {partner.businessName}
+                            <span className="block text-xs text-gray-400 font-semibold">
+                              {partner.address?.city || "—"}
+                            </span>
+                          </td>
+                          <td className={td}>{partner.partnerCode}</td>
+                          <td className={td}>
+                            {partner.contactPhone || "—"}
+                            <span className="block text-xs text-gray-400">
+                              {partner.contactEmail || ""}
+                            </span>
+                          </td>
+                          <td className={td}>
+                            {partner.commissionPercent == null
+                              ? "Platform default"
+                              : `${partner.commissionPercent}%`}
+                          </td>
+                          <td className={td}>
+                            <EnterpriseStatusBadge status={partner.status} />
+                          </td>
+                          <td className={td}>
+                            <div className="flex flex-wrap gap-1.5">
+                              {PARTNER_ACTIONS.filter(
+                                (action) => action.status !== partner.status,
+                              ).map((action) => (
+                                <button
+                                  key={action.status}
+                                  disabled={busyId === partner._id}
+                                  onClick={() =>
+                                    setPartnerStatus(
+                                      partner,
+                                      action.status,
+                                      action.confirm,
+                                    )
+                                  }
+                                  className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold disabled:opacity-50 ${action.tone}`}
+                                >
+                                  {action.icon}
+                                  {action.label}
+                                </button>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {!partners.length && (
+                        <tr>
+                          <td
+                            colSpan={6}
+                            className="px-4 py-12 text-center text-sm font-bold text-gray-400"
+                          >
+                            No parking partners registered yet.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                )}
+              </Paginated>
             </div>
           )}
 
@@ -484,97 +489,101 @@ export const ParkingControlCenterPage: React.FC = () => {
                   );
                 })}
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[820px]">
-                  <thead className="bg-gray-50 dark:bg-slate-900/60">
-                    <tr>
-                      <th className={th}>Parking</th>
-                      <th className={th}>Partner</th>
-                      <th className={th}>Capacity</th>
-                      <th className={th}>Status</th>
-                      <th className={th}>Flags</th>
-                      <th className={th}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-                    {visibleLocations.map((location) => (
-                      <tr key={location._id}>
-                        <td className={`${td} font-bold`}>
-                          {location.name}
-                          <span className="block text-xs text-gray-400 font-semibold">
-                            {location.address?.city || "—"}
-                          </span>
-                        </td>
-                        <td className={td}>
-                          {location.partnerId?.businessName || "—"}
-                        </td>
-                        <td className={td}>{location.totalCapacity ?? 0}</td>
-                        <td className={td}>
-                          <EnterpriseStatusBadge status={location.status} />
-                        </td>
-                        <td className={td}>
-                          <div className="flex gap-1.5">
-                            {(["isVerified", "isFeatured"] as const).map(
-                              (flag) => (
-                                <button
-                                  key={flag}
-                                  disabled={busyId === location._id}
-                                  onClick={() =>
-                                    toggleLocationFlag(location, flag)
-                                  }
-                                  className={`px-2 py-1 rounded-lg text-[11px] font-black border disabled:opacity-50 ${
-                                    location[flag]
-                                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                      : "bg-gray-50 text-gray-400 border-gray-200"
-                                  }`}
-                                >
-                                  {flag === "isVerified"
-                                    ? "Verified"
-                                    : "Featured"}
-                                </button>
-                              ),
-                            )}
-                          </div>
-                        </td>
-                        <td className={td}>
-                          <select
-                            disabled={busyId === location._id}
-                            value={location.status}
-                            onChange={(event) =>
-                              setLocationStatus(location, event.target.value)
-                            }
-                            className="px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold disabled:opacity-50"
-                          >
-                            {[
-                              "draft",
-                              "pending",
-                              "active",
-                              "inactive",
-                              "suspended",
-                            ].map((status) => (
-                              <option key={status} value={status}>
-                                {status}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                      </tr>
-                    ))}
-                    {!visibleLocations.length && (
+              <Paginated items={visibleLocations} pageSize={15}>
+                {(pageItems) => (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[820px]">
+                    <thead className="bg-gray-50 dark:bg-slate-900/60">
                       <tr>
-                        <td
-                          colSpan={6}
-                          className="px-4 py-12 text-center text-sm font-bold text-gray-400"
-                        >
-                          {locations.length
-                            ? `No ${locationStatusFilter} parking locations.`
-                            : "No parking locations yet."}
-                        </td>
+                        <th className={th}>Parking</th>
+                        <th className={th}>Partner</th>
+                        <th className={th}>Capacity</th>
+                        <th className={th}>Status</th>
+                        <th className={th}>Flags</th>
+                        <th className={th}>Actions</th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+                      {pageItems.map((location) => (
+                        <tr key={location._id}>
+                          <td className={`${td} font-bold`}>
+                            {location.name}
+                            <span className="block text-xs text-gray-400 font-semibold">
+                              {location.address?.city || "—"}
+                            </span>
+                          </td>
+                          <td className={td}>
+                            {location.partnerId?.businessName || "—"}
+                          </td>
+                          <td className={td}>{location.totalCapacity ?? 0}</td>
+                          <td className={td}>
+                            <EnterpriseStatusBadge status={location.status} />
+                          </td>
+                          <td className={td}>
+                            <div className="flex gap-1.5">
+                              {(["isVerified", "isFeatured"] as const).map(
+                                (flag) => (
+                                  <button
+                                    key={flag}
+                                    disabled={busyId === location._id}
+                                    onClick={() =>
+                                      toggleLocationFlag(location, flag)
+                                    }
+                                    className={`px-2 py-1 rounded-lg text-[11px] font-black border disabled:opacity-50 ${
+                                      location[flag]
+                                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                        : "bg-gray-50 text-gray-400 border-gray-200"
+                                    }`}
+                                  >
+                                    {flag === "isVerified"
+                                      ? "Verified"
+                                      : "Featured"}
+                                  </button>
+                                ),
+                              )}
+                            </div>
+                          </td>
+                          <td className={td}>
+                            <select
+                              disabled={busyId === location._id}
+                              value={location.status}
+                              onChange={(event) =>
+                                setLocationStatus(location, event.target.value)
+                              }
+                              className="px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold disabled:opacity-50"
+                            >
+                              {[
+                                "draft",
+                                "pending",
+                                "active",
+                                "inactive",
+                                "suspended",
+                              ].map((status) => (
+                                <option key={status} value={status}>
+                                  {status}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                        </tr>
+                      ))}
+                      {!visibleLocations.length && (
+                        <tr>
+                          <td
+                            colSpan={6}
+                            className="px-4 py-12 text-center text-sm font-bold text-gray-400"
+                          >
+                            {locations.length
+                              ? `No ${locationStatusFilter} parking locations.`
+                              : "No parking locations yet."}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                )}
+              </Paginated>
             </div>
           )}
 
@@ -589,49 +598,53 @@ export const ParkingControlCenterPage: React.FC = () => {
                   settled under one payout batch reference.
                 </p>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[640px]">
-                  <thead className="bg-gray-50 dark:bg-slate-900/60">
-                    <tr>
-                      <th className={th}>Partner</th>
-                      <th className={th}>Unsettled Bookings</th>
-                      <th className={th}>Amount Due</th>
-                      <th className={th}>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-                    {payoutsByPartner.map((group) => (
-                      <tr key={group.partnerId}>
-                        <td className={`${td} font-bold`}>{group.name}</td>
-                        <td className={td}>{group.count}</td>
-                        <td className={`${td} font-black`}>
-                          {money(group.earning)}
-                        </td>
-                        <td className={td}>
-                          <button
-                            disabled={busyId === group.partnerId}
-                            onClick={() => settle(group)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F28C28] text-white text-xs font-bold hover:bg-[#D97706] disabled:opacity-50"
-                          >
-                            <IndianRupee size={13} />
-                            Settle Payout
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                    {!payoutsByPartner.length && (
+              <Paginated items={payoutsByPartner} pageSize={15}>
+                {(pageItems) => (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[640px]">
+                    <thead className="bg-gray-50 dark:bg-slate-900/60">
                       <tr>
-                        <td
-                          colSpan={4}
-                          className="px-4 py-12 text-center text-sm font-bold text-gray-400"
-                        >
-                          Nothing pending settlement.
-                        </td>
+                        <th className={th}>Partner</th>
+                        <th className={th}>Unsettled Bookings</th>
+                        <th className={th}>Amount Due</th>
+                        <th className={th}>Action</th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+                      {pageItems.map((group) => (
+                        <tr key={group.partnerId}>
+                          <td className={`${td} font-bold`}>{group.name}</td>
+                          <td className={td}>{group.count}</td>
+                          <td className={`${td} font-black`}>
+                            {money(group.earning)}
+                          </td>
+                          <td className={td}>
+                            <button
+                              disabled={busyId === group.partnerId}
+                              onClick={() => settle(group)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F28C28] text-white text-xs font-bold hover:bg-[#D97706] disabled:opacity-50"
+                            >
+                              <IndianRupee size={13} />
+                              Settle Payout
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {!payoutsByPartner.length && (
+                        <tr>
+                          <td
+                            colSpan={4}
+                            className="px-4 py-12 text-center text-sm font-bold text-gray-400"
+                          >
+                            Nothing pending settlement.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                )}
+              </Paginated>
             </div>
           )}
         </>

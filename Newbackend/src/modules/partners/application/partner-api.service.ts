@@ -204,13 +204,32 @@ export class PartnerApiService {
   // -------------------------------------------------------------
   // PAYMENT STATUS READ
   // -------------------------------------------------------------
+  /**
+   * Accepts a payment id, a booking id / reference ("TRV-..."), a transaction id or a gateway payment id.
+   * For a booking, the successful payment wins, otherwise a payment attempt.
+   */
   async getPaymentStatus(partner: AuthenticatedPartnerContext, paymentIdOrBookingId: string) {
-    const isObjectId = paymentIdOrBookingId.match(/^[0-9a-fA-F]{24}$/);
-    const filter = isObjectId
-      ? { $or: [{ _id: paymentIdOrBookingId }, { bookingId: paymentIdOrBookingId }] }
-      : { transactionId: paymentIdOrBookingId };
+    const ref = paymentIdOrBookingId.trim();
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(ref);
 
-    const payment = await this.paymentModel.findOne(filter).lean();
+    const forBooking = async (bookingKey: string) =>
+      (await this.paymentModel.findOne({ bookingId: bookingKey, status: "success" }).lean()) ??
+      (await this.paymentModel.findOne({ bookingId: bookingKey }).lean());
+
+    let payment: any = null;
+    if (isObjectId) {
+      payment =
+        (await this.paymentModel.findOne({ _id: ref }).lean()) ?? (await forBooking(ref));
+    } else {
+      const booking = await this.bookingModel.findOne({ bookingId: ref }).lean();
+      if (booking) payment = await forBooking(String(booking._id));
+      payment ??= await this.paymentModel
+        .findOne({
+          $or: [{ transactionId: ref }, { "gateway.paymentId": ref }, { "gateway.orderId": ref }],
+        })
+        .lean();
+    }
+
     if (!payment) throw new NotFoundException("Payment record not found");
 
     this.assertAshramInScope(partner, payment.ashramId);

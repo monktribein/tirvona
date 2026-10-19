@@ -100,7 +100,7 @@ const OrderDetail: React.FC<{ id: string; onChanged: () => void }> = ({ id, onCh
       <ul className="divide-y divide-gray-100 dark:divide-slate-800 border border-gray-100 dark:border-slate-800 rounded-2xl">
         {o.items.map((i) => (
           <li key={i._id ?? i.productId} className="p-3 flex items-center gap-3">
-            {i.image && <img src={i.image} alt="" className="w-10 h-10 rounded-lg object-cover" />}
+            {i.image && <img src={i.image} alt="" className="w-10 h-10 rounded-lg object-cover" loading="lazy" decoding="async" />}
             <span className="flex-1 min-w-0">
               <span className="font-bold block truncate">{i.name}</span>
               <span className="text-gray-400">

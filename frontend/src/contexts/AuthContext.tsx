@@ -399,6 +399,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const logout = () => {
     localStorage.removeItem(TOKEN_KEY);
     sessionStorage.removeItem("sidebar_open_group");
+    // Per-account profile cache must not outlive the session on a shared device.
+    localStorage.removeItem("tirvona_user_memory");
     setToken(null);
     setUser(null);
   };

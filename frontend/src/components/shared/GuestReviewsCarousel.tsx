@@ -269,8 +269,7 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
                           onError={(e) => {
                             e.currentTarget.onerror = null;
                             e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(reviewerName)}&background=0A4DA6&color=fff`;
-                          }}
-                        />
+                          }} loading="lazy" decoding="async" />
                         <div className="space-y-0.5">
                           <h4 className="text-xs font-black text-[#0B192C] dark:text-white line-clamp-1">
                             {reviewerName}
@@ -433,8 +432,7 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
                             onError={(e) => {
                               e.currentTarget.onerror = null;
                               e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(reviewerName)}&background=0A4DA6&color=fff`;
-                            }}
-                          />
+                            }} loading="lazy" decoding="async" />
                           <div>
                             <h4 className="text-xs font-black text-[#0B192C] dark:text-white">
                               {reviewerName}

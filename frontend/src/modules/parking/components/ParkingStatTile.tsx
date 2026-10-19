@@ -42,25 +42,15 @@ export const ParkingStatTile: React.FC<ParkingStatTileProps> = ({
   const style = TONES[tone] || TONES.primary;
 
   return (
-    <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-4 space-y-2 shadow-sm hover:shadow-md transition-all">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[9px] tracking-wider font-bold text-gray-400 line-clamp-1">
-          {label}
-        </span>
-        <span
-          className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${style.chip}`}
-        >
+    <div className="tv-stat">
+      <div className="tv-stat-head">
+        <span className="tv-stat-label">{label}</span>
+        <span className={`tv-stat-icon ${style.chip}`}>
           <Icon size={14} className="stroke-[2.5]" />
         </span>
       </div>
-      <p className={`text-xl font-black leading-none ${style.value}`}>
-        {value}
-      </p>
-      {sub && (
-        <p className="text-[10px] font-semibold text-gray-400 line-clamp-1">
-          {sub}
-        </p>
-      )}
+      <p className={`tv-stat-value ${style.value}`}>{value}</p>
+      {sub && <p className="tv-stat-hint">{sub}</p>}
     </div>
   );
 };

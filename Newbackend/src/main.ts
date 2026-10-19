@@ -14,6 +14,12 @@ import { applyDnsServersFromEnvironment } from "./config/environment";
 import { ApiExceptionFilter } from "./common/filters/api-exception.filter";
 import { RequestIdInterceptor } from "./common/interceptors/request-id.interceptor";
 import { configureDatabase } from "./database/database";
+import {
+  devRequestLogMiddleware,
+  perfEnabled,
+  requestPerfMiddleware,
+  startEventLoopMonitor,
+} from "./common/perf/request-perf";
 
 async function bootstrap(): Promise<void> {
   const isProduction = process.env.NODE_ENV === "production";
@@ -24,7 +30,14 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, {
     rawBody: true,
     bufferLogs: isProduction,
-    logger: isProduction ? undefined : ["error", "warn", "log"],
+    // Local runs print only warnings, errors and the ready banner below; the
+    // per-module and per-route startup lines are noise. NEST_LOG=verbose
+    // brings the full Nest log back when debugging startup.
+    logger: isProduction
+      ? undefined
+      : process.env.NEST_LOG === "verbose"
+        ? ["error", "warn", "log"]
+        : ["error", "warn"],
   });
   app.enableShutdownHooks();
   const config = app.get(ConfigService);
@@ -36,6 +49,12 @@ async function bootstrap(): Promise<void> {
     type: VersioningType.URI,
     defaultVersion: VERSION_NEUTRAL,
   });
+  if (perfEnabled()) {
+    app.use(requestPerfMiddleware());
+    startEventLoopMonitor();
+  }
+  if (!isProduction && process.env.REQUEST_LOG !== "false")
+    app.use(devRequestLogMiddleware());
   app.use(helmet());
   app.use(compression());
   if (config.get<boolean>("trustProxy"))
@@ -58,8 +77,9 @@ async function bootstrap(): Promise<void> {
       if (
         allowed.includes(normalized) ||
         /^https:\/\/([a-zA-Z0-9-]+\.)*tirvona\.com$/.test(normalized) ||
-        /^http:\/\/localhost:[0-9]+$/.test(normalized) ||
-        /^http:\/\/127\.0\.0\.1:[0-9]+$/.test(normalized)
+        (!isProduction &&
+          (/^http:\/\/localhost:[0-9]+$/.test(normalized) ||
+            /^http:\/\/127\.0\.0\.1:[0-9]+$/.test(normalized)))
       ) {
         callback(null, true);
       } else {

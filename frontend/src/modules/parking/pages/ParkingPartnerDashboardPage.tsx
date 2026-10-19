@@ -1,3 +1,4 @@
+import { Paginated } from "../../../components/shared/Pagination";
 import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -30,7 +31,7 @@ import {
 } from "../utils/parkingFormat";
 import ParkingStatTile from "../components/ParkingStatTile";
 import ParkingStatusBadge from "../components/ParkingStatusBadge";
-import { AnalyticsBarChart } from "../../../components/dashboard/AnalyticsCharts";
+import { AnalyticsBarChart } from "../../../components/dashboard/LazyAnalyticsCharts";
 
 interface ReportBundle {
   revenue?: {
@@ -99,7 +100,7 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
 
   if (loading && !stats) {
     return (
-      <div className="max-w-7xl mx-auto px-4 pt-8 pb-20 space-y-4">
+      <div className="space-y-4 pb-10">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {Array.from({ length: 8 }).map((_, i) => (
             <div
@@ -265,58 +266,62 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
               No bookings to show.
             </p>
           ) : (
-            <div className="overflow-x-auto -mx-5 px-5">
-              <table className="w-full min-w-[36rem]">
-                <thead>
-                  <tr>
-                    {[
-                      "Vehicle",
-                      "Entry",
-                      "Exit",
-                      "Bay",
-                      "Amount",
-                      "Status",
-                    ].map((h) => (
-                      <th
-                        key={h}
-                        className="text-left text-[9px] tracking-wider font-bold text-gray-400 pb-2 pr-3"
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {bookings.map((b) => (
-                    <tr key={b._id}>
-                      <td className="py-2.5 pr-3">
-                        <p className="text-[11px] font-black text-[#0B192C] dark:text-white">
-                          {b.vehicleNumber}
-                        </p>
-                        <p className="text-[9px] font-semibold text-gray-400">
-                          {vehicleLabel(b.vehicleType)}
-                        </p>
-                      </td>
-                      <td className="py-2.5 pr-3 text-[10px] font-semibold text-slate-600 dark:text-gray-300">
-                        {formatDateTime(b.entryAt)}
-                      </td>
-                      <td className="py-2.5 pr-3 text-[10px] font-semibold text-slate-600 dark:text-gray-300">
-                        {formatDateTime(b.exitAt)}
-                      </td>
-                      <td className="py-2.5 pr-3 text-[10px] font-bold text-slate-700 dark:text-gray-200">
-                        {b.assignedSlotNumber || "—"}
-                      </td>
-                      <td className="py-2.5 pr-3 text-[10px] font-black text-[#0B192C] dark:text-white">
-                        {formatCurrency(b.pricing.amountPaid)}
-                      </td>
-                      <td className="py-2.5">
-                        <ParkingStatusBadge status={b.status} size="sm" />
-                      </td>
+            <Paginated items={bookings} pageSize={10}>
+              {(pageItems) => (
+              <div className="overflow-x-auto -mx-5 px-5">
+                <table className="w-full min-w-[36rem]">
+                  <thead>
+                    <tr>
+                      {[
+                        "Vehicle",
+                        "Entry",
+                        "Exit",
+                        "Bay",
+                        "Amount",
+                        "Status",
+                      ].map((h) => (
+                        <th
+                          key={h}
+                          className="text-left text-[9px] tracking-wider font-bold text-gray-400 pb-2 pr-3"
+                        >
+                          {h}
+                        </th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {pageItems.map((b) => (
+                      <tr key={b._id}>
+                        <td className="py-2.5 pr-3">
+                          <p className="text-[11px] font-black text-[#0B192C] dark:text-white">
+                            {b.vehicleNumber}
+                          </p>
+                          <p className="text-[9px] font-semibold text-gray-400">
+                            {vehicleLabel(b.vehicleType)}
+                          </p>
+                        </td>
+                        <td className="py-2.5 pr-3 text-[10px] font-semibold text-slate-600 dark:text-gray-300">
+                          {formatDateTime(b.entryAt)}
+                        </td>
+                        <td className="py-2.5 pr-3 text-[10px] font-semibold text-slate-600 dark:text-gray-300">
+                          {formatDateTime(b.exitAt)}
+                        </td>
+                        <td className="py-2.5 pr-3 text-[10px] font-bold text-slate-700 dark:text-gray-200">
+                          {b.assignedSlotNumber || "—"}
+                        </td>
+                        <td className="py-2.5 pr-3 text-[10px] font-black text-[#0B192C] dark:text-white">
+                          {formatCurrency(b.pricing.amountPaid)}
+                        </td>
+                        <td className="py-2.5">
+                          <ParkingStatusBadge status={b.status} size="sm" />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              )}
+            </Paginated>
           )}
         </section>
 

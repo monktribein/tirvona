@@ -1,0 +1,451 @@
+/*
+ * TradeVistar dashboard table system
+ *
+ * Buyer Payments & Invoices is the visual source of truth. These rules are
+ * intentionally scoped to dashboard shells so storefront/content tables keep
+ * their purpose-specific presentation. Admin, Seller and Buyer all import this
+ * single file.
+ */
+:root {
+  --tv-table-font-size: 14px;
+  --tv-table-header-size: 12px;
+  --tv-table-row-height: 48px;
+  --tv-table-header-height: 40px;
+  --tv-table-cell-x: 16px;
+  --tv-table-cell-y: 10px;
+  --tv-table-primary: #002d5f;
+  --tv-table-secondary: #607087;
+  --tv-table-divider: rgb(203 213 225 / 0.48);
+  --tv-table-header-bg: #f8fafc;
+  --tv-table-hover: #f8fbff;
+  --tv-table-selected: rgb(3 79 166 / 0.045);
+  --tv-table-focus: #034fa6;
+}
+
+.dashboard-typography :where(table),
+.dashboard-typography .tv-data-table {
+  width: 100%;
+  min-width: 0 !important;
+  max-width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  /* Columns size to their content so every detail reads in full, like a record list; a table
+     wider than its card scrolls sideways. Only product names are shortened (two words, then …). */
+  table-layout: auto !important;
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: var(--tv-table-font-size);
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--tv-table-primary);
+}
+
+.dashboard-typography :where(table) > thead,
+.dashboard-typography .tv-data-table > thead {
+  background: var(--tv-table-header-bg);
+}
+
+.dashboard-typography :where(table) > thead > tr,
+.dashboard-typography .tv-data-table > thead > tr {
+  height: var(--tv-table-header-height);
+  border-block: 1px solid var(--tv-table-divider);
+}
+
+.dashboard-typography :where(table) > thead > tr > th,
+.dashboard-typography .tv-data-table > thead > tr > th {
+  padding: var(--tv-table-cell-y) var(--tv-table-cell-x) !important;
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: var(--tv-table-header-size) !important;
+  font-weight: 600 !important;
+  line-height: 1.25;
+  letter-spacing: 0.015em !important;
+  text-transform: uppercase;
+  color: var(--tv-table-secondary) !important;
+  overflow: visible;
+}
+
+.dashboard-typography :where(table) > tbody > tr,
+.dashboard-typography .tv-data-table > tbody > tr {
+  height: var(--tv-table-row-height);
+  border-bottom: 1px solid var(--tv-table-divider) !important;
+  background: #fff;
+  transition: background-color 150ms ease;
+}
+
+.dark .dashboard-typography :where(table) > tbody > tr,
+.dark .dashboard-typography .tv-data-table > tbody > tr {
+  background: #0b192c;
+}
+
+.dark .dashboard-typography :where(table),
+.dark .dashboard-typography .tv-data-table,
+.dark .dashboard-typography :where(table) > tbody > tr > td,
+.dark .dashboard-typography .tv-data-table > tbody > tr > td {
+  color: #e2e8f0;
+}
+
+.dark .dashboard-typography :where(table) > thead,
+.dark .dashboard-typography .tv-data-table > thead {
+  background: #0f172a;
+}
+
+.dashboard-typography :where(table) > tbody > tr:hover,
+.dashboard-typography .tv-data-table > tbody > tr:hover {
+  background: var(--tv-table-hover) !important;
+}
+
+.dashboard-typography :where(table) > tbody > tr[aria-selected="true"],
+.dashboard-typography .tv-data-table > tbody > tr.tv-table-row-selected {
+  background: var(--tv-table-selected) !important;
+}
+
+.dashboard-typography :where(table) > tbody > tr > td,
+.dashboard-typography .tv-data-table > tbody > tr > td {
+  height: var(--tv-table-row-height);
+  padding: var(--tv-table-cell-y) var(--tv-table-cell-x) !important;
+  vertical-align: middle;
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: var(--tv-table-font-size) !important;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--tv-table-primary);
+  min-width: 0 !important;
+  max-width: none;
+  overflow: visible;
+  white-space: nowrap;
+}
+
+/* Columns that name the record (buyer, supplier, subject…) may wrap rather than stretch the row. */
+.dashboard-typography :where(table) > tbody > tr > td.tv-align-left:not(:first-child):not(:has(> input[type="checkbox"])) {
+  white-space: normal;
+  min-width: 160px !important;
+}
+
+/* A cell carrying the "New" corner ribbon clips the slanted ribbon to itself. */
+.dashboard-typography :where(table) > tbody > tr > td.relative {
+  overflow: hidden;
+}
+
+.dashboard-typography :where(table) > tbody > tr > td > *,
+.dashboard-typography .tv-data-table > tbody > tr > td > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.dashboard-typography :where(table) .tv-cell,
+.dashboard-typography .tv-data-table .tv-cell {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+  white-space: inherit;
+}
+
+.dashboard-typography :where(table) td > :where(p, div, a, span):not([role="menu"]),
+.dashboard-typography .tv-data-table td > :where(p, div, a, span):not([role="menu"]) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Stable space for controls; the record column receives the useful reading width. */
+.dashboard-typography :where(table) :where(th, td)[data-tv-column="select"] {
+  width: 42px;
+  max-width: 42px;
+}
+
+.dashboard-typography :where(table) :where(th, td)[data-tv-column="primary"] {
+  min-width: 140px;
+}
+
+/* Dates, amounts and counts: a fixed narrow column; names and descriptions share the rest. */
+.dashboard-typography :where(table) :where(th, td)[data-tv-column="short"] {
+  white-space: nowrap;
+}
+
+/* A "No." / "#" counter needs only its digits. */
+.dashboard-typography :where(table) :where(th, td)[data-tv-column="index"] {
+  width: 64px;
+  max-width: 64px;
+}
+
+/* Status and Action cells hold one badge or one dropdown: tighter side padding, and enough
+   width that the badge text and the dropdown arrow are never clipped. */
+.dashboard-typography :where(table) :where(th, td)[data-tv-column="status"] {
+  white-space: nowrap;
+}
+
+.dashboard-typography :where(table) :where(th, td)[data-tv-column="action"] {
+  white-space: nowrap;
+}
+
+.dashboard-typography :where(table) > :where(thead, tbody) > tr > :where(th, td):where([data-tv-column="status"], [data-tv-column="action"]) {
+  padding-inline: 12px !important;
+}
+
+/* The Actions dropdown is never cut: its cell lets it use the full width. */
+.dashboard-typography :where(table) td[data-tv-column="action"] {
+  text-overflow: clip;
+}
+
+.dashboard-typography :where(table) td[data-tv-column="action"] :where(button, a),
+.dashboard-typography :where(table) td[data-tv-column="status"] :where(button) {
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+/* Very wide schemas keep only the useful overview fields. The centralized table
+   annotator applies this only when the table declares a row detail/View surface. */
+.dashboard-typography :where(table) :where(th, td)[data-tv-optional="true"] {
+  display: none !important;
+}
+
+.dashboard-typography :where(table) > tbody > tr > td :where(p, span) {
+  line-height: 1.4;
+}
+
+.dashboard-typography :where(table) > tbody > tr > td :where(.text-secondary) {
+  color: var(--tv-table-secondary);
+}
+
+.dashboard-typography .tv-table-scroll,
+.dashboard-typography :where(.overflow-x-auto, .overflow-auto):has(> table) {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto !important;
+  overscroll-behavior-inline: auto;
+  scrollbar-width: none;
+}
+
+.dashboard-typography .tv-table-card {
+  overflow: hidden;
+  border: 1px solid rgb(203 213 225 / 0.55);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgb(0 45 95 / 0.06);
+}
+
+.dark .dashboard-typography .tv-table-card {
+  border-color: rgb(51 65 85 / 0.72);
+  background: #0b192c;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.18);
+}
+
+.dashboard-typography .tv-table-action {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
+}
+
+.dashboard-typography table td :where(button, a):focus-visible,
+.dashboard-typography .tv-table-action:focus-visible {
+  outline: 2px solid var(--tv-table-focus);
+  outline-offset: 2px;
+}
+
+.dashboard-typography table td :where(button, a):hover {
+  filter: brightness(0.98);
+}
+
+.dashboard-typography .tv-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 14px;
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tv-table-secondary);
+}
+
+.dashboard-typography .tv-pagination button {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+/*
+ * Wider screens: one record-list format everywhere. Every column's title and its values start
+ * at the left edge, on one line, like the Payments list.
+ */
+@media (min-width: 768px) {
+  .dashboard-typography :where(table) > thead > tr > th,
+  .dashboard-typography .tv-data-table > thead > tr > th,
+  .dashboard-typography :where(table) > tbody > tr > td,
+  .dashboard-typography .tv-data-table > tbody > tr > td {
+    text-align: left !important;
+  }
+
+  .dashboard-typography :where(table) > tbody > tr > td > :where(.flex, .inline-flex):not(.justify-between):not(.justify-around):not(.justify-evenly) {
+    justify-content: flex-start !important;
+  }
+  .dashboard-typography :where(table) > tbody > tr > td > :where(.flex-col, .items-start) {
+    align-items: flex-start !important;
+  }
+  .dashboard-typography :where(table) > tbody > tr > td .tv-cell {
+    margin-inline: 0 !important;
+  }
+}
+
+@media (max-width: 767px) {
+  /*
+   * Phones: every dashboard table reads as a stack of cards — one card per row, each cell a
+   * "LABEL ··· value" line. Labels come from the column headers (data-label, set by each
+   * app's ResponsiveTables). A table whose columns must stay side by side opts out with
+   * `tv-table-keep` and keeps its contained horizontal scroll.
+   */
+  .dashboard-typography table:not(.tv-table-keep),
+  .dashboard-typography .tv-data-table:not(.tv-table-keep) {
+    display: block;
+    width: 100%;
+    min-width: 0 !important;
+    background: transparent;
+  }
+
+  .dashboard-typography table:not(.tv-table-keep) > thead {
+    display: none;
+  }
+
+  .dashboard-typography table:not(.tv-table-keep) > tbody,
+  .dashboard-typography table:not(.tv-table-keep) > tfoot {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 2px 0;
+  }
+
+  .dashboard-typography table:not(.tv-table-keep) > tbody > tr,
+  .dashboard-typography table:not(.tv-table-keep) > tfoot > tr {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    padding: 8px 12px;
+    border: 1px solid var(--tv-table-divider) !important;
+    border-radius: 12px;
+    background: #fff;
+  }
+
+  .dark .dashboard-typography table:not(.tv-table-keep) > tbody > tr,
+  .dark .dashboard-typography table:not(.tv-table-keep) > tfoot > tr {
+    background: #0b192c;
+  }
+
+  .dashboard-typography table:not(.tv-table-keep) > tbody > tr > td,
+  .dashboard-typography table:not(.tv-table-keep) > tfoot > tr > td {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: auto;
+    padding: 6px 0 !important;
+    border: 0 !important;
+    text-align: right !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+  }
+
+  .dashboard-typography table:not(.tv-table-keep) > tbody > tr > td + td {
+    border-top: 1px dashed rgb(203 213 225 / 0.6) !important;
+  }
+
+  .dashboard-typography table:not(.tv-table-keep) > tbody > tr > td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    max-width: 45%;
+    padding-top: 1px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.015em;
+    line-height: 1.35;
+    text-transform: uppercase;
+    color: var(--tv-table-secondary);
+  }
+
+  /* Cells without a column title (checkbox, actions, the primary item) span the card. */
+  .dashboard-typography table:not(.tv-table-keep) > tbody > tr > td:not([data-label]),
+  .dashboard-typography table:not(.tv-table-keep) > tbody > tr > td[data-label=""],
+  .dashboard-typography table:not(.tv-table-keep) > tbody > tr > td[colspan] {
+    justify-content: flex-start;
+    text-align: left !important;
+  }
+
+  .dashboard-typography table:not(.tv-table-keep) > tbody > tr > td:not([data-label])::before,
+  .dashboard-typography table:not(.tv-table-keep) > tbody > tr > td[data-label=""]::before,
+  .dashboard-typography table:not(.tv-table-keep) > tbody > tr > td[colspan]::before {
+    content: none;
+  }
+
+  /* The row's main item (product, order, seller…) heads the card at full width. */
+  .dashboard-typography table:not(.tv-table-keep) > tbody > tr > td[data-primary] {
+    order: -1;
+    padding-bottom: 8px !important;
+    font-weight: 600;
+  }
+
+  .dashboard-typography table:not(.tv-table-keep) > tbody > tr > td[data-primary] + td {
+    border-top: 0 !important;
+  }
+
+  /* A lone checkbox cell sits above the title rather than taking a full line. */
+  .dashboard-typography table:not(.tv-table-keep) > tbody > tr > td:has(> input[type="checkbox"]:only-child) {
+    order: -2;
+    padding-bottom: 0 !important;
+  }
+
+  /* A row's value side keeps its own inline layout (badges, buttons, stacked text). */
+  .dashboard-typography table:not(.tv-table-keep) > tbody > tr > td > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Action groups (normally the last cell) wrap inside the card instead of overflowing it. */
+  .dashboard-typography table:not(.tv-table-keep) > tbody > tr > td:last-child > :where(.flex, .inline-flex) {
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+
+  /* Columns a page hides on mobile stay hidden in the card too. */
+  .dashboard-typography table:not(.tv-table-keep) td.hidden,
+  .dashboard-typography table:not(.tv-table-keep) th.hidden {
+    display: none !important;
+  }
+
+  .dashboard-typography table:not(.tv-table-keep) > tbody > tr:hover {
+    background: #fff !important;
+  }
+
+  .dark .dashboard-typography table:not(.tv-table-keep) > tbody > tr:hover {
+    background: #0b192c !important;
+  }
+
+  .dashboard-typography .tv-table-scroll,
+  .dashboard-typography :where(.overflow-x-auto):has(> table:not(.tv-table-keep)) {
+    overflow-x: visible;
+    margin-inline: 0;
+  }
+
+  .dashboard-typography table.tv-table-keep {
+    min-width: 640px;
+  }
+
+  .dashboard-typography .tv-pagination {
+    flex-direction: column;
+  }
+}

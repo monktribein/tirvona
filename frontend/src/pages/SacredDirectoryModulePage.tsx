@@ -1,3 +1,4 @@
+import { Paginated } from "../components/shared/Pagination";
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import api from "../lib/api";
@@ -209,8 +210,7 @@ export const SacredDirectoryModulePage: React.FC = () => {
           <img
             src="/banner/coming%20soon/marketplace.png"
             alt="Coming Soon"
-            className="w-full max-w-3xl h-auto object-contain max-h-[550px] mx-auto drop-shadow-md"
-          />
+            className="w-full max-w-3xl h-auto object-contain max-h-[550px] mx-auto drop-shadow-md" loading="lazy" decoding="async" />
         </div>
 
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
@@ -295,68 +295,71 @@ export const SacredDirectoryModulePage: React.FC = () => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {items.map((item) => (
-              <div
-                key={item._id}
-                className="bg-white dark:bg-[#0B192C] rounded-3xl border border-gray-100 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
-              >
-                <div>
-                  <div className="relative h-48 overflow-hidden">
-                    <img
-                      src={item.coverImage}
-                      alt={item.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <span className="absolute top-4 left-4 bg-[#F28C28] text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md">
-                      {item.badge || item.category}
-                    </span>
-                    <span className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white text-[10px] font-extrabold px-3 py-1 rounded-full border border-white/20">
-                      ★ {item.rating}
-                    </span>
-                  </div>
-
-                  <div className="p-6 space-y-3">
-                    <span className="text-[10px] text-gray-400 font-extrabold tracking-wider block">
-                      {item.city}, {item.state}
-                    </span>
-                    <h3 className="font-black text-lg text-[#0B192C] dark:text-white leading-tight">
-                      {item.title}
-                    </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
-                      {item.description}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="p-6 pt-0 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/50 mt-4">
+          <Paginated items={items} pageSize={12}>
+            {(pageItems) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {pageItems.map((item) => (
+                <div
+                  key={item._id}
+                  className="bg-white dark:bg-[#0B192C] rounded-3xl border border-gray-100 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
+                >
                   <div>
-                    {item.price > 0 ? (
-                      <span className="text-xs font-black text-[#F28C28] dark:text-amber-400">
-                        {formatCurrency(item.price)}
+                    <div className="relative h-48 overflow-hidden">
+                      <img
+                        src={item.coverImage}
+                        alt={item.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" decoding="async" />
+                      <span className="absolute top-4 left-4 bg-[#F28C28] text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md">
+                        {item.badge || item.category}
                       </span>
-                    ) : (
-                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-2.5 py-1 rounded-full">
-                        Free Guidance
+                      <span className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white text-[10px] font-extrabold px-3 py-1 rounded-full border border-white/20">
+                        ★ {item.rating}
                       </span>
-                    )}
+                    </div>
+
+                    <div className="p-6 space-y-3">
+                      <span className="text-[10px] text-gray-400 font-extrabold tracking-wider block">
+                        {item.city}, {item.state}
+                      </span>
+                      <h3 className="font-black text-lg text-[#0B192C] dark:text-white leading-tight">
+                        {item.title}
+                      </h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
+                        {item.description}
+                      </p>
+                    </div>
                   </div>
-                  <button
-                    onClick={() =>
-                      toast.info(item.contactPhone || "Contact details unavailable", {
-                        title: item.title,
-                        duration: 7000,
-                      })
-                    }
-                    className="px-5 py-2.5 rounded-full bg-[#F28C28] text-white font-black text-xs flex items-center gap-1.5 shadow-md cursor-pointer hover:bg-[#D97706] transition-colors"
-                  >
-                    <span>Contact & Info</span>
-                    <ArrowRight size={13} />
-                  </button>
+
+                  <div className="p-6 pt-0 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/50 mt-4">
+                    <div>
+                      {item.price > 0 ? (
+                        <span className="text-xs font-black text-[#F28C28] dark:text-amber-400">
+                          {formatCurrency(item.price)}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-2.5 py-1 rounded-full">
+                          Free Guidance
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() =>
+                        toast.info(item.contactPhone || "Contact details unavailable", {
+                          title: item.title,
+                          duration: 7000,
+                        })
+                      }
+                      className="px-5 py-2.5 rounded-full bg-[#F28C28] text-white font-black text-xs flex items-center gap-1.5 shadow-md cursor-pointer hover:bg-[#D97706] transition-colors"
+                    >
+                      <span>Contact & Info</span>
+                      <ArrowRight size={13} />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            )}
+          </Paginated>
         )}
 
         <div className="mt-12 bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 text-white rounded-3xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border border-blue-500/20 shadow-xl">

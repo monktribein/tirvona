@@ -227,6 +227,18 @@ export class PartnerManagementService {
     };
   }
 
+  async sendTestWebhook(webhookId: string) {
+    const webhook = await this.webhookModel.findById(webhookId).lean();
+    if (!webhook) throw new NotFoundException("Webhook not found");
+    if (webhook.status !== "active") {
+      throw new BadRequestException("Activate the webhook before sending a test event");
+    }
+    // Fail fast with a clear message if the saved URL is no longer allowed.
+    await validateWebhookUrl(webhook.url);
+    const eventId = await this.webhookDispatcher.sendTestEvent(webhookId);
+    return { eventId };
+  }
+
   // -------------------------------------------------------------
   // DELIVERY LOGS
   // -------------------------------------------------------------

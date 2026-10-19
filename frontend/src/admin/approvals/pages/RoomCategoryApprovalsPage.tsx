@@ -1,3 +1,4 @@
+import { Paginated } from "../../../components/shared/Pagination";
 import React, { useState, useEffect, useCallback } from "react";
 import { approvalService } from "../../../services";
 import type { RoomCategoryRequestItem } from "../../../services/approval.service";
@@ -156,94 +157,98 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
             No room category approval requests found matching filter settings.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-gray-100 dark:border-slate-800 text-gray-400 font-bold text-[10px] tracking-wider">
-                  <th className="py-3 px-4">Request ID</th>
-                  <th className="py-3 px-4">Stay Name</th>
-                  <th className="py-3 px-4">Stay Owner</th>
-                  <th className="py-3 px-4">Category Name</th>
-                  <th className="py-3 px-4">Capacity / Price</th>
-                  <th className="py-3 px-4">Created Date</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredRequests.map((req) => (
-                  <tr
-                    key={req._id}
-                    className="border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50/50 dark:hover:bg-slate-900/40"
-                  >
-                    <td className="py-3.5 px-4 font-bold text-[#F28C28]">
-                      {req.requestId}
-                    </td>
-                    <td className="py-3.5 px-4 font-bold text-[#0B192C] dark:text-white">
-                      {req.ashramId?.name || "Stay Retreat"}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <div className="flex flex-col">
-                        <span className="font-bold">
-                          {req.stayAdminId?.name || "Stay Owner"}
-                        </span>
-                        <span className="text-[10px] text-gray-400">
-                          {req.stayAdminId?.email}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4 font-extrabold text-[#0B192C] dark:text-white">
-                      {req.categoryData?.name}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span className="font-semibold">
-                        {req.categoryData?.maxGuests} Guests
-                      </span>
-                      <span className="text-gray-400 block text-[10px]">
-                        {formatCurrency(req.categoryData?.suggestedBasePrice)} / night
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 text-gray-500 font-semibold">
-                      {new Date(req.createdAt).toLocaleDateString(getFormattingLocale(), {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span
-                        className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold border ${
-                          req.status === "approved"
-                            ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                            : req.status === "rejected"
-                              ? "bg-rose-500/10 text-rose-600 border-rose-500/20"
-                              : req.status === "needs_modification"
-                                ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                                : "bg-blue-500/10 text-blue-600 border-blue-500/20"
-                        }`}
-                      >
-                        {req.status?.replace("_", " ")}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <button
-                        onClick={() => setSelectedRequest(req)}
-                        className="px-3 py-1.5 bg-[#F28C28]/10 text-[#F28C28] hover:bg-[#F28C28] hover:text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 ml-auto cursor-pointer"
-                      >
-                        <Eye size={13} /> View & Review
-                      </button>
-                    </td>
+          <Paginated items={filteredRequests} pageSize={15}>
+            {(pageItems) => (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-gray-100 dark:border-slate-800 text-gray-400 font-bold text-[10px] tracking-wider">
+                    <th className="py-3 px-4">Request ID</th>
+                    <th className="py-3 px-4">Stay Name</th>
+                    <th className="py-3 px-4">Stay Owner</th>
+                    <th className="py-3 px-4">Category Name</th>
+                    <th className="py-3 px-4">Capacity / Price</th>
+                    <th className="py-3 px-4">Created Date</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {pageItems.map((req) => (
+                    <tr
+                      key={req._id}
+                      className="border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50/50 dark:hover:bg-slate-900/40"
+                    >
+                      <td className="py-3.5 px-4 font-bold text-[#F28C28]">
+                        {req.requestId}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-[#0B192C] dark:text-white">
+                        {req.ashramId?.name || "Stay Retreat"}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="flex flex-col">
+                          <span className="font-bold">
+                            {req.stayAdminId?.name || "Stay Owner"}
+                          </span>
+                          <span className="text-[10px] text-gray-400">
+                            {req.stayAdminId?.email}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4 font-extrabold text-[#0B192C] dark:text-white">
+                        {req.categoryData?.name}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="font-semibold">
+                          {req.categoryData?.maxGuests} Guests
+                        </span>
+                        <span className="text-gray-400 block text-[10px]">
+                          {formatCurrency(req.categoryData?.suggestedBasePrice)} / night
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-gray-500 font-semibold">
+                        {new Date(req.createdAt).toLocaleDateString(getFormattingLocale(), {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold border ${
+                            req.status === "approved"
+                              ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                              : req.status === "rejected"
+                                ? "bg-rose-500/10 text-rose-600 border-rose-500/20"
+                                : req.status === "needs_modification"
+                                  ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                                  : "bg-blue-500/10 text-blue-600 border-blue-500/20"
+                          }`}
+                        >
+                          {req.status?.replace("_", " ")}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <button
+                          onClick={() => setSelectedRequest(req)}
+                          className="px-3 py-1.5 bg-[#F28C28]/10 text-[#F28C28] hover:bg-[#F28C28] hover:text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 ml-auto cursor-pointer"
+                        >
+                          <Eye size={13} /> View & Review
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            )}
+          </Paginated>
         )}
       </div>
 
       {selectedRequest && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 max-w-2xl w-full space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="tv-drawer-panel bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 max-w-2xl w-full space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <div>
                 <span className="text-[10px] font-extrabold text-[#F28C28] tracking-wider">

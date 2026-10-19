@@ -1,0 +1,189 @@
+/* Shared authenticated dashboard navigation language. Public storefront chrome is excluded. */
+.dashboard-typography .tv-dashboard-navbar {
+  height: 64px;
+  max-width: 100vw;
+  border-bottom: 1px solid rgb(203 213 225 / 0.55);
+  background: rgb(255 255 255 / 0.96);
+  box-shadow: 0 2px 10px rgb(0 45 95 / 0.055);
+  backdrop-filter: blur(12px);
+}
+
+.dark .dashboard-typography .tv-dashboard-navbar {
+  border-bottom-color: rgb(51 65 85 / 0.75);
+  background: rgb(11 25 44 / 0.96);
+}
+
+.dashboard-typography .tv-dashboard-nav-inner {
+  max-width: 100%;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dashboard-typography .tv-dashboard-search {
+  position: relative;
+  width: 100%;
+  max-width: 580px;
+}
+
+.dashboard-typography .tv-dashboard-search-field,
+.dashboard-typography .tv-dashboard-search-input {
+  min-height: 40px;
+  border: 1px solid rgb(148 163 184 / 0.38);
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #002d5f;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.dashboard-typography .tv-dashboard-search-field:focus-within,
+.dashboard-typography .tv-dashboard-search-input:focus {
+  border-color: #034fa6;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgb(3 79 166 / 0.1);
+  outline: none;
+}
+
+.dashboard-typography .tv-dashboard-nav-control {
+  min-width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  color: #52647a;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease;
+}
+
+.dashboard-typography .tv-dashboard-nav-control:hover,
+.dashboard-typography .tv-dashboard-nav-control:focus-visible {
+  background: #f1f5f9;
+  color: #002d5f;
+}
+
+.dashboard-typography .tv-dashboard-nav-control:focus-visible,
+.dashboard-typography .tv-dashboard-nav-profile:focus-visible {
+  outline: 2px solid #034fa6;
+  outline-offset: 2px;
+}
+
+.dashboard-typography .tv-dashboard-nav-action {
+  min-height: 44px;
+  border-radius: 8px;
+  color: #52647a;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease;
+}
+
+.dashboard-typography .tv-dashboard-nav-action:hover {
+  background: #f1f5f9;
+  color: #002d5f;
+}
+
+.dashboard-typography .tv-dashboard-nav-profile {
+  min-height: 44px;
+  border-radius: 9px;
+  transition: background-color 150ms ease;
+}
+
+.dashboard-typography .tv-dashboard-nav-profile:hover {
+  background: #f1f5f9;
+}
+
+.dashboard-typography .tv-dashboard-nav-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  display: inline-flex;
+  min-width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: #f45b00;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* One badge language for header icons and all three dashboard sidebars. */
+.dashboard-typography .tv-notification-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9999px;
+  background: #f45b00;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.dashboard-typography .tv-notification-badge--overlay {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+}
+
+/* Slanted green "New" corner ribbon at the left edge of a table row that arrived since the user
+   last opened the page. The cell holding it is position: relative. */
+.dashboard-typography .tv-new-corner {
+  position: absolute;
+  top: 5px;
+  left: -15px;
+  width: 50px;
+  transform: rotate(-45deg);
+  background: #16a34a;
+  color: #fff;
+  font-size: 7px;
+  font-weight: 800;
+  line-height: 11px;
+  letter-spacing: 0.05em;
+  text-align: center;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.dashboard-typography [data-admin-sidebar] .tv-notification-badge {
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.dashboard-typography .tv-dashboard-nav-popover {
+  max-width: calc(100vw - 16px);
+  max-height: calc(100dvh - 80px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid rgb(203 213 225 / 0.65);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 14px 35px rgb(0 45 95 / 0.14);
+}
+
+@media (max-width: 639px) {
+  .dashboard-typography .tv-dashboard-nav-inner {
+    gap: 6px;
+  }
+
+  .dashboard-typography .tv-dashboard-nav-control {
+    min-width: 38px;
+    height: 38px;
+  }
+
+  .dashboard-typography .tv-dashboard-nav-profile {
+    max-width: 132px;
+  }
+}

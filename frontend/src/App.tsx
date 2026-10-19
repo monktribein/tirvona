@@ -458,6 +458,7 @@ import {
 } from "./utils/roleRedirect";
 import { setGuestPendingIntent } from "./utils/guestGate";
 import { smoothScrollEngine } from "./utils/smoothScroll";
+import ImageCropHost from "./components/imageCrop/ImageCropHost";
 
 const RoleAwareHome: React.FC = () => {
   const { user, loading } = useAuth();
@@ -553,11 +554,11 @@ const AppContent: React.FC = () => {
   useCurrency();
   useLanguage();
   useEffect(() => {
-    smoothScrollEngine.init();
+    // Native browser scrolling everywhere; the wheel-smoothing engine is not started.
+    smoothScrollEngine.destroy();
     const removeAutomaticTextCase = installAutomaticTextCase();
     return () => {
       removeAutomaticTextCase();
-      smoothScrollEngine.destroy();
     };
   }, []);
 
@@ -1670,6 +1671,7 @@ const AppContent: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <ToastProvider>
+      <ImageCropHost />
       <LanguageProvider>
         <CurrencyProvider>
           <AuthProvider>

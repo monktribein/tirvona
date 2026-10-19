@@ -231,6 +231,8 @@ const EMPTY_TABLE: Queryable = {
   },
 };
 
+const EXTRA_CHECK_CACHE_MS = Math.max(0, Number(process.env.PG_EXTRA_CHECK_CACHE_MS ?? 15_000) || 0);
+
 export class PgCollection {
   readonly table: TableDef;
   private readonly columns: Map<string, ColumnDef>;
@@ -303,6 +305,7 @@ export class PgCollection {
 
   private async insertRows(q: Queryable, rows: Row[]): Promise<void> {
     if (!rows.length) return;
+    for (const row of rows) this.noteExtraWrite(row);
     const width = this.insertColumns.length;
     const params: unknown[] = [];
     const tuples = rows.map((row) => {
@@ -317,16 +320,44 @@ export class PgCollection {
   }
 
   private async writeRow(q: Queryable, oldId: string, row: Row): Promise<void> {
+    this.noteExtraWrite(row);
     const params = this.rowParams(row);
     const sets = this.insertColumns.map((c, i) => `${qi(c)} = $${i + 1}::${this.insertCasts[i]}`);
     params.push(oldId);
     await q.query(`UPDATE ${this.qualified} SET ${sets.join(", ")} WHERE id = $${params.length}::text`, params);
   }
 
+  /**
+   * Fields known (until the stored time) to be held in no row's _extra. A value
+   * only lands in _extra when it does not fit its column, which is rare, so the
+   * answer is almost always "no" and re-asking the database on every read costs
+   * a roundtrip each time. Only a "no" is cached, for a short time, and this
+   * process forgets it the moment it writes such a value itself; another process
+   * writing one is picked up when the entry expires. PG_EXTRA_CHECK_CACHE_MS=0
+   * turns the cache off.
+   */
+  private readonly extraFreeUntil = new Map<string, number>();
+
   private async hasExtra(q: Queryable, fields: string[]): Promise<boolean> {
     if (!fields.length) return false;
-    const r = await q.query(`SELECT EXISTS (SELECT 1 FROM ${this.qualified} WHERE _extra IS NOT NULL AND _extra ?| $1::text[]) AS x`, [fields]);
-    return Boolean(r.rows[0]?.x);
+    const now = Date.now();
+    const unknown = EXTRA_CHECK_CACHE_MS > 0 ? fields.filter((f) => (this.extraFreeUntil.get(f) ?? 0) <= now) : fields;
+    if (!unknown.length) return false;
+    const r = await q.query(`SELECT EXISTS (SELECT 1 FROM ${this.qualified} WHERE _extra IS NOT NULL AND _extra ?| $1::text[]) AS x`, [unknown]);
+    const found = Boolean(r.rows[0]?.x);
+    if (!found && EXTRA_CHECK_CACHE_MS > 0) for (const f of unknown) this.extraFreeUntil.set(f, now + EXTRA_CHECK_CACHE_MS);
+    return found;
+  }
+
+  /** A row about to be written holds a column field in _extra: drop the cached "no". */
+  private noteExtraWrite(row: Row): void {
+    if (!this.extraFreeUntil.size || !row._extra) return;
+    for (const field of Object.keys(row._extra)) {
+      if (this.columns.has(field)) {
+        this.extraFreeUntil.clear();
+        return;
+      }
+    }
   }
 
   private toDoc(row: Row): Doc {

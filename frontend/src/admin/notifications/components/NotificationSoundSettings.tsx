@@ -117,8 +117,8 @@ export const NotificationSoundSettings: React.FC = () => {
       </button>
 
       {open && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-5 text-left shadow-2xl">
+        <div className="tv-drawer-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="tv-drawer-panel bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-5 text-left shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white flex items-center gap-2">

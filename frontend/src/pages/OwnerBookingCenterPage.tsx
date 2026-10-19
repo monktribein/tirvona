@@ -481,8 +481,8 @@ export const OwnerBookingCenterPage: React.FC<OwnerBookingCenterPageProps> = ({
       </section>
 
       {selectedBooking && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center">
-          <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-5">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center">
+          <div className="tv-drawer-panel w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-5">
             <div className="flex justify-between gap-3 border-b border-gray-100 dark:border-slate-800 pb-4">
               <div><h2 className="font-black text-lg text-[#0B192C] dark:text-white">Booking {selectedBooking.bookingId || selectedBooking.reservationNumber}</h2><p className="text-xs text-gray-400 mt-1">Complete reservation, stay and pricing record.</p></div>
               <button onClick={() => setSelectedBooking(null)} className="text-gray-400 text-xl">×</button>

@@ -28,7 +28,7 @@ export const EnterpriseButton: React.FC<EnterpriseButtonProps> = ({
 }) => {
   const { t } = useLanguage();
   const baseClasses =
-    "min-h-9 shrink-0 rounded-full font-extrabold leading-none inline-flex items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]/40 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
+    "min-h-9 shrink-0 font-semibold leading-none inline-flex items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]/40 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
 
   const sizeClasses =
     size === "sm"
@@ -39,15 +39,15 @@ export const EnterpriseButton: React.FC<EnterpriseButtonProps> = ({
 
   const variantClasses =
     variant === "primary"
-      ? "bg-[#F28C28] hover:bg-[#B45309] text-white shadow-md shadow-[#F28C28]/20"
+      ? "bg-[#F28C28] hover:bg-[#B45309] text-white"
       : variant === "secondary"
         ? "bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-slate-700"
         : variant === "danger"
-          ? "bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-rose-600/20"
+          ? "bg-rose-600 hover:bg-rose-700 text-white"
           : variant === "warning"
-            ? "bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-500/20"
+            ? "bg-amber-500 hover:bg-amber-600 text-white"
             : variant === "success"
-              ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20"
+              ? "bg-emerald-600 hover:bg-emerald-700 text-white"
               : variant === "outline"
                 ? "border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 bg-white dark:bg-[#0B192C] hover:bg-gray-50 dark:hover:bg-slate-800"
                 : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 shadow-none";
@@ -60,7 +60,7 @@ export const EnterpriseButton: React.FC<EnterpriseButtonProps> = ({
       {...props}
     >
       {loading ? (
-        <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+        <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full tv-keep-round animate-spin" />
       ) : (
         icon
       )}

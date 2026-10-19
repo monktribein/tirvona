@@ -4,6 +4,7 @@ import {
   type OnApplicationBootstrap,
 } from "@nestjs/common";
 import { InjectQueue } from "@nestjs/bullmq";
+import { runAfterStartup } from "../../common/utils/run-after-startup";
 import { InjectModel } from "../../database/orm-nest";
 import { Interval, SchedulerRegistry } from "@nestjs/schedule";
 import type { Queue } from "bullmq";
@@ -43,6 +44,8 @@ interface EnqueueSummary {
 export class NotificationOutboxService implements OnApplicationBootstrap {
   private readonly logger = new Logger(NotificationOutboxService.name);
   private pollInProgress = false;
+  /** True while the sweep started at boot runs; an overlapping interval tick is then expected, not worth a warning. */
+  private startupSweepRunning = false;
   private pollSequence = 0;
 
   constructor(
@@ -93,7 +96,7 @@ export class NotificationOutboxService implements OnApplicationBootstrap {
     return Boolean(claimed);
   }
 
-  async onApplicationBootstrap(): Promise<void> {
+  onApplicationBootstrap(): void {
     this.logger.log(
       JSON.stringify({
         event: "notification.outbox_scheduler_initialized",
@@ -106,18 +109,26 @@ export class NotificationOutboxService implements OnApplicationBootstrap {
         bookingCollection: this.booking.collection.collectionName,
       }),
     );
-    await this.dispatch();
+    // The interval keeps sweeping; the first sweep must not delay start-up.
+    runAfterStartup(this.logger, "Initial notification outbox sweep", async () => {
+      this.startupSweepRunning = true;
+      try {
+        await this.dispatch();
+      } finally {
+        this.startupSweepRunning = false;
+      }
+    });
   }
 
   @Interval(OUTBOX_POLL_NAME, OUTBOX_POLL_INTERVAL_MS)
   async dispatch(): Promise<void> {
     if (this.pollInProgress) {
-      this.logger.warn(
-        JSON.stringify({
-          event: "notification.outbox_poll_skipped",
-          reason: "previous_poll_still_running",
-        }),
-      );
+      const skipped = JSON.stringify({
+        event: "notification.outbox_poll_skipped",
+        reason: "previous_poll_still_running",
+      });
+      if (this.startupSweepRunning) this.logger.debug(skipped);
+      else this.logger.warn(skipped);
       return;
     }
     this.pollInProgress = true;
@@ -129,18 +140,28 @@ export class NotificationOutboxService implements OnApplicationBootstrap {
       const community = await this.enqueue("community", this.community);
       const aarti = await this.enqueue("aarti", this.aarti);
       const eventRegistration = await this.enqueue("event", this.event);
-      this.logger.log(
-        JSON.stringify({
-          event: "notification.outbox_poll_completed",
-          pollSequence,
-          booking,
-          bookingWhatsAppRecovery,
-          parking,
-          community,
-          aarti,
-          eventRegistration,
-        }),
-      );
+      const summary = {
+        event: "notification.outbox_poll_completed",
+        pollSequence,
+        booking,
+        bookingWhatsAppRecovery,
+        parking,
+        community,
+        aarti,
+        eventRegistration,
+      };
+      // An idle poll runs every few seconds; only a poll that queued
+      // something is worth a line at the default level.
+      const enqueued = [
+        booking,
+        bookingWhatsAppRecovery,
+        parking,
+        community,
+        aarti,
+        eventRegistration,
+      ].some((domain) => domain.enqueued > 0);
+      if (enqueued) this.logger.log(JSON.stringify(summary));
+      else this.logger.debug(JSON.stringify(summary));
     } catch (error) {
       this.logger.error(
         JSON.stringify({

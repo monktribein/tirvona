@@ -382,7 +382,7 @@ export const WalletPage: React.FC = () => {
                     </p>
                   </div>
                   <span
-                    className={`rounded-full border px-3 py-1 text-[11px] font-bold ${WITHDRAWAL_STATUS_TONE[w.status]}`}
+                    className={`tv-status-badge rounded-full border px-3 py-1 text-[11px] font-bold ${WITHDRAWAL_STATUS_TONE[w.status]}`}
                   >
                     {WITHDRAWAL_STATUS_LABEL[w.status]}
                   </span>

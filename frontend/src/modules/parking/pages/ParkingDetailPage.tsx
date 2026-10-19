@@ -403,8 +403,7 @@ export const ParkingDetailPage: React.FC = () => {
                   onError={(e) => {
                     e.currentTarget.onerror = null;
                     e.currentTarget.src = FALLBACK_IMAGE;
-                  }}
-                />
+                  }} loading="lazy" decoding="async" />
               </button>
             ))}
           </div>

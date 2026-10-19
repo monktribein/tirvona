@@ -159,6 +159,13 @@ export const partnerApiService = {
     await api.delete(`/partners/webhooks/${webhookId}`);
   },
 
+  async testWebhook(webhookId: string): Promise<{ eventId: string }> {
+    const res = await api.post<{ success: boolean; data: { eventId: string } }>(
+      `/partners/webhooks/${webhookId}/test`,
+    );
+    return res.data.data;
+  },
+
   async rotateWebhookSecret(webhookId: string): Promise<CreateWebhookResponse> {
     const res = await api.post<{ success: boolean; data: CreateWebhookResponse }>(
       `/partners/webhooks/${webhookId}/rotate-secret`,

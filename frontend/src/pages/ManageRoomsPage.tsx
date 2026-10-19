@@ -1,3 +1,4 @@
+import { Paginated } from "../components/shared/Pagination";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Bed,
@@ -564,118 +565,122 @@ export const ManageRoomsPage: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {rooms.map((room) => (
-            <div
-              key={room._id}
-              className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 shadow-sm space-y-4"
-            >
-              <div className="flex justify-between items-start border-b border-gray-50 dark:border-slate-850 pb-3">
-                <div>
-                  <h3 className="font-bold text-sm text-[#0B192C] dark:text-white">
-                    {room.name}
-                  </h3>
-                  <span className="text-[9px] font-bold text-gray-400">
-                    {room.type.replace("_", " ")} • {room.acType}
-                  </span>
-                  {room.description && (
-                    <p className="text-[10px] text-gray-500 font-semibold mt-1 line-clamp-2 max-w-sm">
-                      {room.description}
-                    </p>
-                  )}
-                  <span
-                    className={`mt-1 flex items-center gap-1 text-[9px] font-bold ${
-                      room.images?.length ? "text-gray-400" : "text-amber-600"
-                    }`}
-                  >
-                    <ImagePlus size={10} />
-                    {room.images?.length
-                      ? `${room.images.length} photo${room.images.length === 1 ? "" : "s"}`
-                      : "No photos yet"}
-                  </span>
-                  {selectedAshramId === ALL_ASHRAMS && room.ashramName && (
-                    <span className="mt-1 flex items-center gap-1 text-[9px] font-bold text-[#F28C28]">
-                      <Building2 size={10} /> {room.ashramName}
+        <Paginated items={rooms} pageSize={12}>
+          {(pageItems) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {pageItems.map((room) => (
+              <div
+                key={room._id}
+                className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 shadow-sm space-y-4"
+              >
+                <div className="flex justify-between items-start border-b border-gray-50 dark:border-slate-850 pb-3">
+                  <div>
+                    <h3 className="font-bold text-sm text-[#0B192C] dark:text-white">
+                      {room.name}
+                    </h3>
+                    <span className="text-[9px] font-bold text-gray-400">
+                      {room.type.replace("_", " ")} • {room.acType}
                     </span>
-                  )}
-                </div>
-                <span className="text-sm font-extrabold text-[#0B192C] dark:text-white">
-                  {formatCurrency(room.basePrice)}{" "}
-                  <span className="text-[10px] text-gray-400 font-normal">
-                    / night
+                    {room.description && (
+                      <p className="text-[10px] text-gray-500 font-semibold mt-1 line-clamp-2 max-w-sm">
+                        {room.description}
+                      </p>
+                    )}
+                    <span
+                      className={`mt-1 flex items-center gap-1 text-[9px] font-bold ${
+                        room.images?.length ? "text-gray-400" : "text-amber-600"
+                      }`}
+                    >
+                      <ImagePlus size={10} />
+                      {room.images?.length
+                        ? `${room.images.length} photo${room.images.length === 1 ? "" : "s"}`
+                        : "No photos yet"}
+                    </span>
+                    {selectedAshramId === ALL_ASHRAMS && room.ashramName && (
+                      <span className="mt-1 flex items-center gap-1 text-[9px] font-bold text-[#F28C28]">
+                        <Building2 size={10} /> {room.ashramName}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-sm font-extrabold text-[#0B192C] dark:text-white">
+                    {formatCurrency(room.basePrice)}{" "}
+                    <span className="text-[10px] text-gray-400 font-normal">
+                      / night
+                    </span>
                   </span>
-                </span>
-              </div>
+                </div>
 
-              <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                <div className="p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-850 rounded-[12px]">
-                  <span className="text-[9px] text-gray-400 block font-bold">
-                    Max Capacity
-                  </span>
-                  <span className="font-semibold text-secondary dark:text-white">
-                    {room.capacity} Persons
-                  </span>
+                <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                  <div className="p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-850 rounded-[12px]">
+                    <span className="text-[9px] text-gray-400 block font-bold">
+                      Max Capacity
+                    </span>
+                    <span className="font-semibold text-secondary dark:text-white">
+                      {room.capacity} Persons
+                    </span>
+                  </div>
+                  <div className="p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-850 rounded-[12px]">
+                    <span className="text-[9px] text-gray-400 block font-bold">
+                      Total Rooms
+                    </span>
+                    <span className="font-semibold text-secondary dark:text-white">
+                      {room.totalInventory} Units
+                    </span>
+                  </div>
+                  <div className="p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-850 rounded-[12px]">
+                    <span className="text-[9px] text-gray-400 block font-bold">
+                      Status
+                    </span>
+                    <span
+                      className={`font-semibold flex items-center justify-center gap-0.5 ${
+                        room.status === "under_maintenance"
+                          ? "text-amber-600"
+                          : "text-success"
+                      }`}
+                    >
+                      <ClipboardCheck size={12} />{" "}
+                      {room.status === "under_maintenance"
+                        ? "Maintenance"
+                        : "Active"}
+                    </span>
+                  </div>
                 </div>
-                <div className="p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-850 rounded-[12px]">
-                  <span className="text-[9px] text-gray-400 block font-bold">
-                    Total Rooms
-                  </span>
-                  <span className="font-semibold text-secondary dark:text-white">
-                    {room.totalInventory} Units
-                  </span>
-                </div>
-                <div className="p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-850 rounded-[12px]">
-                  <span className="text-[9px] text-gray-400 block font-bold">
-                    Status
-                  </span>
-                  <span
-                    className={`font-semibold flex items-center justify-center gap-0.5 ${
-                      room.status === "under_maintenance"
-                        ? "text-amber-600"
-                        : "text-success"
-                    }`}
+
+                <div className="flex items-center justify-end gap-2 pt-1 border-t border-gray-50 dark:border-slate-850">
+                  <button
+                    type="button"
+                    onClick={() => openEdit(room)}
+                    disabled={deletingId === room._id}
+                    className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-gray-200 dark:border-slate-700 text-[11px] font-extrabold text-[#F28C28] hover:bg-blue-50 dark:hover:bg-slate-800 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <ClipboardCheck size={12} />{" "}
-                    {room.status === "under_maintenance"
-                      ? "Maintenance"
-                      : "Active"}
-                  </span>
+                    <Pencil size={13} /> Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(room)}
+                    disabled={deletingId === room._id}
+                    className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-rose-200 dark:border-rose-900 text-[11px] font-extrabold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {deletingId === room._id ? (
+                      <Loader2 size={13} className="animate-spin" />
+                    ) : (
+                      <Trash2 size={13} />
+                    )}
+                    Remove
+                  </button>
                 </div>
               </div>
-
-              <div className="flex items-center justify-end gap-2 pt-1 border-t border-gray-50 dark:border-slate-850">
-                <button
-                  type="button"
-                  onClick={() => openEdit(room)}
-                  disabled={deletingId === room._id}
-                  className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-gray-200 dark:border-slate-700 text-[11px] font-extrabold text-[#F28C28] hover:bg-blue-50 dark:hover:bg-slate-800 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Pencil size={13} /> Edit
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setConfirmDelete(room)}
-                  disabled={deletingId === room._id}
-                  className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-rose-200 dark:border-rose-900 text-[11px] font-extrabold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {deletingId === room._id ? (
-                    <Loader2 size={13} className="animate-spin" />
-                  ) : (
-                    <Trash2 size={13} />
-                  )}
-                  Remove
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+          )}
+        </Paginated>
       )}
 
       {showCreate && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="tv-drawer-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
             onSubmit={handleCreate}
-            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-4xl w-full rounded-[28px] p-6 sm:p-8 space-y-5 max-h-[85vh] overflow-y-auto text-left"
+            className="tv-drawer-panel bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-4xl w-full rounded-[28px] p-6 sm:p-8 space-y-5 max-h-[85vh] overflow-y-auto text-left"
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white flex items-center gap-1.5">
@@ -897,8 +902,7 @@ export const ManageRoomsPage: React.FC = () => {
                         <img
                           src={src}
                           alt={`Room photo ${idx + 1}`}
-                          className="w-full h-full object-cover"
-                        />
+                          className="w-full h-full object-cover" loading="lazy" decoding="async" />
                         <button
                           type="button"
                           onClick={() =>

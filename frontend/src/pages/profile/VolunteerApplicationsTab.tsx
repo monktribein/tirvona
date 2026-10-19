@@ -1,3 +1,4 @@
+import { Paginated } from "../../components/shared/Pagination";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -71,48 +72,52 @@ export function VolunteerApplicationsTab() {
           </Link>
         </div>
       ) : (
-        <div className="space-y-3">
-          {rows.map((application) => {
-            const job =
-              typeof application.jobId === "object"
-                ? (application.jobId as VolunteerJobItem)
-                : null;
-            const jobId = job?._id || String(application.jobId);
-            return (
-              <Link
-                key={application._id}
-                to={`/volunteer/${jobId}`}
-                className="group block rounded-[24px] border border-gray-100 bg-white p-5 shadow-md transition-all hover:-translate-y-0.5 hover:border-[#E58C28]/50 hover:shadow-lg dark:border-slate-800 dark:bg-[#0B192C]"
-              >
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0 space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className={`rounded-full border px-3 py-1 text-[10px] font-black ${statusStyle[application.status] || statusStyle.applied}`}>
-                        {label(application.status)}
-                      </span>
-                      <span className="flex items-center gap-1 text-[10px] font-bold text-gray-400">
-                        <CalendarDays size={12} /> Applied {new Date(application.createdAt).toLocaleDateString("en-IN")}
-                      </span>
+        <Paginated items={rows} pageSize={8}>
+          {(pageItems) => (
+          <div className="space-y-3">
+            {pageItems.map((application) => {
+              const job =
+                typeof application.jobId === "object"
+                  ? (application.jobId as VolunteerJobItem)
+                  : null;
+              const jobId = job?._id || String(application.jobId);
+              return (
+                <Link
+                  key={application._id}
+                  to={`/volunteer/${jobId}`}
+                  className="group block rounded-[24px] border border-gray-100 bg-white p-5 shadow-md transition-all hover:-translate-y-0.5 hover:border-[#E58C28]/50 hover:shadow-lg dark:border-slate-800 dark:bg-[#0B192C]"
+                >
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0 space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`tv-status-badge rounded-full border px-3 py-1 text-[10px] font-black ${statusStyle[application.status] || statusStyle.applied}`}>
+                          {label(application.status)}
+                        </span>
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-gray-400">
+                          <CalendarDays size={12} /> Applied {new Date(application.createdAt).toLocaleDateString("en-IN")}
+                        </span>
+                      </div>
+                      <h3 className="truncate text-base font-black text-[#0B192C] dark:text-white">
+                        {job?.title || "Volunteer opportunity"}
+                      </h3>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-gray-500">
+                        <span className="flex items-center gap-1"><Building2 size={13} className="text-[#F28C28]" /> {job?.ashramName || "Tirvona Ashram"}</span>
+                        {job?.city && <span className="flex items-center gap-1"><MapPin size={13} className="text-[#E58C28]" /> {job.city}{job.state ? `, ${job.state}` : ""}</span>}
+                      </div>
                     </div>
-                    <h3 className="truncate text-base font-black text-[#0B192C] dark:text-white">
-                      {job?.title || "Volunteer opportunity"}
-                    </h3>
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-gray-500">
-                      <span className="flex items-center gap-1"><Building2 size={13} className="text-[#F28C28]" /> {job?.ashramName || "Tirvona Ashram"}</span>
-                      {job?.city && <span className="flex items-center gap-1"><MapPin size={13} className="text-[#E58C28]" /> {job.city}{job.state ? `, ${job.state}` : ""}</span>}
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-[#F28C28] dark:bg-blue-950/40">
+                        {application.status === "accepted" ? <CircleCheck size={19} /> : <Clock3 size={19} />}
+                      </div>
+                      <ChevronRight className="text-gray-300 transition-transform group-hover:translate-x-1 group-hover:text-[#F28C28]" size={18} />
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-[#F28C28] dark:bg-blue-950/40">
-                      {application.status === "accepted" ? <CircleCheck size={19} /> : <Clock3 size={19} />}
-                    </div>
-                    <ChevronRight className="text-gray-300 transition-transform group-hover:translate-x-1 group-hover:text-[#F28C28]" size={18} />
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+                </Link>
+              );
+            })}
+          </div>
+          )}
+        </Paginated>
       )}
     </div>
   );

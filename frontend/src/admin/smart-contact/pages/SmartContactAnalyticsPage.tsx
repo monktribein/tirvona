@@ -1,3 +1,4 @@
+import { Paginated } from "../../../components/shared/Pagination";
 import React, { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -115,51 +116,55 @@ export const SmartContactAnalyticsPage: React.FC = () => {
                 No active profiles with recorded scans yet.
               </p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="text-[10px] font-black uppercase tracking-wider text-gray-400 border-b border-gray-100 dark:border-slate-800">
-                      <th className="py-2 pr-3">Representative</th>
-                      <th className="py-2 px-3 text-right">Scans</th>
-                      <th className="py-2 px-3 text-right">Views</th>
-                      <th className="py-2 px-3 text-right">Saved</th>
-                      <th className="py-2 pl-3 text-right">Conversion</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {leaderboard.map((profile) => (
-                      <tr
-                        key={profile.id}
-                        className="border-b border-gray-50 dark:border-slate-800/60"
-                      >
-                        <td className="py-2.5 pr-3">
-                          <Link
-                            to={`/admin/smart-contacts/${profile.id}`}
-                            className="text-xs font-black text-[#0B192C] dark:text-white hover:text-[#F28C28]"
-                          >
-                            {profile.displayName}
-                          </Link>
-                          <span className="block text-[10px] text-gray-500">
-                            {profile.designation || "—"}
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-3 text-right text-xs font-bold text-[#0B192C] dark:text-white">
-                          {profile.metrics?.qrScans ?? 0}
-                        </td>
-                        <td className="py-2.5 px-3 text-right text-xs font-bold text-[#0B192C] dark:text-white">
-                          {profile.metrics?.profileViews ?? 0}
-                        </td>
-                        <td className="py-2.5 px-3 text-right text-xs font-bold text-[#0B192C] dark:text-white">
-                          {profile.metrics?.saveContacts ?? 0}
-                        </td>
-                        <td className="py-2.5 pl-3 text-right text-xs font-black text-[#F28C28]">
-                          {(profile.metrics?.conversionRate ?? 0).toFixed(1)}%
-                        </td>
+              <Paginated items={leaderboard} pageSize={15}>
+                {(pageItems) => (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="text-[10px] font-black uppercase tracking-wider text-gray-400 border-b border-gray-100 dark:border-slate-800">
+                        <th className="py-2 pr-3">Representative</th>
+                        <th className="py-2 px-3 text-right">Scans</th>
+                        <th className="py-2 px-3 text-right">Views</th>
+                        <th className="py-2 px-3 text-right">Saved</th>
+                        <th className="py-2 pl-3 text-right">Conversion</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {pageItems.map((profile) => (
+                        <tr
+                          key={profile.id}
+                          className="border-b border-gray-50 dark:border-slate-800/60"
+                        >
+                          <td className="py-2.5 pr-3">
+                            <Link
+                              to={`/admin/smart-contacts/${profile.id}`}
+                              className="text-xs font-black text-[#0B192C] dark:text-white hover:text-[#F28C28]"
+                            >
+                              {profile.displayName}
+                            </Link>
+                            <span className="block text-[10px] text-gray-500">
+                              {profile.designation || "—"}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-right text-xs font-bold text-[#0B192C] dark:text-white">
+                            {profile.metrics?.qrScans ?? 0}
+                          </td>
+                          <td className="py-2.5 px-3 text-right text-xs font-bold text-[#0B192C] dark:text-white">
+                            {profile.metrics?.profileViews ?? 0}
+                          </td>
+                          <td className="py-2.5 px-3 text-right text-xs font-bold text-[#0B192C] dark:text-white">
+                            {profile.metrics?.saveContacts ?? 0}
+                          </td>
+                          <td className="py-2.5 pl-3 text-right text-xs font-black text-[#F28C28]">
+                            {(profile.metrics?.conversionRate ?? 0).toFixed(1)}%
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                )}
+              </Paginated>
             )}
           </div>
         </>

@@ -1,3 +1,4 @@
+import { Paginated } from "../components/shared/Pagination";
 import React, { useState, useEffect, useCallback } from "react";
 import { ashramUrl } from "../lib/urls";
 import api from "../lib/api";
@@ -182,17 +183,21 @@ export const OffersPage: React.FC = () => {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-            {filteredOffers.map((offer) => (
-              <CouponVoucherCard
-                key={offer._id}
-                offer={offer}
-                onBookNow={handleBookWithOffer}
-                onCopyCode={handleCopyCode}
-                copiedCode={copiedCode}
-              />
-            ))}
-          </div>
+          <Paginated items={filteredOffers} pageSize={8}>
+            {(pageItems) => (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+              {pageItems.map((offer) => (
+                <CouponVoucherCard
+                  key={offer._id}
+                  offer={offer}
+                  onBookNow={handleBookWithOffer}
+                  onCopyCode={handleCopyCode}
+                  copiedCode={copiedCode}
+                />
+              ))}
+            </div>
+            )}
+          </Paginated>
         )}
       </div>
     </div>

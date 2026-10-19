@@ -109,7 +109,7 @@ export const MarketplaceStorePage: React.FC = () => {
         <header className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-5 sm:p-8 shadow-sm flex flex-col sm:flex-row gap-5 sm:items-center">
           <div className="w-20 h-20 rounded-2xl bg-[#FFF4E5] dark:bg-slate-900 flex items-center justify-center overflow-hidden shrink-0">
             {store.logoUrl ? (
-              <img src={store.logoUrl} alt={store.storeName} className="w-full h-full object-cover" />
+              <img src={store.logoUrl} alt={store.storeName} className="w-full h-full object-cover" loading="lazy" decoding="async" />
             ) : (
               <Store size={34} className="text-[#F28C28]" />
             )}

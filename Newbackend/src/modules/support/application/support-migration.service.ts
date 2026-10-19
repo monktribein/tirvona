@@ -1,4 +1,5 @@
 import { Injectable, Logger, type OnApplicationBootstrap } from "@nestjs/common";
+import { runAfterStartup } from "../../../common/utils/run-after-startup";
 import { InjectModel } from "../../../database/orm-nest";
 import type { Model } from "../../../database/orm";
 import {
@@ -35,7 +36,11 @@ export class SupportMigrationService implements OnApplicationBootstrap {
     private readonly ticketService: SupportTicketService,
   ) {}
 
-  async onApplicationBootstrap(): Promise<void> {
+  onApplicationBootstrap(): void {
+    runAfterStartup(this.logger, "Support migration", () => this.migrate());
+  }
+
+  private async migrate(): Promise<void> {
     try {
       const seeded = await this.categories.seedDefaults();
       if (seeded) this.logger.log(`Seeded ${seeded} support categor${seeded === 1 ? "y" : "ies"}.`);

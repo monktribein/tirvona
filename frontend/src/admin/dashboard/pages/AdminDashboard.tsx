@@ -1,3 +1,4 @@
+import { Paginated } from "../../../components/shared/Pagination";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -23,7 +24,7 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 import { EnterprisePageHeader } from "../../shared";
-import { AnalyticsAreaChart } from "../../../components/dashboard/AnalyticsCharts";
+import { AnalyticsAreaChart } from "../../../components/dashboard/LazyAnalyticsCharts";
 
 const VIZ_TOKENS = `
 .tv-viz {
@@ -557,42 +558,6 @@ const RankedBars: React.FC<{
   );
 };
 
-const Sparkline: React.FC<{ values: number[] }> = ({ values }) => {
-  if (values.length < 2 || values.every((v) => v === 0))
-    return <div className="h-10" />;
-  const max = Math.max(...values);
-  const W = 100;
-  const H = 30;
-  const x = (i: number) => (i / (values.length - 1)) * W;
-  const y = (v: number) => H - (v / max) * (H - 4) - 2;
-  const line = values
-    .map((v, i) => `${i === 0 ? "M" : "L"} ${x(i)},${y(v)}`)
-    .join(" ");
-  return (
-    <svg
-      viewBox={`0 0 ${W} ${H}`}
-      className="w-full h-10"
-      preserveAspectRatio="none"
-      aria-hidden="true"
-    >
-      <path
-        d={`${line} L ${W},${H} L 0,${H} Z`}
-        fill="var(--viz-series-1)"
-        fillOpacity="0.14"
-      />
-      <path
-        d={line}
-        fill="none"
-        stroke="var(--viz-series-1)"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke"
-      />
-    </svg>
-  );
-};
-
 const DeltaBadge: React.FC<{ change: number; comparable: boolean }> = ({
   change,
   comparable,
@@ -626,14 +591,10 @@ const StatTile: React.FC<{
 }> = ({ label, value, caption, children }) => (
   // No fixed minimum height: a tile is as tall as what it holds, so the plain
   // number tiles no longer reserve room for a chart they never render.
-  <div className="flex h-full flex-col bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-    <span className="text-[11px] font-extrabold text-gray-500 dark:text-gray-400 block tracking-wide">
-      {label}
-    </span>
-    <h4 className="mt-1.5 text-xl font-black text-[#0B192C] dark:text-white">
-      {value}
-    </h4>
-    {caption && <div className="mt-1.5 text-[10px] font-semibold">{caption}</div>}
+  <div className="tv-stat">
+    <span className="tv-stat-label">{label}</span>
+    <h4 className="tv-stat-value">{value}</h4>
+    {caption && <div className="tv-stat-hint">{caption}</div>}
     {children && <div className="mt-auto pt-2.5">{children}</div>}
   </div>
 );
@@ -1027,9 +988,7 @@ export const AdminDashboard: React.FC = () => {
                 {overview?.totals.collectionRate ?? 0}% collected
               </span>
             }
-          >
-            <Sparkline values={series.map((p) => p.gross)} />
-          </StatTile>
+          />
 
           <StatTile
             label="Bookings"
@@ -1040,9 +999,7 @@ export const AdminDashboard: React.FC = () => {
                 comparable={overview?.trend.comparable ?? false}
               />
             }
-          >
-            <Sparkline values={series.map((p) => p.bookings)} />
-          </StatTile>
+          />
 
           <StatTile
             label="Average booking value"
@@ -1155,54 +1112,58 @@ export const AdminDashboard: React.FC = () => {
                 }
               />
             ) : (
-              <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-800">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-gray-50 dark:bg-slate-900 text-gray-600 dark:text-gray-300 font-extrabold tracking-wider text-[10px] border-b border-gray-200 dark:border-slate-800">
-                    <tr>
-                      <th className="py-3 px-4">Booking</th>
-                      <th className="py-3 px-4">Pilgrim</th>
-                      <th className="py-3 px-4">Stay</th>
-                      <th className="py-3 px-4 text-right">Paid</th>
-                      <th className="py-3 px-4">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-slate-800 font-medium text-[#0B192C] dark:text-gray-200">
-                    {filteredBookings.map((row) => (
-                      <tr
-                        key={row.id}
-                        onClick={() => navigate(`/admin/manage/bookings/all`)}
-                        className="hover:bg-gray-50/60 dark:hover:bg-slate-900/50 transition-colors cursor-pointer"
-                      >
-                        <td className="py-3 px-4 font-mono font-bold">
-                          {row.bookingId || row.id.slice(-6)}
-                        </td>
-                        <td className="py-3 px-4 font-extrabold">
-                          {row.customerName}
-                        </td>
-                        <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
-                          {row.ashramName}
-                          {row.city && (
-                            <span className="text-gray-400"> · {row.city}</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 font-bold text-right tabular-nums">
-                          {formatCurrency(row.amountPaid)}
-                          {row.amountPaid < row.totalAmount && (
-                            <span className="block text-[10px] text-gray-400 font-semibold">
-                              of {formatCurrency(row.totalAmount)}
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="px-2.5 py-1 rounded-lg text-[10px] font-black bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200">
-                            {humanizeLabel(row.status)}
-                          </span>
-                        </td>
+              <Paginated items={filteredBookings} pageSize={10}>
+                {(pageItems) => (
+                <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-800">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-gray-50 dark:bg-slate-900 text-gray-600 dark:text-gray-300 font-extrabold tracking-wider text-[10px] border-b border-gray-200 dark:border-slate-800">
+                      <tr>
+                        <th className="py-3 px-4">Booking</th>
+                        <th className="py-3 px-4">Pilgrim</th>
+                        <th className="py-3 px-4">Stay</th>
+                        <th className="py-3 px-4 text-right">Paid</th>
+                        <th className="py-3 px-4">Status</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-slate-800 font-medium text-[#0B192C] dark:text-gray-200">
+                      {pageItems.map((row) => (
+                        <tr
+                          key={row.id}
+                          onClick={() => navigate(`/admin/manage/bookings/all`)}
+                          className="hover:bg-gray-50/60 dark:hover:bg-slate-900/50 transition-colors cursor-pointer"
+                        >
+                          <td className="py-3 px-4 font-mono font-bold">
+                            {row.bookingId || row.id.slice(-6)}
+                          </td>
+                          <td className="py-3 px-4 font-extrabold">
+                            {row.customerName}
+                          </td>
+                          <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
+                            {row.ashramName}
+                            {row.city && (
+                              <span className="text-gray-400"> · {row.city}</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 font-bold text-right tabular-nums">
+                            {formatCurrency(row.amountPaid)}
+                            {row.amountPaid < row.totalAmount && (
+                              <span className="block text-[10px] text-gray-400 font-semibold">
+                                of {formatCurrency(row.totalAmount)}
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="px-2.5 py-1 rounded-lg text-[10px] font-black bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200">
+                              {humanizeLabel(row.status)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                )}
+              </Paginated>
             )}
           </div>
           )}

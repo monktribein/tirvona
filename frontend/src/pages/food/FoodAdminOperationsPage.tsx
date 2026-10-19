@@ -1,3 +1,4 @@
+import { Paginated } from "../../components/shared/Pagination";
 import React, { useEffect, useState } from "react";
 import {
   ShieldAlert,
@@ -128,8 +129,8 @@ export const FoodAdminOperationsPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/70 dark:bg-[#070F1B] text-slate-900 dark:text-slate-100 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="text-slate-900 dark:text-slate-100">
+      <div className="space-y-6">
         <div>
           <span className="text-[10px] font-black uppercase tracking-wider text-amber-500">
             Tirvona Food Module
@@ -234,101 +235,105 @@ export const FoodAdminOperationsPage: React.FC = () => {
                   No settlements yet. Pick the days to settle above; only completed, paid orders that were not settled before are included.
                 </p>
               ) : (
-                <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {settlements.map((s) => (
-                    <div
-                      key={s._id}
-                      className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs"
-                    >
-                      <div>
-                        <p className="font-extrabold text-sm text-slate-900 dark:text-white">
-                          {s.outletId?.brandName || "Outlet"}
-                        </p>
-                        <p className="text-slate-500">
-                          Period: {new Date(s.periodStart).toLocaleDateString()} —{" "}
-                          {new Date(s.periodEnd).toLocaleDateString()} • {s.orderCount} Orders
-                        </p>
-                        <p className="text-slate-400 text-[11px] mt-0.5">
-                          Gross: ₹{s.grossFoodValuePaise / 100} • Comm ({s.commissionRateBps / 100}%): ₹{s.commissionAmountPaise / 100} • GST on comm: ₹{(s.taxOnCommissionPaise ?? 0) / 100}
-                        </p>
-                        <p className="text-[11px] mt-0.5">
-                          {s.vendorId?.businessName}
-                          {" • "}
-                          {s.vendorId?.hasBankDetails ? (
-                            <span className="text-emerald-600 font-bold">Bank details added</span>
-                          ) : (
-                            <span className="text-red-600 font-bold">No bank details yet</span>
-                          )}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <span className="text-[10px] text-slate-400 uppercase font-bold block">
-                            Net Payable
-                          </span>
-                          <span className="text-base font-black text-emerald-600">
-                            ₹{s.netPayablePaise / 100}
-                          </span>
+                <Paginated items={settlements} pageSize={10}>
+                  {(pageItems) => (
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {pageItems.map((s) => (
+                      <div
+                        key={s._id}
+                        className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs"
+                      >
+                        <div>
+                          <p className="font-extrabold text-sm text-slate-900 dark:text-white">
+                            {s.outletId?.brandName || "Outlet"}
+                          </p>
+                          <p className="text-slate-500">
+                            Period: {new Date(s.periodStart).toLocaleDateString()} —{" "}
+                            {new Date(s.periodEnd).toLocaleDateString()} • {s.orderCount} Orders
+                          </p>
+                          <p className="text-slate-400 text-[11px] mt-0.5">
+                            Gross: ₹{s.grossFoodValuePaise / 100} • Comm ({s.commissionRateBps / 100}%): ₹{s.commissionAmountPaise / 100} • GST on comm: ₹{(s.taxOnCommissionPaise ?? 0) / 100}
+                          </p>
+                          <p className="text-[11px] mt-0.5">
+                            {s.vendorId?.businessName}
+                            {" • "}
+                            {s.vendorId?.hasBankDetails ? (
+                              <span className="text-emerald-600 font-bold">Bank details added</span>
+                            ) : (
+                              <span className="text-red-600 font-bold">No bank details yet</span>
+                            )}
+                          </p>
                         </div>
 
-                        {s.status === "pending_approval" && (
-                          <button
-                            onClick={() => handleApproveSettlement(s._id)}
-                            className="px-4 py-2 rounded-full bg-blue-600 text-white font-bold"
-                          >
-                            Approve
-                          </button>
-                        )}
-
-                        {s.status === "approved" &&
-                          (String(s.payoutReference ?? "").startsWith("pout_") ? (
-                            <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-bold">
-                              Transfer in progress ({s.payoutReference})
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <span className="text-[10px] text-slate-400 uppercase font-bold block">
+                              Net Payable
                             </span>
-                          ) : (
-                            <div className="flex flex-wrap items-center gap-2">
-                              {String(s.payoutReference ?? "").startsWith("failed:") && (
-                                <span className="px-2 py-1 rounded-full bg-red-100 text-red-800 font-bold">
-                                  Last transfer failed
-                                </span>
-                              )}
-                              <button
-                                disabled={actionLoading || !s.vendorId?.hasBankDetails}
-                                title={s.vendorId?.hasBankDetails ? "" : "The restaurant has not added bank details"}
-                                onClick={() =>
-                                  window.confirm(`Send ₹${s.netPayablePaise / 100} to ${s.vendorId?.businessName}'s bank account now?`) &&
-                                  run(() => foodService.payFinanceSettlementViaProvider(s._id), "Transfer started. Refresh the status in a moment.")
-                                }
-                                className="px-4 py-1.5 rounded-full bg-emerald-600 text-white font-bold disabled:opacity-50"
-                              >
-                                Pay via RazorpayX
-                              </button>
-                              <input
-                                type="text"
-                                value={payoutRef}
-                                onChange={(e) => setPayoutRef(e.target.value)}
-                                placeholder="or UTR of a manual transfer"
-                                className="px-2.5 py-1.5 rounded-lg border text-xs"
-                              />
-                              <button
-                                onClick={() => handlePaySettlement(s._id)}
-                                className="px-3 py-1.5 rounded-full border border-slate-300 font-bold"
-                              >
-                                Mark Paid
-                              </button>
-                            </div>
-                          ))}
+                            <span className="text-base font-black text-emerald-600">
+                              ₹{s.netPayablePaise / 100}
+                            </span>
+                          </div>
 
-                        {s.status === "paid" && (
-                          <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold">
-                            Paid: {s.payoutReference}
-                          </span>
-                        )}
+                          {s.status === "pending_approval" && (
+                            <button
+                              onClick={() => handleApproveSettlement(s._id)}
+                              className="px-4 py-2 rounded-full bg-blue-600 text-white font-bold"
+                            >
+                              Approve
+                            </button>
+                          )}
+
+                          {s.status === "approved" &&
+                            (String(s.payoutReference ?? "").startsWith("pout_") ? (
+                              <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-bold">
+                                Transfer in progress ({s.payoutReference})
+                              </span>
+                            ) : (
+                              <div className="flex flex-wrap items-center gap-2">
+                                {String(s.payoutReference ?? "").startsWith("failed:") && (
+                                  <span className="px-2 py-1 rounded-full bg-red-100 text-red-800 font-bold">
+                                    Last transfer failed
+                                  </span>
+                                )}
+                                <button
+                                  disabled={actionLoading || !s.vendorId?.hasBankDetails}
+                                  title={s.vendorId?.hasBankDetails ? "" : "The restaurant has not added bank details"}
+                                  onClick={() =>
+                                    window.confirm(`Send ₹${s.netPayablePaise / 100} to ${s.vendorId?.businessName}'s bank account now?`) &&
+                                    run(() => foodService.payFinanceSettlementViaProvider(s._id), "Transfer started. Refresh the status in a moment.")
+                                  }
+                                  className="px-4 py-1.5 rounded-full bg-emerald-600 text-white font-bold disabled:opacity-50"
+                                >
+                                  Pay via RazorpayX
+                                </button>
+                                <input
+                                  type="text"
+                                  value={payoutRef}
+                                  onChange={(e) => setPayoutRef(e.target.value)}
+                                  placeholder="or UTR of a manual transfer"
+                                  className="px-2.5 py-1.5 rounded-lg border text-xs"
+                                />
+                                <button
+                                  onClick={() => handlePaySettlement(s._id)}
+                                  className="px-3 py-1.5 rounded-full border border-slate-300 font-bold"
+                                >
+                                  Mark Paid
+                                </button>
+                              </div>
+                            ))}
+
+                          {s.status === "paid" && (
+                            <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold">
+                              Paid: {s.payoutReference}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                  )}
+                </Paginated>
               )}
             </div>
           </div>

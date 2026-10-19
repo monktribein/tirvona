@@ -291,8 +291,7 @@ export const LoginPage: React.FC = () => {
         className="absolute inset-0 w-full h-full object-cover"
         onError={(e) => {
           e.currentTarget.style.display = "none";
-        }}
-      />
+        }} loading="lazy" decoding="async" />
       <div className="absolute inset-0 bg-gradient-to-r from-[#0B192C]/90 via-[#0B192C]/60 to-[#F28C28]/25" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen grid lg:grid-cols-2 gap-10 lg:gap-12 items-center pt-36 lg:pt-40 pb-16">
@@ -358,8 +357,7 @@ export const LoginPage: React.FC = () => {
               <img
                 src="/logo/logo.png"
                 alt="Tirvona"
-                className="w-10 h-10 object-contain inline-block"
-              />
+                className="w-10 h-10 object-contain inline-block" loading="lazy" decoding="async" />
               <h2 className="text-xl font-black text-[#0B192C] dark:text-white">
                 Welcome Back <span className="align-middle">👋</span>
               </h2>

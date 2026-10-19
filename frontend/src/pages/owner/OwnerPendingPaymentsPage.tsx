@@ -1,3 +1,4 @@
+import { Paginated } from "../../components/shared/Pagination";
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useNotifications } from "../../contexts/NotificationContext";
@@ -119,66 +120,70 @@ export default function OwnerPendingPaymentsPage() {
           <p className="text-gray-500">No pending payment bookings found.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {bookings.map((b) => (
-            <div
-              key={b._id}
-              className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4 flex flex-col"
-            >
-              <div className="flex justify-between items-start border-b border-gray-50 dark:border-slate-800 pb-3">
-                <div className="space-y-1">
-                  <span className="text-xs font-bold text-[#F28C28]">
-                    {b.bookingId}
-                  </span>
-                  <h3 className="font-bold text-sm text-[#0B192C] dark:text-white line-clamp-1">
-                    {b.customerId?.name || b.walkInGuest?.name || "Unknown Guest"}
-                  </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                    <MapPin size={12} /> {b.ashramId?.name}
-                  </p>
+        <Paginated items={bookings} pageSize={10}>
+          {(pageItems) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {pageItems.map((b) => (
+              <div
+                key={b._id}
+                className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4 flex flex-col"
+              >
+                <div className="flex justify-between items-start border-b border-gray-50 dark:border-slate-800 pb-3">
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-[#F28C28]">
+                      {b.bookingId}
+                    </span>
+                    <h3 className="font-bold text-sm text-[#0B192C] dark:text-white line-clamp-1">
+                      {b.customerId?.name || b.walkInGuest?.name || "Unknown Guest"}
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                      <MapPin size={12} /> {b.ashramId?.name}
+                    </p>
+                  </div>
+                  <EnterpriseStatusBadge status={b.status} />
                 </div>
-                <EnterpriseStatusBadge status={b.status} />
-              </div>
 
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <span className="text-gray-400 block text-[10px]">Check In</span>
-                  <span className="font-semibold flex items-center gap-1">
-                    <Calendar size={12} className="text-[#F28C28]" />
-                    {new Date(b.checkInDate).toLocaleDateString()}
-                  </span>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="text-gray-400 block text-[10px]">Check In</span>
+                    <span className="font-semibold flex items-center gap-1">
+                      <Calendar size={12} className="text-[#F28C28]" />
+                      {new Date(b.checkInDate).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400 block text-[10px]">Check Out</span>
+                    <span className="font-semibold flex items-center gap-1">
+                      <Calendar size={12} className="text-[#F28C28]" />
+                      {new Date(b.checkOutDate).toLocaleDateString()}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-gray-400 block text-[10px]">Check Out</span>
-                  <span className="font-semibold flex items-center gap-1">
-                    <Calendar size={12} className="text-[#F28C28]" />
-                    {new Date(b.checkOutDate).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
 
-              <div className="pt-3 border-t border-gray-50 dark:border-slate-800 mt-auto flex justify-between items-center bg-gray-50 dark:bg-slate-900/50 -mx-5 -mb-5 px-5 py-3 rounded-b-2xl">
-                <div>
-                  <span className="text-[10px] text-gray-500 block">Amount Due</span>
-                  <span className="font-bold text-base text-[#0B192C] dark:text-white">
-                    {formatCurrency(b.pricing?.totalAmount)}
-                  </span>
+                <div className="pt-3 border-t border-gray-50 dark:border-slate-800 mt-auto flex justify-between items-center bg-gray-50 dark:bg-slate-900/50 -mx-5 -mb-5 px-5 py-3 rounded-b-2xl">
+                  <div>
+                    <span className="text-[10px] text-gray-500 block">Amount Due</span>
+                    <span className="font-bold text-base text-[#0B192C] dark:text-white">
+                      {formatCurrency(b.pricing?.totalAmount)}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setSelectedBooking(b)}
+                    className="px-4 py-2 bg-[#F28C28] text-white text-xs font-bold rounded-lg hover:bg-opacity-90 transition-colors shadow-sm"
+                  >
+                    Confirm Payment
+                  </button>
                 </div>
-                <button
-                  onClick={() => setSelectedBooking(b)}
-                  className="px-4 py-2 bg-[#F28C28] text-white text-xs font-bold rounded-lg hover:bg-opacity-90 transition-colors shadow-sm"
-                >
-                  Confirm Payment
-                </button>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+          )}
+        </Paginated>
       )}
 
       {selectedBooking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-[#0B192C] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl border border-gray-100 dark:border-slate-800">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="tv-drawer-panel bg-white dark:bg-[#0B192C] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl border border-gray-100 dark:border-slate-800">
             <div className="p-4 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-slate-900/50">
               <h3 className="font-bold text-[#0B192C] dark:text-white flex items-center gap-2">
                 <CreditCard size={18} className="text-[#F28C28]" />

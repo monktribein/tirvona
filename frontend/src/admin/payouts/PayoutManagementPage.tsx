@@ -299,7 +299,7 @@ export const PayoutManagementPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFBF5] p-5 md:p-8 text-[#0B192C]">
+    <div className="text-[#0B192C]">
       <section className="rounded-3xl border border-orange-200 bg-white p-6 mb-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="rounded-2xl bg-blue-50 p-3 text-[#D97706]"><IndianRupee /></div>
@@ -358,7 +358,7 @@ export const PayoutManagementPage: React.FC = () => {
           <div className="mt-4 overflow-x-auto rounded-2xl border border-slate-100">
             <table className="w-full min-w-[640px] text-sm">
               <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Stay</th><th className="px-4 py-3">Account holder</th><th className="px-4 py-3">Bank account</th><th className="px-4 py-3">Status</th></tr></thead>
-              <tbody>{bankCoverage.length === 0 ? <tr><td colSpan={4} className="p-8 text-center text-slate-400">No authorized stays found.</td></tr> : bankCoverage.map((item) => <tr key={item.ashram._id} className="border-t border-slate-100"><td className="px-4 py-3 font-bold">{item.ashram.name}</td><td className="px-4 py-3">{item.bankAccount?.accountHolderName || "—"}</td><td className="px-4 py-3">{item.bankAccount ? `${item.bankAccount.maskedAccountNumber} · ${item.bankAccount.maskedIfsc}` : "Not configured"}</td><td className="px-4 py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-black ${item.bankAccount ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>{item.bankAccount ? "Ready" : "Account required"}</span></td></tr>)}</tbody>
+              <tbody>{bankCoverage.length === 0 ? <tr><td colSpan={4} className="p-8 text-center text-slate-400">No authorized stays found.</td></tr> : bankCoverage.map((item) => <tr key={item.ashram._id} className="border-t border-slate-100"><td className="px-4 py-3 font-bold">{item.ashram.name}</td><td className="px-4 py-3">{item.bankAccount?.accountHolderName || "—"}</td><td className="px-4 py-3">{item.bankAccount ? `${item.bankAccount.maskedAccountNumber} · ${item.bankAccount.maskedIfsc}` : "Not configured"}</td><td className="px-4 py-3"><span className={`tv-status-badge rounded-full px-2.5 py-1 text-xs font-black ${item.bankAccount ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>{item.bankAccount ? "Ready" : "Account required"}</span></td></tr>)}</tbody>
             </table>
           </div>
         </section>
@@ -400,8 +400,8 @@ export const PayoutManagementPage: React.FC = () => {
         <div className="p-4 border-t border-slate-100 flex justify-end items-center gap-3"><button disabled={page <= 1} onClick={() => setPage((value) => value - 1)} className="rounded-lg border px-3 py-1 disabled:opacity-40">Previous</button><b>Page {page} of {pages}</b><button disabled={page >= pages} onClick={() => setPage((value) => value + 1)} className="rounded-lg border px-3 py-1 disabled:opacity-40">Next</button></div>
       </section>
 
-      {manualRow && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4" role="dialog" aria-modal="true" aria-labelledby="manual-payout-title">
-        <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
+      {manualRow && <div className="tv-drawer-overlay fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4" role="dialog" aria-modal="true" aria-labelledby="manual-payout-title">
+        <div className="tv-drawer-panel max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
           <div className="flex items-start justify-between gap-4">
             <div><h2 id="manual-payout-title" className="text-xl font-black">Manual bank transfer</h2><p className="mt-1 text-sm text-slate-500">{manualRow.payoutReference} · {manualRow.ashramId?.name} · {money(manualRow.amount)}</p></div>
             <button type="button" onClick={closeManualPayment} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label="Close manual payment"><X size={18} /></button>
@@ -433,6 +433,6 @@ export const PayoutManagementPage: React.FC = () => {
 };
 
 const Input = ({ label, value, onChange, required, type = "text" }: { label: string; value: string; onChange: (value: string) => void; required?: boolean; type?: string }) => <label className="text-xs font-bold text-slate-600">{label}<input type={type} value={value} onChange={(event) => onChange(event.target.value)} required={required} autoComplete="off" className="mt-1 block w-full rounded-xl border border-orange-200 px-3 py-2.5 text-sm font-normal text-slate-900" /></label>;
-const Badge = ({ status }: { status: string }) => <span className={`rounded-full px-2.5 py-1 text-xs font-black ${status === "paid" ? "bg-green-100 text-green-700" : status === "failed" ? "bg-red-100 text-red-700" : status === "processing" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"}`}>{label(status)}</span>;
+const Badge = ({ status }: { status: string }) => <span className={`tv-status-badge rounded-full px-2.5 py-1 text-xs font-black ${status === "paid" ? "bg-green-100 text-green-700" : status === "failed" ? "bg-red-100 text-red-700" : status === "processing" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"}`}>{label(status)}</span>;
 
 export default PayoutManagementPage;

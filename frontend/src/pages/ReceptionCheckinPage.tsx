@@ -1,3 +1,4 @@
+import { Paginated } from "../components/shared/Pagination";
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
@@ -825,7 +826,7 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/70 p-4 md:p-6 lg:p-8 space-y-6">
+    <div className="space-y-6">
       {/* Top Header / Property Context Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
         <div className="flex items-center gap-4">
@@ -921,7 +922,6 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {/* 1. Collected / Today's Revenue */}
         <div className="relative overflow-hidden rounded-2xl bg-white border border-slate-200/90 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between group">
-          <div className="h-1.5 w-full bg-gradient-to-r from-blue-600 to-indigo-600 absolute top-0 left-0" />
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Collected Revenue</p>
@@ -939,7 +939,6 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
 
         {/* 2. Today's Arrivals */}
         <div className="relative overflow-hidden rounded-2xl bg-white border border-slate-200/90 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between group">
-          <div className="h-1.5 w-full bg-gradient-to-r from-emerald-500 to-teal-500 absolute top-0 left-0" />
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Today's Arrivals</p>
@@ -959,7 +958,6 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
 
         {/* 3. Today's Departures */}
         <div className="relative overflow-hidden rounded-2xl bg-white border border-slate-200/90 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between group">
-          <div className="h-1.5 w-full bg-gradient-to-r from-rose-500 to-pink-500 absolute top-0 left-0" />
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Departures Today</p>
@@ -979,7 +977,6 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
 
         {/* 4. Current In-House Guests */}
         <div className="relative overflow-hidden rounded-2xl bg-white border border-slate-200/90 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between group">
-          <div className="h-1.5 w-full bg-gradient-to-r from-violet-600 to-purple-600 absolute top-0 left-0" />
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-slate-500">In-House Guests</p>
@@ -999,7 +996,6 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
 
         {/* 5. Free / Available Rooms */}
         <div className="relative overflow-hidden rounded-2xl bg-white border border-slate-200/90 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between group">
-          <div className="h-1.5 w-full bg-gradient-to-r from-amber-500 to-orange-500 absolute top-0 left-0" />
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Available Rooms</p>
@@ -1482,6 +1478,8 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
                 }
 
                 return (
+                  <Paginated items={targetList} pageSize={15}>
+                    {(pageItems) => (
                   <table className="w-full text-left border-collapse text-sm">
                     <thead>
                       <tr className="border-b border-slate-200/80 bg-slate-50/50 text-slate-500 uppercase text-[11px] font-bold tracking-wider">
@@ -1495,7 +1493,7 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {targetList.map(booking => {
+                      {pageItems.map(booking => {
                         const isCheckedIn = booking.status === 'checked_in';
                         const isCheckedOut = booking.status === 'checked_out';
                         const guestName = getGuestName(booking);
@@ -1666,6 +1664,8 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
                       })}
                     </tbody>
                   </table>
+                    )}
+                  </Paginated>
                 );
               })()}
             </div>
@@ -1677,8 +1677,8 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
           CHECK-IN MODAL (Aadhaar / Room Assignment / Digital Pass validation)
           ========================================================================= */}
       {showCheckinModal && checkinBooking && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="tv-drawer-panel bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95">
             <div className="p-6 bg-gradient-to-r from-emerald-600 to-teal-600 text-white flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center">
@@ -1864,8 +1864,8 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
           CHECK-OUT MODAL (Pending settlement / Housekeeping release)
           ========================================================================= */}
       {showCheckoutModal && checkoutBooking && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="tv-drawer-panel bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95">
             <div className="p-6 bg-gradient-to-r from-rose-600 to-red-600 text-white flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center">
@@ -1976,8 +1976,8 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
           PAYMENT COLLECTION MODAL
           ========================================================================= */}
       {showPaymentModal && paymentBooking && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="tv-drawer-panel bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95">
             <div className="p-6 bg-gradient-to-r from-amber-500 to-orange-600 text-white flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center">
@@ -2052,8 +2052,8 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
           BOOKING DETAILS MODAL / DOSSIER
           ========================================================================= */}
       {showDetailModal && selectedBooking && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-xl w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="tv-drawer-panel bg-white rounded-3xl shadow-2xl max-w-xl w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95">
             <div className="p-6 bg-slate-900 text-white flex items-center justify-between">
               <div>
                 <span className="text-xs font-semibold text-indigo-400 uppercase tracking-wider">Stay Booking Record</span>
@@ -2188,8 +2188,8 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
           NEW WALK-IN BOOKING MODAL
           ========================================================================= */}
       {showNewBookingModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 my-8">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="tv-drawer-panel bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 my-8">
             <div className="p-6 bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-700 text-white flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center">

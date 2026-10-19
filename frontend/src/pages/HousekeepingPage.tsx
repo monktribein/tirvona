@@ -1,3 +1,4 @@
+import { Paginated } from "../components/shared/Pagination";
 import React, { useState, useEffect } from "react";
 import {
   ClipboardList,
@@ -155,107 +156,111 @@ export const HousekeepingPage: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {units.map((unit) => {
-            const isClean = unit.status === "clean";
-            const isCleaning = unit.status === "cleaning";
-            const isDirty = unit.status === "dirty";
-            const isMaintenance = unit.status === "maintenance";
-            const busy = updatingId === unit._id;
+        <Paginated items={units} pageSize={24}>
+          {(pageItems) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {pageItems.map((unit) => {
+              const isClean = unit.status === "clean";
+              const isCleaning = unit.status === "cleaning";
+              const isDirty = unit.status === "dirty";
+              const isMaintenance = unit.status === "maintenance";
+              const busy = updatingId === unit._id;
 
-            return (
-              <div
-                key={unit._id}
-                className={`bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[20px] p-5 shadow-sm space-y-4 relative overflow-hidden ${busy ? "opacity-60" : ""}`}
-              >
+              return (
                 <div
-                  className={`absolute left-0 inset-y-0 w-1 ${
-                    isClean
-                      ? "bg-success"
-                      : isCleaning
-                        ? "bg-primary"
-                        : isDirty
-                          ? "bg-danger"
-                          : "bg-yellow-500"
-                  }`}
-                />
-
-                <div className="space-y-1">
-                  <h4 className="font-extrabold text-xs text-[#0B192C] dark:text-white truncate pr-2">
-                    {unit.unitNumber}
-                  </h4>
-                  <p className="text-[9px] text-gray-400 font-bold truncate">
-                    {unit.roomId?.name || "Room"}
-                  </p>
-                  {unit.assignedTo?.name && (
-                    <p className="text-[9px] text-gray-400 font-bold">
-                      Staff: {unit.assignedTo.name}
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex justify-between items-center pt-2">
-                  <span
-                    className={`px-2.5 py-0.5 rounded-full text-[8px] font-bold tracking-wider ${
+                  key={unit._id}
+                  className={`bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[20px] p-5 shadow-sm space-y-4 relative overflow-hidden ${busy ? "opacity-60" : ""}`}
+                >
+                  <div
+                    className={`absolute left-0 inset-y-0 w-1 ${
                       isClean
-                        ? "bg-success/10 text-success"
+                        ? "bg-success"
                         : isCleaning
-                          ? "bg-primary/10 text-primary animate-pulse"
+                          ? "bg-primary"
                           : isDirty
-                            ? "bg-danger/10 text-danger"
-                            : "bg-yellow-50 text-yellow-700"
+                            ? "bg-danger"
+                            : "bg-yellow-500"
                     }`}
-                  >
-                    {unit.status}
-                  </span>
+                  />
 
-                  <div className="flex gap-1.5">
-                    {!isClean && (
-                      <button
-                        onClick={() => updateStatus(unit._id, "clean")}
-                        disabled={busy}
-                        className="p-1 hover:bg-success/10 text-gray-400 hover:text-success rounded transition-colors cursor-pointer disabled:cursor-not-allowed"
-                        title="Mark Clean"
-                      >
-                        <CheckCircle size={14} />
-                      </button>
-                    )}
-                    {!isCleaning && !isClean && (
-                      <button
-                        onClick={() => updateStatus(unit._id, "cleaning")}
-                        disabled={busy}
-                        className="p-1 hover:bg-[#F28C28]/10 text-gray-400 hover:text-[#F28C28] rounded transition-colors cursor-pointer disabled:cursor-not-allowed"
-                        title="Start Cleaning"
-                      >
-                        <ClipboardList size={14} />
-                      </button>
-                    )}
-                    {!isDirty && !isMaintenance && (
-                      <button
-                        onClick={() => updateStatus(unit._id, "dirty")}
-                        disabled={busy}
-                        className="p-1 hover:bg-danger/10 text-gray-400 hover:text-danger rounded transition-colors cursor-pointer disabled:cursor-not-allowed"
-                        title="Mark Dirty"
-                      >
-                        <BedDouble size={14} />
-                      </button>
-                    )}
-                    {!isMaintenance && (
-                      <button
-                        onClick={() => updateStatus(unit._id, "maintenance")}
-                        disabled={busy}
-                        className="p-1 hover:bg-yellow-50 text-gray-400 hover:text-yellow-600 rounded transition-colors cursor-pointer disabled:cursor-not-allowed"
-                        title="Log Maintenance"
-                      >
-                        <Wrench size={14} />
-                      </button>
+                  <div className="space-y-1">
+                    <h4 className="font-extrabold text-xs text-[#0B192C] dark:text-white truncate pr-2">
+                      {unit.unitNumber}
+                    </h4>
+                    <p className="text-[9px] text-gray-400 font-bold truncate">
+                      {unit.roomId?.name || "Room"}
+                    </p>
+                    {unit.assignedTo?.name && (
+                      <p className="text-[9px] text-gray-400 font-bold">
+                        Staff: {unit.assignedTo.name}
+                      </p>
                     )}
                   </div>
+
+                  <div className="flex justify-between items-center pt-2">
+                    <span
+                      className={`px-2.5 py-0.5 rounded-full text-[8px] font-bold tracking-wider ${
+                        isClean
+                          ? "bg-success/10 text-success"
+                          : isCleaning
+                            ? "bg-primary/10 text-primary animate-pulse"
+                            : isDirty
+                              ? "bg-danger/10 text-danger"
+                              : "bg-yellow-50 text-yellow-700"
+                      }`}
+                    >
+                      {unit.status}
+                    </span>
+
+                    <div className="flex gap-1.5">
+                      {!isClean && (
+                        <button
+                          onClick={() => updateStatus(unit._id, "clean")}
+                          disabled={busy}
+                          className="p-1 hover:bg-success/10 text-gray-400 hover:text-success rounded transition-colors cursor-pointer disabled:cursor-not-allowed"
+                          title="Mark Clean"
+                        >
+                          <CheckCircle size={14} />
+                        </button>
+                      )}
+                      {!isCleaning && !isClean && (
+                        <button
+                          onClick={() => updateStatus(unit._id, "cleaning")}
+                          disabled={busy}
+                          className="p-1 hover:bg-[#F28C28]/10 text-gray-400 hover:text-[#F28C28] rounded transition-colors cursor-pointer disabled:cursor-not-allowed"
+                          title="Start Cleaning"
+                        >
+                          <ClipboardList size={14} />
+                        </button>
+                      )}
+                      {!isDirty && !isMaintenance && (
+                        <button
+                          onClick={() => updateStatus(unit._id, "dirty")}
+                          disabled={busy}
+                          className="p-1 hover:bg-danger/10 text-gray-400 hover:text-danger rounded transition-colors cursor-pointer disabled:cursor-not-allowed"
+                          title="Mark Dirty"
+                        >
+                          <BedDouble size={14} />
+                        </button>
+                      )}
+                      {!isMaintenance && (
+                        <button
+                          onClick={() => updateStatus(unit._id, "maintenance")}
+                          disabled={busy}
+                          className="p-1 hover:bg-yellow-50 text-gray-400 hover:text-yellow-600 rounded transition-colors cursor-pointer disabled:cursor-not-allowed"
+                          title="Log Maintenance"
+                        >
+                          <Wrench size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+          )}
+        </Paginated>
       )}
     </div>
   );

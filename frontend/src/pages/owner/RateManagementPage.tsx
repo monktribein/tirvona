@@ -1,3 +1,4 @@
+import { Paginated } from "../../components/shared/Pagination";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertCircle,
@@ -376,7 +377,7 @@ export const RateManagementPage: React.FC = () => {
     "w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28] transition-all cursor-pointer";
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-16 font-sans text-left">
+    <div className="space-y-6 pb-16 font-sans text-left">
       {/* Enterprise Header */}
       <EnterprisePageHeader
         title="Rate & Discount Management"
@@ -585,168 +586,172 @@ export const RateManagementPage: React.FC = () => {
         ) : (
           <>
             {/* Desktop Table View (visible on md screens and up) */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[760px]">
-                <thead className="bg-gray-50 dark:bg-slate-900/60 text-[10px] uppercase font-black text-gray-400 tracking-wider">
-                  <tr className="border-b border-gray-100 dark:border-slate-800">
-                    <th className="py-3 px-4 w-12 text-center">
-                      <input
-                        type="checkbox"
-                        checked={
-                          filteredRates.length > 0 &&
-                          selectedRoomIds.size === filteredRates.length
-                        }
-                        onChange={handleSelectAll}
-                        className="rounded border-gray-300 text-[#F28C28] focus:ring-[#F28C28] cursor-pointer"
-                      />
-                    </th>
-                    <th className="py-3 px-4">Stay & Category</th>
-                    <th className="py-3 px-4 text-right">MRP (Base)</th>
-                    <th className="py-3 px-4 text-center">Discount</th>
-                    <th className="py-3 px-4 text-right">You Save</th>
-                    <th className="py-3 px-4 text-right">Selling Price</th>
-                    <th className="py-3 px-4 text-center">Status</th>
-                    <th className="py-3 px-4 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-slate-800 text-xs">
-                  {filteredRates.map((rate) => {
-                    const isDiscounted =
-                      rate.isDiscountActive && rate.discountPercent > 0;
-                    const isSelected = selectedRoomIds.has(rate.roomId);
+            <Paginated items={filteredRates} pageSize={15}>
+              {(pageItems) => (
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[760px]">
+                  <thead className="bg-gray-50 dark:bg-slate-900/60 text-[10px] uppercase font-black text-gray-400 tracking-wider">
+                    <tr className="border-b border-gray-100 dark:border-slate-800">
+                      <th className="py-3 px-4 w-12 text-center">
+                        <input
+                          type="checkbox"
+                          checked={
+                            filteredRates.length > 0 &&
+                            selectedRoomIds.size === filteredRates.length
+                          }
+                          onChange={handleSelectAll}
+                          className="rounded border-gray-300 text-[#F28C28] focus:ring-[#F28C28] cursor-pointer"
+                        />
+                      </th>
+                      <th className="py-3 px-4">Stay & Category</th>
+                      <th className="py-3 px-4 text-right">MRP (Base)</th>
+                      <th className="py-3 px-4 text-center">Discount</th>
+                      <th className="py-3 px-4 text-right">You Save</th>
+                      <th className="py-3 px-4 text-right">Selling Price</th>
+                      <th className="py-3 px-4 text-center">Status</th>
+                      <th className="py-3 px-4 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-slate-800 text-xs">
+                    {pageItems.map((rate) => {
+                      const isDiscounted =
+                        rate.isDiscountActive && rate.discountPercent > 0;
+                      const isSelected = selectedRoomIds.has(rate.roomId);
 
-                    return (
-                      <tr
-                        key={rate.roomId}
-                        className={`hover:bg-gray-50/60 dark:hover:bg-slate-800/30 transition-colors ${
-                          isSelected ? "bg-[#F28C28]/5 dark:bg-[#F28C28]/10" : ""
-                        }`}
-                      >
-                        <td className="py-3.5 px-4 text-center">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleToggleSelectRoom(rate.roomId)}
-                            className="rounded border-gray-300 text-[#F28C28] focus:ring-[#F28C28] cursor-pointer"
-                          />
-                        </td>
+                      return (
+                        <tr
+                          key={rate.roomId}
+                          className={`hover:bg-gray-50/60 dark:hover:bg-slate-800/30 transition-colors ${
+                            isSelected ? "bg-[#F28C28]/5 dark:bg-[#F28C28]/10" : ""
+                          }`}
+                        >
+                          <td className="py-3.5 px-4 text-center">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleToggleSelectRoom(rate.roomId)}
+                              className="rounded border-gray-300 text-[#F28C28] focus:ring-[#F28C28] cursor-pointer"
+                            />
+                          </td>
 
-                        <td className="py-3.5 px-4 min-w-[220px]">
-                          <div className="font-extrabold text-xs sm:text-sm text-[#0B192C] dark:text-white flex items-center gap-2">
-                            {rate.roomName}
-                            {isDiscounted && (
-                              <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/60">
-                                {rate.discountPercent}% OFF
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-[11px] text-gray-400 font-semibold mt-0.5 flex items-center gap-1.5">
-                            <span className="capitalize">{rate.roomType.replace("_", " ")}</span>
-                            <span>•</span>
-                            <span>{rate.acType}</span>
-                            <span>•</span>
-                            <span>Capacity: {rate.capacity} Guests</span>
-                          </div>
-                          {rate.ashramName && (
-                            <div className="text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-1 mt-0.5 font-medium">
-                              <Building2 size={11} />
-                              {rate.ashramName}
+                          <td className="py-3.5 px-4 min-w-[220px]">
+                            <div className="font-extrabold text-xs sm:text-sm text-[#0B192C] dark:text-white flex items-center gap-2">
+                              {rate.roomName}
+                              {isDiscounted && (
+                                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/60">
+                                  {rate.discountPercent}% OFF
+                                </span>
+                              )}
                             </div>
-                          )}
-                        </td>
-
-                        {/* MRP */}
-                        <td className="py-3.5 px-4 text-right font-bold text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-sans">
-                          {isDiscounted ? (
-                            <span className="line-through text-gray-400 dark:text-gray-500 font-normal">
-                              {formatCurrency(rate.mrp)}
-                            </span>
-                          ) : (
-                            formatCurrency(rate.mrp)
-                          )}
-                        </td>
-
-                        {/* Discount % */}
-                        <td className="py-3.5 px-4 text-center">
-                          {isDiscounted ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/80 dark:border-rose-900/50">
-                              <Percent size={10} />
-                              {rate.discountPercent}%
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 text-xs font-semibold">0%</span>
-                          )}
-                        </td>
-
-                        {/* You Save */}
-                        <td className="py-3.5 px-4 text-right font-bold text-xs font-sans">
-                          {isDiscounted ? (
-                            <span className="text-rose-600 dark:text-rose-400">
-                              - {formatCurrency(rate.discountAmount)}
-                            </span>
-                          ) : (
-                            <span className="text-gray-300 dark:text-gray-600 font-normal">—</span>
-                          )}
-                        </td>
-
-                        {/* Selling Price */}
-                        <td className="py-3.5 px-4 text-right">
-                          <span className="font-black text-sm sm:text-base text-emerald-600 dark:text-emerald-400 font-sans">
-                            {formatCurrency(rate.sellingPrice)}
-                          </span>
-                          <span className="text-[10px] text-gray-400 font-semibold block">
-                            / night
-                          </span>
-                        </td>
-
-                        {/* Status */}
-                        <td className="py-3.5 px-4 text-center">
-                          <button
-                            type="button"
-                            onClick={() => handleToggleDiscount(rate)}
-                            disabled={togglingId === rate.roomId}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                            title={
-                              rate.isDiscountActive
-                                ? "Click to pause discount (charges full MRP)"
-                                : "Click to activate discount"
-                            }
-                          >
-                            {togglingId === rate.roomId ? (
-                              <Loader2 size={16} className="animate-spin text-gray-400" />
-                            ) : rate.isDiscountActive ? (
-                              <ToggleRight size={22} className="text-emerald-500" />
-                            ) : (
-                              <ToggleLeft size={22} className="text-gray-300 dark:text-slate-600" />
+                            <div className="text-[11px] text-gray-400 font-semibold mt-0.5 flex items-center gap-1.5">
+                              <span className="capitalize">{rate.roomType.replace("_", " ")}</span>
+                              <span>•</span>
+                              <span>{rate.acType}</span>
+                              <span>•</span>
+                              <span>Capacity: {rate.capacity} Guests</span>
+                            </div>
+                            {rate.ashramName && (
+                              <div className="text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-1 mt-0.5 font-medium">
+                                <Building2 size={11} />
+                                {rate.ashramName}
+                              </div>
                             )}
-                            <span
-                              className={`text-[11px] font-black uppercase ${
-                                rate.isDiscountActive
-                                  ? "text-emerald-600 dark:text-emerald-400"
-                                  : "text-gray-400 dark:text-gray-500"
-                              }`}
-                            >
-                              {rate.isDiscountActive ? "Active" : "Disabled"}
-                            </span>
-                          </button>
-                        </td>
+                          </td>
 
-                        {/* Action */}
-                        <td className="py-3.5 px-4 text-right">
-                          <button
-                            onClick={() => openEditModal(rate)}
-                            className="px-3.5 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-[#F28C28] hover:bg-[#F28C28] hover:text-white text-xs font-extrabold text-[#0B192C] dark:text-white transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-sm"
-                          >
-                            <Edit3 size={13} />
-                            Edit Rate
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          {/* MRP */}
+                          <td className="py-3.5 px-4 text-right font-bold text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-sans">
+                            {isDiscounted ? (
+                              <span className="line-through text-gray-400 dark:text-gray-500 font-normal">
+                                {formatCurrency(rate.mrp)}
+                              </span>
+                            ) : (
+                              formatCurrency(rate.mrp)
+                            )}
+                          </td>
+
+                          {/* Discount % */}
+                          <td className="py-3.5 px-4 text-center">
+                            {isDiscounted ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/80 dark:border-rose-900/50">
+                                <Percent size={10} />
+                                {rate.discountPercent}%
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 text-xs font-semibold">0%</span>
+                            )}
+                          </td>
+
+                          {/* You Save */}
+                          <td className="py-3.5 px-4 text-right font-bold text-xs font-sans">
+                            {isDiscounted ? (
+                              <span className="text-rose-600 dark:text-rose-400">
+                                - {formatCurrency(rate.discountAmount)}
+                              </span>
+                            ) : (
+                              <span className="text-gray-300 dark:text-gray-600 font-normal">—</span>
+                            )}
+                          </td>
+
+                          {/* Selling Price */}
+                          <td className="py-3.5 px-4 text-right">
+                            <span className="font-black text-sm sm:text-base text-emerald-600 dark:text-emerald-400 font-sans">
+                              {formatCurrency(rate.sellingPrice)}
+                            </span>
+                            <span className="text-[10px] text-gray-400 font-semibold block">
+                              / night
+                            </span>
+                          </td>
+
+                          {/* Status */}
+                          <td className="py-3.5 px-4 text-center">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleDiscount(rate)}
+                              disabled={togglingId === rate.roomId}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                              title={
+                                rate.isDiscountActive
+                                  ? "Click to pause discount (charges full MRP)"
+                                  : "Click to activate discount"
+                              }
+                            >
+                              {togglingId === rate.roomId ? (
+                                <Loader2 size={16} className="animate-spin text-gray-400" />
+                              ) : rate.isDiscountActive ? (
+                                <ToggleRight size={22} className="text-emerald-500" />
+                              ) : (
+                                <ToggleLeft size={22} className="text-gray-300 dark:text-slate-600" />
+                              )}
+                              <span
+                                className={`text-[11px] font-black uppercase ${
+                                  rate.isDiscountActive
+                                    ? "text-emerald-600 dark:text-emerald-400"
+                                    : "text-gray-400 dark:text-gray-500"
+                                }`}
+                              >
+                                {rate.isDiscountActive ? "Active" : "Disabled"}
+                              </span>
+                            </button>
+                          </td>
+
+                          {/* Action */}
+                          <td className="py-3.5 px-4 text-right">
+                            <button
+                              onClick={() => openEditModal(rate)}
+                              className="px-3.5 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-[#F28C28] hover:bg-[#F28C28] hover:text-white text-xs font-extrabold text-[#0B192C] dark:text-white transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-sm"
+                            >
+                              <Edit3 size={13} />
+                              Edit Rate
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              )}
+            </Paginated>
 
             {/* Mobile Cards View (visible only on < md screens) */}
             <div className="block md:hidden divide-y divide-gray-100 dark:divide-slate-800">
@@ -882,10 +887,10 @@ export const RateManagementPage: React.FC = () => {
 
       {/* Edit Single Rate Modal */}
       {editingRate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white dark:bg-[#0B192C] w-full max-w-lg rounded-[28px] border border-gray-100 dark:border-slate-800 shadow-2xl p-6 relative overflow-hidden"
+            className="tv-drawer-panel bg-white dark:bg-[#0B192C] w-full max-w-lg rounded-[28px] border border-gray-100 dark:border-slate-800 shadow-2xl p-6 relative overflow-hidden"
           >
             <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-slate-800">
               <div>
@@ -1100,10 +1105,10 @@ export const RateManagementPage: React.FC = () => {
 
       {/* Bulk Rate Modal */}
       {showBulkModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white dark:bg-[#0B192C] w-full max-w-lg rounded-[28px] border border-gray-100 dark:border-slate-800 shadow-2xl p-6 relative overflow-hidden"
+            className="tv-drawer-panel bg-white dark:bg-[#0B192C] w-full max-w-lg rounded-[28px] border border-gray-100 dark:border-slate-800 shadow-2xl p-6 relative overflow-hidden"
           >
             <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-slate-800">
               <div>

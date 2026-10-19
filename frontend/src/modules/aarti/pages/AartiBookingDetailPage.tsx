@@ -215,8 +215,7 @@ export const AartiBookingDetailPage: React.FC = () => {
           <img
             src={pass.image}
             alt="Aarti pass QR code"
-            className="aspect-square w-full rounded-[24px] border border-orange-200 bg-white p-2.5 shadow-sm"
-          />
+            className="aspect-square w-full rounded-[24px] border border-orange-200 bg-white p-2.5 shadow-sm" loading="lazy" decoding="async" />
             <p className="mt-3 text-[10px] font-semibold leading-relaxed text-slate-400">
               Present this QR code at the entrance
             </p>

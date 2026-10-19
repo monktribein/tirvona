@@ -9,7 +9,8 @@ import { randomUUID } from "node:crypto";
 import { Types } from "../../../database/orm";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { escapeRegex } from "../../../common/utils/escape-regex";
-import { isAshramOwner } from "../../../common/auth/ashram-access";
+import { canManageAllAshrams } from "../../../common/auth/ashram-access";
+import { assignedAshramIds } from "../../../common/auth/ashram-scope";
 import {
   AARTI_KINDS,
   AARTI_SESSION_STATUSES,
@@ -179,6 +180,17 @@ export class GovernanceService {
     dto: ApprovalRequestDto,
   ): Promise<any> {
     let ashramId = dto.ashramId;
+    if (ashramId && user.role !== "super_admin" && !canManageAllAshrams(user)) {
+      // A request may only target an ashram the caller owns or is assigned to.
+      const owned = await this.repository.one("GovernanceAshram", {
+        _id: ashramId,
+        ownerId: user.id,
+      });
+      if (!owned && !assignedAshramIds(user).includes(String(ashramId)))
+        throw new ForbiddenException(
+          "You can only submit requests for your own ashram.",
+        );
+    }
     if (!ashramId)
       ashramId = (
         await this.repository.one("GovernanceAshram", { ownerId: user.id })
@@ -269,7 +281,30 @@ export class GovernanceService {
     });
     return { success: true, count: data.length, data };
   }
-  async approvalStats(): Promise<any> {
+  /** Same visibility rule as approvals(): admins see everything, others only their own requests. */
+  private async approvalScope(
+    user: AuthenticatedUser,
+  ): Promise<Record<string, any>> {
+    if (user.role === "super_admin") return {};
+    const ids = (
+      await this.repository.list(
+        "GovernanceAshram",
+        { ownerId: user.id },
+        { select: "_id", limit: 1000 },
+      )
+    ).map((row) => row._id);
+    return { $or: [{ stayAdminId: user.id }, { ashramId: { $in: ids } }] };
+  }
+  /** Platform-wide telemetry is for platform staff; everyone else only sees their own. */
+  private canSeePlatformTelemetry(user: AuthenticatedUser): boolean {
+    return (
+      user.role === "super_admin" ||
+      user.role === "national_admin" ||
+      canManageAllAshrams(user)
+    );
+  }
+  async approvalStats(user: AuthenticatedUser): Promise<any> {
+    const scope = await this.approvalScope(user);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const [
@@ -281,22 +316,28 @@ export class GovernanceService {
       rejectedToday,
       totalCount,
     ] = await Promise.all([
-      this.repository.count("ApprovalRequest", { status: "pending" }),
-      this.repository.count("ApprovalRequest", { status: "under_review" }),
-      this.repository.count("ApprovalRequest", { status: "needs_changes" }),
       this.repository.count("ApprovalRequest", {
+        ...scope, status: "pending" }),
+      this.repository.count("ApprovalRequest", {
+        ...scope, status: "under_review" }),
+      this.repository.count("ApprovalRequest", {
+        ...scope, status: "needs_changes" }),
+      this.repository.count("ApprovalRequest", {
+        ...scope,
         status: { $in: ["pending", "under_review"] },
         priority: { $in: ["high", "urgent"] },
       }),
       this.repository.count("ApprovalRequest", {
+        ...scope,
         status: "approved",
         reviewedAt: { $gte: today },
       }),
       this.repository.count("ApprovalRequest", {
+        ...scope,
         status: "rejected",
         reviewedAt: { $gte: today },
       }),
-      this.repository.count("ApprovalRequest"),
+      this.repository.count("ApprovalRequest", scope),
     ]);
     return {
       success: true,
@@ -549,7 +590,18 @@ export class GovernanceService {
     };
   }
 
-  async telemetryStats(): Promise<any> {
+  async telemetryStats(user: AuthenticatedUser): Promise<any> {
+    const platform = this.canSeePlatformTelemetry(user);
+    const notificationScope: Record<string, any> = platform
+      ? {}
+      : {
+          $or: [
+            { recipientId: user.id },
+            { recipientRole: user.role },
+            { recipientRole: "all" },
+          ],
+        };
+    const logScope: Record<string, any> = platform ? {} : { userId: user.id };
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const [
@@ -563,20 +615,30 @@ export class GovernanceService {
       apiErrors,
     ] = await Promise.all([
       this.repository.count("EnterpriseNotification", {
+        ...notificationScope,
         createdAt: { $gte: today },
       }),
       this.repository.count("EnterpriseNotification", {
+        ...notificationScope,
         severity: { $in: ["critical", "security", "emergency"] },
       }),
-      this.repository.count("EnterpriseNotification", { isRead: false }),
-      this.repository.count("ActivityLog", { action: "FAILED_LOGIN" }),
+      this.repository.count("EnterpriseNotification", {
+        ...notificationScope,
+        isRead: false,
+      }),
       this.repository.count("ActivityLog", {
+        ...logScope, action: "FAILED_LOGIN" }),
+      this.repository.count("ActivityLog", {
+        ...logScope,
         module: "PAYMENT",
         action: "PAYMENT_FAILED",
       }),
-      this.repository.count("ActivityLog", { action: "OTP_FAILED" }),
-      this.repository.count("ActivityLog", { severity: "emergency" }),
-      this.repository.count("ActivityLog", { status: { $gte: 400 } }),
+      this.repository.count("ActivityLog", {
+        ...logScope, action: "OTP_FAILED" }),
+      this.repository.count("ActivityLog", {
+        ...logScope, severity: "emergency" }),
+      this.repository.count("ActivityLog", {
+        ...logScope, status: { $gte: 400 } }),
     ]);
     return {
       success: true,
@@ -608,8 +670,10 @@ export class GovernanceService {
       "ipAddress",
       "activityId",
     ]);
-    if (user.role === "district_officer") filter.city = user.district;
-    else if (isAshramOwner(user)) filter.userId = user.id;
+    if (this.canSeePlatformTelemetry(user)) {
+      // Platform staff keep the full log.
+    } else if (user.role === "district_officer") filter.city = user.district;
+    else filter.userId = user.id; // everyone else: only their own activity
     return this.page("ActivityLog", filter, query, { timestamp: -1 });
   }
   async notifications(
@@ -671,8 +735,7 @@ export class GovernanceService {
   }
   async deleteNotification(user: AuthenticatedUser, id: string): Promise<any> {
     const filter: Record<string, any> = { _id: id };
-    if (user.role !== "super_admin")
-      filter.$or = [{ recipientId: user.id }, { recipientRole: user.role }];
+    if (user.role !== "super_admin") filter.recipientId = user.id;
     if (!(await this.repository.remove("EnterpriseNotification", filter)))
       throw new NotFoundException("Notification not found");
     return { success: true, message: "Notification deleted" };
@@ -682,8 +745,7 @@ export class GovernanceService {
     dto: BulkNotificationDto,
   ): Promise<any> {
     const filter: Record<string, any> = { _id: { $in: dto.ids } };
-    if (user.role !== "super_admin")
-      filter.$or = [{ recipientId: user.id }, { recipientRole: user.role }];
+    if (user.role !== "super_admin") filter.recipientId = user.id;
     if (dto.action === "delete")
       await this.repository.removeMany("EnterpriseNotification", filter);
     else

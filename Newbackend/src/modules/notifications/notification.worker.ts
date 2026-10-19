@@ -94,16 +94,35 @@ export class NotificationWorker
         }),
       ),
     );
-    this.worker.on("error", (error) =>
-      this.logger.error(
-        JSON.stringify({
-          event: "notification.worker_error",
-          queue: "notifications",
-          errorType: error.name,
-        }),
-      ),
+    this.worker.on("error", (error) => this.logWorkerError(error));
+  }
+  private lastWorkerError = { key: "", at: 0 };
+
+  /**
+   * Queue/Redis errors repeat on every reconnect attempt, so an identical error
+   * is logged at most every 30 s. The message is included (credentials in a
+   * URL are masked) because the error type alone cannot tell a refused
+   * connection from an auth failure.
+   */
+  private logWorkerError(error: Error & { code?: string }): void {
+    const message = String(error.message ?? "")
+      .replace(/\/\/[^@\s/]*@/g, "//***@")
+      .slice(0, 240);
+    const key = `${error.name}|${error.code ?? ""}|${message}`;
+    const now = Date.now();
+    if (key === this.lastWorkerError.key && now - this.lastWorkerError.at < 30_000) return;
+    this.lastWorkerError = { key, at: now };
+    this.logger.error(
+      JSON.stringify({
+        event: "notification.worker_error",
+        queue: "notifications",
+        errorType: error.name,
+        errorCode: error.code,
+        message,
+      }),
     );
   }
+
   private modelFor(domain: NotificationJob["domain"]): Model<any> {
     switch (domain) {
       case "booking":

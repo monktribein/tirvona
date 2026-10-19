@@ -42,8 +42,8 @@ export class ApprovalsController {
   ) {
     return this.governance.approvals(user, query);
   }
-  @Get("requests/stats") stats() {
-    return this.governance.approvalStats();
+  @Get("requests/stats") stats(@CurrentUser() user: AuthenticatedUser) {
+    return this.governance.approvalStats(user);
   }
   @Get("requests/:id") one(
     @CurrentUser() user: AuthenticatedUser,
@@ -143,8 +143,8 @@ export class InstitutionsController {
 @Controller("enterprise-notifications")
 export class EnterpriseNotificationsController {
   constructor(private readonly governance: GovernanceService) {}
-  @Get("stats") stats() {
-    return this.governance.telemetryStats();
+  @Get("stats") stats(@CurrentUser() user: AuthenticatedUser) {
+    return this.governance.telemetryStats(user);
   }
   @Get("activities") activities(
     @CurrentUser() user: AuthenticatedUser,

@@ -20,7 +20,7 @@ const AssetValue: React.FC<{ url: string }> = ({ url }) => {
         rel="noreferrer"
         className="inline-flex flex-col gap-1 rounded-xl border border-gray-200 dark:border-slate-700 p-1.5 hover:border-[#F28C28]"
       >
-        <img src={url} alt="Uploaded document" className="h-20 w-28 rounded-lg object-cover bg-slate-900" />
+        <img src={url} alt="Uploaded document" className="h-20 w-28 rounded-lg object-cover bg-slate-900" loading="lazy" decoding="async" />
         <span className="inline-flex items-center justify-center gap-1 text-[10px] font-extrabold text-[#F28C28]">
           <ExternalLink size={10} /> Open image
         </span>

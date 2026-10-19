@@ -1,3 +1,4 @@
+import { Paginated } from "../components/shared/Pagination";
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../lib/api";
@@ -153,107 +154,109 @@ export const BlogListPage: React.FC = () => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {posts.map((item) => {
-              const isVideo = item.youtubeUrl || item.contentType === "video";
-              const targetUrl = isVideo
-                ? `/video/${item.slug}`
-                : `/blog/${item.slug}`;
-              // An admin-entered author name wins over the linked author record.
-              const author = item.authorName
-                ? { ...(item.authorId || {}), name: item.authorName }
-                : item.authorId || {};
+          <Paginated items={posts} pageSize={9}>
+            {(pageItems) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {pageItems.map((item) => {
+                const isVideo = item.youtubeUrl || item.contentType === "video";
+                const targetUrl = isVideo
+                  ? `/video/${item.slug}`
+                  : `/blog/${item.slug}`;
+                // An admin-entered author name wins over the linked author record.
+                const author = item.authorName
+                  ? { ...(item.authorId || {}), name: item.authorName }
+                  : item.authorId || {};
 
-              return (
-                <div
-                  key={item._id}
-                  onClick={() => navigate(targetUrl)}
-                  className="bg-white dark:bg-[#0B192C] rounded-3xl border border-gray-100 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between cursor-pointer group"
-                >
-                  <div>
-                    <div className="relative h-52 overflow-hidden bg-slate-900">
-                      <img
-                        src={item.coverImage}
-                        alt={item.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        onError={(e) => {
-                          e.currentTarget.onerror = null;
-                          e.currentTarget.src =
-                            "/blogs/rishikesh_ashram_1785404729056.png";
-                        }}
-                      />
+                return (
+                  <div
+                    key={item._id}
+                    onClick={() => navigate(targetUrl)}
+                    className="bg-white dark:bg-[#0B192C] rounded-3xl border border-gray-100 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between cursor-pointer group"
+                  >
+                    <div>
+                      <div className="relative h-52 overflow-hidden bg-slate-900">
+                        <img
+                          src={item.coverImage}
+                          alt={item.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src =
+                              "/blogs/rishikesh_ashram_1785404729056.png";
+                          }} loading="lazy" decoding="async" />
 
-                      {isVideo ? (
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                          <div className="w-12 h-12 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
-                            <Play size={20} className="fill-white ml-1" />
+                        {isVideo ? (
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
+                              <Play size={20} className="fill-white ml-1" />
+                            </div>
+                            <span className="absolute bottom-3 right-3 bg-black/80 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-1 rounded-md">
+                              {item.youtubeDuration || "Video"}
+                            </span>
                           </div>
-                          <span className="absolute bottom-3 right-3 bg-black/80 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-1 rounded-md">
-                            {item.youtubeDuration || "Video"}
+                        ) : (
+                          <span className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-1 rounded-md">
+                            {item.readingTime || "5 min read"}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="p-6 space-y-3 flex-1 flex flex-col justify-between">
+                        <div className="flex items-center gap-3 text-[11px] font-bold text-gray-400">
+                          <span className="flex items-center gap-1">
+                            <Calendar size={12} className="text-[#F28C28]" />{" "}
+                            {new Date(item.createdAt).toLocaleDateString(
+                              "en-IN",
+                              { day: "numeric", month: "short", year: "numeric" },
+                            )}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Eye size={12} className="text-[#F28C28]" />{" "}
+                            {item.views} Views
                           </span>
                         </div>
-                      ) : (
-                        <span className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-1 rounded-md">
-                          {item.readingTime || "5 min read"}
-                        </span>
-                      )}
+
+                        <h3 className="font-black text-lg text-[#0B192C] dark:text-white leading-tight group-hover:text-[#F28C28] transition-colors line-clamp-2 h-12 flex items-start">
+                          {item.title}
+                        </h3>
+
+                        <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed h-9 overflow-hidden">
+                          {item.excerpt}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="p-6 space-y-3 flex-1 flex flex-col justify-between">
-                      <div className="flex items-center gap-3 text-[11px] font-bold text-gray-400">
-                        <span className="flex items-center gap-1">
-                          <Calendar size={12} className="text-[#F28C28]" />{" "}
-                          {new Date(item.createdAt).toLocaleDateString(
-                            "en-IN",
-                            { day: "numeric", month: "short", year: "numeric" },
-                          )}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Eye size={12} className="text-[#F28C28]" />{" "}
-                          {item.views} Views
+                    <div className="px-6 py-4 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/50 mt-auto shrink-0 h-16">
+                      <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
+                        <img
+                          src={
+                            author.photo ||
+                            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E"
+                          }
+                          alt={author.name}
+                          className="w-7 h-7 rounded-full object-cover border border-[#F28C28] shrink-0" loading="lazy" decoding="async" />
+                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1 truncate">
+                          <span className="truncate">
+                            {author.name || "Tirvona Editorial"}
+                          </span>
+                          <CheckCircle2
+                            size={12}
+                            className="text-emerald-500 shrink-0"
+                          />
                         </span>
                       </div>
 
-                      <h3 className="font-black text-lg text-[#0B192C] dark:text-white leading-tight group-hover:text-[#F28C28] transition-colors line-clamp-2 h-12 flex items-start">
-                        {item.title}
-                      </h3>
-
-                      <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed h-9 overflow-hidden">
-                        {item.excerpt}
-                      </p>
+                      <button className="px-3.5 py-1.5 rounded-full bg-gray-100 dark:bg-slate-800 group-hover:bg-[#F28C28] group-hover:text-white text-gray-700 dark:text-gray-200 text-xs font-bold transition-all flex items-center gap-1 whitespace-nowrap shrink-0">
+                        <span>{isVideo ? "Watch" : "Read"}</span>
+                        <ArrowRight size={12} />
+                      </button>
                     </div>
                   </div>
-
-                  <div className="px-6 py-4 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/50 mt-auto shrink-0 h-16">
-                    <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
-                      <img
-                        src={
-                          author.photo ||
-                          "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E"
-                        }
-                        alt={author.name}
-                        className="w-7 h-7 rounded-full object-cover border border-[#F28C28] shrink-0"
-                      />
-                      <span className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1 truncate">
-                        <span className="truncate">
-                          {author.name || "Tirvona Editorial"}
-                        </span>
-                        <CheckCircle2
-                          size={12}
-                          className="text-emerald-500 shrink-0"
-                        />
-                      </span>
-                    </div>
-
-                    <button className="px-3.5 py-1.5 rounded-full bg-gray-100 dark:bg-slate-800 group-hover:bg-[#F28C28] group-hover:text-white text-gray-700 dark:text-gray-200 text-xs font-bold transition-all flex items-center gap-1 whitespace-nowrap shrink-0">
-                      <span>{isVideo ? "Watch" : "Read"}</span>
-                      <ArrowRight size={12} />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+            )}
+          </Paginated>
         )}
       </div>
     </div>

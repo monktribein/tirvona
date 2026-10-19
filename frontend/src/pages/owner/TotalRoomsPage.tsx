@@ -1,3 +1,4 @@
+import { Paginated } from "../../components/shared/Pagination";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { LayoutGrid, Loader2, RefreshCw } from "lucide-react";
 import { roomService } from "../../services";
@@ -366,98 +367,102 @@ export const TotalRoomsPage: React.FC = () => {
             No room categories match these filters.
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-gray-50 dark:bg-slate-900/60 text-[10px] uppercase font-black text-gray-400">
-                <tr>
-                  <th className="px-4 py-3">Room category</th>
-                  {showAshramColumn && <th className="px-4 py-3">Stay</th>}
-                  <th className="px-4 py-3">Type</th>
-                  <th className="px-4 py-3 text-right">Registered</th>
-                  <th className="px-4 py-3 text-right">Tirvona</th>
-                  <th className="px-4 py-3 text-right">Booked</th>
-                  <th className="px-4 py-3 text-right">Held</th>
-                  <th className="px-4 py-3 text-right">Occupied</th>
-                  <th className="px-4 py-3 text-right">Blocked</th>
-                  <th className="px-4 py-3 text-right">Offline</th>
-                  <th className="px-4 py-3 text-right">Available</th>
-                  <th className="px-4 py-3">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-                {rooms.map((room) => (
-                  <tr key={room.roomId}>
-                    <td className="px-4 py-3 font-extrabold text-[#0B192C] dark:text-white">
-                      {room.name}
-                      <span className="block text-[10px] font-semibold text-gray-400">
-                        Sleeps {room.guestCapacity} · {room.acType}
-                      </span>
-                    </td>
-                    {showAshramColumn && (
-                      <td className="px-4 py-3 text-gray-500 font-semibold">
-                        {room.ashramName || "—"}
-                      </td>
-                    )}
-                    <td className="px-4 py-3 text-gray-500 font-semibold">
-                      {typeLabel(room.type)}
-                    </td>
-                    <td className="px-4 py-3 text-right font-bold">
-                      {room.registeredUnits}
-                    </td>
-                    <td className="px-4 py-3 text-right font-bold">
-                      {room.capacity}
-                      {room.transferredFromOffline > 0 && (
-                        <span
-                          className="block text-[10px] font-semibold text-gray-400"
-                          title="Units moved across from the offline pool for this night"
-                        >
-                          +{room.transferredFromOffline} moved
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right font-bold">
-                      {room.booked}
-                    </td>
-                    <td className="px-4 py-3 text-right font-bold text-gray-500">
-                      {room.held}
-                    </td>
-                    <td className="px-4 py-3 text-right font-bold">
-                      {room.occupied}
-                    </td>
-                    <td className="px-4 py-3 text-right font-bold text-amber-600">
-                      {room.blocked}
-                    </td>
-                    <td className="px-4 py-3 text-right font-bold text-gray-500">
-                      {room.offlineTotal}
-                      {room.offlineTotal > 0 && (
-                        <span className="block text-[10px] font-semibold text-gray-400">
-                          {room.offlineAvailable} free
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right font-black text-emerald-600">
-                      {room.available}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-[10px] font-black ${
-                          room.isClosed || room.status === "under_maintenance"
-                            ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
-                            : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
-                        }`}
-                      >
-                        {room.isClosed
-                          ? "Closed"
-                          : room.status === "under_maintenance"
-                            ? "Maintenance"
-                            : "Active"}
-                      </span>
-                    </td>
+          <Paginated items={rooms} pageSize={15}>
+            {(pageItems) => (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-gray-50 dark:bg-slate-900/60 text-[10px] uppercase font-black text-gray-400">
+                  <tr>
+                    <th className="px-4 py-3">Room category</th>
+                    {showAshramColumn && <th className="px-4 py-3">Stay</th>}
+                    <th className="px-4 py-3">Type</th>
+                    <th className="px-4 py-3 text-right">Registered</th>
+                    <th className="px-4 py-3 text-right">Tirvona</th>
+                    <th className="px-4 py-3 text-right">Booked</th>
+                    <th className="px-4 py-3 text-right">Held</th>
+                    <th className="px-4 py-3 text-right">Occupied</th>
+                    <th className="px-4 py-3 text-right">Blocked</th>
+                    <th className="px-4 py-3 text-right">Offline</th>
+                    <th className="px-4 py-3 text-right">Available</th>
+                    <th className="px-4 py-3">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+                  {pageItems.map((room) => (
+                    <tr key={room.roomId}>
+                      <td className="px-4 py-3 font-extrabold text-[#0B192C] dark:text-white">
+                        {room.name}
+                        <span className="block text-[10px] font-semibold text-gray-400">
+                          Sleeps {room.guestCapacity} · {room.acType}
+                        </span>
+                      </td>
+                      {showAshramColumn && (
+                        <td className="px-4 py-3 text-gray-500 font-semibold">
+                          {room.ashramName || "—"}
+                        </td>
+                      )}
+                      <td className="px-4 py-3 text-gray-500 font-semibold">
+                        {typeLabel(room.type)}
+                      </td>
+                      <td className="px-4 py-3 text-right font-bold">
+                        {room.registeredUnits}
+                      </td>
+                      <td className="px-4 py-3 text-right font-bold">
+                        {room.capacity}
+                        {room.transferredFromOffline > 0 && (
+                          <span
+                            className="block text-[10px] font-semibold text-gray-400"
+                            title="Units moved across from the offline pool for this night"
+                          >
+                            +{room.transferredFromOffline} moved
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right font-bold">
+                        {room.booked}
+                      </td>
+                      <td className="px-4 py-3 text-right font-bold text-gray-500">
+                        {room.held}
+                      </td>
+                      <td className="px-4 py-3 text-right font-bold">
+                        {room.occupied}
+                      </td>
+                      <td className="px-4 py-3 text-right font-bold text-amber-600">
+                        {room.blocked}
+                      </td>
+                      <td className="px-4 py-3 text-right font-bold text-gray-500">
+                        {room.offlineTotal}
+                        {room.offlineTotal > 0 && (
+                          <span className="block text-[10px] font-semibold text-gray-400">
+                            {room.offlineAvailable} free
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right font-black text-emerald-600">
+                        {room.available}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-[10px] font-black ${
+                            room.isClosed || room.status === "under_maintenance"
+                              ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                              : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                          }`}
+                        >
+                          {room.isClosed
+                            ? "Closed"
+                            : room.status === "under_maintenance"
+                              ? "Maintenance"
+                              : "Active"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            )}
+          </Paginated>
         )}
       </div>
     </div>

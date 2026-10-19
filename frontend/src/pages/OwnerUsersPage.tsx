@@ -1,3 +1,4 @@
+import { Paginated } from "../components/shared/Pagination";
 import React, { useState, useEffect } from "react";
 import api from "../lib/api";
 import { motion, AnimatePresence } from "framer-motion";
@@ -350,134 +351,138 @@ export const OwnerUsersPage: React.FC = () => {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-[10px] font-black tracking-wider text-gray-400">
-                  <th className="py-4 px-6">User Name</th>
-                  <th className="py-4 px-6">Login Email / Phone</th>
-                  <th className="py-4 px-6">Password / Credentials</th>
-                  <th className="py-4 px-6">Assigned Role</th>
-                  <th className="py-4 px-6">Account Status</th>
-                  <th className="py-4 px-6 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-800 text-xs font-semibold text-[#0B192C] dark:text-gray-200">
-                {filteredStaff.map((u) => (
-                  <tr
-                    key={u._id}
-                    className="hover:bg-gray-50/60 dark:hover:bg-slate-900/60 transition-colors"
-                  >
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-[#F28C28]/10 text-[#F28C28] border border-[#F28C28]/20 flex items-center justify-center font-black text-xs shrink-0">
-                          {u.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <div className="font-extrabold text-sm text-[#0B192C] dark:text-white">
-                            {u.name}
+          <Paginated items={filteredStaff} pageSize={15}>
+            {(pageItems) => (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-[10px] font-black tracking-wider text-gray-400">
+                    <th className="py-4 px-6">User Name</th>
+                    <th className="py-4 px-6">Login Email / Phone</th>
+                    <th className="py-4 px-6">Password / Credentials</th>
+                    <th className="py-4 px-6">Assigned Role</th>
+                    <th className="py-4 px-6">Account Status</th>
+                    <th className="py-4 px-6 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-slate-800 text-xs font-semibold text-[#0B192C] dark:text-gray-200">
+                  {pageItems.map((u) => (
+                    <tr
+                      key={u._id}
+                      className="hover:bg-gray-50/60 dark:hover:bg-slate-900/60 transition-colors"
+                    >
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-[#F28C28]/10 text-[#F28C28] border border-[#F28C28]/20 flex items-center justify-center font-black text-xs shrink-0">
+                            {u.name.charAt(0).toUpperCase()}
                           </div>
-                          <div className="text-[10px] text-gray-400">
-                            ID: {u._id.slice(-6)}
+                          <div>
+                            <div className="font-extrabold text-sm text-[#0B192C] dark:text-white">
+                              {u.name}
+                            </div>
+                            <div className="text-[10px] text-gray-400">
+                              ID: {u._id.slice(-6)}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="py-4 px-6 space-y-1">
-                      <div className="flex items-center gap-1.5 font-bold text-[#F28C28] dark:text-amber-400">
-                        <Mail size={13} />
-                        <span className="font-mono text-xs">{u.email}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-gray-400 text-[11px]">
-                        <Phone size={12} />
-                        <span>{u.phone}</span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-2">
-                        <div className="bg-gray-100 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 px-2.5 py-1 rounded-xl text-xs font-mono font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                          <Lock size={12} className="text-amber-500" />
-                          <span>
-                            {showPasswords[u._id] ? "Protected" : "••••••••"}
-                          </span>
+                      </td>
+                      <td className="py-4 px-6 space-y-1">
+                        <div className="flex items-center gap-1.5 font-bold text-[#F28C28] dark:text-amber-400">
+                          <Mail size={13} />
+                          <span className="font-mono text-xs">{u.email}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-gray-400 text-[11px]">
+                          <Phone size={12} />
+                          <span>{u.phone}</span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-2">
+                          <div className="bg-gray-100 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 px-2.5 py-1 rounded-xl text-xs font-mono font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                            <Lock size={12} className="text-amber-500" />
+                            <span>
+                              {showPasswords[u._id] ? "Protected" : "••••••••"}
+                            </span>
+                            <button
+                              onClick={() => togglePasswordVisibility(u._id)}
+                              className="text-gray-400 hover:text-gray-600 ml-1 p-0.5 cursor-pointer"
+                              title="Toggle Show/Hide Password"
+                            >
+                              {showPasswords[u._id] ? (
+                                <EyeOff size={12} />
+                              ) : (
+                                <Eye size={12} />
+                              )}
+                            </button>
+                          </div>
+
                           <button
-                            onClick={() => togglePasswordVisibility(u._id)}
-                            className="text-gray-400 hover:text-gray-600 ml-1 p-0.5 cursor-pointer"
-                            title="Toggle Show/Hide Password"
+                            onClick={() => handleCopyCredentials(u.email, u._id)}
+                            className="px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#F28C28] dark:text-amber-400 hover:bg-blue-100 transition-all cursor-pointer flex items-center gap-1 text-[10px] font-bold"
+                            title="Copy Login Credentials"
                           >
-                            {showPasswords[u._id] ? (
-                              <EyeOff size={12} />
+                            <Copy size={12} />
+                            {copiedUserId === u._id ? (
+                              <span className="text-emerald-600 font-black">
+                                Copied!
+                              </span>
                             ) : (
-                              <Eye size={12} />
+                              <span>Copy</span>
                             )}
                           </button>
                         </div>
-
-                        <button
-                          onClick={() => handleCopyCredentials(u.email, u._id)}
-                          className="px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#F28C28] dark:text-amber-400 hover:bg-blue-100 transition-all cursor-pointer flex items-center gap-1 text-[10px] font-bold"
-                          title="Copy Login Credentials"
-                        >
-                          <Copy size={12} />
-                          {copiedUserId === u._id ? (
-                            <span className="text-emerald-600 font-black">
-                              Copied!
-                            </span>
-                          ) : (
-                            <span>Copy</span>
-                          )}
-                        </button>
-                      </div>
-                    </td>
-                    <td className="py-4 px-6">{getRoleBadge(u.role)}</td>
-                    <td className="py-4 px-6">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-extrabold capitalize ${
-                          u.status === "active"
-                            ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
-                            : "bg-rose-500/10 text-rose-600 border border-rose-500/20"
-                        }`}
-                      >
-                        {u.status}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => {
-                            setTargetUser(u);
-                            setShowResetModal(true);
-                          }}
-                          className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border border-amber-500/20 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
-                          title="Reset Password"
-                        >
-                          <Key size={13} />
-                          <span>Reset Password</span>
-                        </button>
-
-                        <button
-                          onClick={() => handleToggleStatus(u._id, u.status)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                      </td>
+                      <td className="py-4 px-6">{getRoleBadge(u.role)}</td>
+                      <td className="py-4 px-6">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-extrabold capitalize ${
                             u.status === "active"
-                              ? "bg-gray-100 hover:bg-gray-200 text-gray-600 border-gray-200"
-                              : "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 border-emerald-500/20"
+                              ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                              : "bg-rose-500/10 text-rose-600 border border-rose-500/20"
                           }`}
                         >
-                          {u.status === "active" ? "Suspend" : "Activate"}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                          {u.status}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => {
+                              setTargetUser(u);
+                              setShowResetModal(true);
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border border-amber-500/20 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            title="Reset Password"
+                          >
+                            <Key size={13} />
+                            <span>Reset Password</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleToggleStatus(u._id, u.status)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                              u.status === "active"
+                                ? "bg-gray-100 hover:bg-gray-200 text-gray-600 border-gray-200"
+                                : "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 border-emerald-500/20"
+                            }`}
+                          >
+                            {u.status === "active" ? "Suspend" : "Activate"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            )}
+          </Paginated>
         )}
       </div>
 
       <AnimatePresence>
         {showAddModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="tv-drawer-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -489,7 +494,7 @@ export const OwnerUsersPage: React.FC = () => {
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="relative w-full max-w-lg bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 space-y-6"
+              className="tv-drawer-panel relative w-full max-w-lg bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 space-y-6"
             >
               <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-4">
                 <div className="flex items-center gap-2.5">
@@ -671,7 +676,7 @@ export const OwnerUsersPage: React.FC = () => {
 
       <AnimatePresence>
         {showResetModal && targetUser && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="tv-drawer-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -683,7 +688,7 @@ export const OwnerUsersPage: React.FC = () => {
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="relative w-full max-w-md bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 space-y-5"
+              className="tv-drawer-panel relative w-full max-w-md bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 space-y-5"
             >
               <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-4">
                 <div className="flex items-center gap-2.5">

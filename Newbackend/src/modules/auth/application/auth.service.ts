@@ -498,8 +498,15 @@ export class AuthService {
       })
       .sort({ createdAt: -1 })
       .select("+codeHash +payload");
-    if (!row || !this.safeEqual(row.codeHash, this.codeDigest(otp)))
+    if (!row) throw new UnauthorizedException("Invalid OTP");
+    // Same per-code attempt cap as the token-based challenges.
+    if (row.attempts >= row.maxAttempts)
+      throw new UnauthorizedException("Too many invalid OTP attempts");
+    row.attempts += 1;
+    if (!this.safeEqual(row.codeHash, this.codeDigest(otp))) {
+      await row.save();
       throw new UnauthorizedException("Invalid OTP");
+    }
     const user = await this.findUserByPhoneInput(phone);
     if (!user) throw new NotFoundException("User not found");
     row.consumedAt = new Date();

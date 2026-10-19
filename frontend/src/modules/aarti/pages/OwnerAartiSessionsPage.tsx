@@ -1,3 +1,4 @@
+import { Paginated } from "../../../components/shared/Pagination";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getAllStates, getDistricts } from "india-state-district";
@@ -392,132 +393,136 @@ export const OwnerAartiSessionsPage: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm overflow-x-auto">
-          <table className="w-full min-w-[820px] text-sm">
-            <thead className="border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 text-left text-[10px] tracking-wider font-bold text-gray-400 uppercase">
-              <tr>
-                <th className="px-4 py-3">Aarti</th>
-                <th className="px-4 py-3">Schedule</th>
-                <th className="px-4 py-3">Passes</th>
-                <th className="px-4 py-3">Bookings</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-              {sessions.map((session) => {
-                const tone = sessionStatusStyle(session.status);
-                return (
-                  <tr key={session._id}>
-                    <td className="px-4 py-3">
-                      <p className="font-bold text-[#0B192C] dark:text-white">
-                        {session.name}
-                      </p>
-                      <p className="text-[10px] font-bold text-gray-400">
-                        {AARTI_KIND_LABELS[session.kind]}
-                        {session.venue?.city ? ` · ${session.venue.city}` : ""}
-                      </p>
-                      {session.status === "rejected" && session.rejectionReason ? (
-                        <p className="mt-1 text-[10px] font-bold text-rose-600">
-                          {session.rejectionReason}
+        <Paginated items={sessions} pageSize={10}>
+          {(pageItems) => (
+          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm overflow-x-auto">
+            <table className="w-full min-w-[820px] text-sm">
+              <thead className="border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 text-left text-[10px] tracking-wider font-bold text-gray-400 uppercase">
+                <tr>
+                  <th className="px-4 py-3">Aarti</th>
+                  <th className="px-4 py-3">Schedule</th>
+                  <th className="px-4 py-3">Passes</th>
+                  <th className="px-4 py-3">Bookings</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+                {pageItems.map((session) => {
+                  const tone = sessionStatusStyle(session.status);
+                  return (
+                    <tr key={session._id}>
+                      <td className="px-4 py-3">
+                        <p className="font-bold text-[#0B192C] dark:text-white">
+                          {session.name}
                         </p>
-                      ) : null}
-                    </td>
-                    <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                      {formatClock(session.startTime)}
-                      <span className="block text-xs text-gray-400">
-                        {formatSchedule(session.daysOfWeek)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                      {session.passTypeCount ?? 0}
-                    </td>
-                    <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                      {session.bookingCount ?? 0}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-black tracking-wider ${tone}`}
-                      >
-                        {sessionStatusLabel(session.status)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          type="button"
-                          title="Manage passes"
-                          onClick={() => openPasses(session)}
-                          className="p-2 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#F28C28] hover:border-[#F28C28] transition-all active:scale-90 cursor-pointer"
+                        <p className="text-[10px] font-bold text-gray-400">
+                          {AARTI_KIND_LABELS[session.kind]}
+                          {session.venue?.city ? ` · ${session.venue.city}` : ""}
+                        </p>
+                        {session.status === "rejected" && session.rejectionReason ? (
+                          <p className="mt-1 text-[10px] font-bold text-rose-600">
+                            {session.rejectionReason}
+                          </p>
+                        ) : null}
+                      </td>
+                      <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                        {formatClock(session.startTime)}
+                        <span className="block text-xs text-gray-400">
+                          {formatSchedule(session.daysOfWeek)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                        {session.passTypeCount ?? 0}
+                      </td>
+                      <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                        {session.bookingCount ?? 0}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-black tracking-wider ${tone}`}
                         >
-                          <Ticket size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          title="Edit"
-                          onClick={() => openEdit(session)}
-                          className="p-2 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#F28C28] hover:border-[#F28C28] transition-all active:scale-90 cursor-pointer"
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        {["draft", "rejected"].includes(session.status) ? (
+                          {sessionStatusLabel(session.status)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
                             type="button"
-                            title="Submit for review"
-                            onClick={() => submitForReview(session)}
-                            className="p-2 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-400 transition-all active:scale-90 cursor-pointer"
+                            title="Manage passes"
+                            onClick={() => openPasses(session)}
+                            className="p-2 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#F28C28] hover:border-[#F28C28] transition-all active:scale-90 cursor-pointer"
                           >
-                            <Send size={14} />
+                            <Ticket size={14} />
                           </button>
-                        ) : null}
-                        {isSuperAdmin &&
-                        ["approved", "suspended"].includes(session.status) ? (
                           <button
                             type="button"
-                            disabled={statusBusyId === session._id}
-                            title={
-                              session.status === "suspended"
-                                ? "Reactivate aarti"
-                                : "Suspend aarti"
-                            }
-                            onClick={() => toggleSuspension(session)}
-                            className={`inline-flex items-center gap-1 rounded-full border px-3 py-2 text-[10px] font-extrabold transition-all active:scale-95 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${
-                              session.status === "suspended"
-                                ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-400"
-                                : "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-400"
-                            }`}
+                            title="Edit"
+                            onClick={() => openEdit(session)}
+                            className="p-2 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#F28C28] hover:border-[#F28C28] transition-all active:scale-90 cursor-pointer"
                           >
-                            {session.status === "suspended" ? (
-                              <RotateCcw size={13} />
-                            ) : (
-                              <Ban size={13} />
-                            )}
-                            {session.status === "suspended"
-                              ? "Reactivate"
-                              : "Suspend"}
+                            <Pencil size={14} />
                           </button>
-                        ) : null}
-                        <button
-                          type="button"
-                          title="Delete"
-                          onClick={() => deleteSession(session)}
-                          className="p-2 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-400 transition-all active:scale-90 cursor-pointer"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                          {["draft", "rejected"].includes(session.status) ? (
+                            <button
+                              type="button"
+                              title="Submit for review"
+                              onClick={() => submitForReview(session)}
+                              className="p-2 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-400 transition-all active:scale-90 cursor-pointer"
+                            >
+                              <Send size={14} />
+                            </button>
+                          ) : null}
+                          {isSuperAdmin &&
+                          ["approved", "suspended"].includes(session.status) ? (
+                            <button
+                              type="button"
+                              disabled={statusBusyId === session._id}
+                              title={
+                                session.status === "suspended"
+                                  ? "Reactivate aarti"
+                                  : "Suspend aarti"
+                              }
+                              onClick={() => toggleSuspension(session)}
+                              className={`inline-flex items-center gap-1 rounded-full border px-3 py-2 text-[10px] font-extrabold transition-all active:scale-95 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${
+                                session.status === "suspended"
+                                  ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-400"
+                                  : "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-400"
+                              }`}
+                            >
+                              {session.status === "suspended" ? (
+                                <RotateCcw size={13} />
+                              ) : (
+                                <Ban size={13} />
+                              )}
+                              {session.status === "suspended"
+                                ? "Reactivate"
+                                : "Suspend"}
+                            </button>
+                          ) : null}
+                          <button
+                            type="button"
+                            title="Delete"
+                            onClick={() => deleteSession(session)}
+                            className="p-2 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-400 transition-all active:scale-90 cursor-pointer"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          )}
+        </Paginated>
       )}
 
       {showForm ? (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-16">
-          <div className="w-full max-w-3xl bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-2xl">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-16">
+          <div className="tv-drawer-panel w-full max-w-3xl bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-2xl">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-black text-[#0B192C] dark:text-white">
                 {editing ? "Edit aarti" : "New aarti"}
@@ -896,8 +901,8 @@ export const OwnerAartiSessionsPage: React.FC = () => {
       ) : null}
 
       {passesFor ? (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-16">
-          <div className="w-full max-w-3xl bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-2xl">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-16">
+          <div className="tv-drawer-panel w-full max-w-3xl bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-2xl">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-black text-[#0B192C] dark:text-white">
                 Passes — {passesFor.name}

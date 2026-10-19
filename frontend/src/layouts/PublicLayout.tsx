@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import logo from "../assets/logo.png";
+import { getLogoHomePath } from "../utils/roleRedirect";
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useNotifications } from "../contexts/NotificationContext";
@@ -376,14 +377,14 @@ export const PublicLayout: React.FC = () => {
     location.pathname.startsWith("/featured-banner/");
 
   return (
-    <div className="min-h-screen min-h-[100dvh] flex flex-col bg-gray-50/70 dark:bg-[#070F1B] text-foreground transition-colors duration-300">
+    <div className="tv-storefront min-h-screen min-h-[100dvh] flex flex-col bg-gray-50/70 dark:bg-[#070F1B] text-foreground transition-colors duration-300">
       <header
         className={`sticky top-0 z-50 pt-[calc(0.5rem+env(safe-area-inset-top))] pb-3 ${hasOverlayHero ? "-mb-20 lg:-mb-24" : "mb-0"} pointer-events-none transform-gpu transition-all duration-300 ease-out will-change-transform ${navbarVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"}`}
         aria-hidden={!navbarVisible}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pointer-events-auto">
           <div className="bg-white/95 dark:bg-[#0B192C]/95 backdrop-blur-md border border-gray-200/90 dark:border-slate-800 rounded-full px-4 lg:px-6 py-2 flex items-center justify-between w-full shadow-sm hover:shadow-md transition-shadow">
-            <Link to="/" className="flex items-center gap-2 group shrink-0">
+            <Link to={getLogoHomePath(user)} className="flex items-center gap-2 group shrink-0">
               <img
                 src="/logo/logo.png"
                 alt="Tirvona Sacred Destinations"
@@ -829,7 +830,7 @@ export const PublicLayout: React.FC = () => {
       >
         <div className="flex items-center justify-between px-5 py-4 pt-[max(1rem,calc(0.75rem+env(safe-area-inset-top)))] border-b border-gray-100 dark:border-slate-800">
           <Link
-            to="/"
+            to={getLogoHomePath(user)}
             onClick={() => setDrawerOpen(false)}
             className="flex items-center gap-2"
           >
@@ -1137,6 +1138,35 @@ export const PublicLayout: React.FC = () => {
                 every detail so you can travel with peace, comfort, and divine
                 grace.
               </p>
+
+              <ul className="text-xs space-y-2.5 pt-1">
+                <li>
+                  <a
+                    href="tel:+917836055511"
+                    onClick={() => {
+                      import("../lib/analytics").then(({ trackClickCall }) => {
+                        trackClickCall({ page_type: "footer" });
+                      });
+                    }}
+                    className="text-white font-bold hover:text-amber-400 transition-colors flex items-center gap-1"
+                  >
+                    <PhoneCall
+                      size={10}
+                      className="text-[#E58C28] shrink-0"
+                    />{" "}
+                    +91 78360 55511
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="mailto:support@tirvona.com"
+                    className="text-white font-bold hover:text-amber-400 transition-colors flex items-center gap-1"
+                  >
+                    <Mail size={10} className="text-[#E58C28] shrink-0" />{" "}
+                    Email Support
+                  </a>
+                </li>
+              </ul>
             </div>
 
             <div className="grid grid-cols-2 gap-5 sm:gap-8 lg:col-span-2">
@@ -1287,32 +1317,6 @@ export const PublicLayout: React.FC = () => {
                       />{" "}
                       Help &amp; Support
                     </Link>
-                  </li>
-                  <li>
-                    <a
-                      href="tel:+917836055511"
-                      onClick={() => {
-                        import("../lib/analytics").then(({ trackClickCall }) => {
-                          trackClickCall({ page_type: "footer" });
-                        });
-                      }}
-                      className="text-white font-bold hover:text-amber-400 transition-colors flex items-center gap-1"
-                    >
-                      <PhoneCall
-                        size={10}
-                        className="text-[#E58C28] shrink-0"
-                      />{" "}
-                      +91 78360 55511
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="mailto:support@tirvona.com"
-                      className="text-white font-bold hover:text-amber-400 transition-colors flex items-center gap-1"
-                    >
-                      <Mail size={10} className="text-[#E58C28] shrink-0" />{" "}
-                      Email Support
-                    </a>
                   </li>
                 </ul>
               </div>

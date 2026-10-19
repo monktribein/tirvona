@@ -1,3 +1,4 @@
+import { Paginated } from "../../components/shared/Pagination";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   Car,
@@ -281,20 +282,24 @@ export const OwnerParkingSetupPage: React.FC = () => {
         </form>
       ) : (
         <section className="space-y-3">
-          <div className="flex items-center gap-2 text-xs font-bold"><span className={`px-3 py-1 rounded-full ${partner.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-700'}`}>Partner: {partner.status}</span><span className="text-gray-400">{partner.partnerCode}</span></div>
-          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {locations.map((item) => <article key={getId(item)} className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[22px] overflow-hidden shadow-sm">
-              <div className="h-36 bg-gray-100 dark:bg-slate-800">{item.coverImage && <img src={item.coverImage} alt={item.name} className="w-full h-full object-cover" />}</div>
-              <div className="p-4 space-y-3"><div className="flex justify-between gap-2"><h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">{item.name}</h3><span className="text-[9px] font-bold uppercase text-[#F28C28]">{item.status}</span></div><p className="text-xs text-gray-400">{item.address?.city || 'Location pending'} · {item.totalCapacity || 0} bays</p>
-                <div className="border-t border-gray-100 dark:border-slate-800 pt-3 space-y-2"><button onClick={() => setViewLocation(item)} className="w-full rounded-full bg-[#F28C28] text-white py-2 text-[11px] font-extrabold inline-flex justify-center items-center gap-1.5"><Eye size={13} /> Edit / View</button><button onClick={() => openBays(item)} className="w-full rounded-full border border-[#F28C28] text-[#F28C28] py-2 text-[11px] font-extrabold inline-flex justify-center items-center gap-1.5"><CircleParking size={13} /> Bays & Pricing</button></div>
-              </div>
-            </article>)}
-            {locations.length === 0 && <button onClick={() => openLocationForm()} className="min-h-52 border-2 border-dashed border-[#F28C28]/30 rounded-[22px] text-[#F28C28] text-xs font-extrabold flex flex-col items-center justify-center gap-2"><Car size={28} /><Plus size={15} /> Add your first parking facility</button>}
-          </div>
+          <div className="flex items-center gap-2 text-xs font-bold"><span className={`tv-status-badge px-3 py-1 rounded-full ${partner.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-700'}`}>Partner: {partner.status}</span><span className="text-gray-400">{partner.partnerCode}</span></div>
+          <Paginated items={locations} pageSize={10}>
+            {(pageItems) => (
+            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {pageItems.map((item) => <article key={getId(item)} className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[22px] overflow-hidden shadow-sm">
+                <div className="h-36 bg-gray-100 dark:bg-slate-800">{item.coverImage && <img src={item.coverImage} alt={item.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />}</div>
+                <div className="p-4 space-y-3"><div className="flex justify-between gap-2"><h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">{item.name}</h3><span className="text-[9px] font-bold uppercase text-[#F28C28]">{item.status}</span></div><p className="text-xs text-gray-400">{item.address?.city || 'Location pending'} · {item.totalCapacity || 0} bays</p>
+                  <div className="border-t border-gray-100 dark:border-slate-800 pt-3 space-y-2"><button onClick={() => setViewLocation(item)} className="w-full rounded-full bg-[#F28C28] text-white py-2 text-[11px] font-extrabold inline-flex justify-center items-center gap-1.5"><Eye size={13} /> Edit / View</button><button onClick={() => openBays(item)} className="w-full rounded-full border border-[#F28C28] text-[#F28C28] py-2 text-[11px] font-extrabold inline-flex justify-center items-center gap-1.5"><CircleParking size={13} /> Bays & Pricing</button></div>
+                </div>
+              </article>)}
+              {locations.length === 0 && <button onClick={() => openLocationForm()} className="min-h-52 border-2 border-dashed border-[#F28C28]/30 rounded-[22px] text-[#F28C28] text-xs font-extrabold flex flex-col items-center justify-center gap-2"><Car size={28} /><Plus size={15} /> Add your first parking facility</button>}
+            </div>
+            )}
+          </Paginated>
         </section>
       )}
 
-      {baysLocation && <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center"><div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-5">
+      {baysLocation && <div className="tv-drawer-overlay fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center"><div className="tv-drawer-panel w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-5">
         <div className="flex justify-between items-start">
           <div>
             <h2 className="font-black text-lg text-[#0B192C] dark:text-white flex items-center gap-2"><CircleParking size={19} className="text-[#F28C28]" /> Bays & Pricing</h2>
@@ -338,16 +343,16 @@ export const OwnerParkingSetupPage: React.FC = () => {
         </form>
       </div></div>}
 
-      {viewLocation && <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center"><div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-5">
+      {viewLocation && <div className="tv-drawer-overlay fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center"><div className="tv-drawer-panel w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-5">
         <div className="flex justify-between items-start"><div><h2 className="font-black text-xl text-[#0B192C] dark:text-white">{viewLocation.name}</h2><p className="text-xs text-gray-400 mt-1">Complete parking facility details</p></div><button onClick={() => setViewLocation(null)} className="p-2 text-gray-400"><X size={18} /></button></div>
-        {Array.from(new Set([viewLocation.coverImage, ...(viewLocation.images || [])].filter(Boolean))).length > 0 && <div className="grid grid-cols-3 gap-2">{Array.from(new Set([viewLocation.coverImage, ...(viewLocation.images || [])].filter(Boolean))).map((image: any, index) => <img key={image} src={image} alt={`${viewLocation.name} ${index + 1}`} className={`w-full object-cover rounded-xl ${index === 0 ? 'col-span-3 h-56' : 'h-28'}`} />)}</div>}
+        {Array.from(new Set([viewLocation.coverImage, ...(viewLocation.images || [])].filter(Boolean))).length > 0 && <div className="grid grid-cols-3 gap-2">{Array.from(new Set([viewLocation.coverImage, ...(viewLocation.images || [])].filter(Boolean))).map((image: any, index) => <img key={image} src={image} alt={`${viewLocation.name} ${index + 1}`} className={`w-full object-cover rounded-xl ${index === 0 ? 'col-span-3 h-56' : 'h-28'}`} loading="lazy" decoding="async" />)}</div>}
         <div className="grid sm:grid-cols-2 gap-3">{[
           ['Status', viewLocation.status], ['Capacity', `${viewLocation.totalCapacity || 0} bays`], ['Phone', viewLocation.contactPhone], ['City', viewLocation.address?.city], ['District', viewLocation.address?.district], ['State', viewLocation.address?.state], ['Pincode', viewLocation.address?.pincode], ['Description', viewLocation.description]
         ].map(([label, value]) => <div key={label} className="rounded-xl border border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 p-3"><p className="text-[10px] uppercase font-black text-gray-400">{label}</p><p className="text-xs font-bold mt-1 text-[#0B192C] dark:text-white">{value || '—'}</p></div>)}</div>
         <div className="flex justify-end gap-2 border-t border-gray-100 dark:border-slate-800 pt-4"><button onClick={() => setViewLocation(null)} className="px-5 py-2.5 rounded-full bg-gray-100 text-xs font-bold">Close</button><button onClick={() => { const item = viewLocation; setViewLocation(null); openLocationForm(item); }} className="px-5 py-2.5 rounded-full bg-[#F28C28] text-white text-xs font-extrabold inline-flex items-center gap-1.5"><Pencil size={13} /> Edit Facility</button></div>
       </div></div>}
 
-      {showLocation && partner && <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center"><form onSubmit={saveLocation} className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-4">
+      {showLocation && partner && <div className="tv-drawer-overlay fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center"><form onSubmit={saveLocation} className="tv-drawer-panel w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-4">
         <div className="flex justify-between"><div><h2 className="font-black text-lg text-[#0B192C] dark:text-white">{editingLocationId ? 'Edit Parking Facility' : 'Add Parking Facility'}</h2><p className="text-xs text-gray-400">Maintain complete and accurate facility details.</p></div><button type="button" onClick={() => setShowLocation(false)} className="text-gray-400"><X size={19} /></button></div>
         <label className="block space-y-1">
           <span className="text-[11px] font-extrabold text-[#0B192C] dark:text-white">Stay *</span>

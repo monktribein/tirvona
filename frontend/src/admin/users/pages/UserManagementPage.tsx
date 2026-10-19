@@ -1,3 +1,4 @@
+import { Paginated } from "../../../components/shared/Pagination";
 import React, { useState, useEffect, useMemo } from "react";
 import { getFormattingLocale } from "../../../utils/format";
 import {
@@ -899,142 +900,146 @@ export const UserManagementPage: React.FC = () => {
         <div className="h-64 bg-gray-50 border border-gray-100 rounded-[24px] animate-pulse" />
       ) : (
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-gray-100 dark:border-slate-800 bg-gray-50/70 dark:bg-slate-900/50 text-gray-400 font-extrabold text-[10px] tracking-wider">
-                  <th className="py-4 pl-6 pr-2">
-                    <input
-                      type="checkbox"
-                      checked={allFilteredSelected}
-                      onChange={toggleSelectAllFiltered}
-                      disabled={!selectableFilteredIds.length}
-                      aria-label="Select all filtered accounts"
-                      className="h-4 w-4 rounded border-gray-300 accent-[#F28C28]"
-                    />
-                  </th>
-                  <th className="py-4 px-4">Employee / User Info</th>
-                  <th className="py-4 px-6">Role</th>
-                  <th className="py-4 px-6">Status</th>
-                  <th className="py-4 px-6">Emp ID / Username</th>
-                  <th className="py-4 px-6 text-right">Edit / View</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredUsers.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="py-12 text-center text-gray-400 font-semibold"
-                    >
-                      No matching user accounts found.
-                    </td>
+          <Paginated items={filteredUsers} pageSize={25} resetKey={filteredUsers.length}>
+            {(pageItems) => (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-100 dark:border-slate-800 bg-gray-50/70 dark:bg-slate-900/50 text-gray-400 font-extrabold text-[10px] tracking-wider">
+                    <th className="py-4 pl-6 pr-2">
+                      <input
+                        type="checkbox"
+                        checked={allFilteredSelected}
+                        onChange={toggleSelectAllFiltered}
+                        disabled={!selectableFilteredIds.length}
+                        aria-label="Select all filtered accounts"
+                        className="h-4 w-4 rounded border-gray-300 accent-[#F28C28]"
+                      />
+                    </th>
+                    <th className="py-4 px-4">Employee / User Info</th>
+                    <th className="py-4 px-6">Role</th>
+                    <th className="py-4 px-6">Status</th>
+                    <th className="py-4 px-6">Emp ID / Username</th>
+                    <th className="py-4 px-6 text-right">Edit / View</th>
                   </tr>
-                ) : (
-                  filteredUsers.map((u) => {
-                    const isUserSuspended =
-                      Boolean(u.isSuspended) ||
-                      [
-                        "suspended",
-                        "temp_suspended",
-                        "perm_suspended",
-                      ].includes(u.status);
-                    const isSoftDeleted =
-                      u.status === "deleted" || Boolean(u.isDeleted);
-
-                    return (
-                      <tr
-                        key={u._id}
-                        className="border-b border-gray-50 dark:border-slate-850 hover:bg-gray-50/30 transition-colors"
+                </thead>
+                <tbody>
+                  {filteredUsers.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="py-12 text-center text-gray-400 font-semibold"
                       >
-                        <td className="py-4 pl-6 pr-2">
-                          <input
-                            type="checkbox"
-                            checked={selectedUserIds.includes(u._id)}
-                            onChange={() =>
-                              setSelectedUserIds((current) =>
-                                current.includes(u._id)
-                                  ? current.filter((id) => id !== u._id)
-                                  : [...current, u._id],
-                              )
-                            }
-                            disabled={u._id === currentUser?.id || isSoftDeleted}
-                            aria-label={`Select ${u.name}`}
-                            className="h-4 w-4 rounded border-gray-300 accent-[#F28C28] disabled:opacity-30"
-                          />
-                        </td>
-                        <td className="py-4 px-4 font-bold text-[#0B192C] dark:text-white">
-                          <div className="flex flex-col">
-                            <span className="text-sm font-extrabold">
-                              {u.name}
-                            </span>
-                            <span className="text-gray-400 text-[11px] font-normal">
-                              {u.email} • {u.phone}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <span className="px-2.5 py-0.5 bg-[#F28C28]/10 text-[#F28C28] rounded-full text-[9px] font-extrabold">
-                            {u.role.replace("_", " ")}
-                          </span>
-                          {u.assignedAshram && (
-                            <span
-                              className="mt-1 flex items-center gap-1 text-[10px] font-bold text-gray-500"
-                              title={`Scoped to ${u.assignedAshram.name}`}
-                            >
-                              <Building2 size={11} className="shrink-0" />
-                              <span className="truncate">
-                                {u.assignedAshram.name}
+                        No matching user accounts found.
+                      </td>
+                    </tr>
+                  ) : (
+                    pageItems.map((u) => {
+                      const isUserSuspended =
+                        Boolean(u.isSuspended) ||
+                        [
+                          "suspended",
+                          "temp_suspended",
+                          "perm_suspended",
+                        ].includes(u.status);
+                      const isSoftDeleted =
+                        u.status === "deleted" || Boolean(u.isDeleted);
+
+                      return (
+                        <tr
+                          key={u._id}
+                          className="border-b border-gray-50 dark:border-slate-850 hover:bg-gray-50/30 transition-colors"
+                        >
+                          <td className="py-4 pl-6 pr-2">
+                            <input
+                              type="checkbox"
+                              checked={selectedUserIds.includes(u._id)}
+                              onChange={() =>
+                                setSelectedUserIds((current) =>
+                                  current.includes(u._id)
+                                    ? current.filter((id) => id !== u._id)
+                                    : [...current, u._id],
+                                )
+                              }
+                              disabled={u._id === currentUser?.id || isSoftDeleted}
+                              aria-label={`Select ${u.name}`}
+                              className="h-4 w-4 rounded border-gray-300 accent-[#F28C28] disabled:opacity-30"
+                            />
+                          </td>
+                          <td className="py-4 px-4 font-bold text-[#0B192C] dark:text-white">
+                            <div className="flex flex-col">
+                              <span className="text-sm font-extrabold">
+                                {u.name}
                               </span>
+                              <span className="text-gray-400 text-[11px] font-normal">
+                                {u.email} • {u.phone}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <span className="px-2.5 py-0.5 bg-[#F28C28]/10 text-[#F28C28] rounded-full text-[9px] font-extrabold">
+                              {u.role.replace("_", " ")}
                             </span>
-                          )}
-                        </td>
-                        <td className="py-4 px-6">
-                          <span
-                            className={`px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wide ${
-                              isSoftDeleted
-                                ? "bg-gray-200 text-gray-700 dark:bg-slate-800 dark:text-gray-400"
-                                : !isUserSuspended && u.status === "active"
-                                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
-                                  : u.status === "perm_suspended"
-                                    ? "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400"
-                                    : isUserSuspended
-                                      ? "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400"
-                                      : "bg-gray-100 text-gray-600"
-                            }`}
-                          >
-                            {isSoftDeleted
-                              ? "Soft Deleted"
-                              : isUserSuspended
-                                ? "Suspended"
-                                : u.status}
-                          </span>
-                        </td>
-                        <td className="py-4 px-6 font-mono text-[11px] text-gray-500">
-                          <div>{u.employeeId || "EMP-2026-8812"}</div>
-                          <div className="text-[10px] text-gray-400">
-                            {u.username ||
-                              `@${u.name.toLowerCase().replace(/\s+/g, "")}`}
-                          </div>
-                        </td>
-                        <td className="py-4 px-6 text-right">
-                          <div className="flex items-center justify-end">
-                            <button
-                              onClick={() => setViewingUser(u)}
-                              className="inline-flex items-center gap-1.5 rounded-full border border-[#F28C28]/20 bg-[#F28C28]/5 px-3 py-1.5 text-[10px] font-extrabold text-[#F28C28] transition-colors hover:bg-[#F28C28] hover:text-white"
-                              title="Edit or view account"
+                            {u.assignedAshram && (
+                              <span
+                                className="mt-1 flex items-center gap-1 text-[10px] font-bold text-gray-500"
+                                title={`Scoped to ${u.assignedAshram.name}`}
+                              >
+                                <Building2 size={11} className="shrink-0" />
+                                <span className="truncate">
+                                  {u.assignedAshram.name}
+                                </span>
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-4 px-6">
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wide ${
+                                isSoftDeleted
+                                  ? "bg-gray-200 text-gray-700 dark:bg-slate-800 dark:text-gray-400"
+                                  : !isUserSuspended && u.status === "active"
+                                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                                    : u.status === "perm_suspended"
+                                      ? "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400"
+                                      : isUserSuspended
+                                        ? "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400"
+                                        : "bg-gray-100 text-gray-600"
+                              }`}
                             >
-                              <Eye size={13} /> Edit / View
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                              {isSoftDeleted
+                                ? "Soft Deleted"
+                                : isUserSuspended
+                                  ? "Suspended"
+                                  : u.status}
+                            </span>
+                          </td>
+                          <td className="py-4 px-6 font-mono text-[11px] text-gray-500">
+                            <div>{u.employeeId || "EMP-2026-8812"}</div>
+                            <div className="text-[10px] text-gray-400">
+                              {u.username ||
+                                `@${u.name.toLowerCase().replace(/\s+/g, "")}`}
+                            </div>
+                          </td>
+                          <td className="py-4 px-6 text-right">
+                            <div className="flex items-center justify-end">
+                              <button
+                                onClick={() => setViewingUser(u)}
+                                className="inline-flex items-center gap-1.5 rounded-full border border-[#F28C28]/20 bg-[#F28C28]/5 px-3 py-1.5 text-[10px] font-extrabold text-[#F28C28] transition-colors hover:bg-[#F28C28] hover:text-white"
+                                title="Edit or view account"
+                              >
+                                <Eye size={13} /> Edit / View
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+            )}
+          </Paginated>
         </div>
       )}
 
@@ -1057,11 +1062,18 @@ export const UserManagementPage: React.FC = () => {
       )}
 
       {isCreateOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <form onSubmit={handleCreateAccountSubmit} className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-[28px] border border-gray-100 bg-white p-6 text-left shadow-2xl dark:border-slate-800 dark:bg-[#0B192C] sm:p-8">
+        <div className="tv-drawer-overlay" onMouseDown={() => !creatingAccount && setIsCreateOpen(false)}>
+          <form
+            onSubmit={handleCreateAccountSubmit}
+            onMouseDown={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-account-title"
+            className="tv-drawer-panel max-w-2xl overflow-y-auto p-5 text-left sm:p-7"
+          >
             <div className="flex items-start justify-between gap-4 border-b border-gray-100 pb-4 dark:border-slate-800">
               <div>
-                <h3 className="flex items-center gap-2 text-xl font-extrabold text-[#0B192C] dark:text-white"><UserPlus size={22} className="text-[#F28C28]" /> Create Account</h3>
+                <h3 id="create-account-title" className="flex items-center gap-2 text-xl font-extrabold text-[#0B192C] dark:text-white"><UserPlus size={22} className="text-[#F28C28]" /> Create Account</h3>
                 <p className="mt-1 text-xs font-medium text-gray-500">Enter account details and verification documents in one step.</p>
               </div>
               <button type="button" onClick={() => setIsCreateOpen(false)} disabled={creatingAccount} className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800" aria-label="Close account form"><X size={18} /></button>
@@ -1522,10 +1534,10 @@ export const UserManagementPage: React.FC = () => {
       )}
 
       {roleTarget && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="tv-drawer-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
             onSubmit={handleChangeRoleSubmit}
-            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 text-left shadow-2xl"
+            className="tv-drawer-panel bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 text-left shadow-2xl"
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <h3 className="font-bold text-base text-[#0B192C] dark:text-white flex items-center gap-2">
@@ -1639,10 +1651,10 @@ export const UserManagementPage: React.FC = () => {
       )}
 
       {statusTarget && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="tv-drawer-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
             onSubmit={handleStatusChangeSubmit}
-            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 text-left shadow-2xl"
+            className="tv-drawer-panel bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 text-left shadow-2xl"
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <h3 className="font-bold text-base text-[#0B192C] dark:text-white flex items-center gap-2">
@@ -1680,10 +1692,10 @@ export const UserManagementPage: React.FC = () => {
       )}
 
       {permTarget && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="tv-drawer-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
             onSubmit={handlePermissionsSubmit}
-            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 text-left shadow-2xl"
+            className="tv-drawer-panel bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 text-left shadow-2xl"
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <h3 className="font-bold text-base text-[#0B192C] dark:text-white flex items-center gap-2">
@@ -1750,10 +1762,10 @@ export const UserManagementPage: React.FC = () => {
       )}
 
       {resetPassTarget && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="tv-drawer-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
             onSubmit={handleResetPasswordSubmit}
-            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 text-left shadow-2xl animate-in zoom-in-95 duration-150"
+            className="tv-drawer-panel bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 text-left shadow-2xl animate-in zoom-in-95 duration-150"
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white flex items-center gap-2">
@@ -1934,7 +1946,7 @@ export const UserManagementPage: React.FC = () => {
 
       {viewingUser && (
         <div
-          className="fixed inset-0 z-[70] flex items-start sm:items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
+          className="tv-drawer-overlay"
           onClick={() => {
             setEditingUser(false);
             setViewingUser(null);
@@ -1945,7 +1957,7 @@ export const UserManagementPage: React.FC = () => {
             aria-modal="true"
             aria-label="Account details"
             onClick={(e) => e.stopPropagation()}
-            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] max-w-2xl w-full my-4 sm:my-8 shadow-2xl flex flex-col max-h-[calc(100dvh-2rem)] overflow-hidden"
+            className="tv-drawer-panel max-w-2xl"
           >
             <div className="shrink-0 flex items-start justify-between gap-3 border-b border-gray-100 dark:border-slate-800 px-5 sm:px-7 pt-5 pb-4">
               <div className="flex items-center gap-3 min-w-0">
