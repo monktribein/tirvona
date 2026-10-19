@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "../../../database/orm-nest";
 import type { Model } from "../../../database/orm";
+import { runAfterStartup } from "../../../common/utils/run-after-startup";
 import type { CreateDayStayProductDto } from "../presentation/dtos/day-stay.dto";
 
 @Injectable()
@@ -12,8 +13,10 @@ export class DayStayProductsService {
     private readonly productModel: Model<any>,
   ) {}
 
-  async onModuleInit() {
-    await this.seedDefaultProducts();
+  onModuleInit(): void {
+    runAfterStartup(this.logger, "Day-stay product seed", () =>
+      this.seedDefaultProducts(),
+    );
   }
 
   async seedDefaultProducts(): Promise<void> {

@@ -203,8 +203,7 @@ export const MarketplaceProductDetailPage: React.FC = () => {
                 className="w-full aspect-square object-cover"
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src = FALLBACK_IMAGE;
-                }}
-              />
+                }} loading="lazy" decoding="async" />
               {discount > 0 && (
                 <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-rose-500 text-white text-[11px] font-black">
                   {discount}% off
@@ -231,8 +230,7 @@ export const MarketplaceProductDetailPage: React.FC = () => {
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src =
                           FALLBACK_IMAGE;
-                      }}
-                    />
+                      }} loading="lazy" decoding="async" />
                   </button>
                 ))}
               </div>

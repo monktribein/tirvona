@@ -276,8 +276,7 @@ const ProductModal: React.FC<{
             className="w-full rounded-xl object-cover aspect-square bg-gray-100 dark:bg-slate-900"
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).src = FALLBACK_IMAGE;
-            }}
-          />
+            }} loading="lazy" decoding="async" />
 
           <div className="space-y-3">
             <div className="flex items-baseline gap-2 flex-wrap">
@@ -679,8 +678,7 @@ export const MarketplaceHubPage: React.FC = () => {
                   <img
                     src={cmsBanner}
                     alt="Marketplace banner"
-                    className="w-full max-w-2xl mx-auto h-auto max-h-[420px] object-contain drop-shadow-md rounded-2xl"
-                  />
+                    className="w-full max-w-2xl mx-auto h-auto max-h-[420px] object-contain drop-shadow-md rounded-2xl" loading="lazy" decoding="async" />
                 ) : null}
                 <div className="flex flex-wrap items-center justify-center gap-4">
                   <button

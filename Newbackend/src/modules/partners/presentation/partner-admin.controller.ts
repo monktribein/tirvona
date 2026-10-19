@@ -46,6 +46,28 @@ export class PartnerAdminController {
     return { success: true, data: await this.service.listPartners() };
   }
 
+  // Static GET routes must be declared BEFORE `@Get(":id")`, otherwise Nest
+  // matches "webhooks" / "deliveries" as a partner id.
+  @Get("webhooks")
+  @ApiOperation({ summary: "List registered webhooks" })
+  async listWebhooks(@Query("partnerId") partnerId?: string) {
+    return { success: true, data: await this.service.listWebhooks(partnerId) };
+  }
+
+  @Get("deliveries")
+  @ApiOperation({ summary: "List webhook delivery logs" })
+  async listDeliveries(
+    @Query("webhookId") webhookId?: string,
+    @Query("partnerId") partnerId?: string,
+    @Query("status") status?: string,
+    @Query("limit") limit?: number,
+  ) {
+    return {
+      success: true,
+      data: await this.service.listDeliveryLogs({ webhookId, partnerId, status, limit }),
+    };
+  }
+
   @Get(":id")
   @ApiOperation({ summary: "Get partner by ID" })
   async getPartner(@Param("id") id: string) {
@@ -108,12 +130,6 @@ export class PartnerAdminController {
     return { success: true, data: await this.service.createWebhook(user, partnerId, dto) };
   }
 
-  @Get("webhooks")
-  @ApiOperation({ summary: "List registered webhooks" })
-  async listWebhooks(@Query("partnerId") partnerId?: string) {
-    return { success: true, data: await this.service.listWebhooks(partnerId) };
-  }
-
   @Patch("webhooks/:webhookId")
   @ApiOperation({ summary: "Update webhook URL, status, or events" })
   async updateWebhook(
@@ -139,21 +155,13 @@ export class PartnerAdminController {
     return { success: true, data: await this.service.rotateWebhookSecret(user, webhookId) };
   }
 
-  // Webhook Delivery Logs
-  @Get("deliveries")
-  @ApiOperation({ summary: "List webhook delivery logs" })
-  async listDeliveries(
-    @Query("webhookId") webhookId?: string,
-    @Query("partnerId") partnerId?: string,
-    @Query("status") status?: string,
-    @Query("limit") limit?: number,
-  ) {
-    return {
-      success: true,
-      data: await this.service.listDeliveryLogs({ webhookId, partnerId, status, limit }),
-    };
+  @Post("webhooks/:webhookId/test")
+  @ApiOperation({ summary: "Send a signed test event to a webhook endpoint" })
+  async testWebhook(@Param("webhookId") webhookId: string) {
+    return { success: true, data: await this.service.sendTestWebhook(webhookId) };
   }
 
+  // Webhook Delivery Logs
   @Post("deliveries/:id/retry")
   @ApiOperation({ summary: "Retry a webhook delivery" })
   async retryDelivery(

@@ -1,3 +1,4 @@
+import { Paginated } from "../../components/shared/Pagination";
 import React from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Copy } from "lucide-react";
@@ -57,36 +58,40 @@ export const ProfileCouponsPage: React.FC = () => {
       </section>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {coupons.map((c, idx) => (
-            <div
-              key={idx}
-              className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-lg space-y-4 flex flex-col justify-between"
-            >
-              <div className="space-y-2">
-                <span className="px-3 py-1 bg-amber-50 text-amber-600 border border-amber-200 rounded-full text-[10px] font-black">
-                  {c.discount}
-                </span>
-                <h3 className="text-xl font-black text-[#F28C28] tracking-wider pt-1">
-                  {c.code}
-                </h3>
-                <p className="text-xs text-gray-500 font-medium">
-                  {c.description}
-                </p>
-                <span className="text-[10px] text-gray-400 block font-bold">
-                  {c.expiry}
-                </span>
-              </div>
-
-              <button
-                onClick={() => handleCopy(c.code)}
-                className="w-full py-2.5 bg-[#F28C28] text-white rounded-full text-xs font-extrabold flex items-center justify-center gap-2 hover:bg-[#B45309] transition-colors cursor-pointer"
+        <Paginated items={coupons} pageSize={9}>
+          {(pageItems) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {pageItems.map((c, idx) => (
+              <div
+                key={idx}
+                className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-lg space-y-4 flex flex-col justify-between"
               >
-                <Copy size={14} /> Copy Coupon Code
-              </button>
-            </div>
-          ))}
-        </div>
+                <div className="space-y-2">
+                  <span className="px-3 py-1 bg-amber-50 text-amber-600 border border-amber-200 rounded-full text-[10px] font-black">
+                    {c.discount}
+                  </span>
+                  <h3 className="text-xl font-black text-[#F28C28] tracking-wider pt-1">
+                    {c.code}
+                  </h3>
+                  <p className="text-xs text-gray-500 font-medium">
+                    {c.description}
+                  </p>
+                  <span className="text-[10px] text-gray-400 block font-bold">
+                    {c.expiry}
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => handleCopy(c.code)}
+                  className="w-full py-2.5 bg-[#F28C28] text-white rounded-full text-xs font-extrabold flex items-center justify-center gap-2 hover:bg-[#B45309] transition-colors cursor-pointer"
+                >
+                  <Copy size={14} /> Copy Coupon Code
+                </button>
+              </div>
+            ))}
+          </div>
+          )}
+        </Paginated>
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import { Paginated } from "../components/shared/Pagination";
 import React, { useState } from "react";
 import { formatCurrency } from "../utils/format";
 import {
@@ -149,63 +150,67 @@ const CareersPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="space-y-3">
-          {filtered.map((job, i) => (
-            <div
-              key={i}
-              className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm"
-            >
-              <button
-                onClick={() => setExpanded(expanded === i ? null : i)}
-                className="w-full text-left p-5 flex items-start justify-between gap-4 cursor-pointer"
+        <Paginated items={filtered} pageSize={10}>
+          {(pageItems) => (
+          <div className="space-y-3">
+            {pageItems.map((job, i) => (
+              <div
+                key={i}
+                className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm"
               >
-                <div className="space-y-1.5">
-                  <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
-                    {job.title}
-                  </h3>
-                  <div className="flex flex-wrap gap-3 text-[10px] text-gray-400 font-bold">
-                    <span className="flex items-center gap-1">
-                      <MapPin size={10} className="text-[#F28C28]" />
-                      {job.location}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock size={10} className="text-[#0E7B6C]" />
-                      {job.type}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Briefcase size={10} className="text-[#6B21A8]" />
-                      {job.dept}
-                    </span>
+                <button
+                  onClick={() => setExpanded(expanded === i ? null : i)}
+                  className="w-full text-left p-5 flex items-start justify-between gap-4 cursor-pointer"
+                >
+                  <div className="space-y-1.5">
+                    <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
+                      {job.title}
+                    </h3>
+                    <div className="flex flex-wrap gap-3 text-[10px] text-gray-400 font-bold">
+                      <span className="flex items-center gap-1">
+                        <MapPin size={10} className="text-[#F28C28]" />
+                        {job.location}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock size={10} className="text-[#0E7B6C]" />
+                        {job.type}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Briefcase size={10} className="text-[#6B21A8]" />
+                        {job.dept}
+                      </span>
+                    </div>
                   </div>
-                </div>
-                {expanded === i ? (
-                  <ChevronUp
-                    size={16}
-                    className="text-gray-400 mt-1 flex-shrink-0"
-                  />
-                ) : (
-                  <ChevronDown
-                    size={16}
-                    className="text-gray-400 mt-1 flex-shrink-0"
-                  />
+                  {expanded === i ? (
+                    <ChevronUp
+                      size={16}
+                      className="text-gray-400 mt-1 flex-shrink-0"
+                    />
+                  ) : (
+                    <ChevronDown
+                      size={16}
+                      className="text-gray-400 mt-1 flex-shrink-0"
+                    />
+                  )}
+                </button>
+                {expanded === i && (
+                  <div className="px-5 pb-5 space-y-4 border-t border-gray-50 dark:border-slate-800 pt-4">
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                      {job.desc}
+                    </p>
+                    <a
+                      href="mailto:careers@tirvona.in"
+                      className="inline-flex items-center gap-2 min-h-[44px] px-6 py-2 bg-[#F28C28] text-white text-xs font-extrabold rounded-full"
+                    >
+                      Apply Now <ArrowRight size={13} />
+                    </a>
+                  </div>
                 )}
-              </button>
-              {expanded === i && (
-                <div className="px-5 pb-5 space-y-4 border-t border-gray-50 dark:border-slate-800 pt-4">
-                  <p className="text-xs text-gray-500 leading-relaxed">
-                    {job.desc}
-                  </p>
-                  <a
-                    href="mailto:careers@tirvona.in"
-                    className="inline-flex items-center gap-2 min-h-[44px] px-6 py-2 bg-[#F28C28] text-white text-xs font-extrabold rounded-full"
-                  >
-                    Apply Now <ArrowRight size={13} />
-                  </a>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+              </div>
+            ))}
+          </div>
+          )}
+        </Paginated>
 
         <div className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-3xl p-6 text-center space-y-3">
           <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">

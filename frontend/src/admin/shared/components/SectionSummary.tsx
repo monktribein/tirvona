@@ -118,11 +118,11 @@ export const SectionSummaryStrip: React.FC<{ pathname: string }> = ({
   if (!keys.length) return null;
   if (loading && !shown.length)
     return (
-      <div className="grid gap-3 mb-5 grid-cols-2 lg:grid-cols-4">
+      <div className="tv-summary-strip grid gap-3 grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
           <div
             key={index}
-            className="h-[104px] rounded-[24px] bg-white/60 dark:bg-slate-900/40 border border-gray-100 dark:border-slate-800 animate-pulse"
+            className="h-[104px] bg-white/60 dark:bg-slate-900/40 border border-gray-100 dark:border-slate-800 animate-pulse"
           />
         ))}
       </div>
@@ -130,7 +130,7 @@ export const SectionSummaryStrip: React.FC<{ pathname: string }> = ({
   if (!shown.length) return null;
 
   return (
-    <div className="space-y-4 mb-5">
+    <div className="tv-summary-strip space-y-4">
       {shown.map((section) => (
         <div key={section.key} className="space-y-2">
           {shown.length > 1 && (

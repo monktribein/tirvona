@@ -27,6 +27,20 @@ export const isParkingRole = (
   return false;
 };
 
+/**
+ * Where the Tirvona logo leads. "/" sends every non-customer role on to their
+ * dashboard (RoleAwareHome), so those roles use "/public", which always shows
+ * the storefront home.
+ */
+export const getLogoHomePath = (
+  user?: { role?: string; parkingRoles?: string[]; email?: string } | null,
+): string =>
+  user &&
+  getRoleDefaultDashboard(user.role, user.parkingRoles, user.email) !==
+    "/profile"
+    ? "/public"
+    : "/";
+
 export const getRoleDefaultDashboard = (
   role?: string,
   parkingRoles?: string[],

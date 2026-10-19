@@ -18,26 +18,22 @@ export const EnterprisePageHeader: React.FC<EnterprisePageHeaderProps> = ({
 }) => {
   const { t } = useLanguage();
   return (
-    <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all">
-      <div className="flex items-center gap-3.5">
-        {icon && (
-          <div className="w-12 h-12 rounded-2xl bg-[#F28C28]/10 text-[#F28C28] dark:text-amber-400 flex items-center justify-center shrink-0 border border-[#F28C28]/15">
-            {icon}
-          </div>
-        )}
-        <div className="space-y-0.5">
-          <div className="flex items-center gap-2.5">
-            <h2 className="text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white tracking-tight">
+    <div className="tv-page-header">
+      <div className="flex min-w-0 items-center gap-3.5">
+        {icon && <div className="tv-page-header-icon">{icon}</div>}
+        <div className="min-w-0 space-y-0.5">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h2 className="text-xl font-semibold tracking-tight text-[#0B192C] dark:text-white sm:text-2xl">
               {t(title)}
             </h2>
             {badgeText && (
-              <span className="px-3 py-0.5 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 rounded-full text-xs font-black border border-amber-200 dark:border-amber-900/50">
+              <span className="bg-[#F28C28]/10 px-2 py-0.5 text-[11px] font-semibold text-[#B45309] dark:text-[#FFA44D]">
                 {t(badgeText)}
               </span>
             )}
           </div>
           {subtitle && (
-            <p className="text-xs text-gray-400 font-semibold leading-relaxed">
+            <p className="text-xs font-medium leading-relaxed text-gray-500 dark:text-gray-400">
               {t(subtitle)}
             </p>
           )}
@@ -45,7 +41,7 @@ export const EnterprisePageHeader: React.FC<EnterprisePageHeaderProps> = ({
       </div>
 
       {actions && (
-        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+        <div className="flex shrink-0 flex-wrap items-center gap-2.5">
           {actions}
         </div>
       )}

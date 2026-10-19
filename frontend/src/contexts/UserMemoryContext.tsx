@@ -59,7 +59,21 @@ export const UserMemoryProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(false);
   const syncTimerRef = useRef<any>(null);
 
+  const previousUserId = useRef<string | null>(null);
+
   useEffect(() => {
+    const currentUserId = user ? String(user.id ?? (user as any)._id ?? "") : null;
+    // When the signed-in account changes (including logout), the previous
+    // account's cached profile must not carry over to the next one.
+    if (previousUserId.current !== null && previousUserId.current !== currentUserId) {
+      try {
+        localStorage.removeItem("tirvona_user_memory");
+      } catch {
+        // storage unavailable; state reset below still applies
+      }
+      setMemory(defaultMemory);
+    }
+    previousUserId.current = currentUserId;
     fetchRemoteMemory();
   }, [user]);
 

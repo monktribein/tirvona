@@ -7,8 +7,7 @@ export const PageLoader: React.FC = () => (
       <img
         src="/logo/logo.png"
         alt="Tirvona"
-        className="relative w-14 h-14 object-contain animate-pulse"
-      />
+        className="relative w-14 h-14 object-contain animate-pulse"  loading="eager" />
     </div>
 
     <div className="w-56 space-y-2.5">

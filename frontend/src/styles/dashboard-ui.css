@@ -1,0 +1,847 @@
+/*
+ * Tirvona dashboard UI system
+ *
+ * One look for every authenticated role (super admin, ashram owner/admin,
+ * managers, staff, vendors, providers, parking, food …). Everything is scoped
+ * to `.dashboard-shell`, so the customer storefront and the customer profile
+ * area are untouched.
+ *
+ * Principles
+ *   - Square, flat surfaces. No rounded boxes, no drop shadows on cards.
+ *   - One border per surface. A bordered box never sits inside another box
+ *     that already draws the same edge (no double borders).
+ *   - Record details, forms and confirmations open in a right-side drawer.
+ *   - Tirvona saffron (#F28C28) for accent, navy (#0B192C) for ink.
+ */
+
+.dashboard-shell {
+  --d-ink: #0b192c;
+  --d-muted: #64748b;
+  --d-line: #e4e7ec;
+  --d-line-strong: #cfd5df;
+  --d-surface: #ffffff;
+  --d-canvas: #f6f7f9;
+  --d-head: #f8f9fb;
+  --d-hover: #fff7ed;
+  --d-accent: #f28c28;
+  --d-accent-ink: #b45309;
+  --d-accent-soft: rgb(242 140 40 / 0.1);
+  --d-overlay: rgb(11 25 44 / 0.5);
+}
+
+.dark .dashboard-shell {
+  --d-ink: #f1f5f9;
+  --d-muted: #94a3b8;
+  --d-line: #1e2b40;
+  --d-line-strong: #2b3a54;
+  --d-surface: #0b192c;
+  --d-canvas: #070f1b;
+  --d-head: #0f1d33;
+  --d-hover: rgb(242 140 40 / 0.07);
+  --d-accent-ink: #ffa44d;
+  --d-accent-soft: rgb(242 140 40 / 0.14);
+  --d-overlay: rgb(2 6 14 / 0.62);
+}
+
+.dashboard-shell main {
+  background: var(--d-canvas);
+}
+
+/* ------------------------------------------------------------------ *
+ * 1. Square everything
+ *    Circles stay circles only where a circle carries meaning: avatars,
+ *    status dots, spinners, switch thumbs (all of them have a w-/h-/size-
+ *    class). Text pills, badges, chips and buttons become square.
+ * ------------------------------------------------------------------ */
+.dashboard-shell [class*="rounded"]:not(.rounded-full):not(.tv-keep-round),
+.dashboard-shell :where(input, select, textarea, table, tr, th, td, details, summary, dialog, fieldset) {
+  border-radius: 0 !important;
+}
+
+.dashboard-shell :is(button, a, label, input, select, textarea, li):is([class*="rounded-full"]):not([role="switch"]):not(.tv-keep-round),
+.dashboard-shell :is(span, p, div)[class*="rounded-full"]:not([class*="w-"]):not([class*="h-"]):not([class*="size-"]):not(.tv-keep-round) {
+  border-radius: 0 !important;
+}
+
+.dashboard-shell [class*="rounded-"]:is(img):not(.rounded-full) {
+  border-radius: 0 !important;
+}
+
+/* ------------------------------------------------------------------ *
+ * 2. Flat surfaces, one hairline border
+ * ------------------------------------------------------------------ */
+.dashboard-shell main :is(.shadow-sm, .shadow, .shadow-md, .shadow-lg, .shadow-xs),
+.dashboard-shell main [class*="hover:shadow"]:hover,
+.dashboard-shell main [class*="shadow-[0"] {
+  box-shadow: none !important;
+}
+
+/* The global stylesheet tints every gray border saffron; dashboards use a neutral hairline. */
+.dashboard-shell [class*="border-gray-"],
+.dashboard-shell [class*="border-slate-"],
+.dashboard-shell [class*="border-zinc-"],
+.dashboard-shell [class*="border-neutral-"],
+.dashboard-shell [class*="border-white/"] {
+  border-color: var(--d-line) !important;
+}
+
+/* A bordered box that only wraps another bordered box: keep the outer edge only. */
+.dashboard-shell main .border:has(> .border:only-child) > .border:only-child,
+.dashboard-shell main [class*="border-gray-"]:has(> [class*="border-gray-"]:only-child) > [class*="border-gray-"]:only-child {
+  border-width: 0 !important;
+}
+
+/* ------------------------------------------------------------------ *
+ * 3. Shared surface: toolbar + table + footer read as ONE panel
+ * ------------------------------------------------------------------ */
+.dashboard-shell .tv-surface {
+  background: var(--d-surface);
+  border: 1px solid var(--d-line);
+  overflow: hidden;
+}
+
+.dashboard-shell .tv-surface .tv-surface-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--d-surface);
+  border: 0;
+  border-bottom: 1px solid var(--d-line);
+}
+
+.dashboard-shell .tv-surface .tv-surface-bulk {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--d-accent-soft);
+  border: 0;
+  border-bottom: 1px solid var(--d-line);
+}
+
+.dashboard-shell .tv-surface .tv-surface-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--d-head);
+  border: 0;
+  border-top: 1px solid var(--d-line);
+}
+
+/* ------------------------------------------------------------------ *
+ * 4. Tables (rebrands the shared table system from blue to Tirvona)
+ * ------------------------------------------------------------------ */
+.dashboard-shell {
+  --tv-table-primary: var(--d-ink);
+  --tv-table-secondary: var(--d-muted);
+  --tv-table-divider: var(--d-line);
+  --tv-table-header-bg: var(--d-head);
+  --tv-table-hover: var(--d-hover);
+  --tv-table-selected: var(--d-accent-soft);
+  --tv-table-focus: var(--d-accent);
+  --tv-table-row-height: 52px;
+}
+
+.dashboard-shell table > thead,
+.dashboard-shell .tv-data-table > thead {
+  background: var(--d-head) !important;
+}
+
+.dashboard-shell table > thead > tr,
+.dashboard-shell .tv-data-table > thead > tr {
+  border-top: 0 !important;
+  border-bottom: 1px solid var(--d-line) !important;
+  background: transparent !important;
+}
+
+.dashboard-shell table > thead > tr > th,
+.dashboard-shell .tv-data-table > thead > tr > th {
+  color: var(--d-muted) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.06em !important;
+  background: transparent !important;
+}
+
+.dashboard-shell table > tbody > tr,
+.dashboard-shell .tv-data-table > tbody > tr {
+  background: var(--d-surface);
+  border-bottom: 1px solid var(--d-line) !important;
+}
+
+.dashboard-shell table > tbody > tr:last-child {
+  border-bottom: 0 !important;
+}
+
+.dashboard-shell table > tbody > tr > td,
+.dashboard-shell .tv-data-table > tbody > tr > td {
+  color: var(--d-ink);
+}
+
+.dashboard-shell table > tbody > tr:hover,
+.dashboard-shell .tv-data-table > tbody > tr:hover {
+  background: var(--d-hover) !important;
+}
+
+.dashboard-shell table > tbody > tr.tv-table-row-selected,
+.dashboard-shell table > tbody > tr[aria-selected="true"] {
+  background: var(--d-accent-soft) !important;
+}
+
+.dashboard-shell .tv-table-card,
+.dashboard-shell .tv-table-scroll {
+  border-radius: 0 !important;
+}
+
+.dashboard-shell table input[type="checkbox"],
+.dashboard-shell .tv-surface input[type="checkbox"] {
+  accent-color: var(--d-accent);
+  width: 15px;
+  height: 15px;
+  border-radius: 0 !important;
+}
+
+@media (max-width: 767px) {
+  .dashboard-shell table:not(.tv-table-keep) > tbody > tr {
+    border: 1px solid var(--d-line) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: var(--d-surface);
+  }
+  .dashboard-shell table:not(.tv-table-keep) > tbody > tr:hover {
+    }
+}
+
+/* ------------------------------------------------------------------ *
+ * 5. Inputs, selects and buttons
+ * ------------------------------------------------------------------ */
+.dashboard-shell :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]) {
+  border: 1px solid var(--d-line-strong) !important;
+  background: var(--d-surface);
+  color: var(--d-ink);
+  box-shadow: none !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dashboard-shell :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus {
+  border-color: var(--d-accent) !important;
+  box-shadow: 0 0 0 3px var(--d-accent-soft) !important;
+  outline: none;
+}
+
+.dashboard-shell button:focus-visible,
+.dashboard-shell a:focus-visible {
+  outline: 2px solid var(--d-accent);
+  outline-offset: 2px;
+}
+
+/* Square pager buttons */
+.dashboard-shell .tv-pager {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dashboard-shell .tv-pager > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--d-line-strong);
+  background: var(--d-surface);
+  color: var(--d-ink);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.dashboard-shell .tv-pager > button:hover:not(:disabled) {
+  border-color: var(--d-accent);
+  background: var(--d-hover);
+}
+
+.dashboard-shell .tv-pager > button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* The shared Pagination component */
+.dashboard-shell nav[aria-label="Pagination"] button {
+  border-radius: 0 !important;
+  min-width: 32px;
+  height: 32px;
+}
+
+/* ------------------------------------------------------------------ *
+ * 6. Page header
+ * ------------------------------------------------------------------ */
+.dashboard-shell .tv-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  background: var(--d-surface);
+  border: 1px solid var(--d-line);
+}
+
+.dashboard-shell .tv-page-header-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  background: var(--d-accent-soft);
+  color: var(--d-accent);
+}
+
+/* ------------------------------------------------------------------ *
+ * 7. Summary (stat) cards
+ * ------------------------------------------------------------------ */
+.dashboard-shell .tv-stat {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  height: 100%;
+  padding: 16px;
+  background: var(--d-surface);
+  border: 1px solid var(--d-line);
+  box-shadow: none !important;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.dashboard-shell a.tv-stat:hover,
+.dashboard-shell button.tv-stat:hover {
+  border-color: var(--d-accent);
+  background: var(--d-hover);
+}
+
+.dashboard-shell .tv-stat-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.dashboard-shell .tv-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--d-muted);
+}
+
+.dashboard-shell .tv-stat-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  background: var(--d-accent-soft);
+  color: var(--d-accent);
+}
+
+.dashboard-shell .tv-stat-value {
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  color: var(--d-ink);
+  overflow-wrap: anywhere;
+}
+
+.dashboard-shell .tv-stat-hint {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--d-muted);
+}
+
+/* ------------------------------------------------------------------ *
+ * 8. Right-side drawer (record details, forms, confirmations)
+ * ------------------------------------------------------------------ */
+@keyframes tv-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes tv-drawer-in {
+  from { transform: translateX(36px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+.tv-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  justify-content: flex-end;
+  background: var(--d-overlay, rgb(11 25 44 / 0.5));
+  animation: tv-overlay-in 0.18s ease-out;
+}
+
+/*
+ * While a drawer (or a legacy modal retrofitted into one) is open, the page
+ * behind it must not scroll: only the drawer body does.
+ */
+html:has(.tv-drawer-overlay),
+html:has(.tv-drawer-overlay) body,
+html:has(.tv-drawer-overlay) .dashboard-shell main,
+html:has(.tv-drawer-overlay) .dashboard-shell nav,
+html:has(.dashboard-shell .fixed.inset-0.justify-center:is(.items-center, .items-start, .sm\:items-center):not([class*="bg-black/9"]):not([class*="bg-black/8"]):not(.lg\:hidden):not(.sm\:hidden):not(.md\:hidden):not(.tv-drawer-overlay)),
+html:has(.dashboard-shell .fixed.inset-0.justify-center:is(.items-center, .items-start, .sm\:items-center):not([class*="bg-black/9"]):not([class*="bg-black/8"]):not(.lg\:hidden):not(.sm\:hidden):not(.md\:hidden):not(.tv-drawer-overlay)) body,
+html:has(.dashboard-shell .fixed.inset-0.justify-center:is(.items-center, .items-start, .sm\:items-center):not([class*="bg-black/9"]):not([class*="bg-black/8"]):not(.lg\:hidden):not(.sm\:hidden):not(.md\:hidden):not(.tv-drawer-overlay)) .dashboard-shell main {
+  overflow: hidden !important;
+}
+
+/*
+ * A drawer is always full height, pinned to the right edge. Pages that add
+ * Tailwind's `items-center` / `p-4` to the overlay must not centre or inset
+ * it, and neither the overlay nor the panel may scroll as a whole: header and
+ * footer stay put and only the body scrolls.
+ */
+.tv-drawer-overlay {
+  overscroll-behavior: contain;
+  overflow: hidden;
+  align-items: stretch !important;
+  justify-content: flex-end !important;
+  padding: 0 !important;
+}
+
+.tv-drawer-panel {
+  overflow: hidden;
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
+
+/* A form drawer that scrolls its own middle section (instead of .tv-drawer-body). */
+.tv-drawer-panel > .overflow-y-auto {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none !important;
+  overscroll-behavior: contain;
+}
+
+.tv-drawer-panel > :is(.border-b, .border-t) {
+  flex: none;
+}
+
+.tv-drawer-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 520px;
+  height: 100%;
+  max-height: 100%;
+  background: var(--d-surface, #fff);
+  color: var(--d-ink, #0b192c);
+  border-left: 1px solid var(--d-line, #e4e7ec);
+  box-shadow: -16px 0 40px rgb(11 25 44 / 0.16);
+  animation: tv-drawer-in 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+  outline: none;
+}
+
+.tv-drawer-header {
+  flex: none;
+  background: var(--d-head, #f8f9fb);
+  border-bottom: 1px solid var(--d-line, #e4e7ec) !important;
+}
+
+.tv-drawer-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  max-height: none !important;
+  overscroll-behavior: contain;
+}
+
+.tv-drawer-footer {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  background: var(--d-head, #f8f9fb) !important;
+  border-top: 1px solid var(--d-line, #e4e7ec) !important;
+}
+
+/* Sections inside a drawer: a flat block with a single edge, never a box in a box. */
+.tv-drawer-panel .tv-drawer-body :is(.bg-gray-50, [class*="bg-gray-50/"], .bg-slate-50, [class*="bg-slate-50/"]) {
+  border-color: var(--d-line) !important;
+}
+
+@media (max-width: 640px) {
+  .tv-drawer-panel {
+    max-width: 100% !important;
+    border-left: 0;
+  }
+}
+
+/*
+ * Legacy centred modals. Pages that still render their own
+ * `fixed inset-0 … items-center justify-center` dialog open as the same
+ * right-side drawer, without being rewritten one by one. Image lightboxes
+ * (near-opaque black backdrops) and the mobile navigation keep their layout.
+ */
+.dashboard-shell .fixed.inset-0.justify-center:is(.items-center, .items-start, .sm\:items-center):not([class*="bg-black/9"]):not([class*="bg-black/8"]):not(.lg\:hidden):not(.sm\:hidden):not(.md\:hidden):not(.tv-drawer-overlay) {
+  align-items: stretch !important;
+  justify-content: flex-end !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  background: var(--d-overlay) !important;
+  backdrop-filter: none !important;
+  animation: tv-overlay-in 0.18s ease-out;
+}
+
+.dashboard-shell .fixed.inset-0.justify-center:is(.items-center, .items-start, .sm\:items-center):not([class*="bg-black/9"]):not([class*="bg-black/8"]):not(.lg\:hidden):not(.sm\:hidden):not(.md\:hidden):not(.tv-drawer-overlay) > :not(.absolute):not(.fixed):not([class*="inset-0"]) {
+  width: 100% !important;
+  max-width: 560px !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  overflow-y: auto;
+  background-color: var(--d-surface);
+  border: 0 !important;
+  border-left: 1px solid var(--d-line) !important;
+  box-shadow: -16px 0 40px rgb(11 25 44 / 0.16) !important;
+  transform: none !important;
+  animation: tv-drawer-in 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+}
+
+.dashboard-shell .fixed.inset-0.justify-center:is(.items-center, .items-start, .sm\:items-center):not([class*="bg-black/9"]):not([class*="bg-black/8"]):not(.lg\:hidden):not(.sm\:hidden):not(.md\:hidden):not(.tv-drawer-overlay) > :is(.max-w-3xl, .max-w-4xl, .max-w-5xl):not(.absolute) {
+  max-width: 760px !important;
+}
+
+.dashboard-shell .fixed.inset-0.justify-center:is(.items-center, .items-start, .sm\:items-center):not([class*="bg-black/9"]):not([class*="bg-black/8"]):not(.lg\:hidden):not(.sm\:hidden):not(.md\:hidden):not(.tv-drawer-overlay) > :is(.max-w-6xl, .max-w-7xl, .max-w-full):not(.absolute) {
+  max-width: 980px !important;
+}
+
+.dashboard-shell .fixed.inset-0.justify-center:is(.items-center, .items-start, .sm\:items-center):not([class*="bg-black/9"]):not([class*="bg-black/8"]):not(.lg\:hidden):not(.sm\:hidden):not(.md\:hidden):not(.tv-drawer-overlay) > :is(.max-w-xs, .max-w-sm, .max-w-md):not(.absolute) {
+  max-width: 440px !important;
+}
+
+@media (max-width: 640px) {
+  .dashboard-shell .fixed.inset-0.justify-center:is(.items-center, .items-start, .sm\:items-center) > :not(.absolute):not(.fixed):not([class*="inset-0"]) {
+    max-width: 100% !important;
+    border-left: 0 !important;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * 9. Pages that bring their own full-screen chrome
+ *    Role pages render inside the shared layout, so they must not add a
+ *    second canvas, a second viewport-height or their own page gutter.
+ * ------------------------------------------------------------------ */
+.dashboard-shell main .tv-dashboard-page-surface .min-h-screen,
+.dashboard-shell main .tv-dashboard-page-surface [class*="min-h-[100"],
+.dashboard-shell main .tv-dashboard-page-surface [class*="min-h-[calc(100"] {
+  min-height: 0 !important;
+}
+
+.dashboard-shell main .tv-dashboard-page-surface > :is(div, section):only-child > .max-w-7xl.mx-auto:first-child,
+.dashboard-shell main .tv-dashboard-page-surface > .max-w-7xl.mx-auto,
+.dashboard-shell main .tv-dashboard-page-surface > :is(div, section):only-child.max-w-7xl {
+  max-width: none;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .tv-drawer-overlay,
+  .tv-drawer-panel,
+  .dashboard-shell .fixed.inset-0.justify-center > * {
+    animation: none !important;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * 10. Status badges: compact tinted square chips that follow whatever
+ *     semantic colour the page already gives them (green / amber / red…).
+ * ------------------------------------------------------------------ */
+.dashboard-shell .tv-status-badge,
+.dashboard-shell table td[data-tv-column="status"] span[class*="rounded-full"][class*="px-"] {
+  padding: 3px 9px !important;
+  background: color-mix(in srgb, currentColor 10%, transparent) !important;
+  border: 1px solid color-mix(in srgb, currentColor 24%, transparent) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  line-height: 1.3;
+}
+
+/* ------------------------------------------------------------------ *
+ * 11. The page is not a box. Content sits straight on the canvas; only
+ *     the cards inside it have edges (no outer frame around every page).
+ * ------------------------------------------------------------------ */
+.dashboard-shell .tv-dashboard-page-surface {
+  gap: 16px;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.dashboard-shell .tv-dashboard-page-surface :is(section, article, div).bg-white:not([role="dialog"]):not([aria-modal="true"]) {
+  background-color: var(--d-surface) !important;
+}
+
+.dashboard-shell .tv-dashboard-page-surface :is(section, article, div):is([class*="border-slate"], [class*="border-outline"]) {
+  border-color: var(--d-line) !important;
+}
+
+/* ------------------------------------------------------------------ *
+ * 12. The page title always comes first. A page header (marked by the
+ *     runtime, or the shared EnterprisePageHeader) is ordered above summary
+ *     cards, whether those come from the page or from the layout's strip.
+ * ------------------------------------------------------------------ */
+.dashboard-shell .tv-dashboard-page-surface {
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-shell .tv-page-header,
+.dashboard-shell [data-tv-header] {
+  order: -10;
+}
+
+.dashboard-shell .tv-summary-strip {
+  order: -9;
+  margin: 0 !important;
+}
+
+.dashboard-shell .tv-dashboard-page-surface > [data-tv-page-root] {
+  display: contents;
+}
+
+.dashboard-shell .tv-dashboard-page-surface > [data-tv-page-root] > * {
+  margin-top: 0 !important;
+}
+
+/* ------------------------------------------------------------------ *
+ * 13. Table actions: named, never icon-only
+ *     The runtime marks action cells (data-tv-actions) and their controls
+ *     (.tv-act). Several actions collapse into one "Actions" dropdown;
+ *     a single action is a plain text button. No icons in either.
+ * ------------------------------------------------------------------ */
+.dashboard-shell td[data-tv-actions] .material-symbols-rounded,
+.dashboard-shell td[data-tv-actions] svg {
+  display: none !important;
+}
+
+.dashboard-shell td[data-tv-actions="menu"] {
+  min-width: 132px;
+}
+
+.dashboard-shell td[data-tv-actions] .tv-act {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 5px 12px !important;
+  border: 1px solid var(--d-line-strong) !important;
+  background: var(--d-surface) !important;
+  color: var(--d-ink) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.dashboard-shell td[data-tv-actions] .tv-act[data-tv-icon-only]::after {
+  content: attr(data-tv-label);
+}
+
+.dashboard-shell td[data-tv-actions="inline"] .tv-act:hover {
+  border-color: var(--d-accent) !important;
+  background: var(--d-hover) !important;
+}
+
+.dashboard-shell td[data-tv-actions] .tv-act[data-tv-danger] {
+  color: #dc2626 !important;
+}
+
+/* inline: several named buttons sit in a tidy row */
+.dashboard-shell td[data-tv-actions="inline"] {
+  white-space: nowrap;
+}
+
+/* menu: the wrapper of the actions is the dropdown */
+.dashboard-shell .tv-menu {
+  display: inline-flex;
+  position: relative;
+  align-items: center;
+  cursor: pointer;
+  outline: none;
+}
+
+.dashboard-shell .tv-menu:not([data-open])::before {
+  content: "Actions  \25BE";
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 5px 12px;
+  border: 1px solid var(--d-line-strong);
+  background: var(--d-surface);
+  color: var(--d-ink);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dashboard-shell .tv-menu:not([data-open]):hover::before,
+.dashboard-shell .tv-menu:not([data-open]):focus-visible::before {
+  border-color: var(--d-accent);
+  background: var(--d-hover);
+}
+
+.dashboard-shell .tv-menu:not([data-open]) > * {
+  display: none !important;
+}
+
+.dashboard-shell .tv-menu[data-open] {
+  position: fixed;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0 !important;
+  min-width: 188px !important;
+  max-width: 280px !important;
+  padding: 0 0 4px;
+  background: var(--d-surface) !important;
+  border: 1px solid var(--d-line-strong);
+  box-shadow: 0 14px 32px rgb(11 25 44 / 0.2) !important;
+  cursor: default;
+}
+
+.dashboard-shell .tv-menu[data-open]::before {
+  content: "Actions  \25B4";
+  display: block;
+  padding: 9px 14px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--d-line);
+  background: var(--d-head);
+  color: var(--d-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.dashboard-shell .tv-menu[data-open] > *:not(.tv-act) {
+  display: flex !important;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.dashboard-shell .tv-menu[data-open] .tv-act {
+  display: flex !important;
+  flex-direction: row;
+  width: 100%;
+  justify-content: flex-start;
+  margin: 0 !important;
+  padding: 9px 14px !important;
+  border: 0 !important;
+  background: transparent !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  text-align: left;
+}
+
+.dashboard-shell .tv-menu[data-open] .tv-act:hover {
+  background: var(--d-hover) !important;
+}
+
+/* ------------------------------------------------------------------ *
+ * 14. Summary cards: one compact layer, one size everywhere
+ *     Every row of summary cards is a single joined band (no gaps, thin
+ *     dividers). Titles are small and sit on one line; a long title wraps
+ *     to a second line instead of being cut. No charts inside the cards.
+ * ------------------------------------------------------------------ */
+.dashboard-shell :where(div, section, ul):has(> .tv-stat) {
+  gap: 0 !important;
+  row-gap: 0 !important;
+  column-gap: 0 !important;
+  border-top: 1px solid var(--d-line);
+  border-left: 1px solid var(--d-line);
+  background: var(--d-surface);
+}
+
+.dashboard-shell .tv-stat {
+  gap: 4px;
+  justify-content: flex-start;
+  padding: 14px 16px;
+  border: 0;
+  border-right: 1px solid var(--d-line);
+  border-bottom: 1px solid var(--d-line);
+  background: transparent;
+}
+
+.dashboard-shell .tv-stat-head {
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.dashboard-shell .tv-stat-label {
+  min-width: 0;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+  color: var(--d-muted);
+}
+
+.dashboard-shell .tv-stat-icon {
+  width: 26px;
+  height: 26px;
+}
+
+.dashboard-shell .tv-stat-icon .material-symbols-rounded {
+  font-size: 16px !important;
+}
+
+.dashboard-shell .tv-stat-value {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.dashboard-shell .tv-stat-hint,
+.dashboard-shell .tv-stat-hint * {
+  margin: 0;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  line-height: 1.35;
+}
+
+.dashboard-shell a.tv-stat:hover,
+.dashboard-shell button.tv-stat:hover {
+  background: var(--d-hover);
+}

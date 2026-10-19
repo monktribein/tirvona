@@ -1,3 +1,4 @@
+import { Paginated } from "../../../components/shared/Pagination";
 import React, { useState, useEffect, useCallback } from "react";
 import { FileCheck, ShieldAlert, FileText, X, ShieldCheck } from "lucide-react";
 import { useNotifications } from "../../../contexts/NotificationContext";
@@ -128,135 +129,139 @@ export const VerificationQueuePage: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {pendingList.map((a) => (
-            <div
-              key={a._id}
-              className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 shadow-sm space-y-5"
-            >
-              <div className="flex justify-between items-start border-b border-gray-50 dark:border-slate-850 pb-3">
-                <div>
-                  <h3 className="font-bold text-sm text-[#0B192C] dark:text-white">
-                    {a.name}
-                  </h3>
-                  <span className="text-[10px] text-gray-400 font-semibold">
-                    {a.address?.city}, {a.address?.state}
+        <Paginated items={pendingList} pageSize={10}>
+          {(pageItems) => (
+          <div className="space-y-4">
+            {pageItems.map((a) => (
+              <div
+                key={a._id}
+                className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 shadow-sm space-y-5"
+              >
+                <div className="flex justify-between items-start border-b border-gray-50 dark:border-slate-850 pb-3">
+                  <div>
+                    <h3 className="font-bold text-sm text-[#0B192C] dark:text-white">
+                      {a.name}
+                    </h3>
+                    <span className="text-[10px] text-gray-400 font-semibold">
+                      {a.address?.city}, {a.address?.state}
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-bold bg-yellow-50 text-yellow-750 border border-yellow-200 px-2.5 py-0.5 rounded-full capitalize">
+                    {a.status?.replace("_", " ")}
                   </span>
                 </div>
-                <span className="text-[9px] font-bold bg-yellow-50 text-yellow-750 border border-yellow-200 px-2.5 py-0.5 rounded-full capitalize">
-                  {a.status?.replace("_", " ")}
-                </span>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                <div className="space-y-1">
-                  <span className="text-[9px] text-gray-450 block font-bold">
-                    Applicant Owner
-                  </span>
-                  <span className="font-semibold text-secondary dark:text-white">
-                    {a.ownerId?.name} ({a.ownerId?.phone})
-                  </span>
-                  <span className="text-[10px] text-gray-500 block">
-                    {a.ownerId?.govtIdType
-                      ? `${a.ownerId.govtIdType}: ${a.ownerId.govtIdNumberMasked || "document uploaded"}`
-                      : "Owner identity document not available"}
-                  </span>
-                  {a.ownerId?.govtIdUrl && (
-                    <a
-                      href={a.ownerId.govtIdUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-[10px] font-bold text-[#F28C28] hover:underline"
-                    >
-                      View owner identity document
-                    </a>
-                  )}
-                </div>
-
-                <div className="space-y-1 md:col-span-2">
-                  <span className="text-[9px] text-gray-455 block font-bold">
-                    KYC Attachments
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      ["Trust Deed", a.documents?.trustDeedUrl],
-                      [
-                        "Fire Safety Certificate",
-                        a.documents?.fireSafetyCertificateUrl,
-                      ],
-                      ["Land Ownership / Lease", a.documents?.landOwnershipUrl],
-                    ].map(([label, url]) =>
-                      url ? (
-                        <a
-                          key={label}
-                          href={url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center gap-1.5 px-3 py-1 bg-gray-50 dark:bg-slate-900 border border-gray-150 rounded-full text-[10px] font-bold hover:bg-gray-100 transition-colors"
-                        >
-                          <FileText size={12} className="text-orange-500" />{" "}
-                          {label}
-                        </a>
-                      ) : (
-                        <span
-                          key={label}
-                          className="px-3 py-1 bg-red-50 text-red-600 border border-red-100 rounded-full text-[10px] font-bold"
-                        >
-                          Missing: {label}
-                        </span>
-                      ),
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                  <div className="space-y-1">
+                    <span className="text-[9px] text-gray-450 block font-bold">
+                      Applicant Owner
+                    </span>
+                    <span className="font-semibold text-secondary dark:text-white">
+                      {a.ownerId?.name} ({a.ownerId?.phone})
+                    </span>
+                    <span className="text-[10px] text-gray-500 block">
+                      {a.ownerId?.govtIdType
+                        ? `${a.ownerId.govtIdType}: ${a.ownerId.govtIdNumberMasked || "document uploaded"}`
+                        : "Owner identity document not available"}
+                    </span>
+                    {a.ownerId?.govtIdUrl && (
+                      <a
+                        href={a.ownerId.govtIdUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[10px] font-bold text-[#F28C28] hover:underline"
+                      >
+                        View owner identity document
+                      </a>
                     )}
                   </div>
+
+                  <div className="space-y-1 md:col-span-2">
+                    <span className="text-[9px] text-gray-455 block font-bold">
+                      KYC Attachments
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        ["Trust Deed", a.documents?.trustDeedUrl],
+                        [
+                          "Fire Safety Certificate",
+                          a.documents?.fireSafetyCertificateUrl,
+                        ],
+                        ["Land Ownership / Lease", a.documents?.landOwnershipUrl],
+                      ].map(([label, url]) =>
+                        url ? (
+                          <a
+                            key={label}
+                            href={url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1.5 px-3 py-1 bg-gray-50 dark:bg-slate-900 border border-gray-150 rounded-full text-[10px] font-bold hover:bg-gray-100 transition-colors"
+                          >
+                            <FileText size={12} className="text-orange-500" />{" "}
+                            {label}
+                          </a>
+                        ) : (
+                          <span
+                            key={label}
+                            className="px-3 py-1 bg-red-50 text-red-600 border border-red-100 rounded-full text-[10px] font-bold"
+                          >
+                            Missing: {label}
+                          </span>
+                        ),
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-gray-50 dark:border-slate-850 flex justify-end gap-3">
+                  {a.status === "pending_docs" && (
+                    <button
+                      onClick={() => {
+                        setSchedulingAshramId(a._id);
+                        setInspectionDate("");
+                      }}
+                      className="px-4 py-2 bg-[#F28C28]/10 text-[#F28C28] border border-[#F28C28]/20 hover:bg-[#F28C28]/15 rounded-full text-[10px] font-bold cursor-pointer"
+                    >
+                      Schedule Inspection
+                    </button>
+                  )}
+                  {canMakeFinalDecision && (
+                    <button
+                      onClick={() => {
+                        setActionAshramId(a._id);
+                        setTargetStatus("rejected");
+                        setComments("");
+                      }}
+                      className="px-4 py-2 bg-danger/10 text-danger border border-danger/20 hover:bg-danger/15 rounded-full text-[10px] font-bold cursor-pointer"
+                    >
+                      Reject
+                    </button>
+                  )}
+                  {canMakeFinalDecision && a.status === "pending_inspection" && (
+                    <button
+                      onClick={() => {
+                        setActionAshramId(a._id);
+                        setTargetStatus("approved");
+                        setComments("");
+                      }}
+                      className="px-4 py-2 bg-[#F28C28]/10 text-[#F28C28] border border-[#F28C28]/20 hover:bg-[#F28C28]/15 rounded-full text-[10px] font-bold cursor-pointer"
+                    >
+                      Verify Approve
+                    </button>
+                  )}
                 </div>
               </div>
-
-              <div className="pt-3 border-t border-gray-50 dark:border-slate-850 flex justify-end gap-3">
-                {a.status === "pending_docs" && (
-                  <button
-                    onClick={() => {
-                      setSchedulingAshramId(a._id);
-                      setInspectionDate("");
-                    }}
-                    className="px-4 py-2 bg-[#F28C28]/10 text-[#F28C28] border border-[#F28C28]/20 hover:bg-[#F28C28]/15 rounded-full text-[10px] font-bold cursor-pointer"
-                  >
-                    Schedule Inspection
-                  </button>
-                )}
-                {canMakeFinalDecision && (
-                  <button
-                    onClick={() => {
-                      setActionAshramId(a._id);
-                      setTargetStatus("rejected");
-                      setComments("");
-                    }}
-                    className="px-4 py-2 bg-danger/10 text-danger border border-danger/20 hover:bg-danger/15 rounded-full text-[10px] font-bold cursor-pointer"
-                  >
-                    Reject
-                  </button>
-                )}
-                {canMakeFinalDecision && a.status === "pending_inspection" && (
-                  <button
-                    onClick={() => {
-                      setActionAshramId(a._id);
-                      setTargetStatus("approved");
-                      setComments("");
-                    }}
-                    className="px-4 py-2 bg-[#F28C28]/10 text-[#F28C28] border border-[#F28C28]/20 hover:bg-[#F28C28]/15 rounded-full text-[10px] font-bold cursor-pointer"
-                  >
-                    Verify Approve
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+          )}
+        </Paginated>
       )}
 
       {actionAshramId && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="tv-drawer-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
             onSubmit={handleDecision}
-            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 text-left shadow-xl"
+            className="tv-drawer-panel bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 text-left shadow-xl"
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <h3 className="font-bold text-sm text-[#0B192C] dark:text-white flex items-center gap-1.5">
@@ -308,10 +313,10 @@ export const VerificationQueuePage: React.FC = () => {
       )}
 
       {schedulingAshramId && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="tv-drawer-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
             onSubmit={handleSchedule}
-            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 text-left shadow-xl"
+            className="tv-drawer-panel bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 text-left shadow-xl"
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <h3 className="font-bold text-sm text-[#0B192C] dark:text-white">

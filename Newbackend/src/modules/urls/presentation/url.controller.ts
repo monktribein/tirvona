@@ -18,7 +18,7 @@ export class UrlController {
    * the new slug URL. Anything unknown gets a 404, never a bounce to "/".
    */
   @Public()
-  @Get("resolve/*")
+  @Get("resolve/{*path}")
   async resolveLegacy(
     @Req() request: Request,
     @Res() response: Response,

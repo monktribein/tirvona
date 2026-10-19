@@ -1,3 +1,4 @@
+import { Paginated } from "../components/shared/Pagination";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -802,150 +803,154 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredStays.map((stay) => {
-                const isAvailable = checkAshramBookingAvailable(stay);
-                const price = stay.calculatedPrice;
-                const primaryImage =
-                  (Array.isArray(stay.images) && stay.images[0]) ||
-                  stay.coverImage ||
-                  stay.thumbnail ||
-                  "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800&q=80";
+            <Paginated items={filteredStays} pageSize={9} resetKey={filteredStays.length}>
+              {(pageItems) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {pageItems.map((stay) => {
+                  const isAvailable = checkAshramBookingAvailable(stay);
+                  const price = stay.calculatedPrice;
+                  const primaryImage =
+                    (Array.isArray(stay.images) && stay.images[0]) ||
+                    stay.coverImage ||
+                    stay.thumbnail ||
+                    "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800&q=80";
 
-                const addressText =
-                  stay.address?.street || stay.address?.area || "Vrindavan";
+                  const addressText =
+                    stay.address?.street || stay.address?.area || "Vrindavan";
 
-                return (
-                  <article
-                    key={stay._id || stay.slug}
-                    onClick={() => handleNavigateDetails(stay)}
-                    className="bg-white dark:bg-[#0B192C] border border-slate-200/90 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between group cursor-pointer"
-                  >
-                    <div>
-                      {/* Image Header with Price & Badge */}
-                      <div className="relative aspect-[16/10] bg-slate-100 dark:bg-slate-900 overflow-hidden">
-                        <img
-                          src={primaryImage}
-                          alt={stay.name}
-                          loading="lazy"
-                          className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${
-                            !isAvailable ? "grayscale-[20%]" : ""
-                          }`}
-                          onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src =
-                              "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800&q=80";
+                  return (
+                    <article
+                      key={stay._id || stay.slug}
+                      onClick={() => handleNavigateDetails(stay)}
+                      className="bg-white dark:bg-[#0B192C] border border-slate-200/90 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between group cursor-pointer"
+                    >
+                      <div>
+                        {/* Image Header with Price & Badge */}
+                        <div className="relative aspect-[16/10] bg-slate-100 dark:bg-slate-900 overflow-hidden">
+                          <img
+                            src={primaryImage}
+                            alt={stay.name}
+                            loading="lazy"
+                            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${
+                              !isAvailable ? "grayscale-[20%]" : ""
+                            }`}
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src =
+                                "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800&q=80";
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
+
+                          {!isAvailable && (
+                            <div className="absolute top-3 left-3 bg-rose-600 text-white px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-md z-10">
+                              Not Available
+                            </div>
+                          )}
+
+                          {/* Top-Right Badge: Legitimate Tirvona Trusted */}
+                          {stay.isVerified && (
+                            <div className="absolute top-3 right-3 bg-white/95 dark:bg-slate-900/90 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-black text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 flex items-center gap-1 shadow-sm">
+                              <ShieldCheck size={12} className="text-emerald-600" />
+                              <span>Tirvona Trusted</span>
+                            </div>
+                          )}
+
+                          {/* Bottom-Left Pill: Price */}
+                          <div className="absolute bottom-3 left-3 bg-black/80 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-black shadow-md border border-white/10 flex items-center gap-1">
+                            <span className="text-[10px] font-normal text-slate-300">
+                              From
+                            </span>
+                            <span className="text-amber-300">
+                              {price > 0
+                                ? formatCurrency(price, currency)
+                                : "₹450"}
+                            </span>
+                            <span className="text-[9px] font-normal text-slate-400">
+                              /night
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Card Content Details */}
+                        <div className="p-5 space-y-3">
+                          {/* Title & Proximity */}
+                          <div>
+                            <h3 className="font-black text-base sm:text-lg text-slate-900 dark:text-white leading-snug group-hover:text-[#F28C28] dark:group-hover:text-[#E58C28] transition-colors line-clamp-1">
+                              {stay.name}
+                            </h3>
+                            <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-1">
+                              <MapPin
+                                size={13}
+                                className="text-[#E58C28] shrink-0"
+                              />
+                              <span className="truncate">{stay.displayDistance}</span>
+                              <span className="text-slate-300 dark:text-slate-600">
+                                •
+                              </span>
+                              <span className="truncate text-slate-400">
+                                {addressText}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Key Amenities */}
+                          <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                            {stay.hasAc && (
+                              <span className="px-2 py-0.5 rounded-md bg-[#FFF4E5]/40 text-[#F28C28] dark:text-amber-300 text-[10px] font-bold">
+                                AC
+                              </span>
+                            )}
+                            {stay.hasParking && (
+                              <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold flex items-center gap-1">
+                                <Car size={10} /> Parking
+                              </span>
+                            )}
+                            {stay.hasAttachedBath && (
+                              <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-bold">
+                                Attached Bath
+                              </span>
+                            )}
+                            <span className="px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-[10px] font-bold">
+                              Pure Satvik
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Card Action Buttons */}
+                      <div className="p-4 pt-0 grid grid-cols-2 gap-2 border-t border-slate-100 dark:border-slate-800/80 mt-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleNavigateDetails(stay);
                           }}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
-
-                        {!isAvailable && (
-                          <div className="absolute top-3 left-3 bg-rose-600 text-white px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-md z-10">
-                            Not Available
-                          </div>
-                        )}
-
-                        {/* Top-Right Badge: Legitimate Tirvona Trusted */}
-                        {stay.isVerified && (
-                          <div className="absolute top-3 right-3 bg-white/95 dark:bg-slate-900/90 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-black text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 flex items-center gap-1 shadow-sm">
-                            <ShieldCheck size={12} className="text-emerald-600" />
-                            <span>Tirvona Trusted</span>
-                          </div>
-                        )}
-
-                        {/* Bottom-Left Pill: Price */}
-                        <div className="absolute bottom-3 left-3 bg-black/80 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-black shadow-md border border-white/10 flex items-center gap-1">
-                          <span className="text-[10px] font-normal text-slate-300">
-                            From
-                          </span>
-                          <span className="text-amber-300">
-                            {price > 0
-                              ? formatCurrency(price, currency)
-                              : "₹450"}
-                          </span>
-                          <span className="text-[9px] font-normal text-slate-400">
-                            /night
-                          </span>
-                        </div>
+                          className="w-full py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-extrabold text-xs transition-colors cursor-pointer text-center"
+                        >
+                          View Stay
+                        </button>
+                        <button
+                          type="button"
+                          disabled={!isAvailable}
+                          onClick={(e) => {
+                            if (isAvailable) handleNavigateBooking(stay, e);
+                          }}
+                          className={`w-full py-2 px-3 rounded-xl font-black text-xs transition-colors text-center shadow-xs ${
+                            !isAvailable
+                              ? "bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed"
+                              : "bg-[#F28C28] hover:bg-[#D97706] text-white cursor-pointer"
+                          }`}
+                        >
+                          {isAvailable ? "Book Now" : "Not Available"}
+                        </button>
                       </div>
-
-                      {/* Card Content Details */}
-                      <div className="p-5 space-y-3">
-                        {/* Title & Proximity */}
-                        <div>
-                          <h3 className="font-black text-base sm:text-lg text-slate-900 dark:text-white leading-snug group-hover:text-[#F28C28] dark:group-hover:text-[#E58C28] transition-colors line-clamp-1">
-                            {stay.name}
-                          </h3>
-                          <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-1">
-                            <MapPin
-                              size={13}
-                              className="text-[#E58C28] shrink-0"
-                            />
-                            <span className="truncate">{stay.displayDistance}</span>
-                            <span className="text-slate-300 dark:text-slate-600">
-                              •
-                            </span>
-                            <span className="truncate text-slate-400">
-                              {addressText}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Key Amenities */}
-                        <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                          {stay.hasAc && (
-                            <span className="px-2 py-0.5 rounded-md bg-[#FFF4E5]/40 text-[#F28C28] dark:text-amber-300 text-[10px] font-bold">
-                              AC
-                            </span>
-                          )}
-                          {stay.hasParking && (
-                            <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold flex items-center gap-1">
-                              <Car size={10} /> Parking
-                            </span>
-                          )}
-                          {stay.hasAttachedBath && (
-                            <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-bold">
-                              Attached Bath
-                            </span>
-                          )}
-                          <span className="px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-[10px] font-bold">
-                            Pure Satvik
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Card Action Buttons */}
-                    <div className="p-4 pt-0 grid grid-cols-2 gap-2 border-t border-slate-100 dark:border-slate-800/80 mt-2">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleNavigateDetails(stay);
-                        }}
-                        className="w-full py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-extrabold text-xs transition-colors cursor-pointer text-center"
-                      >
-                        View Stay
-                      </button>
-                      <button
-                        type="button"
-                        disabled={!isAvailable}
-                        onClick={(e) => {
-                          if (isAvailable) handleNavigateBooking(stay, e);
-                        }}
-                        className={`w-full py-2 px-3 rounded-xl font-black text-xs transition-colors text-center shadow-xs ${
-                          !isAvailable
-                            ? "bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed"
-                            : "bg-[#F28C28] hover:bg-[#D97706] text-white cursor-pointer"
-                        }`}
-                      >
-                        {isAvailable ? "Book Now" : "Not Available"}
-                      </button>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
+                    </article>
+                  );
+                })}
+              </div>
+              )}
+            </Paginated>
           )}
         </section>
 
@@ -1001,8 +1006,7 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
                             "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=400&q=80"
                           }
                           alt={item.name}
-                          className="w-16 h-16 rounded-lg object-cover group-hover:scale-105 transition-transform shrink-0"
-                        />
+                          className="w-16 h-16 rounded-lg object-cover group-hover:scale-105 transition-transform shrink-0" loading="lazy" decoding="async" />
                         <div className="min-w-0 flex-1">
                           <h4 className="font-extrabold text-sm text-slate-900 dark:text-white truncate group-hover:text-[#F28C28] transition-colors">
                             {item.name}
@@ -1111,8 +1115,7 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
               <img
                 src={config.targetTemple.image}
                 alt={config.targetTemple.name}
-                className="w-full h-full object-cover"
-              />
+                className="w-full h-full object-cover" loading="lazy" decoding="async" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none" />
               <div className="absolute bottom-3 left-3 text-white">
                 <span className="text-[9px] font-black uppercase tracking-widest text-amber-300 block">

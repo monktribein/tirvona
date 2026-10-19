@@ -1557,10 +1557,14 @@ export const HomePage: React.FC = () => {
               return (
                 <div
                   onClick={() => navigate(targetUrl)}
-                  className="shrink-0 w-[280px] sm:w-[320px] bg-white dark:bg-[#0B192C] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between border border-gray-100 dark:border-slate-800 group hover:-translate-y-1 cursor-pointer h-full"
+                  className="flex-shrink-0 relative group cursor-pointer"
+                  style={{ width: "clamp(200px, 48vw, 220px)" }}
                 >
-                  <div className="flex flex-col flex-1">
-                    <div className="h-44 sm:h-48 overflow-hidden bg-slate-900 relative shrink-0">
+                  <div className="w-full bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col hover:-translate-y-1">
+                    <div
+                      className="relative overflow-hidden bg-slate-900"
+                      style={{ height: "clamp(170px, 40vw, 190px)" }}
+                    >
                       <img
                         src={item.coverImage}
                         alt={item.title}
@@ -1574,55 +1578,53 @@ export const HomePage: React.FC = () => {
                       />
                       {isVideo && (
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                          <div className="w-12 h-12 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
-                            <Play size={20} className="fill-white ml-1" />
+                          <div className="w-10 h-10 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
+                            <Play size={18} className="fill-white ml-0.5" />
                           </div>
                         </div>
                       )}
                     </div>
-                    <div className="p-5 space-y-2.5 flex-1 flex flex-col justify-between">
-                      <div className="flex items-center gap-4 text-[11px] font-bold text-gray-400">
-                        <span className="flex items-center gap-1.5">
-                          <Calendar size={13} className="text-[#F28C28]" />{" "}
+                    <div className="p-4 flex flex-col gap-2">
+                      <div className="flex items-center gap-3 text-[10px] font-bold text-gray-400">
+                        <span className="flex items-center gap-1">
+                          <Calendar size={11} className="text-[#F28C28]" />{" "}
                           {new Date(item.createdAt).toLocaleDateString("en-IN", {
                             day: "numeric",
                             month: "short",
                             year: "numeric",
                           })}
                         </span>
-                        <span className="flex items-center gap-1.5">
-                          <BookOpen size={13} className="text-[#F28C28]" />{" "}
-                          {item.views} Views
+                        <span className="flex items-center gap-1">
+                          <BookOpen size={11} className="text-[#F28C28]" />{" "}
+                          {item.views}
                         </span>
                       </div>
-                      <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-snug line-clamp-2 h-11 sm:h-12 flex items-start group-hover:text-[#F28C28] transition-colors">
+                      <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white leading-snug line-clamp-2 h-10 group-hover:text-[#F28C28] transition-colors">
                         {item.title}
                       </h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed h-9 overflow-hidden">
-                        {item.excerpt}
-                      </p>
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100 dark:border-slate-800/60">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <img
+                            src={author.photo || author.avatar || item.coverImage}
+                            alt={author.name || "Author"}
+                            className="w-6 h-6 rounded-full object-cover border border-[#F28C28] shrink-0"
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src =
+                                "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
+                            }} loading="lazy" decoding="async" />
+                          <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300 truncate">
+                            {author.name || "Tirvona Editorial"}
+                          </span>
+                        </div>
+                        <span
+                          aria-label={isVideo ? "Watch video" : "Read article"}
+                          className="w-7 h-7 bg-[#F0F5FC] dark:bg-blue-950/40 text-gray-700 dark:text-amber-300 group-hover:bg-[#F28C28] group-hover:text-white rounded-full flex items-center justify-center transition-colors shrink-0"
+                        >
+                          <ArrowRight size={12} />
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="px-5 py-3 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/60 mt-auto shrink-0 h-16">
-                    <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
-                      <img
-                        src={author.photo || author.avatar || item.coverImage}
-                        alt={author.name || "Author"}
-                        className="w-7 h-7 rounded-full object-cover border border-[#F28C28] shrink-0"
-                        onError={(e) => {
-                          e.currentTarget.onerror = null;
-                          e.currentTarget.src =
-                            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
-                        }}
-                      />
-                      <span className="text-xs font-bold text-gray-600 dark:text-gray-300 truncate">
-                        {author.name || "Tirvona Editorial"}
-                      </span>
-                    </div>
-                    <button className="px-3.5 py-1.5 bg-[#F0F5FC] dark:bg-blue-950/40 text-gray-700 dark:text-amber-300 group-hover:bg-[#F28C28] group-hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0">
-                      <span>{isVideo ? "Watch Video" : "Read Article"}</span>
-                      <ArrowRight size={12} />
-                    </button>
                   </div>
                 </div>
               );
@@ -1658,9 +1660,9 @@ export const HomePage: React.FC = () => {
               renderItem={(fb: any, idx: number) => (
                 <div
                   className="flex-shrink-0 relative group cursor-pointer"
-                  style={{ width: "clamp(240px, 50vw, 280px)" }}
+                  style={{ width: "clamp(200px, 48vw, 220px)" }}
                 >
-                  <div className="w-full bg-white dark:bg-[#0B192C] rounded-[28px] overflow-hidden border border-gray-100 dark:border-slate-800 shadow-md hover:shadow-2xl transition-all duration-500 flex flex-col hover:-translate-y-1.5 h-[340px] sm:h-[380px] relative">
+                  <div className="w-full bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col hover:-translate-y-1 h-[300px] relative">
                     {fb.img ? (
                       <img
                         src={fb.img}
@@ -1672,7 +1674,7 @@ export const HomePage: React.FC = () => {
 
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
-                    <div className="absolute inset-0 p-5 flex flex-col justify-between text-white z-10">
+                    <div className="absolute inset-0 p-4 flex flex-col justify-between text-white z-10">
                       <div className="flex items-center gap-1 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full w-fit mx-auto text-[#FFD700] text-xs font-bold border border-white/20 shadow-xs">
                         {[...Array(fb.rating)].map((_, i) => (
                           <Star
@@ -1687,20 +1689,21 @@ export const HomePage: React.FC = () => {
                       </div>
 
                       <div className="space-y-3">
-                        <p className="text-xs text-gray-100 font-medium leading-relaxed italic line-clamp-4 min-h-[4.5rem] drop-shadow-xs">
+                        <p className="text-[11px] text-gray-100 font-medium leading-relaxed italic line-clamp-3 min-h-[3.4rem] drop-shadow-xs">
                           "{fb.comment}"
                         </p>
 
-                        <div className="pt-3 border-t border-white/20 flex items-center justify-between gap-2">
+                        <div className="pt-2.5 border-t border-white/20 flex items-center justify-between gap-2">
                           <div className="min-w-0">
-                            <h4 className="font-extrabold text-sm text-white leading-none truncate flex items-center gap-1.5">
-                              {fb.reviewer}
+                            <h4 className="font-extrabold text-sm text-white leading-none flex items-center gap-1.5 min-w-0">
+                              <span className="truncate">{fb.reviewer}</span>
                               {fb.verifiedStay && (
                                 <span
-                                  title="Stayed at this stay"
-                                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-500/25 border border-emerald-400/40 text-emerald-200 text-[9px] font-black shrink-0"
+                                  title="Verified stay"
+                                  aria-label="Verified stay"
+                                  className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-emerald-500/25 border border-emerald-400/40 text-emerald-200 shrink-0"
                                 >
-                                  <CheckCircle size={9} /> Verified stay
+                                  <CheckCircle size={9} />
                                 </span>
                               )}
                             </h4>

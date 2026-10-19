@@ -89,7 +89,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
       {currentUrl && status !== "uploading" && (
         /\.(jpe?g|png|webp|gif|svg|avif|heic)($|\?)/i.test(currentUrl) ? (
           <a href={currentUrl} target="_blank" rel="noreferrer" className="inline-flex flex-col gap-1 rounded-xl border border-gray-200 p-1.5">
-            <img src={currentUrl} alt="Uploaded file" className="h-20 w-28 rounded-lg object-cover" />
+            <img src={currentUrl} alt="Uploaded file" className="h-20 w-28 rounded-lg object-cover" loading="lazy" decoding="async" />
             <span className="inline-flex items-center justify-center gap-1 text-[10px] font-bold text-[#F28C28]"><ExternalLink size={10} /> Open image</span>
           </a>
         ) : (

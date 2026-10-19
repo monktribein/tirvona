@@ -744,7 +744,7 @@ export default function AddEditTemplePage() {
   );
 
   return (
-    <div className="p-6 max-w-7xl mx-auto pb-24">
+    <div className="pb-24">
       <EnterprisePageHeader
         title={isEdit ? `Edit Temple: ${formData.name}` : "Add New Temple"}
         subtitle="Manage complete temple information, history, timings and media."

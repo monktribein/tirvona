@@ -41,9 +41,14 @@ export class FcmService implements OnModuleInit {
     const clientEmail = this.config.get<string>("firebaseClientEmail");
     const privateKey = this.config.get<string>("firebasePrivateKey");
     if (!projectId || !clientEmail || !privateKey) {
-      this.logger.warn(
-        JSON.stringify({ event: "fcm.disabled", reason: "credentials_missing" }),
-      );
+      // A warning in production (push is off for every user); on a developer
+      // machine missing Firebase credentials is the normal setup.
+      const line = JSON.stringify({
+        event: "fcm.disabled",
+        reason: "credentials_missing",
+      });
+      if (process.env.NODE_ENV === "production") this.logger.warn(line);
+      else this.logger.log(line);
       return;
     }
     this.app = admin.apps.length

@@ -1,3 +1,4 @@
+import { Paginated } from "../../../components/shared/Pagination";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -390,21 +391,25 @@ export const ParkingHubPage: React.FC = () => {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                {results.map((parking, index) => (
-                  <motion.div
-                    key={parking._id}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{
-                      duration: 0.3,
-                      delay: Math.min(index * 0.04, 0.4),
-                    }}
-                  >
-                    <ParkingCard parking={parking} query={detailQuery} />
-                  </motion.div>
-                ))}
-              </div>
+              <Paginated items={results} pageSize={12}>
+                {(pageItems) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {pageItems.map((parking, index) => (
+                    <motion.div
+                      key={parking._id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{
+                        duration: 0.3,
+                        delay: Math.min(index * 0.04, 0.4),
+                      }}
+                    >
+                      <ParkingCard parking={parking} query={detailQuery} />
+                    </motion.div>
+                  ))}
+                </div>
+                )}
+              </Paginated>
             )}
           </div>
         </div>

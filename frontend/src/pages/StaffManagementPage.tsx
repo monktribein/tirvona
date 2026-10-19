@@ -1,3 +1,4 @@
+import { Paginated } from "../components/shared/Pagination";
 import React, { useState, useEffect } from "react";
 import { Users, Plus, X, Trash2, ShieldCheck } from "lucide-react";
 import { userService, ashramService } from "../services";
@@ -171,74 +172,78 @@ export const StaffManagementPage: React.FC = () => {
         </div>
       ) : (
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-gray-50 dark:border-slate-850 bg-gray-50 dark:bg-slate-900 text-gray-400 font-bold text-[10px] tracking-wider">
-                  <th className="py-4 px-6">Name</th>
-                  <th className="py-4 px-6">Contact</th>
-                  <th className="py-4 px-6">Role</th>
-                  <th className="py-4 px-6">Stay</th>
-                  <th className="py-4 px-6">Status</th>
-                  <th className="py-4 px-6 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {staff.map((s) => (
-                  <tr
-                    key={s._id}
-                    className="border-b border-gray-50 dark:border-slate-850 hover:bg-gray-50/20"
-                  >
-                    <td className="py-4 px-6 font-bold text-[#0B192C] dark:text-white">
-                      {s.name}
-                    </td>
-                    <td className="py-4 px-6 text-gray-500">
-                      <div className="flex flex-col">
-                        <span>{s.email}</span>
-                        <span className="text-[10px] text-gray-400">
-                          {s.phone}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-6">
-                      <span className="px-2.5 py-0.5 bg-[#F28C28]/10 text-[#F28C28] rounded-full text-[9px] font-bold">
-                        {ROLE_LABELS[s.role] || s.role}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-gray-500">
-                      {s.employerAshramId?.name || "—"}
-                    </td>
-                    <td className="py-4 px-6">
-                      <span
-                        className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold ${s.status === "active" ? "bg-success/10 text-success" : "bg-danger/10 text-danger"}`}
-                      >
-                        {s.status}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-right">
-                      {s.status === "active" && (
-                        <button
-                          onClick={() => handleRemove(s._id)}
-                          className="p-1.5 rounded-lg text-danger hover:bg-danger/10 transition-colors cursor-pointer"
-                          title="Deactivate"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      )}
-                    </td>
+          <Paginated items={staff} pageSize={15}>
+            {(pageItems) => (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-50 dark:border-slate-850 bg-gray-50 dark:bg-slate-900 text-gray-400 font-bold text-[10px] tracking-wider">
+                    <th className="py-4 px-6">Name</th>
+                    <th className="py-4 px-6">Contact</th>
+                    <th className="py-4 px-6">Role</th>
+                    <th className="py-4 px-6">Stay</th>
+                    <th className="py-4 px-6">Status</th>
+                    <th className="py-4 px-6 text-right">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {pageItems.map((s) => (
+                    <tr
+                      key={s._id}
+                      className="border-b border-gray-50 dark:border-slate-850 hover:bg-gray-50/20"
+                    >
+                      <td className="py-4 px-6 font-bold text-[#0B192C] dark:text-white">
+                        {s.name}
+                      </td>
+                      <td className="py-4 px-6 text-gray-500">
+                        <div className="flex flex-col">
+                          <span>{s.email}</span>
+                          <span className="text-[10px] text-gray-400">
+                            {s.phone}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className="px-2.5 py-0.5 bg-[#F28C28]/10 text-[#F28C28] rounded-full text-[9px] font-bold">
+                          {ROLE_LABELS[s.role] || s.role}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-gray-500">
+                        {s.employerAshramId?.name || "—"}
+                      </td>
+                      <td className="py-4 px-6">
+                        <span
+                          className={`tv-status-badge px-2.5 py-0.5 rounded-full text-[9px] font-bold ${s.status === "active" ? "bg-success/10 text-success" : "bg-danger/10 text-danger"}`}
+                        >
+                          {s.status}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-right">
+                        {s.status === "active" && (
+                          <button
+                            onClick={() => handleRemove(s._id)}
+                            className="p-1.5 rounded-lg text-danger hover:bg-danger/10 transition-colors cursor-pointer"
+                            title="Deactivate"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            )}
+          </Paginated>
         </div>
       )}
 
       {showCreate && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="tv-drawer-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
             onSubmit={handleCreate}
-            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-4xl w-full rounded-[28px] p-6 sm:p-8 space-y-5 max-h-[88vh] overflow-y-auto text-left"
+            className="tv-drawer-panel bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-4xl w-full rounded-[28px] p-6 sm:p-8 space-y-5 max-h-[88vh] overflow-y-auto text-left"
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white flex items-center gap-1.5">

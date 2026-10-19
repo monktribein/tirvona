@@ -1,3 +1,4 @@
+import { Paginated } from "../../components/shared/Pagination";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { ashramService } from "../../services";
 import { useNotifications } from "../../contexts/NotificationContext";
@@ -480,103 +481,107 @@ export const OwnerAddOnsPage: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {addOns.map((item) => {
-            const isBed = isBedItem(item);
-            return (
-              <div
-                key={item._id}
-                className={`bg-white dark:bg-[#0B192C] border rounded-[24px] p-5 shadow-sm space-y-4 transition-all relative ${
-                  isBed
-                    ? "border-blue-200 dark:border-blue-900/50 ring-1 ring-blue-100 dark:ring-blue-950"
-                    : item.enabled
-                      ? "border-gray-100 dark:border-slate-800"
-                      : "border-gray-200 dark:border-slate-800 opacity-60"
-                }`}
-              >
-                <div className="flex justify-between items-start gap-2">
-                  <div className="flex items-start gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-[#FFF4E5]/60 flex items-center justify-center shrink-0">
-                      {getItemIcon(item)}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white leading-tight">
-                          {item.name}
-                        </h3>
-                        {isBed && (
-                          <span className="text-[8px] font-black uppercase px-1.5 py-0.2 rounded bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">
-                            Bed Category
+        <Paginated items={addOns} pageSize={10}>
+          {(pageItems) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {pageItems.map((item) => {
+              const isBed = isBedItem(item);
+              return (
+                <div
+                  key={item._id}
+                  className={`bg-white dark:bg-[#0B192C] border rounded-[24px] p-5 shadow-sm space-y-4 transition-all relative ${
+                    isBed
+                      ? "border-blue-200 dark:border-blue-900/50 ring-1 ring-blue-100 dark:ring-blue-950"
+                      : item.enabled
+                        ? "border-gray-100 dark:border-slate-800"
+                        : "border-gray-200 dark:border-slate-800 opacity-60"
+                  }`}
+                >
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex items-start gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-[#FFF4E5]/60 flex items-center justify-center shrink-0">
+                        {getItemIcon(item)}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white leading-tight">
+                            {item.name}
+                          </h3>
+                          {isBed && (
+                            <span className="text-[8px] font-black uppercase px-1.5 py-0.2 rounded bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">
+                              Bed Category
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] font-extrabold text-[#F28C28] bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-md mt-1 inline-block">
+                          {formatCurrency(item.price)} / {item.unitLabel || "Unit"}
+                        </span>
+                        {isAllSelected && item.ashramName && (
+                          <span className="mt-1 flex items-center gap-1 text-[9px] font-bold text-gray-400">
+                            <Building2 size={10} /> {item.ashramName}
                           </span>
                         )}
                       </div>
-                      <span className="text-[10px] font-extrabold text-[#F28C28] bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-md mt-1 inline-block">
-                        {formatCurrency(item.price)} / {item.unitLabel || "Unit"}
-                      </span>
-                      {isAllSelected && item.ashramName && (
-                        <span className="mt-1 flex items-center gap-1 text-[9px] font-bold text-gray-400">
-                          <Building2 size={10} /> {item.ashramName}
-                        </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleToggleEnable(item)}
+                      title={item.enabled ? "Click to Disable" : "Click to Enable"}
+                      className="text-gray-400 hover:text-[#F28C28] transition-colors cursor-pointer"
+                    >
+                      {item.enabled ? (
+                        <ToggleRight size={26} className="text-emerald-500" />
+                      ) : (
+                        <ToggleLeft
+                          size={26}
+                          className="text-gray-300 dark:text-slate-600"
+                        />
+                      )}
+                    </button>
+                  </div>
+
+                  {item.description && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2">
+                      {item.description}
+                    </p>
+                  )}
+
+                  <div className="pt-3 border-t border-gray-50 dark:border-slate-850 flex justify-between items-center text-[10px] text-gray-400 font-bold">
+                    <span>Max Limit: {item.maxQuantity} per booking</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditModal(item)}
+                        className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-gray-600 dark:text-gray-300 transition-all cursor-pointer"
+                        title="Edit Service & Rate"
+                      >
+                        <Edit3 size={14} />
+                      </button>
+                      {item._id && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteService(item)}
+                          className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg text-rose-500 transition-all cursor-pointer"
+                          title="Delete Service"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       )}
                     </div>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleToggleEnable(item)}
-                    title={item.enabled ? "Click to Disable" : "Click to Enable"}
-                    className="text-gray-400 hover:text-[#F28C28] transition-colors cursor-pointer"
-                  >
-                    {item.enabled ? (
-                      <ToggleRight size={26} className="text-emerald-500" />
-                    ) : (
-                      <ToggleLeft
-                        size={26}
-                        className="text-gray-300 dark:text-slate-600"
-                      />
-                    )}
-                  </button>
                 </div>
-
-                {item.description && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2">
-                    {item.description}
-                  </p>
-                )}
-
-                <div className="pt-3 border-t border-gray-50 dark:border-slate-850 flex justify-between items-center text-[10px] text-gray-400 font-bold">
-                  <span>Max Limit: {item.maxQuantity} per booking</span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleOpenEditModal(item)}
-                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-gray-600 dark:text-gray-300 transition-all cursor-pointer"
-                      title="Edit Service & Rate"
-                    >
-                      <Edit3 size={14} />
-                    </button>
-                    {item._id && (
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteService(item)}
-                        className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg text-rose-500 transition-all cursor-pointer"
-                        title="Delete Service"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+          )}
+        </Paginated>
       )}
 
       {/* Add / Edit Service Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100] overflow-y-auto">
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-5 text-left my-auto relative z-[101]">
+        <div className="tv-drawer-overlay fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100] overflow-y-auto">
+          <div className="tv-drawer-panel bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-5 text-left my-auto relative z-[101]">
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <div>
                 <h3 className="font-black text-base text-[#0B192C] dark:text-white flex items-center gap-2">

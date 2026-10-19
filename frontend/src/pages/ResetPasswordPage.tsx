@@ -102,8 +102,7 @@ export const ResetPasswordPage: React.FC = () => {
         className="absolute inset-0 w-full h-full object-cover"
         onError={(e) => {
           e.currentTarget.style.display = "none";
-        }}
-      />
+        }} loading="lazy" decoding="async" />
       <div className="absolute inset-0 bg-gradient-to-r from-[#0B192C]/90 via-[#0B192C]/60 to-[#F28C28]/25" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen flex items-center justify-center pt-36 lg:pt-40 pb-16">
@@ -113,8 +112,7 @@ export const ResetPasswordPage: React.FC = () => {
               <img
                 src="/logo/logo.png"
                 alt="Tirvona"
-                className="w-14 h-14 object-contain inline-block"
-              />
+                className="w-14 h-14 object-contain inline-block" loading="lazy" decoding="async" />
               <h2 className="text-2xl font-black text-[#0B192C] dark:text-white flex items-center justify-center gap-1.5">
                 Set New Password{" "}
                 <ShieldCheck size={20} className="text-[#F28C28]" />

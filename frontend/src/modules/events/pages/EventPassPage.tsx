@@ -203,8 +203,7 @@ export const EventPassPage: React.FC = () => {
           <img
             src={pass.image}
             alt="Event entry pass QR code"
-            className="mx-auto mt-2 h-56 w-56 rounded-[24px] border border-gray-100 dark:border-slate-800 bg-white p-2"
-          />
+            className="mx-auto mt-2 h-56 w-56 rounded-[24px] border border-gray-100 dark:border-slate-800 bg-white p-2" loading="lazy" decoding="async" />
 
           <div className="pt-1">
             <p className="text-[9px] tracking-wider font-bold text-gray-400">

@@ -1,3 +1,4 @@
+import { Paginated } from "../components/shared/Pagination";
 import React, { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Search, Users } from "lucide-react";
 import { bookingService } from "../services";
@@ -182,25 +183,29 @@ export const OwnerGuestsPage: React.FC = () => {
         </div>
       ) : (
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead className="bg-gray-50 dark:bg-slate-900 text-gray-400 text-[10px] tracking-wider">
-                <tr><th className="py-4 px-6">Guest</th><th className="py-4 px-6">Contact</th><th className="py-4 px-6">Stay</th><th className="py-4 px-6">Reservations</th><th className="py-4 px-6">Latest Stay</th><th className="py-4 px-6">Status</th></tr>
-              </thead>
-              <tbody>
-                {guests.map((guest) => (
-                  <tr key={guest.id} className="border-t border-gray-50 dark:border-slate-800 hover:bg-gray-50/30">
-                    <td className="py-4 px-6 font-bold text-[#0B192C] dark:text-white">{guest.name}</td>
-                    <td className="py-4 px-6 text-gray-500"><div>{guest.email || "—"}</div><div className="text-[10px] text-gray-400">{guest.phone || "—"}</div></td>
-                    <td className="py-4 px-6 text-gray-500">{[...guest.ashrams.values()].join(", ") || "—"}</td>
-                    <td className="py-4 px-6"><span className="font-bold text-[#F28C28]">{guest.bookingCount}</span><span className="text-gray-400"> / {guest.guestCount} traveller(s)</span></td>
-                    <td className="py-4 px-6 text-gray-500"><span className="inline-flex items-center gap-1"><CalendarDays size={13} />{guest.latestStay ? new Date(guest.latestStay).toLocaleDateString() : "—"}</span></td>
-                    <td className="py-4 px-6"><span className="px-2.5 py-1 bg-[#F28C28]/10 text-[#F28C28] rounded-full text-[9px] font-bold">{readableStatus(guest.latestStatus)}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Paginated items={guests} pageSize={15}>
+            {(pageItems) => (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-gray-50 dark:bg-slate-900 text-gray-400 text-[10px] tracking-wider">
+                  <tr><th className="py-4 px-6">Guest</th><th className="py-4 px-6">Contact</th><th className="py-4 px-6">Stay</th><th className="py-4 px-6">Reservations</th><th className="py-4 px-6">Latest Stay</th><th className="py-4 px-6">Status</th></tr>
+                </thead>
+                <tbody>
+                  {pageItems.map((guest) => (
+                    <tr key={guest.id} className="border-t border-gray-50 dark:border-slate-800 hover:bg-gray-50/30">
+                      <td className="py-4 px-6 font-bold text-[#0B192C] dark:text-white">{guest.name}</td>
+                      <td className="py-4 px-6 text-gray-500"><div>{guest.email || "—"}</div><div className="text-[10px] text-gray-400">{guest.phone || "—"}</div></td>
+                      <td className="py-4 px-6 text-gray-500">{[...guest.ashrams.values()].join(", ") || "—"}</td>
+                      <td className="py-4 px-6"><span className="font-bold text-[#F28C28]">{guest.bookingCount}</span><span className="text-gray-400"> / {guest.guestCount} traveller(s)</span></td>
+                      <td className="py-4 px-6 text-gray-500"><span className="inline-flex items-center gap-1"><CalendarDays size={13} />{guest.latestStay ? new Date(guest.latestStay).toLocaleDateString() : "—"}</span></td>
+                      <td className="py-4 px-6"><span className="tv-status-badge px-2.5 py-1 bg-[#F28C28]/10 text-[#F28C28] rounded-full text-[9px] font-bold">{readableStatus(guest.latestStatus)}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            )}
+          </Paginated>
         </div>
       )}
     </div>

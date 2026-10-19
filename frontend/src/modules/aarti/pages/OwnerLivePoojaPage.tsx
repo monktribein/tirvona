@@ -274,8 +274,7 @@ export const OwnerLivePoojaPage: React.FC = () => {
                     <img
                       src={stream.thumbnailUrl}
                       alt={stream.title}
-                      className="h-full w-full object-cover"
-                    />
+                      className="h-full w-full object-cover" loading="lazy" decoding="async" />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-gray-500">
                       <Video size={30} />
@@ -356,8 +355,8 @@ export const OwnerLivePoojaPage: React.FC = () => {
       )}
 
       {showForm ? (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-16">
-          <div className="w-full max-w-2xl bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-2xl">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-16">
+          <div className="tv-drawer-panel w-full max-w-2xl bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-2xl">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-black text-[#0B192C] dark:text-white">
                 {editing ? "Edit live pooja" : "New live pooja"}

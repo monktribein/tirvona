@@ -570,8 +570,7 @@ export default function TempleDetailPage() {
                               <img
                                 src={image}
                                 alt={r.name || r.title}
-                                className={`w-full h-full object-cover ${!isAvailable ? "grayscale-[20%]" : ""}`}
-                              />
+                                className={`w-full h-full object-cover ${!isAvailable ? "grayscale-[20%]" : ""}`} loading="lazy" decoding="async" />
                             ) : (
                               <Building2 className="w-6 h-6 text-gray-300" />
                             )}
@@ -598,7 +597,7 @@ export default function TempleDetailPage() {
         </div>
       )}
 
-      {lightboxOpen && currentImage && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4" role="dialog" aria-modal="true" onClick={() => setLightboxOpen(false)} onTouchStart={(event) => { touchStartX.current = event.changedTouches[0].clientX; }} onTouchEnd={(event) => { const delta = event.changedTouches[0].clientX - touchStartX.current; if (Math.abs(delta) > 40) setActiveImage((index) => (index + (delta < 0 ? 1 : -1) + gallery.length) % gallery.length); }}><button type="button" aria-label="Close gallery" onClick={() => setLightboxOpen(false)} className="absolute right-5 top-5 text-3xl text-white">×</button><button type="button" aria-label="Previous image" onClick={(event) => { event.stopPropagation(); setActiveImage((index) => (index - 1 + gallery.length) % gallery.length); }} className="absolute left-4 text-4xl text-white">‹</button><img src={currentImage} alt={temple.name} className="max-h-[85vh] max-w-[90vw] object-contain" onClick={(event) => event.stopPropagation()} /><button type="button" aria-label="Next image" onClick={(event) => { event.stopPropagation(); setActiveImage((index) => (index + 1) % gallery.length); }} className="absolute right-4 text-4xl text-white">›</button></div>}
+      {lightboxOpen && currentImage && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4" role="dialog" aria-modal="true" onClick={() => setLightboxOpen(false)} onTouchStart={(event) => { touchStartX.current = event.changedTouches[0].clientX; }} onTouchEnd={(event) => { const delta = event.changedTouches[0].clientX - touchStartX.current; if (Math.abs(delta) > 40) setActiveImage((index) => (index + (delta < 0 ? 1 : -1) + gallery.length) % gallery.length); }}><button type="button" aria-label="Close gallery" onClick={() => setLightboxOpen(false)} className="absolute right-5 top-5 text-3xl text-white">×</button><button type="button" aria-label="Previous image" onClick={(event) => { event.stopPropagation(); setActiveImage((index) => (index - 1 + gallery.length) % gallery.length); }} className="absolute left-4 text-4xl text-white">‹</button><img src={currentImage} alt={temple.name} className="max-h-[85vh] max-w-[90vw] object-contain" onClick={(event) => event.stopPropagation()} loading="lazy" decoding="async" /><button type="button" aria-label="Next image" onClick={(event) => { event.stopPropagation(); setActiveImage((index) => (index + 1) % gallery.length); }} className="absolute right-4 text-4xl text-white">›</button></div>}
     </div>
   );
 }

@@ -132,8 +132,8 @@ export const DayStayManagerModal: React.FC<Props> = ({ ashram, onClose, onSaved 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-[#0B192C]">
+    <div className="tv-drawer-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+      <div className="tv-drawer-panel flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-[#0B192C]">
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <Clock size={18} className="text-[#F28C28]" />

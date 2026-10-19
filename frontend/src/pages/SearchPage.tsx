@@ -1,3 +1,4 @@
+import { Paginated } from "../components/shared/Pagination";
 import React, { useState, useEffect, useRef } from "react";
 import { ashramUrl, type SluggableAshram } from "../lib/urls";
 import { useCanonicalUrl } from "../lib/useCanonicalUrl";
@@ -1004,215 +1005,218 @@ export const SearchPage: React.FC = () => {
               )}
             </div>
           ) : (
-            <div className="space-y-3.5">
-              {results.map((ashram, index) => {
-                const isAvailable = checkAshramBookingAvailable(ashram);
-                return (
-                <React.Fragment key={ashram._id}>
-                  {coordinates && ashram.discovery?.isNearby && index === 0 && (
-                    <div className="flex items-center gap-2 px-1 pt-1 text-sm font-extrabold text-[#0B192C] dark:text-white">
-                      <Navigation size={17} className="text-[#F28C28]" />
-                      Nearby Stays, ranked by distance
-                    </div>
-                  )}
-                  {coordinates &&
-                    !ashram.discovery?.isNearby &&
-                    index > 0 &&
-                    results[index - 1]?.discovery?.isNearby && (
-                      <div className="flex items-center gap-2 border-t border-slate-200 px-1 pt-5 text-sm font-extrabold text-[#0B192C] dark:border-slate-700 dark:text-white">
-                        <Compass size={17} className="text-[#F28C28]" />
-                        More verified Stays
+            <Paginated items={results} pageSize={10} resetKey={results}>
+              {(pageItems, offset) => (
+              <div className="space-y-3.5">
+                {pageItems.map((ashram, localIndex) => {
+                const index = offset + localIndex;
+                  const isAvailable = checkAshramBookingAvailable(ashram);
+                  return (
+                  <React.Fragment key={ashram._id}>
+                    {coordinates && ashram.discovery?.isNearby && index === 0 && (
+                      <div className="flex items-center gap-2 px-1 pt-1 text-sm font-extrabold text-[#0B192C] dark:text-white">
+                        <Navigation size={17} className="text-[#F28C28]" />
+                        Nearby Stays, ranked by distance
                       </div>
                     )}
-                <div
-                  className={`bg-white dark:bg-[#0B192C] border rounded-[28px] p-5 shadow-sm premium-card-hover flex flex-col md:flex-row gap-6 relative transition-all ${
-                    !isAvailable
-                      ? "border-rose-200/80 dark:border-rose-950/50 bg-white/80 dark:bg-[#0B192C]/80 backdrop-blur-[1.5px] opacity-90"
-                      : "border-gray-100 dark:border-slate-800"
-                  }`}
-                >
-                  <div className="w-full md:w-60 h-40 rounded-[20px] bg-gray-50 dark:bg-slate-900 relative overflow-hidden shrink-0">
-                    <img
-                      src={
-                        ashram.images?.[0] ||
-                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E"
-                      }
-                      alt={ashram.name}
-                      className={`w-full h-full object-cover transition-all ${!isAvailable ? "grayscale-[15%]" : ""}`}
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src =
-                          "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
-                      }}
-                    />
-                    {ashram.discovery?.distanceKm != null && (
-                      <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-extrabold text-[#F28C28] shadow-sm">
-                        {ashram.discovery.distanceKm} km away
-                      </span>
-                    )}
-                    {(ashram.images?.length ?? 0) > 1 && (
-                      <span className="absolute bottom-3 right-3 rounded-full bg-slate-950/75 px-2 py-1 text-[9px] font-bold text-white">
-                        {ashram.images.length} images
-                      </span>
-                    )}
-                    {!isAvailable && (
-                      <span className="absolute top-3 right-3 rounded-full bg-rose-600 text-white px-2.5 py-1 text-[10px] font-black uppercase tracking-wider shadow-md">
-                        Not Available
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex-grow flex flex-col justify-between space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-start gap-2">
-                        <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight flex items-center gap-2">
-                          <span>{ashram.name}</span>
-                          {(ashram.isVerified ?? ashram.status === "approved") && (
-                            <img
-                              src="/Verified badge/verified.png"
-                              alt="Tirvona Verified"
-                              className="h-9 sm:h-11 w-auto object-contain inline-block shrink-0 align-middle max-w-[140px]"
-                            />
-                          )}
-                        </h3>
-                        <div className="flex items-center gap-1 text-xs font-bold text-[#0B192C] dark:text-accent">
-                          <Star
-                            className="text-[#D4AF37] fill-[#D4AF37]"
-                            size={13}
-                          />
-                          <span>
-                            {Number(ashram.rating?.average) > 0
-                              ? Number(ashram.rating.average).toFixed(1)
-                              : "New"}
-                          </span>
-                          <span className="text-[10px] text-gray-400 font-medium">
-                            ({Number(ashram.rating?.count ?? 0)})
-                          </span>
+                    {coordinates &&
+                      !ashram.discovery?.isNearby &&
+                      index > 0 &&
+                      results[index - 1]?.discovery?.isNearby && (
+                        <div className="flex items-center gap-2 border-t border-slate-200 px-1 pt-5 text-sm font-extrabold text-[#0B192C] dark:border-slate-700 dark:text-white">
+                          <Compass size={17} className="text-[#F28C28]" />
+                          More verified Stays
                         </div>
-                      </div>
-                      <p className="text-[10px] text-gray-400 font-bold flex items-center gap-1">
-                        <MapPin size={10} className="text-[#F28C28]" />{" "}
-                        {ashram.address?.city}, {ashram.address?.state}
-                      </p>
-                      <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">
-                        {ashram.description ||
-                          "Spiritual lodging offering simple bedding, prayers, and vegetarian boarding."}
-                      </p>
+                      )}
+                  <div
+                    className={`bg-white dark:bg-[#0B192C] border rounded-[28px] p-5 shadow-sm premium-card-hover flex flex-col md:flex-row gap-6 relative transition-all ${
+                      !isAvailable
+                        ? "border-rose-200/80 dark:border-rose-950/50 bg-white/80 dark:bg-[#0B192C]/80 backdrop-blur-[1.5px] opacity-90"
+                        : "border-gray-100 dark:border-slate-800"
+                    }`}
+                  >
+                    <div className="w-full md:w-60 h-40 rounded-[20px] bg-gray-50 dark:bg-slate-900 relative overflow-hidden shrink-0">
+                      <img
+                        src={
+                          ashram.images?.[0] ||
+                          "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E"
+                        }
+                        alt={ashram.name}
+                        className={`w-full h-full object-cover transition-all ${!isAvailable ? "grayscale-[15%]" : ""}`}
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src =
+                            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
+                        }} loading="lazy" decoding="async" />
+                      {ashram.discovery?.distanceKm != null && (
+                        <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-extrabold text-[#F28C28] shadow-sm">
+                          {ashram.discovery.distanceKm} km away
+                        </span>
+                      )}
+                      {(ashram.images?.length ?? 0) > 1 && (
+                        <span className="absolute bottom-3 right-3 rounded-full bg-slate-950/75 px-2 py-1 text-[9px] font-bold text-white">
+                          {ashram.images.length} images
+                        </span>
+                      )}
+                      {!isAvailable && (
+                        <span className="absolute top-3 right-3 rounded-full bg-rose-600 text-white px-2.5 py-1 text-[10px] font-black uppercase tracking-wider shadow-md">
+                          Not Available
+                        </span>
+                      )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-[10px] font-semibold text-slate-600 dark:text-slate-300 sm:grid-cols-4">
-                      <span className="flex items-center gap-1.5 rounded-xl bg-slate-50 px-2.5 py-2 dark:bg-slate-900">
-                        <BedDouble size={13} className="text-[#F28C28]" />
-                        {ashram.discovery?.rooms?.totalInventory ?? 0} rooms
-                      </span>
-                      <span className="flex items-center gap-1.5 rounded-xl bg-slate-50 px-2.5 py-2 dark:bg-slate-900">
-                        <Car size={13} className="text-[#F28C28]" />
-                        {ashram.discovery?.parking?.available
-                          ? "Parking"
-                          : "No parking listed"}
-                      </span>
-                      <span className="flex items-center gap-1.5 rounded-xl bg-slate-50 px-2.5 py-2 dark:bg-slate-900">
-                        <UtensilsCrossed size={13} className="text-[#F28C28]" />
-                        {ashram.discovery?.food?.available
-                          ? ashram.discovery.food.type || "Food available"
-                          : "No food listed"}
-                      </span>
-                      <span
-                        className={`flex items-center gap-1.5 rounded-xl px-2.5 py-2 font-bold ${
-                          !isAvailable
-                            ? "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/40"
-                            : "bg-slate-50 dark:bg-slate-900 text-emerald-600 dark:text-emerald-400"
-                        }`}
-                      >
-                        {!isAvailable ? (
-                          <>
-                            <XCircle size={13} className="text-rose-600 dark:text-rose-400 shrink-0" />
-                            <span className="text-rose-600 dark:text-rose-400 font-extrabold">Not Available</span>
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <div className="flex-grow flex flex-col justify-between space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-start gap-2">
+                          <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight flex items-center gap-2">
+                            <span>{ashram.name}</span>
+                            {(ashram.isVerified ?? ashram.status === "approved") && (
+                              <img
+                                src="/Verified badge/verified.png"
+                                alt="Tirvona Verified"
+                                className="h-9 sm:h-11 w-auto object-contain inline-block shrink-0 align-middle max-w-[140px]" loading="lazy" decoding="async" />
+                            )}
+                          </h3>
+                          <div className="flex items-center gap-1 text-xs font-bold text-[#0B192C] dark:text-accent">
+                            <Star
+                              className="text-[#D4AF37] fill-[#D4AF37]"
+                              size={13}
+                            />
                             <span>
-                              {ashram.discovery?.bookingAvailability?.checkedForDates
-                                ? `${ashram.discovery.bookingAvailability.availableRooms} available`
-                                : ashram.discovery?.rooms?.totalInventory
-                                  ? `${ashram.discovery.rooms.totalInventory} available`
-                                  : "Available"}
+                              {Number(ashram.rating?.average) > 0
+                                ? Number(ashram.rating.average).toFixed(1)
+                                : "New"}
+                            </span>
+                            <span className="text-[10px] text-gray-400 font-medium">
+                              ({Number(ashram.rating?.count ?? 0)})
+                            </span>
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-gray-400 font-bold flex items-center gap-1">
+                          <MapPin size={10} className="text-[#F28C28]" />{" "}
+                          {ashram.address?.city}, {ashram.address?.state}
+                        </p>
+                        <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">
+                          {ashram.description ||
+                            "Spiritual lodging offering simple bedding, prayers, and vegetarian boarding."}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-[10px] font-semibold text-slate-600 dark:text-slate-300 sm:grid-cols-4">
+                        <span className="flex items-center gap-1.5 rounded-xl bg-slate-50 px-2.5 py-2 dark:bg-slate-900">
+                          <BedDouble size={13} className="text-[#F28C28]" />
+                          {ashram.discovery?.rooms?.totalInventory ?? 0} rooms
+                        </span>
+                        <span className="flex items-center gap-1.5 rounded-xl bg-slate-50 px-2.5 py-2 dark:bg-slate-900">
+                          <Car size={13} className="text-[#F28C28]" />
+                          {ashram.discovery?.parking?.available
+                            ? "Parking"
+                            : "No parking listed"}
+                        </span>
+                        <span className="flex items-center gap-1.5 rounded-xl bg-slate-50 px-2.5 py-2 dark:bg-slate-900">
+                          <UtensilsCrossed size={13} className="text-[#F28C28]" />
+                          {ashram.discovery?.food?.available
+                            ? ashram.discovery.food.type || "Food available"
+                            : "No food listed"}
+                        </span>
+                        <span
+                          className={`flex items-center gap-1.5 rounded-xl px-2.5 py-2 font-bold ${
+                            !isAvailable
+                              ? "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/40"
+                              : "bg-slate-50 dark:bg-slate-900 text-emerald-600 dark:text-emerald-400"
+                          }`}
+                        >
+                          {!isAvailable ? (
+                            <>
+                              <XCircle size={13} className="text-rose-600 dark:text-rose-400 shrink-0" />
+                              <span className="text-rose-600 dark:text-rose-400 font-extrabold">Not Available</span>
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                              <span>
+                                {ashram.discovery?.bookingAvailability?.checkedForDates
+                                  ? `${ashram.discovery.bookingAvailability.availableRooms} available`
+                                  : ashram.discovery?.rooms?.totalInventory
+                                    ? `${ashram.discovery.rooms.totalInventory} available`
+                                    : "Available"}
+                              </span>
+                            </>
+                          )}
+                        </span>
+                      </div>
+
+                      {(ashram.discovery?.spiritualSchedule?.dailySchedule ||
+                        ashram.discovery?.spiritualSchedule?.activities?.length >
+                          0) && (
+                        <p className="flex items-start gap-1.5 text-[10px] leading-relaxed text-slate-500 dark:text-slate-300">
+                          <Clock size={13} className="mt-0.5 shrink-0 text-[#F28C28]" />
+                          <span className="line-clamp-2">
+                            {ashram.discovery.spiritualSchedule.dailySchedule ||
+                              ashram.discovery.spiritualSchedule.activities.join(
+                                " · ",
+                              )}
+                          </span>
+                        </p>
+                      )}
+
+                      <div className="flex flex-wrap gap-1 items-center">
+                        {ashram.dayStayConfig?.enabled && (
+                          <span className="text-[9px] font-black bg-[#E58C28]/15 text-[#E58C28] border border-[#E58C28]/30 px-2 py-0.5 rounded-md flex items-center gap-1">
+                            <Sparkles size={10} /> Day Rest Available
+                          </span>
+                        )}
+                        {ashram.amenities
+                          ?.slice(0, 3)
+                          .map((am: string, i: number) => (
+                            <span
+                              key={i}
+                              className="text-[9px] font-bold bg-gray-50 dark:bg-slate-900 text-gray-500 px-2 py-0.5 rounded-md"
+                            >
+                              {am}
+                            </span>
+                          ))}
+                      </div>
+                    </div>
+
+                    <div className="w-full md:w-40 md:border-l border-gray-100 dark:border-slate-800 pl-0 md:pl-6 flex md:flex-col justify-between md:justify-center items-center md:items-end gap-4 shrink-0">
+                      <div className="flex flex-col md:text-right">
+                        <span className="text-[9px] text-gray-400 font-bold tracking-wider">
+                          Starts From
+                        </span>
+                        {ashram.lowestNightPrice != null ? (
+                          <>
+                            <span className="text-base font-extrabold text-[#0B192C] dark:text-white">
+                              {formatCurrency(ashram.lowestNightPrice)}
+                            </span>
+                            <span className="text-[9px] text-gray-400 font-bold">
+                              per night / bed
                             </span>
                           </>
+                        ) : (
+                          <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">
+                            Contact for price
+                          </span>
                         )}
-                      </span>
-                    </div>
-
-                    {(ashram.discovery?.spiritualSchedule?.dailySchedule ||
-                      ashram.discovery?.spiritualSchedule?.activities?.length >
-                        0) && (
-                      <p className="flex items-start gap-1.5 text-[10px] leading-relaxed text-slate-500 dark:text-slate-300">
-                        <Clock size={13} className="mt-0.5 shrink-0 text-[#F28C28]" />
-                        <span className="line-clamp-2">
-                          {ashram.discovery.spiritualSchedule.dailySchedule ||
-                            ashram.discovery.spiritualSchedule.activities.join(
-                              " · ",
-                            )}
-                        </span>
-                      </p>
-                    )}
-
-                    <div className="flex flex-wrap gap-1 items-center">
-                      {ashram.dayStayConfig?.enabled && (
-                        <span className="text-[9px] font-black bg-[#E58C28]/15 text-[#E58C28] border border-[#E58C28]/30 px-2 py-0.5 rounded-md flex items-center gap-1">
-                          <Sparkles size={10} /> Day Rest Available
-                        </span>
-                      )}
-                      {ashram.amenities
-                        ?.slice(0, 3)
-                        .map((am: string, i: number) => (
-                          <span
-                            key={i}
-                            className="text-[9px] font-bold bg-gray-50 dark:bg-slate-900 text-gray-500 px-2 py-0.5 rounded-md"
-                          >
-                            {am}
-                          </span>
-                        ))}
+                      </div>
+                      <Link
+                        to={buildDetailLink(ashram)}
+                        className={`w-full md:w-auto px-5 py-2.5 text-center text-xs font-bold rounded-full transition-all ${
+                          !isAvailable
+                            ? "bg-slate-700 hover:bg-slate-800 text-white opacity-95"
+                            : "bg-[#F28C28] hover:bg-opacity-95 text-white"
+                        }`}
+                      >
+                        View Details
+                      </Link>
                     </div>
                   </div>
-
-                  <div className="w-full md:w-40 md:border-l border-gray-100 dark:border-slate-800 pl-0 md:pl-6 flex md:flex-col justify-between md:justify-center items-center md:items-end gap-4 shrink-0">
-                    <div className="flex flex-col md:text-right">
-                      <span className="text-[9px] text-gray-400 font-bold tracking-wider">
-                        Starts From
-                      </span>
-                      {ashram.lowestNightPrice != null ? (
-                        <>
-                          <span className="text-base font-extrabold text-[#0B192C] dark:text-white">
-                            {formatCurrency(ashram.lowestNightPrice)}
-                          </span>
-                          <span className="text-[9px] text-gray-400 font-bold">
-                            per night / bed
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">
-                          Contact for price
-                        </span>
-                      )}
-                    </div>
-                    <Link
-                      to={buildDetailLink(ashram)}
-                      className={`w-full md:w-auto px-5 py-2.5 text-center text-xs font-bold rounded-full transition-all ${
-                        !isAvailable
-                          ? "bg-slate-700 hover:bg-slate-800 text-white opacity-95"
-                          : "bg-[#F28C28] hover:bg-opacity-95 text-white"
-                      }`}
-                    >
-                      View Details
-                    </Link>
-                  </div>
-                </div>
                 </React.Fragment>
               );
               })}
             </div>
+              )}
+            </Paginated>
           )}
         </section>
       </div>

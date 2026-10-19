@@ -1,3 +1,4 @@
+import { Paginated } from "../../components/shared/Pagination";
 import React, { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { checkoutApi } from "../../services/marketplace.service";
@@ -92,8 +93,7 @@ const ItemRow: React.FC<{ item: OrderItem; action?: React.ReactNode }> = ({
       className="w-12 h-12 rounded-lg object-cover bg-gray-100 dark:bg-slate-900 shrink-0"
       onError={(e) => {
         (e.currentTarget as HTMLImageElement).src = FALLBACK_IMAGE;
-      }}
-    />
+      }} loading="lazy" decoding="async" />
     <span className="flex-1 min-w-0 text-xs">
       <span className="block font-bold text-[#0B192C] dark:text-white truncate">
         {item.name}
@@ -282,157 +282,161 @@ export const ProfileOrdersPage: React.FC = () => {
     );
 
   return (
-    <div className="space-y-4">
-      {orders.map((order) => {
-        const canCancel =
-          order.paymentStatus === "pending"
-            ? order.status === "pending_payment"
-            : order.vendorOrders.some((vo) => CANCELLABLE.includes(vo.fulfillmentStatus));
-        return (
-          <div
-            key={order._id}
-            className="bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4"
-          >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <span className="font-mono text-xs font-black text-[#0B192C] dark:text-white">
-                  {order.orderNumber}
-                </span>
-                <span className="block text-[11px] text-gray-500">
-                  Placed {formatDateIN(order.createdAt)}
-                  {order.vendorOrders.length > 1 &&
-                    ` · ${order.vendorOrders.length} stores`}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <StatusPill status={order.status} />
-                {order.paymentStatus !== "paid" && (
-                  <span className="text-[10px] font-black text-amber-600">
-                    Payment {humanizeLabel(order.paymentStatus).toLowerCase()}
+    <Paginated items={orders} pageSize={8}>
+      {(pageItems) => (
+      <div className="space-y-4">
+        {pageItems.map((order) => {
+          const canCancel =
+            order.paymentStatus === "pending"
+              ? order.status === "pending_payment"
+              : order.vendorOrders.some((vo) => CANCELLABLE.includes(vo.fulfillmentStatus));
+          return (
+            <div
+              key={order._id}
+              className="bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <span className="font-mono text-xs font-black text-[#0B192C] dark:text-white">
+                    {order.orderNumber}
                   </span>
-                )}
-              </div>
-            </div>
-
-            {order.status === "pending_payment" && (
-              <p className="text-[11px] text-amber-700 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-xl p-2.5">
-                Payment was not completed. The items are held for a few minutes and
-                then released automatically. Nothing has been charged.
-              </p>
-            )}
-
-            {order.vendorOrders.map((vo) => (
-              <section
-                key={vo._id}
-                className="rounded-xl border border-gray-100 dark:border-slate-800 p-3 space-y-2.5"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="flex items-center gap-1.5 text-[11px] font-black text-gray-600 dark:text-gray-300">
-                    <Store size={12} className="text-[#F28C28]" />
-                    {vo.vendorSnapshot?.slug ? (
-                      <Link
-                        to={`/marketplace/store/${vo.vendorSnapshot.slug}`}
-                        className="hover:text-[#F28C28]"
-                      >
-                        {vo.vendorSnapshot?.storeName}
-                      </Link>
-                    ) : (
-                      vo.vendorSnapshot?.storeName
-                    )}
-                    <span className="font-mono font-semibold text-gray-400">
-                      {vo.vendorOrderNumber}
-                    </span>
+                  <span className="block text-[11px] text-gray-500">
+                    Placed {formatDateIN(order.createdAt)}
+                    {order.vendorOrders.length > 1 &&
+                      ` · ${order.vendorOrders.length} stores`}
                   </span>
-                  <StatusPill status={vo.fulfillmentStatus} />
                 </div>
-                {vo.items.map((item) => {
-                  const key = `${vo._id}:${item.productId}`;
-                  const canReview =
-                    vo.fulfillmentStatus === "delivered" && !reviewed.has(key);
-                  return (
-                    <ItemRow
-                      key={item._id ?? item.productId}
-                      item={item}
-                      action={
-                        canReview &&
-                        (reviewing === key ? (
-                          <ReviewForm
-                            vendorOrderId={vo._id}
-                            productId={String(item.productId)}
-                            onDone={() => {
-                              setReviewing("");
-                              setReviewed((prev) => new Set(prev).add(key));
-                              addNotification("Thank you", "Your review has been published.", "success");
-                            }}
-                          />
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => setReviewing(key)}
-                            className="block mt-1 text-[11px] font-bold text-[#F28C28] hover:underline cursor-pointer"
-                          >
-                            Write a review
-                          </button>
-                        ))
-                      }
-                    />
-                  );
-                })}
-                {vo.tracking?.trackingNumber && (
-                  <p className="flex items-center gap-1.5 text-[11px] text-gray-500">
-                    <Truck size={12} />
-                    {vo.tracking.carrier} {vo.tracking.trackingNumber}
-                    {vo.tracking.trackingUrl && (
-                      <a
-                        href={vo.tracking.trackingUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-bold text-[#F28C28] hover:underline"
-                      >
-                        Track
-                      </a>
-                    )}
-                  </p>
-                )}
-                {vo.fulfillmentStatus === "delivered" && (
+                <div className="flex items-center gap-2">
+                  <StatusPill status={order.status} />
+                  {order.paymentStatus !== "paid" && (
+                    <span className="text-[10px] font-black text-amber-600">
+                      Payment {humanizeLabel(order.paymentStatus).toLowerCase()}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {order.status === "pending_payment" && (
+                <p className="text-[11px] text-amber-700 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-xl p-2.5">
+                  Payment was not completed. The items are held for a few minutes and
+                  then released automatically. Nothing has been charged.
+                </p>
+              )}
+
+              {order.vendorOrders.map((vo) => (
+                <section
+                  key={vo._id}
+                  className="rounded-xl border border-gray-100 dark:border-slate-800 p-3 space-y-2.5"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="flex items-center gap-1.5 text-[11px] font-black text-gray-600 dark:text-gray-300">
+                      <Store size={12} className="text-[#F28C28]" />
+                      {vo.vendorSnapshot?.slug ? (
+                        <Link
+                          to={`/marketplace/store/${vo.vendorSnapshot.slug}`}
+                          className="hover:text-[#F28C28]"
+                        >
+                          {vo.vendorSnapshot?.storeName}
+                        </Link>
+                      ) : (
+                        vo.vendorSnapshot?.storeName
+                      )}
+                      <span className="font-mono font-semibold text-gray-400">
+                        {vo.vendorOrderNumber}
+                      </span>
+                    </span>
+                    <StatusPill status={vo.fulfillmentStatus} />
+                  </div>
+                  {vo.items.map((item) => {
+                    const key = `${vo._id}:${item.productId}`;
+                    const canReview =
+                      vo.fulfillmentStatus === "delivered" && !reviewed.has(key);
+                    return (
+                      <ItemRow
+                        key={item._id ?? item.productId}
+                        item={item}
+                        action={
+                          canReview &&
+                          (reviewing === key ? (
+                            <ReviewForm
+                              vendorOrderId={vo._id}
+                              productId={String(item.productId)}
+                              onDone={() => {
+                                setReviewing("");
+                                setReviewed((prev) => new Set(prev).add(key));
+                                addNotification("Thank you", "Your review has been published.", "success");
+                              }}
+                            />
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setReviewing(key)}
+                              className="block mt-1 text-[11px] font-bold text-[#F28C28] hover:underline cursor-pointer"
+                            >
+                              Write a review
+                            </button>
+                          ))
+                        }
+                      />
+                    );
+                  })}
+                  {vo.tracking?.trackingNumber && (
+                    <p className="flex items-center gap-1.5 text-[11px] text-gray-500">
+                      <Truck size={12} />
+                      {vo.tracking.carrier} {vo.tracking.trackingNumber}
+                      {vo.tracking.trackingUrl && (
+                        <a
+                          href={vo.tracking.trackingUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-bold text-[#F28C28] hover:underline"
+                        >
+                          Track
+                        </a>
+                      )}
+                    </p>
+                  )}
+                  {vo.fulfillmentStatus === "delivered" && (
+                    <button
+                      onClick={() => requestReturn(vo)}
+                      disabled={busy === vo._id}
+                      className="text-[11px] font-bold text-gray-500 hover:text-rose-600 disabled:opacity-50 cursor-pointer"
+                    >
+                      Request a return
+                    </button>
+                  )}
+                </section>
+              ))}
+
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 dark:border-slate-800 pt-3">
+                <span className="text-xs">
+                  <span className="text-gray-500">Total </span>
+                  <strong className="text-[#F28C28] dark:text-amber-400 font-black">
+                    {formatCurrency(order.pricing.totalAmount)}
+                  </strong>
+                  {Number(order.pricing.amountRefunded) > 0 && (
+                    <span className="text-gray-500">
+                      {" "}· Refunded {formatCurrency(Number(order.pricing.amountRefunded))}
+                    </span>
+                  )}
+                </span>
+                {canCancel && (
                   <button
-                    onClick={() => requestReturn(vo)}
-                    disabled={busy === vo._id}
-                    className="text-[11px] font-bold text-gray-500 hover:text-rose-600 disabled:opacity-50 cursor-pointer"
+                    onClick={() => cancelOrder(order)}
+                    disabled={busy === order._id}
+                    className="text-[11px] font-bold text-rose-600 hover:underline disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
                   >
-                    Request a return
+                    {busy === order._id && <Loader2 size={11} className="animate-spin" />}
+                    Cancel order
                   </button>
                 )}
-              </section>
-            ))}
-
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 dark:border-slate-800 pt-3">
-              <span className="text-xs">
-                <span className="text-gray-500">Total </span>
-                <strong className="text-[#F28C28] dark:text-amber-400 font-black">
-                  {formatCurrency(order.pricing.totalAmount)}
-                </strong>
-                {Number(order.pricing.amountRefunded) > 0 && (
-                  <span className="text-gray-500">
-                    {" "}· Refunded {formatCurrency(Number(order.pricing.amountRefunded))}
-                  </span>
-                )}
-              </span>
-              {canCancel && (
-                <button
-                  onClick={() => cancelOrder(order)}
-                  disabled={busy === order._id}
-                  className="text-[11px] font-bold text-rose-600 hover:underline disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
-                >
-                  {busy === order._id && <Loader2 size={11} className="animate-spin" />}
-                  Cancel order
-                </button>
-              )}
+              </div>
             </div>
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+      )}
+    </Paginated>
   );
 };
 

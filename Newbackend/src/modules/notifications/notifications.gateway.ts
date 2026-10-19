@@ -14,8 +14,12 @@ const isOriginAllowed = (origin: string | undefined): boolean => {
   const allowed = corsOriginsFromEnvironment();
   if (allowed.includes(normalized)) return true;
   if (/^https:\/\/([a-zA-Z0-9-]+\.)*tirvona\.com$/.test(normalized)) return true;
-  if (/^http:\/\/localhost:[0-9]+$/.test(normalized)) return true;
-  if (/^http:\/\/127\.0\.0\.1:[0-9]+$/.test(normalized)) return true;
+  // Any-port localhost is a development convenience only; the explicit dev
+  // ports stay allowed through corsOriginsFromEnvironment().
+  if (process.env.NODE_ENV !== "production") {
+    if (/^http:\/\/localhost:[0-9]+$/.test(normalized)) return true;
+    if (/^http:\/\/127\.0\.0\.1:[0-9]+$/.test(normalized)) return true;
+  }
   return false;
 };
 
@@ -44,6 +48,8 @@ export class NotificationsGateway implements OnGatewayConnection {
           "",
       ).replace(/^Bearer\s+/i, "");
       const payload: any = await this.jwt.verifyAsync(raw);
+      // Half-finished sign-in tokens (OTP not yet verified) are not sessions.
+      if (payload.purpose) throw new Error("incomplete session");
       await client.join(`user:${payload.sub ?? payload.id}`);
     } catch {
       client.disconnect(true);

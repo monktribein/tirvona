@@ -383,7 +383,7 @@ const WalletDetailModal: React.FC<{
                     <span className="font-bold text-[#0B192C] dark:text-white">
                       {inr(w.amount)} <span className="text-gray-400 font-medium">· {w.requestNumber} · {formatDateTimeIN(w.createdAt)}</span>
                     </span>
-                    <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${WITHDRAWAL_STATUS_TONE[w.status]}`}>
+                    <span className={`tv-status-badge rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${WITHDRAWAL_STATUS_TONE[w.status]}`}>
                       {WITHDRAWAL_STATUS_LABEL[w.status]}
                     </span>
                   </li>

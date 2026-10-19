@@ -1,0 +1,289 @@
+/*
+ * Shared responsive guardrails for TradeVistar's Buyer, Seller and Admin apps.
+ * Desktop component styling remains authoritative; these rules only prevent
+ * viewport overflow and give compact screens safe, fluid containment.
+ */
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+    text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    width: 100%;
+    min-width: 320px;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  img,
+  picture,
+  video,
+  canvas,
+  iframe {
+    max-width: 100%;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Long references, email addresses and API-provided labels must stay inside
+     their card. `break-word` only acts when the text would otherwise escape,
+     so normal copy keeps its intended line breaks. */
+  :where(p, li, dd, dt, label, legend) {
+    overflow-wrap: break-word;
+  }
+
+  pre {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
+
+/* Grid and flex children otherwise retain their intrinsic content width and
+   can force a whole page wider than the viewport. */
+:where(.dashboard-typography, .product-detail-page) :where(.grid, .flex) > * {
+  min-width: 0;
+}
+
+/* …except inside a strip that scrolls sideways (tab bars, section menus, chip rows,
+   carousels): there each item keeps its natural width and the strip scrolls, instead of the
+   items being squeezed until their labels overlap. */
+:where(.dashboard-typography, .product-detail-page)
+  :where(.flex, .inline-flex):where(.overflow-x-auto, .overflow-x-scroll, .overflow-auto, .overflow-scroll)
+  > * {
+  flex-shrink: 0;
+  min-width: auto;
+}
+
+/* The same defaults for the rest of the site, as a base layer: Tailwind v4 utilities sit in a
+   later layer, so a component's own sizing (e.g. the hero slides' `min-w-full`) still wins.
+   Unlayered, this rule overrode it and collapsed the homepage banner to zero width. */
+@layer base {
+  :where(body) :where(.grid, .flex) > * {
+    min-width: 0;
+  }
+
+  :where(body)
+    :where(.flex, .inline-flex):where(.overflow-x-auto, .overflow-x-scroll, .overflow-auto, .overflow-scroll)
+    > * {
+    flex-shrink: 0;
+    min-width: auto;
+  }
+}
+
+/* Stable, bounded type for the three applications. The lower bound keeps
+   compact screens readable; the upper bound prevents large monitors from
+   enlarging controls and changing established page proportions. */
+:where(.dashboard-typography, .payment-checkout) {
+  --text-body: clamp(13px, calc(12.68px + 0.1vw), 14px);
+  --text-meta: clamp(12px, calc(11.68px + 0.1vw), 13px);
+  --text-small: clamp(11.5px, calc(11.34px + 0.05vw), 12px);
+  --text-ui: clamp(13px, calc(12.68px + 0.1vw), 14px);
+  --text-nav: clamp(13px, calc(12.68px + 0.1vw), 14px);
+  --text-label: clamp(13px, calc(12.68px + 0.1vw), 14px);
+  --text-input: clamp(13px, calc(12.68px + 0.1vw), 14px);
+  --text-button: clamp(13px, calc(12.68px + 0.1vw), 14px);
+  --text-table: clamp(12.5px, calc(12.34px + 0.05vw), 13px);
+}
+
+/* Checkout method cards share one geometry in Buyer and Seller. Titles stay
+   on one line while descriptions are allowed to wrap without clipping. */
+.payment-method-list > [role="tab"] {
+  min-height: 84px;
+}
+
+.payment-method-title {
+  white-space: nowrap;
+}
+
+.payment-method-hint {
+  display: block;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+@media (min-width: 768px) {
+  .payment-method-list > [role="tab"] {
+    min-height: 100px;
+  }
+}
+
+.dashboard-typography,
+.dashboard-typography main,
+.dashboard-typography main > *,
+.product-detail-page,
+.product-detail-page > * {
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Dashboard content is fluid inside the fixed shell. These elements commonly
+   carry API text or nested grids, so none may retain an intrinsic width wider
+   than the main column. */
+.dashboard-typography main :where(section, article, form, fieldset, header, footer, aside) {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.dashboard-typography main :where(.break-words, .break-all, code) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* Fixed rails and top bars always keep one viewport-sized shell; their own
+   content may wrap, but must never make the page wider. */
+.dashboard-typography :where(.tv-dashboard-navbar, [data-dashboard-sidebar]) {
+  max-width: 100vw;
+}
+
+.dashboard-typography .tv-dashboard-nav-inner > * {
+  min-width: 0;
+}
+
+/* One visual language for every authenticated sidebar page. The wrapper is
+   deliberately layout-neutral: page-owned grids, tables and sticky controls
+   keep their existing flow while gaining the same unified surface used by the
+   Buyer dashboard. */
+.dashboard-typography .tv-dashboard-page-surface {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgb(148 163 184 / 0.3);
+  border-radius: 16px;
+  background: #fff;
+  padding: 16px;
+  box-shadow:
+    0 3px 10px rgb(0 45 95 / 0.08),
+    0 1px 3px rgb(0 45 95 / 0.04);
+}
+
+.dark .dashboard-typography .tv-dashboard-page-surface {
+  border-color: rgb(51 65 85 / 0.72);
+  background: #0b192c;
+  box-shadow: 0 3px 12px rgb(0 0 0 / 0.18);
+}
+
+.dashboard-typography .tv-dashboard-page-surface
+  :where(section, article, div):is([class*="rounded-xl"], [class*="rounded-2xl"]):is([class*="border-outline"], [class*="border-slate"]):not([role="dialog"]):not([aria-modal="true"]) {
+  border-color: rgb(148 163 184 / 0.28);
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+/* Match the Buyer dashboard's single-surface treatment: white nested cards
+   become transparent inside the shared shell, while their grey outline keeps
+   summaries, main sections and right rails clearly separated. */
+.dashboard-typography .tv-dashboard-page-surface
+  :where(section, article, div):is([class*="rounded-xl"], [class*="rounded-2xl"]):is([class*="border-outline"], [class*="border-slate"])[class*="bg-white"]:not([role="dialog"]):not([aria-modal="true"]) {
+  background-color: transparent;
+}
+
+/* Use the dashboard's 16px content rhythm at page-section level. These rules
+   intentionally stop at the first layout layer so compact controls, forms and
+   table cells retain their component-specific spacing. */
+.dashboard-typography .tv-dashboard-page-surface
+  > :where([class~="grid"], [class~="flex"]) {
+  gap: 16px;
+}
+
+.dashboard-typography .tv-dashboard-page-surface
+  > [class*="space-y-"] {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dashboard-typography .tv-dashboard-page-surface
+  > [class*="space-y-"]
+  > :not([hidden]) {
+  margin-block: 0;
+}
+
+.dashboard-typography .tv-dashboard-page-surface
+  > :where([class~="grid"], [class~="flex"])
+  > aside[class*="gap-"] {
+  gap: 16px;
+}
+
+@media (max-width: 639px) {
+  .dashboard-typography .tv-dashboard-page-surface {
+    border-radius: 12px;
+    padding: 16px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .dashboard-typography .tv-dashboard-page-surface {
+    padding: 20px;
+  }
+}
+
+/* Reusable media and banner contract: scale inside the available area without
+   stretching or leaking into adjacent columns. Purposeful cover images keep
+   their component-level object-fit rule. */
+:where(.dashboard-typography, .product-detail-page) :where(img, video, canvas) {
+  max-width: 100%;
+}
+
+@media (max-width: 767px) {
+  .dashboard-typography main {
+    width: 100%;
+    overflow-x: clip;
+  }
+
+  .dashboard-typography .tv-table-card,
+  .dashboard-typography .tv-table-scroll,
+  .dashboard-typography :where(.overflow-x-auto, .overflow-auto):has(> table) {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .dashboard-typography .tv-dashboard-nav-popover {
+    max-width: calc(100vw - 16px);
+  }
+
+  .dashboard-typography :where([role="dialog"], [aria-modal="true"]) {
+    max-width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
+  }
+}
+
+@media (max-width: 479px) {
+  .dashboard-typography .tv-pagination {
+    align-items: stretch;
+  }
+
+  .dashboard-typography .tv-pagination > * {
+    max-width: 100%;
+  }
+}
+
+/* Shared authentication canvas: a restrained blend of the TradeVistar globe's
+   blue/cyan, growth green and brand orange, used behind the transparent artwork. */
+.auth-brand-gradient {
+  background-color: #f7fbff;
+  background-image:
+    radial-gradient(circle at 8% 12%, rgb(14 165 233 / 0.18), transparent 31%),
+    radial-gradient(circle at 90% 8%, rgb(22 163 74 / 0.1), transparent 27%),
+    radial-gradient(circle at 88% 90%, rgb(249 115 22 / 0.16), transparent 31%),
+    linear-gradient(135deg, #eef8ff 0%, #f8fbff 49%, #fff7ed 100%);
+  background-attachment: fixed;
+}

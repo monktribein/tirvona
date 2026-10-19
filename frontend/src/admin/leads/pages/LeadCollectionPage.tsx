@@ -852,8 +852,7 @@ export const LeadCollectionPage: React.FC = () => {
                     key={index}
                     src={src}
                     alt={`Lead photo ${index + 1}`}
-                    className="w-full h-24 object-cover rounded-xl border border-gray-100 dark:border-slate-800"
-                  />
+                    className="w-full h-24 object-cover rounded-xl border border-gray-100 dark:border-slate-800" loading="lazy" decoding="async" />
                 ))}
               </div>
             )}

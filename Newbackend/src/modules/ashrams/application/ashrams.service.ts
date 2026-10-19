@@ -161,6 +161,36 @@ const assertCompleteAddress = (address: Record<string, any>): void => {
     );
 };
 
+/**
+ * Public stay responses must not carry owner/KYC/review internals: the trust's
+ * PAN, uploaded verification documents, inspection reports, rejection notes
+ * and the owner's user id. The owner/admin views read the full record through
+ * the managed endpoints instead.
+ */
+export const withoutPrivateAshramFields = <T extends Record<string, any>>(
+  row: T,
+): T => {
+  if (!row || typeof row !== "object") return row;
+  const out: Record<string, any> = { ...row };
+  for (const key of [
+    "ownerId",
+    "documents",
+    "inspectionDetails",
+    "rejectionReason",
+    "availabilityRequest",
+  ])
+    delete out[key];
+  if (out.trust && typeof out.trust === "object") {
+    out.trust = { ...out.trust };
+    delete out.trust.panNo;
+  }
+  if (out.dayStayConfig?.verificationData) {
+    out.dayStayConfig = { ...out.dayStayConfig };
+    delete out.dayStayConfig.verificationData;
+  }
+  return out as T;
+};
+
 @Injectable()
 export class AshramsService {
   constructor(
@@ -723,7 +753,9 @@ export class AshramsService {
       (query.page - 1) * query.limit,
       query.page * query.limit,
     );
-    const data = await this.enrichDiscoveryRows(pageRows, query);
+    const data = (await this.enrichDiscoveryRows(pageRows, query)).map(
+      withoutPrivateAshramFields,
+    );
     return {
       success: true,
       count: data.length,
@@ -775,7 +807,7 @@ export class AshramsService {
     });
     return {
       ashram: {
-        ...ashram,
+        ...withoutPrivateAshramFields(ashram),
         addOnServices: managedAddOns.length
           ? managedAddOns
           : (ashram.addOnServices ?? []),

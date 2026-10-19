@@ -9,6 +9,7 @@
  *   GET   /api/v2/rituals                   published ritual catalogue
  */
 
+import { Paginated } from "../../../components/shared/Pagination";
 import React, { useCallback, useEffect, useState } from "react";
 import { BookOpen, CalendarDays, Clock, Edit2, Plus, RefreshCw, Users } from "lucide-react";
 import { providerSelfService, ritualCatalogService } from "../services/provider.service";
@@ -382,13 +383,17 @@ export const ProviderOfferingsPage: React.FC = () => {
           />
         </Card>
       ) : (
-        <ul className="space-y-4">
-          {offerings.map((o) => (
-            <li key={o.id}>
-              <OfferingCard offering={o} onEdit={setModalOffering} onToggle={handleToggle} toggling={togglingId === o.id} />
-            </li>
-          ))}
-        </ul>
+        <Paginated items={offerings} pageSize={10}>
+          {(pageItems) => (
+          <ul className="space-y-4">
+            {pageItems.map((o) => (
+              <li key={o.id}>
+                <OfferingCard offering={o} onEdit={setModalOffering} onToggle={handleToggle} toggling={togglingId === o.id} />
+              </li>
+            ))}
+          </ul>
+          )}
+        </Paginated>
       )}
 
       {!loading && !error && (

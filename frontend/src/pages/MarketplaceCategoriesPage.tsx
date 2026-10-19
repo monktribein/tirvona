@@ -1,3 +1,4 @@
+import { Paginated } from "../components/shared/Pagination";
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, Loader2, PackageSearch, Search, Tags } from "lucide-react";
@@ -66,43 +67,47 @@ const MarketplaceCategoriesPage: React.FC = () => {
             <p className="text-sm font-bold text-[#0B192C] dark:text-white">No categories found</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((cat) => (
-              <div
-                key={cat._id}
-                className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] overflow-hidden shadow-sm hover:shadow-lg hover:border-[#E58C28]/60 transition-all"
-              >
-                <Link to={`/marketplace/category/${cat.slug}`} className="block">
-                  {cat.image ? (
-                    <img src={cat.image} alt={cat.name} loading="lazy" className="w-full aspect-[16/9] object-cover" />
-                  ) : (
-                    <div className="w-full aspect-[16/9] bg-[#FFF4E5] dark:bg-slate-900 flex items-center justify-center">
-                      <Tags size={30} className="text-[#F28C28]" />
+          <Paginated items={filtered} pageSize={12}>
+            {(pageItems) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pageItems.map((cat) => (
+                <div
+                  key={cat._id}
+                  className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] overflow-hidden shadow-sm hover:shadow-lg hover:border-[#E58C28]/60 transition-all"
+                >
+                  <Link to={`/marketplace/category/${cat.slug}`} className="block">
+                    {cat.image ? (
+                      <img src={cat.image} alt={cat.name} loading="lazy" className="w-full aspect-[16/9] object-cover" />
+                    ) : (
+                      <div className="w-full aspect-[16/9] bg-[#FFF4E5] dark:bg-slate-900 flex items-center justify-center">
+                        <Tags size={30} className="text-[#F28C28]" />
+                      </div>
+                    )}
+                    <div className="p-4 space-y-1">
+                      <h2 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center justify-between gap-2">
+                        {cat.name} <ChevronRight size={15} className="text-[#F28C28]" />
+                      </h2>
+                      {cat.description && <p className="text-xs text-gray-500 line-clamp-2">{cat.description}</p>}
+                    </div>
+                  </Link>
+                  {!query && (cat.children?.length ?? 0) > 0 && (
+                    <div className="px-4 pb-4 flex flex-wrap gap-1.5">
+                      {cat.children!.map((child) => (
+                        <Link
+                          key={child._id}
+                          to={`/marketplace/category/${child.slug}`}
+                          className="px-2.5 py-1 rounded-full bg-gray-100 dark:bg-slate-800 text-[11px] font-bold text-gray-600 dark:text-gray-300 hover:text-[#F28C28]"
+                        >
+                          {child.name}
+                        </Link>
+                      ))}
                     </div>
                   )}
-                  <div className="p-4 space-y-1">
-                    <h2 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center justify-between gap-2">
-                      {cat.name} <ChevronRight size={15} className="text-[#F28C28]" />
-                    </h2>
-                    {cat.description && <p className="text-xs text-gray-500 line-clamp-2">{cat.description}</p>}
-                  </div>
-                </Link>
-                {!query && (cat.children?.length ?? 0) > 0 && (
-                  <div className="px-4 pb-4 flex flex-wrap gap-1.5">
-                    {cat.children!.map((child) => (
-                      <Link
-                        key={child._id}
-                        to={`/marketplace/category/${child.slug}`}
-                        className="px-2.5 py-1 rounded-full bg-gray-100 dark:bg-slate-800 text-[11px] font-bold text-gray-600 dark:text-gray-300 hover:text-[#F28C28]"
-                      >
-                        {child.name}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+                </div>
+              ))}
+            </div>
+            )}
+          </Paginated>
         )}
       </div>
     </div>

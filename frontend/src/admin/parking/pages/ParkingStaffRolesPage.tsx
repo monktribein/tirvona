@@ -1,3 +1,4 @@
+import { Paginated } from "../../../components/shared/Pagination";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Loader2, RefreshCw, ShieldCheck, Trash2, UserPlus, X } from "lucide-react";
 import { EnterprisePageHeader } from "../../shared/components/EnterprisePageHeader";
@@ -211,26 +212,30 @@ export const ParkingStaffRolesPage: React.FC = () => {
             <option value="all">All statuses</option><option value="pending_approval">Pending approval</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="suspended">Suspended</option>
           </select>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 text-xs text-gray-400 dark:bg-slate-900"><tr><th className="px-5 py-3">Staff</th><th className="px-5 py-3">Parking role</th><th className="px-5 py-3">Parking facility</th><th className="px-5 py-3">Employee code</th><th className="px-5 py-3">Status</th><th className="px-5 py-3 text-right">Action</th></tr></thead>
-            <tbody>
-              {visibleGrants.map((grant) => <tr key={grant._id} className="border-t border-gray-100 dark:border-slate-800">
-                <td className="px-5 py-4"><div>{grant.userId?.name ?? "Parking staff"}</div><div className="text-xs text-gray-400">{grant.userId?.email}</div></td>
-                <td className="px-5 py-4">{humanizeLabel(grant.parkingRole)}</td>
-                <td className="px-5 py-4">{(grant.locationIds ?? []).map((row: any) => row.name).join(", ") || "All partner parking"}</td>
-                <td className="px-5 py-4 font-mono text-xs">{grant.employeeCode || "—"}</td>
-                <td className="px-5 py-4"><EnterpriseStatusBadge status={grant.status} size="sm" /></td>
-                <td className="px-5 py-4 text-right"><div className="flex justify-end gap-2">{grant.status === "pending_approval" && canApprove && <button type="button" onClick={() => void approve(grant)} disabled={busyId === String(grant._id)} className="rounded-full bg-[#F28C28] px-3 py-2 text-xs text-white disabled:opacity-50">Approve</button>}{["active", "pending_approval"].includes(grant.status) && <button type="button" onClick={() => void revoke(grant)} disabled={busyId === String(grant._id)} className="rounded-full border border-red-200 p-2 text-red-600 disabled:opacity-50" title="Remove parking access">{busyId === String(grant._id) ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}</button>}</div></td>
-              </tr>)}
-              {!loading && visibleGrants.length === 0 && <tr><td colSpan={6} className="px-5 py-12 text-center text-sm text-gray-400">No parking staff found.</td></tr>}
-            </tbody>
-          </table>
-        </div>
+        <Paginated items={visibleGrants} pageSize={15}>
+          {(pageItems) => (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-gray-50 text-xs text-gray-400 dark:bg-slate-900"><tr><th className="px-5 py-3">Staff</th><th className="px-5 py-3">Parking role</th><th className="px-5 py-3">Parking facility</th><th className="px-5 py-3">Employee code</th><th className="px-5 py-3">Status</th><th className="px-5 py-3 text-right">Action</th></tr></thead>
+              <tbody>
+                {pageItems.map((grant) => <tr key={grant._id} className="border-t border-gray-100 dark:border-slate-800">
+                  <td className="px-5 py-4"><div>{grant.userId?.name ?? "Parking staff"}</div><div className="text-xs text-gray-400">{grant.userId?.email}</div></td>
+                  <td className="px-5 py-4">{humanizeLabel(grant.parkingRole)}</td>
+                  <td className="px-5 py-4">{(grant.locationIds ?? []).map((row: any) => row.name).join(", ") || "All partner parking"}</td>
+                  <td className="px-5 py-4 font-mono text-xs">{grant.employeeCode || "—"}</td>
+                  <td className="px-5 py-4"><EnterpriseStatusBadge status={grant.status} size="sm" /></td>
+                  <td className="px-5 py-4 text-right"><div className="flex justify-end gap-2">{grant.status === "pending_approval" && canApprove && <button type="button" onClick={() => void approve(grant)} disabled={busyId === String(grant._id)} className="rounded-full bg-[#F28C28] px-3 py-2 text-xs text-white disabled:opacity-50">Approve</button>}{["active", "pending_approval"].includes(grant.status) && <button type="button" onClick={() => void revoke(grant)} disabled={busyId === String(grant._id)} className="rounded-full border border-red-200 p-2 text-red-600 disabled:opacity-50" title="Remove parking access">{busyId === String(grant._id) ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}</button>}</div></td>
+                </tr>)}
+                {!loading && visibleGrants.length === 0 && <tr><td colSpan={6} className="px-5 py-12 text-center text-sm text-gray-400">No parking staff found.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+          )}
+        </Paginated>
       </div>
 
-      {showForm && <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm">
-        <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-[28px] bg-white p-6 dark:bg-[#0B192C]">
+      {showForm && <div className="tv-drawer-overlay fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm">
+        <div className="tv-drawer-panel max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-[28px] bg-white p-6 dark:bg-[#0B192C]">
           <div className="mb-5 flex items-center justify-between border-b border-gray-100 pb-4 dark:border-slate-800">
             <div><h3 className="text-lg text-[#0B192C] dark:text-white">Create Parking Staff Account</h3><p className="mt-1 text-xs text-gray-400">Set the staff member's login password. The employee code is generated automatically.</p></div>
             <button type="button" onClick={() => setShowForm(false)} className="text-gray-400"><X size={19} /></button>

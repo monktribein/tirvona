@@ -162,8 +162,7 @@ export default function TempleManagementPage() {
               <img
                 src={row.media.coverImage}
                 alt={row.name}
-                className="h-10 w-10 object-cover"
-              />
+                className="h-10 w-10 object-cover" loading="lazy" decoding="async" />
             ) : (
               <Building2 className="w-5 h-5 text-[#F28C28]" />
             )}

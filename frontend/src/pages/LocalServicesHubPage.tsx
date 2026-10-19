@@ -1,3 +1,4 @@
+import { Paginated } from "../components/shared/Pagination";
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../lib/api";
@@ -140,63 +141,66 @@ export const LocalServicesHubPage: React.FC = () => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {items.map((item) => (
-              <div
-                key={item._id || item.id}
-                className="bg-white dark:bg-[#0B192C] rounded-[32px] border border-gray-100 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
-              >
-                <div>
-                  <div className="relative h-48 overflow-hidden bg-slate-900">
-                    <img
-                      src={
-                        item.image ||
-                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E"
-                      }
-                      alt={item.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <span className="absolute top-4 left-4 bg-[#F28C28] text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md">
-                      {item.badge || "Verified operator"}
-                    </span>
-                    <span className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white text-[10px] font-extrabold px-3 py-1 rounded-full border border-white/20">
-                      ★ {item.rating || "4.9"}
-                    </span>
-                  </div>
-
-                  <div className="p-6 space-y-3">
-                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-400">
-                      <MapPin size={13} className="text-[#F28C28]" />
-                      <span>{item.location || item.city}</span>
+          <Paginated items={items} pageSize={12}>
+            {(pageItems) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {pageItems.map((item) => (
+                <div
+                  key={item._id || item.id}
+                  className="bg-white dark:bg-[#0B192C] rounded-[32px] border border-gray-100 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
+                >
+                  <div>
+                    <div className="relative h-48 overflow-hidden bg-slate-900">
+                      <img
+                        src={
+                          item.image ||
+                          "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E"
+                        }
+                        alt={item.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" decoding="async" />
+                      <span className="absolute top-4 left-4 bg-[#F28C28] text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md">
+                        {item.badge || "Verified operator"}
+                      </span>
+                      <span className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white text-[10px] font-extrabold px-3 py-1 rounded-full border border-white/20">
+                        ★ {item.rating || "4.9"}
+                      </span>
                     </div>
-                    <h3 className="font-black text-base text-[#0B192C] dark:text-white leading-tight">
-                      {item.title}
-                    </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
-                      {item.description || item.desc}
-                    </p>
+
+                    <div className="p-6 space-y-3">
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-400">
+                        <MapPin size={13} className="text-[#F28C28]" />
+                        <span>{item.location || item.city}</span>
+                      </div>
+                      <h3 className="font-black text-base text-[#0B192C] dark:text-white leading-tight">
+                        {item.title}
+                      </h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
+                        {item.description || item.desc}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-6 pt-0 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/50 mt-4">
+                    <span className="text-xs font-black text-[#F28C28] dark:text-amber-400">
+                      {item.price || "Contact for Fare"}
+                    </span>
+                    <button
+                      onClick={() =>
+                        toast.info(item.phone || "+91 98765 00000", {
+                          title: `Contact ${item.title}`,
+                          duration: 7000,
+                        })
+                      }
+                      className="px-4 py-2 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white font-black text-xs shadow-md transition-colors cursor-pointer"
+                    >
+                      Contact &amp; Book
+                    </button>
                   </div>
                 </div>
-
-                <div className="p-6 pt-0 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/50 mt-4">
-                  <span className="text-xs font-black text-[#F28C28] dark:text-amber-400">
-                    {item.price || "Contact for Fare"}
-                  </span>
-                  <button
-                    onClick={() =>
-                      toast.info(item.phone || "+91 98765 00000", {
-                        title: `Contact ${item.title}`,
-                        duration: 7000,
-                      })
-                    }
-                    className="px-4 py-2 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white font-black text-xs shadow-md transition-colors cursor-pointer"
-                  >
-                    Contact &amp; Book
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            )}
+          </Paginated>
         )}
 
         <div className="pt-6 flex justify-center">

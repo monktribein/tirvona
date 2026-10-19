@@ -179,19 +179,22 @@ export const Stat: React.FC<{ label: string; value: React.ReactNode; hint?: stri
   to,
 }) => {
   const body = (
-  <div className={`h-full bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[20px] p-4 shadow-sm space-y-1.5 min-w-0 ${to ? "transition-all hover:border-[#F28C28]/60 hover:shadow-md hover:-translate-y-0.5" : ""}`}>
-    <div className="flex items-center justify-between gap-2">
-      <span className="text-[11px] text-gray-500 dark:text-gray-400 font-bold truncate">{label}</span>
-      {icon && <span className="text-[#F28C28] shrink-0">{icon}</span>}
+  <div
+    className="tv-stat"
+    style={tone === "warn" ? ({ "--tv-stat-accent": "#d97706" } as React.CSSProperties) : tone === "ok" ? ({ "--tv-stat-accent": "#059669" } as React.CSSProperties) : undefined}
+  >
+    <div className="tv-stat-head">
+      <span className="tv-stat-label truncate">{label}</span>
+      {icon && <span className="tv-stat-icon">{icon}</span>}
     </div>
     <div
-      className={`text-lg sm:text-xl font-black tracking-tight tabular-nums truncate ${
-        tone === "warn" ? "text-amber-600" : tone === "ok" ? "text-emerald-600" : "text-[#0B192C] dark:text-white"
+      className={`tv-stat-value ${
+        tone === "warn" ? "!text-amber-600" : tone === "ok" ? "!text-emerald-600" : ""
       }`}
     >
       {value}
     </div>
-    {hint && <p className="text-[10px] text-gray-400 leading-snug">{hint}</p>}
+    {hint && <p className="tv-stat-hint">{hint}</p>}
   </div>
   );
   return to ? (

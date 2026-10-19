@@ -111,8 +111,7 @@ export const EventApprovalsPage: React.FC = () => {
                       <img
                         src={item.coverImage}
                         alt={item.name}
-                        className="h-20 w-32 shrink-0 rounded-2xl object-cover"
-                      />
+                        className="h-20 w-32 shrink-0 rounded-2xl object-cover" loading="lazy" decoding="async" />
                     ) : null}
                     <div className="min-w-0">
                       <h3 className="text-sm font-black text-[#0B192C] dark:text-white">

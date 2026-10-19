@@ -22,57 +22,49 @@ export const EnterpriseStatsCard: React.FC<EnterpriseStatsCardProps> = ({
   description,
   icon,
   badgeText,
-  badgeColor = "bg-[#F28C28]/10 text-[#F28C28] border-[#F28C28]/20",
+  badgeColor = "bg-[#F28C28]/10 text-[#B45309] dark:text-[#FFA44D]",
 }) => {
   const { t } = useLanguage();
   return (
-    <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 space-y-2.5">
-      <div className="flex justify-between items-start">
-        <div className="w-10 h-10 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 flex items-center justify-center text-[#F28C28] dark:text-amber-400 shrink-0">
+    <div className="tv-stat">
+      <div className="tv-stat-head">
+        <span className="tv-stat-label">{t(title)}</span>
+        <span className="tv-stat-icon" aria-hidden="true">
           {icon}
-        </div>
+        </span>
+      </div>
+
+      <div className="flex flex-wrap items-baseline gap-2">
+        <span className="tv-stat-value">
+          {typeof value === "number" ? formatIndianNumber(value) : value}
+        </span>
+
+        {change && (
+          <span
+            className={`inline-flex items-center px-1.5 py-0.5 text-[11px] font-semibold ${
+              trend === "up"
+                ? "text-emerald-700 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-950/50"
+                : trend === "down"
+                  ? "text-rose-700 bg-rose-50 dark:text-rose-300 dark:bg-rose-950/50"
+                  : "text-gray-600 bg-gray-100 dark:text-gray-300 dark:bg-slate-800"
+            }`}
+          >
+            {trend === "up" && <ArrowUpRight size={13} />}
+            {trend === "down" && <ArrowDownRight size={13} />}
+            {change}
+          </span>
+        )}
 
         {badgeText && (
           <span
-            className={`px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider border ${badgeColor}`}
+            className={`px-1.5 py-0.5 text-[10px] font-semibold tracking-wide ${badgeColor}`}
           >
             {t(badgeText)}
           </span>
         )}
       </div>
 
-      <div className="space-y-1">
-        <span className="text-xs text-gray-400 font-bold tracking-wider block">
-          {t(title)}
-        </span>
-        <div className="flex items-baseline gap-2">
-          <span className="text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white tracking-tight">
-            {typeof value === "number" ? formatIndianNumber(value) : value}
-          </span>
-
-          {change && (
-            <span
-              className={`inline-flex items-center text-xs font-black px-1.5 py-0.5 rounded-md ${
-                trend === "up"
-                  ? "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50"
-                  : trend === "down"
-                    ? "text-rose-600 bg-rose-50 dark:bg-rose-950/50"
-                    : "text-gray-500 bg-gray-100 dark:bg-slate-800"
-              }`}
-            >
-              {trend === "up" && <ArrowUpRight size={14} />}
-              {trend === "down" && <ArrowDownRight size={14} />}
-              {change}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {description && (
-        <p className="text-[11px] text-gray-400 font-medium leading-relaxed">
-          {t(description)}
-        </p>
-      )}
+      {description && <p className="tv-stat-hint">{t(description)}</p>}
     </div>
   );
 };

@@ -1,3 +1,4 @@
+import { Paginated } from "../../../components/shared/Pagination";
 import React, { useCallback, useEffect, useState } from "react";
 import { useNotifications } from "../../../contexts/NotificationContext";
 import { AlertCircle, Loader2, Search, Users, XCircle } from "lucide-react";
@@ -143,79 +144,83 @@ export const OwnerEventRegistrationsPage: React.FC = () => {
           <p className="text-xs text-gray-400 font-semibold">
             {total} registration(s)
           </p>
-          <div className={`${CARD} overflow-x-auto`}>
-            <table className="w-full min-w-[880px] text-sm">
-              <thead className="border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 text-left text-[10px] tracking-wider font-bold text-gray-400 uppercase">
-                <tr>
-                  <th className="px-4 py-3">Reference</th>
-                  <th className="px-4 py-3">Event</th>
-                  <th className="px-4 py-3">Attendee</th>
-                  <th className="px-4 py-3">Attending</th>
-                  <th className="px-4 py-3">Places</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-                {rows.map((registration) => {
-                  const festival =
-                    typeof registration.eventId === "object"
-                      ? (registration.eventId as EventFestival)
-                      : null;
-                  const customer = registration.customerId as
-                    | { name?: string; phone?: string }
-                    | undefined;
-                  return (
-                    <tr key={registration._id}>
-                      <td className="px-4 py-3 font-mono text-[11px] font-bold text-gray-400 tracking-wider">
-                        {registration.registrationReference}
-                      </td>
-                      <td className="px-4 py-3 text-xs font-semibold text-gray-600 dark:text-gray-300">
-                        {festival?.name ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                        {typeof customer === "object"
-                          ? (customer?.name ?? "—")
-                          : "—"}
-                        <span className="block text-[10px] font-bold text-gray-400">
-                          {registration.contactPhone}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                        {formatDate(registration.attendDate)}
-                        <span className="block text-[10px] font-bold text-gray-400">
-                          {formatDateTime(registration.startsAt)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                        {registration.seats}
-                        {registration.checkedInCount
-                          ? ` (${registration.checkedInCount} in)`
-                          : ""}
-                      </td>
-                      <td className="px-4 py-3">
-                        <EventStatusBadge
-                          status={registration.status}
-                          size="sm"
-                        />
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        {registration.status === "confirmed" ? (
-                          <button
-                            type="button"
-                            onClick={() => cancel(registration)}
-                            className="inline-flex items-center gap-1 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-400 text-[10px] font-bold px-2.5 py-1.5 rounded-full transition-all active:scale-95 cursor-pointer"
-                          >
-                            <XCircle size={12} /> Cancel
-                          </button>
-                        ) : null}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <Paginated items={rows} pageSize={15}>
+            {(pageItems) => (
+            <div className={`${CARD} overflow-x-auto`}>
+              <table className="w-full min-w-[880px] text-sm">
+                <thead className="border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 text-left text-[10px] tracking-wider font-bold text-gray-400 uppercase">
+                  <tr>
+                    <th className="px-4 py-3">Reference</th>
+                    <th className="px-4 py-3">Event</th>
+                    <th className="px-4 py-3">Attendee</th>
+                    <th className="px-4 py-3">Attending</th>
+                    <th className="px-4 py-3">Places</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+                  {pageItems.map((registration) => {
+                    const festival =
+                      typeof registration.eventId === "object"
+                        ? (registration.eventId as EventFestival)
+                        : null;
+                    const customer = registration.customerId as
+                      | { name?: string; phone?: string }
+                      | undefined;
+                    return (
+                      <tr key={registration._id}>
+                        <td className="px-4 py-3 font-mono text-[11px] font-bold text-gray-400 tracking-wider">
+                          {registration.registrationReference}
+                        </td>
+                        <td className="px-4 py-3 text-xs font-semibold text-gray-600 dark:text-gray-300">
+                          {festival?.name ?? "—"}
+                        </td>
+                        <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                          {typeof customer === "object"
+                            ? (customer?.name ?? "—")
+                            : "—"}
+                          <span className="block text-[10px] font-bold text-gray-400">
+                            {registration.contactPhone}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                          {formatDate(registration.attendDate)}
+                          <span className="block text-[10px] font-bold text-gray-400">
+                            {formatDateTime(registration.startsAt)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                          {registration.seats}
+                          {registration.checkedInCount
+                            ? ` (${registration.checkedInCount} in)`
+                            : ""}
+                        </td>
+                        <td className="px-4 py-3">
+                          <EventStatusBadge
+                            status={registration.status}
+                            size="sm"
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {registration.status === "confirmed" ? (
+                            <button
+                              type="button"
+                              onClick={() => cancel(registration)}
+                              className="inline-flex items-center gap-1 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-400 text-[10px] font-bold px-2.5 py-1.5 rounded-full transition-all active:scale-95 cursor-pointer"
+                            >
+                              <XCircle size={12} /> Cancel
+                            </button>
+                          ) : null}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            )}
+          </Paginated>
         </>
       )}
     </div>

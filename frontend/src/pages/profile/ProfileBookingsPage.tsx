@@ -1,3 +1,4 @@
+import { Paginated } from "../../components/shared/Pagination";
 import React, { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -283,63 +284,15 @@ export const ProfileBookingsPage: React.FC = () => {
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
-            {visible.map((b) => (
-              <article
-                key={`${b.kind}-${b.id}`}
-                className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-5 sm:p-6 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-5"
-              >
-                <div className="flex items-start gap-4 min-w-0">
-                  <Link
-                    to={
-                      b.detailHref ||
-                      (b.kind === "parking"
-                        ? `/parking/booking/${b.id}`
-                        : `/booking/${b.reference || b.id}`)
-                    }
-                    className="shrink-0 hover:opacity-90 transition-opacity"
-                  >
-                    <img
-                      src={b.image || FALLBACK_IMAGE[b.kind]}
-                      alt={b.title}
-                      loading="lazy"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = FALLBACK_IMAGE[b.kind];
-                      }}
-                      className="w-24 h-24 rounded-2xl object-cover shrink-0 border border-gray-100 dark:border-slate-800"
-                    />
-                  </Link>
-
-                  <div className="space-y-1 text-xs min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-[10px] text-gray-400 font-bold">
-                        {b.reference}
-                      </span>
-                      {b.kind === "puja" ? <StatusBadge status={b.status} /> : <EnterpriseStatusBadge status={b.status} />}
-                      <span
-                        className={`inline-flex items-center gap-1 text-[9px] font-black tracking-wider px-2 py-0.5 rounded-full ${
-                          b.kind === "parking"
-                            ? "bg-[#FFF4E5]/50 text-[#F28C28] dark:text-amber-300"
-                            : "bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300"
-                        }`}
-                      >
-                        {b.kind === "parking" ? (
-                          <CircleParking size={10} />
-                        ) : b.kind === "puja" ? (
-                          <Flame size={10} />
-                        ) : (
-                          <BedDouble size={10} />
-                        )}
-                        {b.kind === "parking" ? "Parking" : b.kind === "puja" ? "Puja" : "Stay"}
-                      </span>
-                      {b.kind === "puja" && b.rawBooking?.deliveryMode === "LIVE_ONLINE" && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-black text-white">
-                          <Video size={10} /> Live online
-                        </span>
-                      )}
-                    </div>
-
+          <Paginated items={visible} pageSize={8}>
+            {(pageItems) => (
+            <div className="space-y-4">
+              {pageItems.map((b) => (
+                <article
+                  key={`${b.kind}-${b.id}`}
+                  className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-5 sm:p-6 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-5"
+                >
+                  <div className="flex items-start gap-4 min-w-0">
                     <Link
                       to={
                         b.detailHref ||
@@ -347,184 +300,236 @@ export const ProfileBookingsPage: React.FC = () => {
                           ? `/parking/booking/${b.id}`
                           : `/booking/${b.reference || b.id}`)
                       }
-                      className="hover:text-[#F28C28] transition-colors block"
+                      className="shrink-0 hover:opacity-90 transition-opacity"
                     >
-                      <h3 className="font-black text-base text-[#0B192C] dark:text-white leading-tight">
-                        {b.title}
-                      </h3>
+                      <img
+                        src={b.image || FALLBACK_IMAGE[b.kind]}
+                        alt={b.title}
+                        loading="lazy"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = FALLBACK_IMAGE[b.kind];
+                        }}
+                        className="w-24 h-24 rounded-2xl object-cover shrink-0 border border-gray-100 dark:border-slate-800"
+                      />
                     </Link>
 
-                    {b.location && (
-                      <p className="text-gray-500 font-medium flex items-center gap-1">
-                        <MapPin size={12} className="text-[#E58C28] shrink-0" />{" "}
-                        {b.location}
-                      </p>
-                    )}
-
-                    <p className="text-gray-400 font-bold pt-1">
-                      {b.kind === "parking"
-                        ? `${formatDateTime(b.start)} → ${formatDateTime(b.end)}`
-                        : ((b.bookingType === "day_rest" || b.bookingType === "freshen_up" || Boolean(b.dayStayDetails?.productCode)) && b.bookingType !== "overnight")
-                        ? `${formatDate(b.start)} · ${formatSlotTime(b.dayStayDetails?.slotStartTime || b.start)} – ${formatSlotTime(b.dayStayDetails?.slotEndTime || b.end)}`
-                        : `${formatDate(b.start)} → ${formatDate(b.end)}`}
-                      {b.meta ? ` • ${b.meta}` : ""}
-                    </p>
-
-                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                      {b.checkInCode && (
-                        <p className="inline-flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 px-2.5 py-1 rounded-full text-[10px] font-black">
-                          <KeyRound size={11} /> Check-in code: {b.checkInCode}
-                        </p>
-                      )}
-
-                      {(b.assignedRoomNumbers && b.assignedRoomNumbers.length > 0) ? (
-                        <p className="inline-flex items-center gap-1.5 bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 px-2.5 py-1 rounded-full text-[10px] font-black">
-                          <BedDouble size={11} /> Assigned:{" "}
-                          {b.assignedRoomNumbers.join(", ")}
-                        </p>
-                      ) : b.assignedRoomNumber ? (
-                        <p className="inline-flex items-center gap-1.5 bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 px-2.5 py-1 rounded-full text-[10px] font-black">
-                          <BedDouble size={11} /> Assigned:{" "}
-                          {b.assignedRoomNumber}
-                        </p>
-                      ) : null}
-
-                      {b.kind === "stay" && (
-                        <span className="inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 px-2.5 py-1 rounded-full text-[10px] font-bold">
-                          Pay at Ashram ({b.paymentStatus || "Pending"})
+                    <div className="space-y-1 text-xs min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[10px] text-gray-400 font-bold">
+                          {b.reference}
                         </span>
+                        {b.kind === "puja" ? <StatusBadge status={b.status} /> : <EnterpriseStatusBadge status={b.status} />}
+                        <span
+                          className={`inline-flex items-center gap-1 text-[9px] font-black tracking-wider px-2 py-0.5 rounded-full ${
+                            b.kind === "parking"
+                              ? "bg-[#FFF4E5]/50 text-[#F28C28] dark:text-amber-300"
+                              : "bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300"
+                          }`}
+                        >
+                          {b.kind === "parking" ? (
+                            <CircleParking size={10} />
+                          ) : b.kind === "puja" ? (
+                            <Flame size={10} />
+                          ) : (
+                            <BedDouble size={10} />
+                          )}
+                          {b.kind === "parking" ? "Parking" : b.kind === "puja" ? "Puja" : "Stay"}
+                        </span>
+                        {b.kind === "puja" && b.rawBooking?.deliveryMode === "LIVE_ONLINE" && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-black text-white">
+                            <Video size={10} /> Live online
+                          </span>
+                        )}
+                      </div>
+
+                      <Link
+                        to={
+                          b.detailHref ||
+                          (b.kind === "parking"
+                            ? `/parking/booking/${b.id}`
+                            : `/booking/${b.reference || b.id}`)
+                        }
+                        className="hover:text-[#F28C28] transition-colors block"
+                      >
+                        <h3 className="font-black text-base text-[#0B192C] dark:text-white leading-tight">
+                          {b.title}
+                        </h3>
+                      </Link>
+
+                      {b.location && (
+                        <p className="text-gray-500 font-medium flex items-center gap-1">
+                          <MapPin size={12} className="text-[#E58C28] shrink-0" />{" "}
+                          {b.location}
+                        </p>
                       )}
+
+                      <p className="text-gray-400 font-bold pt-1">
+                        {b.kind === "parking"
+                          ? `${formatDateTime(b.start)} → ${formatDateTime(b.end)}`
+                          : ((b.bookingType === "day_rest" || b.bookingType === "freshen_up" || Boolean(b.dayStayDetails?.productCode)) && b.bookingType !== "overnight")
+                          ? `${formatDate(b.start)} · ${formatSlotTime(b.dayStayDetails?.slotStartTime || b.start)} – ${formatSlotTime(b.dayStayDetails?.slotEndTime || b.end)}`
+                          : `${formatDate(b.start)} → ${formatDate(b.end)}`}
+                        {b.meta ? ` • ${b.meta}` : ""}
+                      </p>
+
+                      <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                        {b.checkInCode && (
+                          <p className="inline-flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 px-2.5 py-1 rounded-full text-[10px] font-black">
+                            <KeyRound size={11} /> Check-in code: {b.checkInCode}
+                          </p>
+                        )}
+
+                        {(b.assignedRoomNumbers && b.assignedRoomNumbers.length > 0) ? (
+                          <p className="inline-flex items-center gap-1.5 bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 px-2.5 py-1 rounded-full text-[10px] font-black">
+                            <BedDouble size={11} /> Assigned:{" "}
+                            {b.assignedRoomNumbers.join(", ")}
+                          </p>
+                        ) : b.assignedRoomNumber ? (
+                          <p className="inline-flex items-center gap-1.5 bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 px-2.5 py-1 rounded-full text-[10px] font-black">
+                            <BedDouble size={11} /> Assigned:{" "}
+                            {b.assignedRoomNumber}
+                          </p>
+                        ) : null}
+
+                        {b.kind === "stay" && (
+                          <span className="inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 px-2.5 py-1 rounded-full text-[10px] font-bold">
+                            Pay at Ashram ({b.paymentStatus || "Pending"})
+                          </span>
+                        )}
+                      </div>
+
+                      {b.slotNumber && (
+                        <p className="inline-flex items-center gap-1.5 mt-1.5 bg-[#FFF4E5]/50 text-[#F28C28] dark:text-amber-300 px-2.5 py-1 rounded-full text-[10px] font-black">
+                          <CircleParking size={11} /> Bay {b.slotNumber}
+                        </p>
+                      )}
+
+                      {b.specialRequests && (
+                        <p className="text-[11px] text-gray-500 italic mt-1">
+                          Note: {b.specialRequests}
+                        </p>
+                      )}
+
+                      {b.kind === "puja" && b.status === "PAYMENT_PENDING" && b.rawBooking?.holdExpiresAt && (
+                        <p className="text-[11px] font-bold text-amber-700 dark:text-amber-300 pt-1">
+                          Slot held until {formatDateTime(b.rawBooking.holdExpiresAt)}. It is released if payment is not completed.
+                        </p>
+                      )}
+
+                      {b.category === "cancelled" &&
+                        (b.refundAmount ?? 0) > 0 && (
+                          <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 pt-1">
+                            {formatCurrency(b.refundAmount)} refunded
+                          </p>
+                        )}
+                    </div>
+                  </div>
+
+                  <div className="flex md:flex-col justify-between items-end gap-3 w-full md:w-auto pt-3 md:pt-0 shrink-0">
+                    <div className="text-right">
+                      <span className="text-[10px] text-gray-400 block font-bold">
+                        {b.amountPaid > 0 ? "Paid" : b.kind === "puja" ? "Amount due" : "Payable at Stay"}
+                      </span>
+                      <span className="text-lg font-black text-[#F28C28] dark:text-white">
+                        {formatCurrency(
+                          b.amountPaid > 0 ? b.amountPaid : b.amount,
+                        )}
+                      </span>
                     </div>
 
-                    {b.slotNumber && (
-                      <p className="inline-flex items-center gap-1.5 mt-1.5 bg-[#FFF4E5]/50 text-[#F28C28] dark:text-amber-300 px-2.5 py-1 rounded-full text-[10px] font-black">
-                        <CircleParking size={11} /> Bay {b.slotNumber}
-                      </p>
-                    )}
-
-                    {b.specialRequests && (
-                      <p className="text-[11px] text-gray-500 italic mt-1">
-                        Note: {b.specialRequests}
-                      </p>
-                    )}
-
-                    {b.kind === "puja" && b.status === "PAYMENT_PENDING" && b.rawBooking?.holdExpiresAt && (
-                      <p className="text-[11px] font-bold text-amber-700 dark:text-amber-300 pt-1">
-                        Slot held until {formatDateTime(b.rawBooking.holdExpiresAt)}. It is released if payment is not completed.
-                      </p>
-                    )}
-
-                    {b.category === "cancelled" &&
-                      (b.refundAmount ?? 0) > 0 && (
-                        <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 pt-1">
-                          {formatCurrency(b.refundAmount)} refunded
-                        </p>
-                      )}
-                  </div>
-                </div>
-
-                <div className="flex md:flex-col justify-between items-end gap-3 w-full md:w-auto pt-3 md:pt-0 shrink-0">
-                  <div className="text-right">
-                    <span className="text-[10px] text-gray-400 block font-bold">
-                      {b.amountPaid > 0 ? "Paid" : b.kind === "puja" ? "Amount due" : "Payable at Stay"}
-                    </span>
-                    <span className="text-lg font-black text-[#F28C28] dark:text-white">
-                      {formatCurrency(
-                        b.amountPaid > 0 ? b.amountPaid : b.amount,
-                      )}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2 flex-wrap justify-end">
-                    {b.kind === "stay" && (
-                      <>
-                        <Link to={`/booking/${b.reference || b.id}`}>
+                    <div className="flex items-center gap-2 flex-wrap justify-end">
+                      {b.kind === "stay" && (
+                        <>
+                          <Link to={`/booking/${b.reference || b.id}`}>
+                            <EnterpriseButton
+                              variant="primary"
+                              size="sm"
+                              className="gap-1.5 text-xs"
+                            >
+                              <ArrowRight size={14} /> Details
+                            </EnterpriseButton>
+                          </Link>
                           <EnterpriseButton
-                            variant="primary"
+                            variant="outline"
+                            size="sm"
+                            className="gap-1.5 text-xs"
+                            onClick={() => setSelectedReceipt(b)}
+                          >
+                            <Ticket size={14} /> Receipt
+                          </EnterpriseButton>
+                        </>
+                      )}
+
+                      {b.kind === "parking" && b.category !== "cancelled" && (
+                        <Link to={`/parking/booking/${b.id}`}>
+                          <EnterpriseButton
+                            variant="outline"
                             size="sm"
                             className="gap-1.5 text-xs"
                           >
-                            <ArrowRight size={14} /> Details
+                            <Ticket size={14} /> QR Pass
                           </EnterpriseButton>
                         </Link>
+                      )}
+
+                      {b.kind === "puja" && (
+                        <PujaProcessButton ritualId={b.rawBooking?.ritual?.id} title={b.rawBooking?.ritual?.titles?.en} viewer="DEVOTEE" className="!min-h-[34px] !text-xs" />
+                      )}
+
+                      {b.kind === "puja" && ["CONFIRMED", "PROVIDER_ACCEPTED", "PREPARATION_IN_PROGRESS", "READY_FOR_FULFILMENT", "IN_PROGRESS"].includes(b.status) && (
+                        <WatchLiveButton stream={b.rawBooking?.liveStream} title={b.rawBooking?.ritual?.titles?.en} className="!min-h-[34px] !text-xs" />
+                      )}
+
+                      {b.cancellable && (
                         <EnterpriseButton
                           variant="outline"
                           size="sm"
-                          className="gap-1.5 text-xs"
-                          onClick={() => setSelectedReceipt(b)}
+                          className="gap-1.5 text-xs !text-rose-600 !border-rose-200"
+                          disabled={cancellingId === b.id}
+                          onClick={() => handleCancel(b)}
                         >
-                          <Ticket size={14} /> Receipt
+                          {cancellingId === b.id ? (
+                            <Loader2 size={14} className="animate-spin" />
+                          ) : (
+                            <XCircle size={14} />
+                          )}
+                          Cancel
                         </EnterpriseButton>
-                      </>
-                    )}
+                      )}
 
-                    {b.kind === "parking" && b.category !== "cancelled" && (
-                      <Link to={`/parking/booking/${b.id}`}>
-                        <EnterpriseButton
-                          variant="outline"
-                          size="sm"
-                          className="gap-1.5 text-xs"
-                        >
-                          <Ticket size={14} /> QR Pass
-                        </EnterpriseButton>
-                      </Link>
-                    )}
-
-                    {b.kind === "puja" && (
-                      <PujaProcessButton ritualId={b.rawBooking?.ritual?.id} title={b.rawBooking?.ritual?.titles?.en} viewer="DEVOTEE" className="!min-h-[34px] !text-xs" />
-                    )}
-
-                    {b.kind === "puja" && ["CONFIRMED", "PROVIDER_ACCEPTED", "PREPARATION_IN_PROGRESS", "READY_FOR_FULFILMENT", "IN_PROGRESS"].includes(b.status) && (
-                      <WatchLiveButton stream={b.rawBooking?.liveStream} title={b.rawBooking?.ritual?.titles?.en} className="!min-h-[34px] !text-xs" />
-                    )}
-
-                    {b.cancellable && (
-                      <EnterpriseButton
-                        variant="outline"
-                        size="sm"
-                        className="gap-1.5 text-xs !text-rose-600 !border-rose-200"
-                        disabled={cancellingId === b.id}
-                        onClick={() => handleCancel(b)}
-                      >
-                        {cancellingId === b.id ? (
-                          <Loader2 size={14} className="animate-spin" />
-                        ) : (
-                          <XCircle size={14} />
-                        )}
-                        Cancel
-                      </EnterpriseButton>
-                    )}
-
-                    {b.category === "completed" && b.detailHref && (
-                      <Link to={b.detailHref}>
-                        <EnterpriseButton
-                          variant="primary"
-                          size="sm"
-                          className="gap-1.5 text-xs"
-                        >
-                          <RefreshCw size={14} /> Book Again
-                        </EnterpriseButton>
-                      </Link>
-                    )}
-
-                    {b.category !== "completed" &&
-                      b.detailHref &&
-                      b.kind === "stay" && (
+                      {b.category === "completed" && b.detailHref && (
                         <Link to={b.detailHref}>
                           <EnterpriseButton
                             variant="primary"
                             size="sm"
                             className="gap-1.5 text-xs"
                           >
-                            View <ArrowRight size={13} />
+                            <RefreshCw size={14} /> Book Again
                           </EnterpriseButton>
                         </Link>
                       )}
+
+                      {b.category !== "completed" &&
+                        b.detailHref &&
+                        b.kind === "stay" && (
+                          <Link to={b.detailHref}>
+                            <EnterpriseButton
+                              variant="primary"
+                              size="sm"
+                              className="gap-1.5 text-xs"
+                            >
+                              View <ArrowRight size={13} />
+                            </EnterpriseButton>
+                          </Link>
+                        )}
+                    </div>
                   </div>
-                </div>
-              </article>
-            ))}
-          </div>
+                </article>
+              ))}
+            </div>
+            )}
+          </Paginated>
         )}
 
         {selectedReceipt && (

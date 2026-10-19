@@ -1,3 +1,4 @@
+import { Paginated } from "../../components/shared/Pagination";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ArrowDownLeft,
@@ -562,318 +563,330 @@ export const OfflineInventoryPage: React.FC = () => {
       ) : tab === "rooms" ? (
         /* ─── Rooms tab ──────────────────────────────────────────────────── */
         <div className={`${card} overflow-hidden`}>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead className="bg-gray-50 dark:bg-slate-900/60">
-                <tr className="text-[10px] uppercase font-black text-gray-400">
-                  <th className="py-3 px-4 whitespace-nowrap">Offline room</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Room type</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Stay</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Offline total</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Available offline</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Moved to Tirvona online</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Status</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-                {rooms.map((row) => (
-                  <tr key={getId(row)} className="text-xs">
-                    <td className="py-3.5 px-4 font-extrabold text-[#0B192C] dark:text-white">
-                      {row.label}
-                      {row.notes && (
-                        <span className="block text-[10px] font-normal text-gray-400">
-                          {row.notes}
+          <Paginated items={rooms} pageSize={15}>
+            {(pageItems) => (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-gray-50 dark:bg-slate-900/60">
+                  <tr className="text-[10px] uppercase font-black text-gray-400">
+                    <th className="py-3 px-4 whitespace-nowrap">Offline room</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Room type</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Stay</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Offline total</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Available offline</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Moved to Tirvona online</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Status</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+                  {pageItems.map((row) => (
+                    <tr key={getId(row)} className="text-xs">
+                      <td className="py-3.5 px-4 font-extrabold text-[#0B192C] dark:text-white">
+                        {row.label}
+                        {row.notes && (
+                          <span className="block text-[10px] font-normal text-gray-400">
+                            {row.notes}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4">{row.roomId?.name || "—"}</td>
+                      <td className="py-3.5 px-4">{row.ashramId?.name || "—"}</td>
+                      <td className="py-3.5 px-4 font-bold">{row.totalUnits}</td>
+                      <td className="py-3.5 px-4 font-black text-emerald-600">
+                        {row.availableUnits}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-[#F28C28]">
+                        {row.transferredUnits || 0}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                            row.status === "active"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-gray-200 text-gray-600"
+                          }`}
+                        >
+                          {row.status}
                         </span>
-                      )}
-                    </td>
-                    <td className="py-3.5 px-4">{row.roomId?.name || "—"}</td>
-                    <td className="py-3.5 px-4">{row.ashramId?.name || "—"}</td>
-                    <td className="py-3.5 px-4 font-bold">{row.totalUnits}</td>
-                    <td className="py-3.5 px-4 font-black text-emerald-600">
-                      {row.availableUnits}
-                    </td>
-                    <td className="py-3.5 px-4 font-bold text-[#F28C28]">
-                      {row.transferredUnits || 0}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span
-                        className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase ${
-                          row.status === "active"
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-gray-200 text-gray-600"
-                        }`}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {canManage ? (
+                          <div className="flex flex-wrap gap-1.5">
+                            <button
+                              onClick={() => openTransferModal(row)}
+                              disabled={row.availableUnits <= 0}
+                              className="px-2.5 py-1.5 rounded-lg bg-[#F28C28] text-white text-[10px] font-extrabold disabled:opacity-40"
+                            >
+                              Transfer to Tirvona
+                            </button>
+                            <button
+                              onClick={() => openReturnModal(row)}
+                              disabled={
+                                !row.transferredUnits || row.transferredUnits <= 0
+                              }
+                              className="px-2.5 py-1.5 rounded-lg border border-[#F28C28] text-[#F28C28] dark:text-amber-400 bg-blue-50/60 dark:bg-blue-950/20 hover:bg-blue-100 dark:hover:bg-[#D97706]/40 text-[10px] font-extrabold disabled:opacity-40 transition"
+                            >
+                              Request rooms back
+                            </button>
+                            <button
+                              onClick={() => openForm(row)}
+                              className="p-1.5 rounded-lg border border-gray-200 dark:border-slate-700"
+                            >
+                              <Pencil size={12} />
+                            </button>
+                            <button
+                              onClick={() => remove(row)}
+                              className="p-1.5 rounded-lg border border-rose-200 text-rose-600"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] font-bold text-gray-400">
+                            View only
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {!rooms.length && (
+                    <tr>
+                      <td
+                        colSpan={8}
+                        className="py-12 text-center text-xs font-bold text-gray-400"
                       >
-                        {row.status}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      {canManage ? (
-                        <div className="flex flex-wrap gap-1.5">
-                          <button
-                            onClick={() => openTransferModal(row)}
-                            disabled={row.availableUnits <= 0}
-                            className="px-2.5 py-1.5 rounded-lg bg-[#F28C28] text-white text-[10px] font-extrabold disabled:opacity-40"
-                          >
-                            Transfer to Tirvona
-                          </button>
-                          <button
-                            onClick={() => openReturnModal(row)}
-                            disabled={
-                              !row.transferredUnits || row.transferredUnits <= 0
-                            }
-                            className="px-2.5 py-1.5 rounded-lg border border-[#F28C28] text-[#F28C28] dark:text-amber-400 bg-blue-50/60 dark:bg-blue-950/20 hover:bg-blue-100 dark:hover:bg-[#D97706]/40 text-[10px] font-extrabold disabled:opacity-40 transition"
-                          >
-                            Request rooms back
-                          </button>
-                          <button
-                            onClick={() => openForm(row)}
-                            className="p-1.5 rounded-lg border border-gray-200 dark:border-slate-700"
-                          >
-                            <Pencil size={12} />
-                          </button>
-                          <button
-                            onClick={() => remove(row)}
-                            className="p-1.5 rounded-lg border border-rose-200 text-rose-600"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-[10px] font-bold text-gray-400">
-                          View only
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-                {!rooms.length && (
-                  <tr>
-                    <td
-                      colSpan={8}
-                      className="py-12 text-center text-xs font-bold text-gray-400"
-                    >
-                      <p className="mb-2">No offline rooms yet.</p>
-                      {canManage && (
-                        <div className="flex justify-center items-center gap-2 mt-3">
-                          <button
-                            type="button"
-                            onClick={() => openDirectReturnModal()}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border-2 border-[#F28C28] text-[#F28C28] dark:text-amber-400 bg-white dark:bg-[#0B192C] hover:bg-blue-50 dark:hover:bg-blue-950/40 text-xs font-extrabold shadow-sm transition"
-                          >
-                            <ArrowDownLeft size={14} /> Request rooms from Tirvona
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => openForm()}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold transition"
-                          >
-                            <Plus size={14} /> Add offline room
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                        <p className="mb-2">No offline rooms yet.</p>
+                        {canManage && (
+                          <div className="flex justify-center items-center gap-2 mt-3">
+                            <button
+                              type="button"
+                              onClick={() => openDirectReturnModal()}
+                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border-2 border-[#F28C28] text-[#F28C28] dark:text-amber-400 bg-white dark:bg-[#0B192C] hover:bg-blue-50 dark:hover:bg-blue-950/40 text-xs font-extrabold shadow-sm transition"
+                            >
+                              <ArrowDownLeft size={14} /> Request rooms from Tirvona
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openForm()}
+                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold transition"
+                            >
+                              <Plus size={14} /> Add offline room
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            )}
+          </Paginated>
         </div>
       ) : tab === "history" ? (
         /* ─── Transfer history tab ───────────────────────────────────────── */
         <div className={`${card} overflow-hidden`}>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[880px] text-left">
-              <thead className="bg-gray-50 dark:bg-slate-900/60">
-                <tr className="text-[10px] uppercase font-black text-gray-400">
-                  <th className="py-3 px-4">Reference</th>
-                  <th className="py-3 px-4">Offline room</th>
-                  <th className="py-3 px-4">Units</th>
-                  <th className="py-3 px-4">Dates</th>
-                  <th className="py-3 px-4">Offline left</th>
-                  <th className="py-3 px-4">By</th>
-                  <th className="py-3 px-4">Reason</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-                {transfers.map((row) => (
-                  <tr key={getId(row)} className="text-xs">
-                    <td className="py-3.5 px-4 font-extrabold text-[#0B192C] dark:text-white">
-                      {row.reference}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      {row.offlineRoomId?.label || "—"}
-                      <span className="block text-[10px] text-gray-400">
-                        {row.roomId?.name || ""}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 font-black text-[#F28C28]">
-                      +{row.units}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      {new Date(row.fromDate).toLocaleDateString()} –{" "}
-                      {new Date(row.toDate).toLocaleDateString()}
-                      <span className="block text-[10px] text-gray-400">
-                        {row.datesCovered} night(s)
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      {row.offlineAvailableBefore} → {row.offlineAvailableAfter}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      {row.performedBy?.name || "—"}
-                      <span className="block text-[10px] text-gray-400">
-                        {row.performedByRole}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 text-gray-500">
-                      {row.reason || "—"}
-                    </td>
+          <Paginated items={transfers} pageSize={15}>
+            {(pageItems) => (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[880px] text-left">
+                <thead className="bg-gray-50 dark:bg-slate-900/60">
+                  <tr className="text-[10px] uppercase font-black text-gray-400">
+                    <th className="py-3 px-4">Reference</th>
+                    <th className="py-3 px-4">Offline room</th>
+                    <th className="py-3 px-4">Units</th>
+                    <th className="py-3 px-4">Dates</th>
+                    <th className="py-3 px-4">Offline left</th>
+                    <th className="py-3 px-4">By</th>
+                    <th className="py-3 px-4">Reason</th>
                   </tr>
-                ))}
-                {!transfers.length && (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="py-12 text-center text-xs font-bold text-gray-400"
-                    >
-                      No transfers recorded yet.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+                  {pageItems.map((row) => (
+                    <tr key={getId(row)} className="text-xs">
+                      <td className="py-3.5 px-4 font-extrabold text-[#0B192C] dark:text-white">
+                        {row.reference}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {row.offlineRoomId?.label || "—"}
+                        <span className="block text-[10px] text-gray-400">
+                          {row.roomId?.name || ""}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 font-black text-[#F28C28]">
+                        +{row.units}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {new Date(row.fromDate).toLocaleDateString()} –{" "}
+                        {new Date(row.toDate).toLocaleDateString()}
+                        <span className="block text-[10px] text-gray-400">
+                          {row.datesCovered} night(s)
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {row.offlineAvailableBefore} → {row.offlineAvailableAfter}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {row.performedBy?.name || "—"}
+                        <span className="block text-[10px] text-gray-400">
+                          {row.performedByRole}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-gray-500">
+                        {row.reason || "—"}
+                      </td>
+                    </tr>
+                  ))}
+                  {!transfers.length && (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="py-12 text-center text-xs font-bold text-gray-400"
+                      >
+                        No transfers recorded yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            )}
+          </Paginated>
         </div>
       ) : (
         /* ─── Return requests tab ────────────────────────────────────────── */
         <div className={`${card} overflow-hidden`}>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[960px] text-left">
-              <thead className="bg-gray-50 dark:bg-slate-900/60">
-                <tr className="text-[10px] uppercase font-black text-gray-400">
-                  <th className="py-3 px-4">Reference</th>
-                  <th className="py-3 px-4">Offline room</th>
-                  <th className="py-3 px-4">Units</th>
-                  <th className="py-3 px-4">Dates</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Requested by</th>
-                  <th className="py-3 px-4">Reason</th>
-                  <th className="py-3 px-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-                {returnReqs.map((row) => (
-                  <tr key={getId(row)} className="text-xs">
-                    <td className="py-3.5 px-4 font-extrabold text-[#0B192C] dark:text-white">
-                      {row.reference}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      {row.offlineRoomId?.label || "—"}
-                      <span className="block text-[10px] text-gray-400">
-                        {row.roomId?.name || ""}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 font-black text-amber-600">
-                      −{row.units}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      {new Date(row.fromDate).toLocaleDateString()} –{" "}
-                      {new Date(row.toDate).toLocaleDateString()}
-                      <span className="block text-[10px] text-gray-400">
-                        {row.datesCovered} night(s)
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span
-                        className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase ${
-                          STATUS_BADGE[row.status] ?? STATUS_BADGE.cancelled
-                        }`}
-                      >
-                        {row.status}
-                      </span>
-                      {row.status === "rejected" && row.rejectionReason && (
-                        <span className="block text-[10px] text-rose-500 mt-0.5">
-                          {row.rejectionReason}
+          <Paginated items={returnReqs} pageSize={15}>
+            {(pageItems) => (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[960px] text-left">
+                <thead className="bg-gray-50 dark:bg-slate-900/60">
+                  <tr className="text-[10px] uppercase font-black text-gray-400">
+                    <th className="py-3 px-4">Reference</th>
+                    <th className="py-3 px-4">Offline room</th>
+                    <th className="py-3 px-4">Units</th>
+                    <th className="py-3 px-4">Dates</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4">Requested by</th>
+                    <th className="py-3 px-4">Reason</th>
+                    <th className="py-3 px-4">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+                  {pageItems.map((row) => (
+                    <tr key={getId(row)} className="text-xs">
+                      <td className="py-3.5 px-4 font-extrabold text-[#0B192C] dark:text-white">
+                        {row.reference}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {row.offlineRoomId?.label || "—"}
+                        <span className="block text-[10px] text-gray-400">
+                          {row.roomId?.name || ""}
                         </span>
-                      )}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      {row.requestedBy?.name || "—"}
-                      <span className="block text-[10px] text-gray-400">
-                        {row.requestedByRole}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 text-gray-500 max-w-[180px] truncate">
-                      {row.reason || "—"}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <div className="flex flex-wrap gap-1.5">
-                        {row.status === "pending" && !canManage && (
-                          <>
-                            <button
-                              onClick={() => {
-                                setDecideTarget(row);
-                                setDecideAction("approve");
-                                setDecideReason("");
-                              }}
-                              className="px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-[10px] font-extrabold"
-                            >
-                              <Check size={10} className="inline -mt-0.5 mr-0.5" /> Approve
-                            </button>
-                            <button
-                              onClick={() => {
-                                setDecideTarget(row);
-                                setDecideAction("reject");
-                                setDecideReason("");
-                              }}
-                              className="px-2.5 py-1.5 rounded-lg bg-rose-600 text-white text-[10px] font-extrabold"
-                            >
-                              <XCircle size={10} className="inline -mt-0.5 mr-0.5" /> Reject
-                            </button>
-                          </>
-                        )}
-                        {row.status === "pending" && canManage && (
-                          <button
-                            onClick={() => cancelReturn(row)}
-                            className="px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-slate-700 text-[10px] font-extrabold text-gray-600 dark:text-gray-300"
-                          >
-                            Cancel
-                          </button>
-                        )}
-                        {row.status !== "pending" && (
-                          <span className="text-[10px] font-bold text-gray-400">
-                            {row.decidedBy?.name
-                              ? `by ${row.decidedBy.name}`
-                              : "—"}
+                      </td>
+                      <td className="py-3.5 px-4 font-black text-amber-600">
+                        −{row.units}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {new Date(row.fromDate).toLocaleDateString()} –{" "}
+                        {new Date(row.toDate).toLocaleDateString()}
+                        <span className="block text-[10px] text-gray-400">
+                          {row.datesCovered} night(s)
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                            STATUS_BADGE[row.status] ?? STATUS_BADGE.cancelled
+                          }`}
+                        >
+                          {row.status}
+                        </span>
+                        {row.status === "rejected" && row.rejectionReason && (
+                          <span className="block text-[10px] text-rose-500 mt-0.5">
+                            {row.rejectionReason}
                           </span>
                         )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {!returnReqs.length && (
-                  <tr>
-                    <td
-                      colSpan={8}
-                      className="py-12 text-center text-xs font-bold text-gray-400"
-                    >
-                      No return requests yet.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {row.requestedBy?.name || "—"}
+                        <span className="block text-[10px] text-gray-400">
+                          {row.requestedByRole}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-gray-500 max-w-[180px] truncate">
+                        {row.reason || "—"}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="flex flex-wrap gap-1.5">
+                          {row.status === "pending" && !canManage && (
+                            <>
+                              <button
+                                onClick={() => {
+                                  setDecideTarget(row);
+                                  setDecideAction("approve");
+                                  setDecideReason("");
+                                }}
+                                className="px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-[10px] font-extrabold"
+                              >
+                                <Check size={10} className="inline -mt-0.5 mr-0.5" /> Approve
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setDecideTarget(row);
+                                  setDecideAction("reject");
+                                  setDecideReason("");
+                                }}
+                                className="px-2.5 py-1.5 rounded-lg bg-rose-600 text-white text-[10px] font-extrabold"
+                              >
+                                <XCircle size={10} className="inline -mt-0.5 mr-0.5" /> Reject
+                              </button>
+                            </>
+                          )}
+                          {row.status === "pending" && canManage && (
+                            <button
+                              onClick={() => cancelReturn(row)}
+                              className="px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-slate-700 text-[10px] font-extrabold text-gray-600 dark:text-gray-300"
+                            >
+                              Cancel
+                            </button>
+                          )}
+                          {row.status !== "pending" && (
+                            <span className="text-[10px] font-bold text-gray-400">
+                              {row.decidedBy?.name
+                                ? `by ${row.decidedBy.name}`
+                                : "—"}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {!returnReqs.length && (
+                    <tr>
+                      <td
+                        colSpan={8}
+                        className="py-12 text-center text-xs font-bold text-gray-400"
+                      >
+                        No return requests yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            )}
+          </Paginated>
         </div>
       )}
 
       {/* ─── Add / Edit offline room modal ──────────────────────────────── */}
       {formOpen && canManage && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center">
           <form
             onSubmit={save}
-            className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-4"
+            className="tv-drawer-panel w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-4"
           >
             <div className="flex justify-between items-start">
               <h2 className="font-black text-lg text-[#0B192C] dark:text-white">
@@ -981,10 +994,10 @@ export const OfflineInventoryPage: React.FC = () => {
 
       {/* ─── Transfer to Tirvona modal ──────────────────────────────────── */}
       {transferTarget && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center">
           <form
             onSubmit={submitTransfer}
-            className="w-full max-w-lg bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-4"
+            className="tv-drawer-panel w-full max-w-lg bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-4"
           >
             <div className="flex justify-between items-start">
               <div>
@@ -1091,10 +1104,10 @@ export const OfflineInventoryPage: React.FC = () => {
 
       {/* ─── Request rooms back modal ───────────────────────────────────── */}
       {returnTarget && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center">
           <form
             onSubmit={submitReturnRequest}
-            className="w-full max-w-lg bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-4"
+            className="tv-drawer-panel w-full max-w-lg bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-4"
           >
             <div className="flex justify-between items-start">
               <div>
@@ -1179,10 +1192,10 @@ export const OfflineInventoryPage: React.FC = () => {
 
       {/* ─── Admin approve / reject modal ───────────────────────────────── */}
       {decideTarget && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center">
           <form
             onSubmit={submitDecision}
-            className="w-full max-w-md bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-4"
+            className="tv-drawer-panel w-full max-w-md bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-4"
           >
             <div className="flex justify-between items-start">
               <div>
@@ -1253,10 +1266,10 @@ export const OfflineInventoryPage: React.FC = () => {
 
       {/* ─── Direct Request rooms from Tirvona modal ───────────────────── */}
       {directReturnOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center">
           <form
             onSubmit={submitDirectReturnRequest}
-            className="w-full max-w-lg bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-4 shadow-2xl"
+            className="tv-drawer-panel w-full max-w-lg bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-4 shadow-2xl"
           >
             <div className="flex justify-between items-start">
               <div>

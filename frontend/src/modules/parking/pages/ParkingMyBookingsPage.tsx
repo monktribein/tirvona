@@ -1,3 +1,4 @@
+import { Paginated } from "../../../components/shared/Pagination";
 import React, { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -123,104 +124,108 @@ export const ParkingMyBookingsPage: React.FC = () => {
             </Link>
           </div>
         ) : (
-          <ul className="space-y-3">
-            {bookings.map((booking, index) => {
-              const location =
-                typeof booking.locationId === "object"
-                  ? (booking.locationId as ParkingLocation)
-                  : null;
+          <Paginated items={bookings} pageSize={10}>
+            {(pageItems) => (
+            <ul className="space-y-3">
+              {pageItems.map((booking, index) => {
+                const location =
+                  typeof booking.locationId === "object"
+                    ? (booking.locationId as ParkingLocation)
+                    : null;
 
-              return (
-                <motion.li
-                  key={booking._id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: 0.25,
-                    delay: Math.min(index * 0.05, 0.3),
-                  }}
-                >
-                  <Link
-                    to={`/parking/booking/${booking._id}`}
-                    className="group block bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-4 sm:p-5 shadow-sm hover:shadow-lg transition-all hover:-translate-y-0.5"
+                return (
+                  <motion.li
+                    key={booking._id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      duration: 0.25,
+                      delay: Math.min(index * 0.05, 0.3),
+                    }}
                   >
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div className="min-w-0 space-y-1">
-                        <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white line-clamp-1">
-                          {location?.name || "Parking booking"}
-                        </h3>
-                        {location?.address && (
-                          <p className="inline-flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400 font-medium line-clamp-1">
-                            <MapPin
-                              size={11}
-                              className="shrink-0 stroke-[2.5]"
-                            />
-                            {[location.address.landmark, location.address.city]
-                              .filter(Boolean)
-                              .join(", ")}
-                          </p>
-                        )}
-                      </div>
-                      <ParkingStatusBadge status={booking.status} />
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3">
-                      {[
-                        {
-                          icon: Car,
-                          label: "Vehicle",
-                          value: `${booking.vehicleNumber}`,
-                          sub: vehicleLabel(booking.vehicleType),
-                        },
-                        {
-                          icon: Clock,
-                          label: "Entry",
-                          value: formatDateTime(booking.entryAt),
-                        },
-                        {
-                          icon: Clock,
-                          label: "Exit",
-                          value: formatDateTime(booking.exitAt),
-                        },
-                        {
-                          icon: CircleParking,
-                          label: "Paid",
-                          value: formatCurrency(booking.pricing.amountPaid),
-                        },
-                      ].map(({ icon: Icon, label, value, sub }) => (
-                        <div key={label} className="space-y-0.5 min-w-0">
-                          <span className="inline-flex items-center gap-1 text-[9px] tracking-wider font-bold text-gray-400">
-                            <Icon size={10} className="stroke-[2.5]" /> {label}
-                          </span>
-                          <p className="text-[11px] font-bold text-slate-700 dark:text-gray-200 truncate">
-                            {value}
-                          </p>
-                          {sub && (
-                            <p className="text-[9px] font-semibold text-gray-400">
-                              {sub}
+                    <Link
+                      to={`/parking/booking/${booking._id}`}
+                      className="group block bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-4 sm:p-5 shadow-sm hover:shadow-lg transition-all hover:-translate-y-0.5"
+                    >
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="min-w-0 space-y-1">
+                          <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white line-clamp-1">
+                            {location?.name || "Parking booking"}
+                          </h3>
+                          {location?.address && (
+                            <p className="inline-flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400 font-medium line-clamp-1">
+                              <MapPin
+                                size={11}
+                                className="shrink-0 stroke-[2.5]"
+                              />
+                              {[location.address.landmark, location.address.city]
+                                .filter(Boolean)
+                                .join(", ")}
                             </p>
                           )}
                         </div>
-                      ))}
-                    </div>
+                        <ParkingStatusBadge status={booking.status} />
+                      </div>
 
-                    <div className="flex items-center justify-between gap-2 pt-3 mt-3">
-                      <span className="text-[10px] font-bold text-gray-400">
-                        {booking.bookingReference}
-                      </span>
-                      <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-[#F28C28] dark:text-amber-300">
-                        View pass
-                        <ArrowRight
-                          size={12}
-                          className="stroke-[3] transition-transform group-hover:translate-x-0.5"
-                        />
-                      </span>
-                    </div>
-                  </Link>
-                </motion.li>
-              );
-            })}
-          </ul>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3">
+                        {[
+                          {
+                            icon: Car,
+                            label: "Vehicle",
+                            value: `${booking.vehicleNumber}`,
+                            sub: vehicleLabel(booking.vehicleType),
+                          },
+                          {
+                            icon: Clock,
+                            label: "Entry",
+                            value: formatDateTime(booking.entryAt),
+                          },
+                          {
+                            icon: Clock,
+                            label: "Exit",
+                            value: formatDateTime(booking.exitAt),
+                          },
+                          {
+                            icon: CircleParking,
+                            label: "Paid",
+                            value: formatCurrency(booking.pricing.amountPaid),
+                          },
+                        ].map(({ icon: Icon, label, value, sub }) => (
+                          <div key={label} className="space-y-0.5 min-w-0">
+                            <span className="inline-flex items-center gap-1 text-[9px] tracking-wider font-bold text-gray-400">
+                              <Icon size={10} className="stroke-[2.5]" /> {label}
+                            </span>
+                            <p className="text-[11px] font-bold text-slate-700 dark:text-gray-200 truncate">
+                              {value}
+                            </p>
+                            {sub && (
+                              <p className="text-[9px] font-semibold text-gray-400">
+                                {sub}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 pt-3 mt-3">
+                        <span className="text-[10px] font-bold text-gray-400">
+                          {booking.bookingReference}
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-[#F28C28] dark:text-amber-300">
+                          View pass
+                          <ArrowRight
+                            size={12}
+                            className="stroke-[3] transition-transform group-hover:translate-x-0.5"
+                          />
+                        </span>
+                      </div>
+                    </Link>
+                  </motion.li>
+                );
+              })}
+            </ul>
+            )}
+          </Paginated>
         )}
       </div>
     </div>

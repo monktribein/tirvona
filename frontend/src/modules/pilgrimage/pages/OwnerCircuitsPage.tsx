@@ -1,3 +1,4 @@
+import { Paginated } from "../../../components/shared/Pagination";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertCircle,
@@ -301,105 +302,109 @@ export const OwnerCircuitsPage: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className={`${CARD} overflow-x-auto`}>
-          <table className="w-full min-w-[880px] text-sm">
-            <thead className="border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 text-left text-[10px] tracking-wider font-bold text-gray-400 uppercase">
-              <tr>
-                <th className="px-4 py-3">Circuit</th>
-                <th className="px-4 py-3">Route</th>
-                <th className="px-4 py-3">Length</th>
-                <th className="px-4 py-3">Stops</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-              {circuits.map((circuit) => (
-                <tr key={circuit._id}>
-                  <td className="px-4 py-3">
-                    <p className="font-bold text-[#0B192C] dark:text-white">
-                      {circuit.name}
-                    </p>
-                    <p className="text-[10px] font-bold text-gray-400">
-                      {CIRCUIT_TYPE_LABELS[circuit.circuitType]} ·{" "}
-                      {difficultyLabel(circuit.difficulty)}
-                    </p>
-                    {circuit.status === "rejected" && circuit.rejectionReason ? (
-                      <p className="mt-1 text-[10px] font-bold text-rose-600">
-                        {circuit.rejectionReason}
+        <Paginated items={circuits} pageSize={10}>
+          {(pageItems) => (
+          <div className={`${CARD} overflow-x-auto`}>
+            <table className="w-full min-w-[880px] text-sm">
+              <thead className="border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 text-left text-[10px] tracking-wider font-bold text-gray-400 uppercase">
+                <tr>
+                  <th className="px-4 py-3">Circuit</th>
+                  <th className="px-4 py-3">Route</th>
+                  <th className="px-4 py-3">Length</th>
+                  <th className="px-4 py-3">Stops</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+                {pageItems.map((circuit) => (
+                  <tr key={circuit._id}>
+                    <td className="px-4 py-3">
+                      <p className="font-bold text-[#0B192C] dark:text-white">
+                        {circuit.name}
                       </p>
-                    ) : null}
-                  </td>
-                  <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                    {circuit.startCity || "—"}
-                    {circuit.endCity && circuit.endCity !== circuit.startCity
-                      ? ` → ${circuit.endCity}`
-                      : ""}
-                    <span className="block text-[10px] font-bold text-gray-400">
-                      {formatDistance(circuit.totalDistanceKm)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                    {formatDuration(circuit.durationDays)}
-                  </td>
-                  <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                    {circuit.stopCount ?? 0}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-black tracking-wider ${circuitStatusStyle(circuit.status)}`}
-                    >
-                      {circuitStatusLabel(circuit.status)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <button
-                        type="button"
-                        title="Manage stops"
-                        onClick={() => openStops(circuit)}
-                        className="p-2 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#F28C28] hover:border-[#F28C28] transition-all active:scale-90 cursor-pointer"
+                      <p className="text-[10px] font-bold text-gray-400">
+                        {CIRCUIT_TYPE_LABELS[circuit.circuitType]} ·{" "}
+                        {difficultyLabel(circuit.difficulty)}
+                      </p>
+                      {circuit.status === "rejected" && circuit.rejectionReason ? (
+                        <p className="mt-1 text-[10px] font-bold text-rose-600">
+                          {circuit.rejectionReason}
+                        </p>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                      {circuit.startCity || "—"}
+                      {circuit.endCity && circuit.endCity !== circuit.startCity
+                        ? ` → ${circuit.endCity}`
+                        : ""}
+                      <span className="block text-[10px] font-bold text-gray-400">
+                        {formatDistance(circuit.totalDistanceKm)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                      {formatDuration(circuit.durationDays)}
+                    </td>
+                    <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                      {circuit.stopCount ?? 0}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`tv-status-badge inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-black tracking-wider ${circuitStatusStyle(circuit.status)}`}
                       >
-                        <Route size={14} />
-                      </button>
-                      <button
-                        type="button"
-                        title="Edit"
-                        onClick={() => openEdit(circuit)}
-                        className="p-2 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#F28C28] hover:border-[#F28C28] transition-all active:scale-90 cursor-pointer"
-                      >
-                        <Pencil size={14} />
-                      </button>
-                      {["draft", "rejected"].includes(circuit.status) ? (
+                        {circuitStatusLabel(circuit.status)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-1.5">
                         <button
                           type="button"
-                          title="Submit for review"
-                          onClick={() => submitForReview(circuit)}
-                          className="p-2 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-400 transition-all active:scale-90 cursor-pointer"
+                          title="Manage stops"
+                          onClick={() => openStops(circuit)}
+                          className="p-2 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#F28C28] hover:border-[#F28C28] transition-all active:scale-90 cursor-pointer"
                         >
-                          <Send size={14} />
+                          <Route size={14} />
                         </button>
-                      ) : null}
-                      <button
-                        type="button"
-                        title="Delete"
-                        onClick={() => remove(circuit)}
-                        className="p-2 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-400 transition-all active:scale-90 cursor-pointer"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                        <button
+                          type="button"
+                          title="Edit"
+                          onClick={() => openEdit(circuit)}
+                          className="p-2 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#F28C28] hover:border-[#F28C28] transition-all active:scale-90 cursor-pointer"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        {["draft", "rejected"].includes(circuit.status) ? (
+                          <button
+                            type="button"
+                            title="Submit for review"
+                            onClick={() => submitForReview(circuit)}
+                            className="p-2 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-400 transition-all active:scale-90 cursor-pointer"
+                          >
+                            <Send size={14} />
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          title="Delete"
+                          onClick={() => remove(circuit)}
+                          className="p-2 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-400 transition-all active:scale-90 cursor-pointer"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          )}
+        </Paginated>
       )}
 
       {showForm ? (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-16">
-          <div className="w-full max-w-3xl bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-2xl">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-16">
+          <div className="tv-drawer-panel w-full max-w-3xl bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-2xl">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-black text-[#0B192C] dark:text-white">
                 {editing ? "Edit circuit" : "New circuit"}
@@ -672,8 +677,8 @@ export const OwnerCircuitsPage: React.FC = () => {
       ) : null}
 
       {stopsFor ? (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-16">
-          <div className="w-full max-w-3xl bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-2xl">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-16">
+          <div className="tv-drawer-panel w-full max-w-3xl bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-2xl">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-black text-[#0B192C] dark:text-white">
                 Stops — {stopsFor.name}
