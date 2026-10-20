@@ -156,8 +156,7 @@ export const FloatingDealBox: React.FC = () => {
         <img
           src="/assets/deals/puja-offer-banner.jpg"
           alt="Festive Sacred Offer Banner"
-          className="absolute inset-0 w-full h-full object-cover object-center group-hover/card:scale-108 transition-transform duration-700 ease-out"
-        />
+          className="absolute inset-0 w-full h-full object-cover object-center group-hover/card:scale-108 transition-transform duration-700 ease-out" loading="lazy" decoding="async" />
 
         {/* Ambient Warm Crimson/Saffron Gradients for Pristine Text Legibility */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-black/35 pointer-events-none" />

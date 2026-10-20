@@ -8,7 +8,10 @@ import type { AuthenticatedUser } from "../../../common/decorators/current-user.
 import { WalletService } from "../../wallet/application/wallet.service";
 import { providerError } from "../domain/provider.errors";
 import { sameId, toObjectId } from "./provider.helpers";
-import { ProviderBookingService } from "./provider-booking.service";
+// Type-only: provider-booking.service imports this file too. The class is
+// resolved lazily below so the two modules never load each other mid-evaluation
+// (which would trip a TDZ error under the SWC dev builder).
+import type { ProviderBookingService } from "./provider-booking.service";
 import type {
   ConfirmProviderPaymentDto,
   CreatePaymentOrderDto,
@@ -53,7 +56,15 @@ export class ProviderBookingPaymentService {
 
   constructor(
     @InjectModel("ProviderBooking") private readonly bookings: Model<any>,
-    @Inject(forwardRef(() => ProviderBookingService))
+    @Inject(
+      forwardRef(
+        () =>
+          // Lazy on purpose: provider-booking.service imports this file too.
+          // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/consistent-type-imports
+          (require("./provider-booking.service") as typeof import("./provider-booking.service"))
+            .ProviderBookingService,
+      ),
+    )
     private readonly bookingService: ProviderBookingService,
     private readonly wallet: WalletService,
     private readonly config: ConfigService,

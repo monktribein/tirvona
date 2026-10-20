@@ -690,12 +690,12 @@ export const InventoryCalendarPage: React.FC = () => {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 overflow-y-auto"
+          className="tv-drawer-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 overflow-y-auto"
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowOverride(false);
           }}
         >
-          <div className="relative z-[101] bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-3xl p-6 sm:p-7 space-y-5 shadow-2xl text-left animate-in fade-in zoom-in-95 duration-200 my-auto">
+          <div className="tv-drawer-panel relative z-[101] bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-3xl p-6 sm:p-7 space-y-5 shadow-2xl text-left animate-in fade-in zoom-in-95 duration-200 my-auto">
             {/* Modal Header */}
             <div className="flex justify-between items-start border-b border-gray-100 dark:border-slate-800 pb-4">
               <div className="space-y-1">

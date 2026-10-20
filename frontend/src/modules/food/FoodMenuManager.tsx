@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Pencil, Trash2, Power, UtensilsCrossed, Image as ImageIcon, Star, ArrowLeft, ArrowRight, X, Camera, Upload, Loader2 } from "lucide-react";
+import { Paginated } from "../../components/shared/Pagination";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Plus, Pencil, Trash2, Power, UtensilsCrossed } from "lucide-react";
 import { EnterpriseButton } from "../../admin/shared/components/EnterpriseButton";
 import { CameraCaptureModal } from "../../components/shared/CameraCaptureModal";
 import { getErrorMessage } from "../../lib/api";
@@ -601,71 +602,57 @@ export const FoodMenuManager: React.FC<{
           />
         </Panel>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {visible.map((m) => (
-            <div key={m.id} className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[20px] p-4 shadow-sm flex flex-col gap-2.5">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-sm font-black text-[#0B192C] dark:text-white truncate">{m.label}</p>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">{m.family}</p>
+        <Paginated items={visible} pageSize={12}>
+          {(pageItems) => (
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {pageItems.map((m) => (
+              <div key={m.id} className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[20px] p-4 shadow-sm flex flex-col gap-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-black text-[#0B192C] dark:text-white truncate">{m.label}</p>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">{m.family}</p>
+                  </div>
+                  <p className="text-sm font-black text-[#F28C28] tabular-nums shrink-0">{rupees(m.pricePaise)}</p>
                 </div>
-                <p className="text-sm font-black text-[#F28C28] tabular-nums shrink-0">{rupees(m.pricePaise)}</p>
-              </div>
-              {(m.imageUrl || (m.imageUrls && m.imageUrls.length > 0)) && (
-                <div className="relative h-28 w-full rounded-xl overflow-hidden bg-gray-100 dark:bg-slate-900">
-                  <img
-                    src={m.imageUrl || m.imageUrls?.[0]}
-                    alt={m.label}
-                    className="h-full w-full object-cover"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src =
-                        "https://placehold.co/300x200?text=Food+Item";
-                    }}
-                  />
-                  {m.imageUrls && m.imageUrls.length > 1 && (
-                    <span className="absolute bottom-1.5 right-1.5 inline-flex items-center gap-1 rounded-md bg-black/75 backdrop-blur-xs px-2 py-0.5 text-[10px] font-bold text-white shadow-xs">
-                      <ImageIcon size={10} /> {m.imageUrls.length} photos
+                {m.contents && <p className="text-[11px] text-gray-500 leading-snug line-clamp-2">{m.contents}</p>}
+                <div className="flex flex-wrap gap-1">
+                  {m.dietaryTags.map((t) => (
+                    <span key={t} className="px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-800 text-[9px] font-bold text-gray-600 dark:text-gray-300">
+                      {t.replace(/_/g, " ")}
                     </span>
-                  )}
+                  ))}
                 </div>
-              )}
-              {m.contents && <p className="text-[11px] text-gray-500 leading-snug line-clamp-2">{m.contents}</p>}
-              <div className="flex flex-wrap gap-1">
-                {m.dietaryTags.map((t) => (
-                  <span key={t} className="px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-800 text-[9px] font-bold text-gray-600 dark:text-gray-300">
-                    {t.replace(/_/g, " ")}
+                <div className="flex items-center justify-between text-[11px] text-gray-500">
+                  <span>
+                    Stock/day: <strong className="text-[#0B192C] dark:text-white">{m.dailyCapacity}</strong> · {m.prepMinutes} min
                   </span>
-                ))}
+                  <Pill label={m.isAvailable ? "Available" : "Hidden"} tone={m.isAvailable ? "green" : "gray"} />
+                </div>
+                <div className="flex items-center gap-2 pt-1 mt-auto">
+                  <EnterpriseButton
+                    variant="outline"
+                    size="sm"
+                    icon={<Power size={12} />}
+                    loading={busy === `av-${m.id}`}
+                    disabled={Boolean(busy)}
+                    onClick={() =>
+                      run(`av-${m.id}`, () => foodPartnerService.updateMenuItem(scope, m.id, { isAvailable: !m.isAvailable }), m.isAvailable ? "Dish hidden" : "Dish is available")
+                    }
+                  >
+                    {m.isAvailable ? "Mark sold out" : "Make available"}
+                  </EnterpriseButton>
+                  <button type="button" aria-label={`Edit ${m.label}`} onClick={() => setEditor({ id: m.id, draft: fromItem(m) })} className="p-2 rounded-lg border border-gray-200 dark:border-slate-700 text-gray-600 hover:border-[#F28C28] hover:text-[#F28C28]">
+                    <Pencil size={13} />
+                  </button>
+                  <button type="button" aria-label={`Remove ${m.label}`} disabled={busy === `del-${m.id}`} onClick={() => remove(m)} className="p-2 rounded-lg border border-gray-200 dark:border-slate-700 text-gray-600 hover:border-rose-400 hover:text-rose-500 disabled:opacity-50">
+                    <Trash2 size={13} />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center justify-between text-[11px] text-gray-500">
-                <span>
-                  Stock/day: <strong className="text-[#0B192C] dark:text-white">{m.dailyCapacity}</strong> · {m.prepMinutes} min
-                </span>
-                <Pill label={m.isAvailable ? "Available" : "Hidden"} tone={m.isAvailable ? "green" : "gray"} />
-              </div>
-              <div className="flex items-center gap-2 pt-1 mt-auto">
-                <EnterpriseButton
-                  variant="outline"
-                  size="sm"
-                  icon={<Power size={12} />}
-                  loading={busy === `av-${m.id}`}
-                  disabled={Boolean(busy)}
-                  onClick={() =>
-                    run(`av-${m.id}`, () => foodPartnerService.updateMenuItem(scope, m.id, { isAvailable: !m.isAvailable }), m.isAvailable ? "Dish hidden" : "Dish is available")
-                  }
-                >
-                  {m.isAvailable ? "Mark sold out" : "Make available"}
-                </EnterpriseButton>
-                <button type="button" aria-label={`Edit ${m.label}`} onClick={() => openEditor(m.id, fromItem(m))} className="p-2 rounded-lg border border-gray-200 dark:border-slate-700 text-gray-600 hover:border-[#F28C28] hover:text-[#F28C28]">
-                  <Pencil size={13} />
-                </button>
-                <button type="button" aria-label={`Remove ${m.label}`} disabled={busy === `del-${m.id}`} onClick={() => remove(m)} className="p-2 rounded-lg border border-gray-200 dark:border-slate-700 text-gray-600 hover:border-rose-400 hover:text-rose-500 disabled:opacity-50">
-                  <Trash2 size={13} />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+          )}
+        </Paginated>
       )}
     </div>
   );

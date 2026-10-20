@@ -1,3 +1,4 @@
+import { Paginated } from "../components/shared/Pagination";
 import React, { useState, useEffect } from "react";
 import { useSearchParams, Link, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -709,117 +710,121 @@ export const VolunteerHubPage: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {jobs.map((job) => (
-                <div
-                  key={job._id}
-                  className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-5 shadow-lg hover:shadow-2xl transition-all flex flex-col justify-between space-y-4 group relative overflow-hidden"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-[#F28C28]/10 text-[#F28C28] flex items-center justify-center font-black text-sm">
-                          {job.ashramName ? job.ashramName.charAt(0) : "S"}
+            <Paginated items={jobs} pageSize={10}>
+              {(pageItems) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {pageItems.map((job) => (
+                  <div
+                    key={job._id}
+                    className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-5 shadow-lg hover:shadow-2xl transition-all flex flex-col justify-between space-y-4 group relative overflow-hidden"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-2xl bg-[#F28C28]/10 text-[#F28C28] flex items-center justify-center font-black text-sm">
+                            {job.ashramName ? job.ashramName.charAt(0) : "S"}
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-black text-[#0B192C] dark:text-white group-hover:text-[#F28C28] transition-colors line-clamp-1">
+                              {job.ashramName}
+                            </h4>
+                            <span className="text-[10px] font-extrabold text-gray-400 flex items-center gap-1">
+                              <MapPin size={10} className="text-[#E58C28]" />{" "}
+                              {job.city}, {job.state}
+                            </span>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="text-xs font-black text-[#0B192C] dark:text-white group-hover:text-[#F28C28] transition-colors line-clamp-1">
-                            {job.ashramName}
-                          </h4>
-                          <span className="text-[10px] font-extrabold text-gray-400 flex items-center gap-1">
-                            <MapPin size={10} className="text-[#E58C28]" />{" "}
-                            {job.city}, {job.state}
+
+                        <EnterpriseStatusBadge
+                          status={job.status === "open" ? "active" : "pending"}
+                        />
+                      </div>
+
+                      <div>
+                        <Link
+                          to={`/volunteer/${job._id}`}
+                          className="block group-hover:text-[#F28C28] transition-colors"
+                        >
+                          <h3 className="text-base font-black text-[#0B192C] dark:text-white leading-snug hover:underline">
+                            {job.title}
+                          </h3>
+                        </Link>
+                        <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                          <span className="inline-block px-2.5 py-0.5 bg-blue-50 dark:bg-slate-900 text-[#F28C28] border border-blue-100 dark:border-slate-800 rounded-full text-[10px] font-black tracking-wider">
+                            {getVolunteerCategoryLabel(job.type)}
+                          </span>
+                          {job.department && job.department !== getVolunteerCategoryLabel(job.type) && (
+                            <span className="inline-block px-2 py-0.5 bg-gray-50 dark:bg-slate-850 text-gray-500 rounded-full text-[10px] font-bold">
+                              {job.department}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-[11px] font-extrabold text-gray-600 dark:text-gray-300 pt-1">
+                        <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-slate-900/60 p-2 rounded-xl border border-gray-100 dark:border-slate-800/80">
+                          <HomeIcon
+                            size={13}
+                            className="text-emerald-500 shrink-0"
+                          />
+                          <span className="truncate">
+                            {job.accommodation === "free_ashram_stay"
+                              ? "Free Stay"
+                              : "Stay Option"}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-slate-900/60 p-2 rounded-xl border border-gray-100 dark:border-slate-800/80">
+                          <Utensils size={13} className="text-[#E58C28] shrink-0" />
+                          <span className="truncate">
+                            {job.food === "satvik_free_3_meals"
+                              ? "Free 3 Satvik Meals"
+                              : "Meals Provided"}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-slate-900/60 p-2 rounded-xl border border-gray-100 dark:border-slate-800/80">
+                          <Clock size={13} className="text-blue-500 shrink-0" />
+                          <span className="truncate">{job.duration || "Flexible Duration"}</span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-slate-900/60 p-2 rounded-xl border border-gray-100 dark:border-slate-800/80">
+                          <Award size={13} className="text-amber-500 shrink-0" />
+                          <span className="truncate">
+                            {job.certificateProvided
+                              ? "Cert. Included"
+                              : "Experience"}
                           </span>
                         </div>
                       </div>
 
-                      <EnterpriseStatusBadge
-                        status={job.status === "open" ? "active" : "pending"}
-                      />
+                      <div className="bg-[#E58C28]/10 border border-[#E58C28]/25 rounded-2xl p-2.5 text-center">
+                        <span className="text-xs font-black text-[#E58C28]">
+                          {job.stipend || "Free Ashram Stay + Satvik Meals"}
+                        </span>
+                      </div>
                     </div>
 
-                    <div>
+                    <div className="pt-2 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between gap-2">
                       <Link
                         to={`/volunteer/${job._id}`}
-                        className="block group-hover:text-[#F28C28] transition-colors"
+                        className="text-[11px] font-extrabold text-[#F28C28] hover:underline"
                       >
-                        <h3 className="text-base font-black text-[#0B192C] dark:text-white leading-snug hover:underline">
-                          {job.title}
-                        </h3>
+                        View Details →
                       </Link>
-                      <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                        <span className="inline-block px-2.5 py-0.5 bg-blue-50 dark:bg-slate-900 text-[#F28C28] border border-blue-100 dark:border-slate-800 rounded-full text-[10px] font-black tracking-wider">
-                          {getVolunteerCategoryLabel(job.type)}
-                        </span>
-                        {job.department && job.department !== getVolunteerCategoryLabel(job.type) && (
-                          <span className="inline-block px-2 py-0.5 bg-gray-50 dark:bg-slate-850 text-gray-500 rounded-full text-[10px] font-bold">
-                            {job.department}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 text-[11px] font-extrabold text-gray-600 dark:text-gray-300 pt-1">
-                      <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-slate-900/60 p-2 rounded-xl border border-gray-100 dark:border-slate-800/80">
-                        <HomeIcon
-                          size={13}
-                          className="text-emerald-500 shrink-0"
-                        />
-                        <span className="truncate">
-                          {job.accommodation === "free_ashram_stay"
-                            ? "Free Stay"
-                            : "Stay Option"}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-slate-900/60 p-2 rounded-xl border border-gray-100 dark:border-slate-800/80">
-                        <Utensils size={13} className="text-[#E58C28] shrink-0" />
-                        <span className="truncate">
-                          {job.food === "satvik_free_3_meals"
-                            ? "Free 3 Satvik Meals"
-                            : "Meals Provided"}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-slate-900/60 p-2 rounded-xl border border-gray-100 dark:border-slate-800/80">
-                        <Clock size={13} className="text-blue-500 shrink-0" />
-                        <span className="truncate">{job.duration || "Flexible Duration"}</span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-slate-900/60 p-2 rounded-xl border border-gray-100 dark:border-slate-800/80">
-                        <Award size={13} className="text-amber-500 shrink-0" />
-                        <span className="truncate">
-                          {job.certificateProvided
-                            ? "Cert. Included"
-                            : "Experience"}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="bg-[#E58C28]/10 border border-[#E58C28]/25 rounded-2xl p-2.5 text-center">
-                      <span className="text-xs font-black text-[#E58C28]">
-                        {job.stipend || "Free Ashram Stay + Satvik Meals"}
-                      </span>
+                      <EnterpriseButton
+                        variant={appliedJobIds.has(job._id) ? "success" : "primary"}
+                        size="sm"
+                        onClick={() => handleApplyClick(job)}
+                      >
+                        {appliedJobIds.has(job._id) ? "Already Applied" : "Apply Now"}
+                      </EnterpriseButton>
                     </div>
                   </div>
-
-                  <div className="pt-2 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between gap-2">
-                    <Link
-                      to={`/volunteer/${job._id}`}
-                      className="text-[11px] font-extrabold text-[#F28C28] hover:underline"
-                    >
-                      View Details →
-                    </Link>
-                    <EnterpriseButton
-                      variant={appliedJobIds.has(job._id) ? "success" : "primary"}
-                      size="sm"
-                      onClick={() => handleApplyClick(job)}
-                    >
-                      {appliedJobIds.has(job._id) ? "Already Applied" : "Apply Now"}
-                    </EnterpriseButton>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+              )}
+            </Paginated>
           )}
         </section>
       )}

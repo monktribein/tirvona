@@ -175,7 +175,7 @@ const BannerDetailPage: React.FC = () => {
 
   return <main className="bg-gray-50/70 pb-20 dark:bg-[#070F1B]">
     <section className="relative min-h-[520px] overflow-hidden rounded-b-[40px] bg-[#0B192C]">
-      {gallery[0] && <img src={gallery[0]} alt={banner.title} className="absolute inset-0 h-full w-full object-cover" />}
+      {gallery[0] && <img src={gallery[0]} alt={banner.title} className="absolute inset-0 h-full w-full object-cover" loading="lazy" decoding="async" />}
       <div className="absolute inset-0 bg-gradient-to-r from-[#071426]/95 via-[#0B192C]/72 to-black/30" />
       <div className="relative mx-auto flex min-h-[520px] max-w-7xl items-end px-5 pb-14 pt-32 sm:px-8 lg:px-12">
         <div className="max-w-3xl text-white">
@@ -203,7 +203,7 @@ const BannerDetailPage: React.FC = () => {
         <p className="mt-5 whitespace-pre-line text-sm font-medium leading-7 text-gray-600 dark:text-gray-300">{banner.description || banner.eventDetails || entity?.description || entity?.about || banner.subtitle}</p>
         {banner.eventDetails && banner.eventDetails !== banner.description && <div className="mt-7 border-t border-orange-100 pt-6 dark:border-slate-800"><h3 className="text-lg font-black">Event & festival information</h3><p className="mt-3 whitespace-pre-line text-sm font-medium leading-7 text-gray-600 dark:text-gray-300">{banner.eventDetails}</p></div>}
       </article>
-      {gallery.length > 1 && <aside className="grid grid-cols-2 gap-3">{gallery.slice(1, 5).map((image) => <img key={image} src={image} alt="Banner gallery" className="h-36 w-full rounded-2xl object-cover shadow-sm sm:h-44" />)}</aside>}
+      {gallery.length > 1 && <aside className="grid grid-cols-2 gap-3">{gallery.slice(1, 5).map((image) => <img key={image} src={image} alt="Banner gallery" className="h-36 w-full rounded-2xl object-cover shadow-sm sm:h-44" loading="lazy" decoding="async" />)}</aside>}
     </div>
 
     {related.length > 0 && <section className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-12">
@@ -217,7 +217,7 @@ const BannerDetailPage: React.FC = () => {
         const path = `/ashram/${item._id}`;
         const itemArea = [item.address?.city || item.city, item.address?.state || item.state].filter(Boolean).join(", ");
         return <button key={item._id || index} onClick={() => navigate(path)} className="group flex min-h-full flex-col overflow-hidden rounded-[24px] border border-orange-200 bg-white text-left shadow-sm transition hover:-translate-y-1 hover:border-orange-300 hover:shadow-xl dark:border-slate-800 dark:bg-[#0B192C]">
-          {image ? <img src={image} alt={name} className="h-48 w-full object-cover transition duration-500 group-hover:scale-105"/> : <div className="grid h-48 w-full place-items-center bg-gradient-to-br from-[#F28C28] to-[#0B192C] text-3xl font-black text-white">{name.slice(0, 1).toUpperCase()}</div>}
+          {image ? <img src={image} alt={name} className="h-48 w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" decoding="async" /> : <div className="grid h-48 w-full place-items-center bg-gradient-to-br from-[#F28C28] to-[#0B192C] text-3xl font-black text-white">{name.slice(0, 1).toUpperCase()}</div>}
           <div className="flex flex-1 flex-col p-5"><h3 className="text-base font-black text-[#0B192C] dark:text-white">{name}</h3>{itemArea && <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500"><MapPin size={13}/>{itemArea}</p>}<p className="mt-3 line-clamp-2 text-xs leading-5 text-gray-500">{item.description || item.about || "Explore rooms, facilities and booking availability."}</p><span className="mt-auto inline-flex items-center gap-1 pt-5 text-xs font-black text-[#F28C28]">View Stay <ArrowRight size={13} className="transition group-hover:translate-x-1"/></span></div>
         </button>;
       })}</div>

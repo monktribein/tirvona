@@ -325,8 +325,7 @@ export const AartiCheckoutPage: React.FC = () => {
                 <img
                   src={state.coverImage}
                   alt={state.sessionName}
-                  className="w-full h-full object-cover"
-                />
+                  className="w-full h-full object-cover" loading="lazy" decoding="async" />
               ) : (
                 <Flame size={20} className="text-gray-300 dark:text-slate-700" />
               )}

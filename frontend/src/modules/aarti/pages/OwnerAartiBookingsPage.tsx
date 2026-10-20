@@ -1,3 +1,4 @@
+import { Paginated } from "../../../components/shared/Pagination";
 import React, { useCallback, useEffect, useState } from "react";
 import { useNotifications } from "../../../contexts/NotificationContext";
 import { AlertCircle, CalendarDays, Loader2, Search, XCircle } from "lucide-react";
@@ -140,75 +141,79 @@ export const OwnerAartiBookingsPage: React.FC = () => {
       ) : (
         <>
           <p className="text-xs text-gray-400 font-semibold">{total} booking(s)</p>
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm overflow-x-auto">
-            <table className="w-full min-w-[900px] text-sm">
-              <thead className="border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 text-left text-[10px] tracking-wider font-bold text-gray-400 uppercase">
-                <tr>
-                  <th className="px-4 py-3">Reference</th>
-                  <th className="px-4 py-3">Aarti</th>
-                  <th className="px-4 py-3">Devotee</th>
-                  <th className="px-4 py-3">When</th>
-                  <th className="px-4 py-3">Passes</th>
-                  <th className="px-4 py-3">Amount</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-                {bookings.map((booking) => {
-                  const session =
-                    typeof booking.sessionId === "object"
-                      ? (booking.sessionId as AartiSession)
-                      : null;
-                  const customer = booking.customerId as unknown as
-                    | { name?: string; phone?: string }
-                    | undefined;
-                  return (
-                    <tr key={booking._id}>
-                      <td className="px-4 py-3 font-mono text-[11px] font-bold text-gray-400 tracking-wider">
-                        {booking.bookingReference}
-                      </td>
-                      <td className="px-4 py-3 text-xs font-semibold text-gray-600 dark:text-gray-300">
-                        {session?.name ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                        {typeof customer === "object" ? (customer?.name ?? "—") : "—"}
-                        <span className="block text-[10px] font-bold text-gray-400">
-                          {booking.contactPhone}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                        {formatDateTime(booking.startsAt)}
-                      </td>
-                      <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                        {booking.passCount}
-                        {booking.checkedInCount
-                          ? ` (${booking.checkedInCount} in)`
-                          : ""}
-                      </td>
-                      <td className="px-4 py-3 text-xs font-black text-[#0B192C] dark:text-white">
-                        {formatCurrency(booking.pricing.totalAmount)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <AartiStatusBadge status={booking.status} size="sm" />
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        {["pending", "upcoming"].includes(booking.status) ? (
-                          <button
-                            type="button"
-                            onClick={() => cancel(booking)}
-                            className="inline-flex items-center gap-1 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-400 text-[10px] font-bold px-2.5 py-1.5 rounded-full transition-all active:scale-95 cursor-pointer"
-                          >
-                            <XCircle size={12} /> Cancel
-                          </button>
-                        ) : null}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <Paginated items={bookings} pageSize={15}>
+            {(pageItems) => (
+            <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm overflow-x-auto">
+              <table className="w-full min-w-[900px] text-sm">
+                <thead className="border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 text-left text-[10px] tracking-wider font-bold text-gray-400 uppercase">
+                  <tr>
+                    <th className="px-4 py-3">Reference</th>
+                    <th className="px-4 py-3">Aarti</th>
+                    <th className="px-4 py-3">Devotee</th>
+                    <th className="px-4 py-3">When</th>
+                    <th className="px-4 py-3">Passes</th>
+                    <th className="px-4 py-3">Amount</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+                  {pageItems.map((booking) => {
+                    const session =
+                      typeof booking.sessionId === "object"
+                        ? (booking.sessionId as AartiSession)
+                        : null;
+                    const customer = booking.customerId as unknown as
+                      | { name?: string; phone?: string }
+                      | undefined;
+                    return (
+                      <tr key={booking._id}>
+                        <td className="px-4 py-3 font-mono text-[11px] font-bold text-gray-400 tracking-wider">
+                          {booking.bookingReference}
+                        </td>
+                        <td className="px-4 py-3 text-xs font-semibold text-gray-600 dark:text-gray-300">
+                          {session?.name ?? "—"}
+                        </td>
+                        <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                          {typeof customer === "object" ? (customer?.name ?? "—") : "—"}
+                          <span className="block text-[10px] font-bold text-gray-400">
+                            {booking.contactPhone}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                          {formatDateTime(booking.startsAt)}
+                        </td>
+                        <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                          {booking.passCount}
+                          {booking.checkedInCount
+                            ? ` (${booking.checkedInCount} in)`
+                            : ""}
+                        </td>
+                        <td className="px-4 py-3 text-xs font-black text-[#0B192C] dark:text-white">
+                          {formatCurrency(booking.pricing.totalAmount)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <AartiStatusBadge status={booking.status} size="sm" />
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {["pending", "upcoming"].includes(booking.status) ? (
+                            <button
+                              type="button"
+                              onClick={() => cancel(booking)}
+                              className="inline-flex items-center gap-1 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-400 text-[10px] font-bold px-2.5 py-1.5 rounded-full transition-all active:scale-95 cursor-pointer"
+                            >
+                              <XCircle size={12} /> Cancel
+                            </button>
+                          ) : null}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            )}
+          </Paginated>
         </>
       )}
     </div>

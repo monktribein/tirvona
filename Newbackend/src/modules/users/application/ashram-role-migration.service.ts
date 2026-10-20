@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnApplicationBootstrap } from "@nestjs/common";
 import { InjectModel } from "../../../database/orm-nest";
 import type { Model } from "../../../database/orm";
+import { runAfterStartup } from "../../../common/utils/run-after-startup";
 
 @Injectable()
 export class AshramRoleMigrationService implements OnApplicationBootstrap {
@@ -8,7 +9,11 @@ export class AshramRoleMigrationService implements OnApplicationBootstrap {
 
   constructor(@InjectModel("User") private readonly users: Model<any>) {}
 
-  async onApplicationBootstrap(): Promise<void> {
+  onApplicationBootstrap(): void {
+    runAfterStartup(this.logger, "Ashram role migration", () => this.migrate());
+  }
+
+  private async migrate(): Promise<void> {
     const global = await this.users.updateMany(
       {
         $or: [

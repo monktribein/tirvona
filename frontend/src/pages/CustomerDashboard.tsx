@@ -1,3 +1,4 @@
+import { Paginated } from "../components/shared/Pagination";
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -163,144 +164,148 @@ export const CustomerDashboard: React.FC = () => {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {bookings.map((b) => {
-            const isConfirmed = b.status === "confirmed";
-            const isPending = b.status === "pending";
-            const isCancelled = b.status === "cancelled";
-            const isCheckedOut = b.status === "checked_out";
-            const isRefunded = b.paymentStatus === "refunded";
+        <Paginated items={bookings} pageSize={8}>
+          {(pageItems) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {pageItems.map((b) => {
+              const isConfirmed = b.status === "confirmed";
+              const isPending = b.status === "pending";
+              const isCancelled = b.status === "cancelled";
+              const isCheckedOut = b.status === "checked_out";
+              const isRefunded = b.paymentStatus === "refunded";
 
-            return (
-              <div
-                key={b._id}
-                className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 shadow-sm space-y-4 flex flex-col justify-between transform hover:scale-[1.01] transition-all"
-              >
-                <div className="flex justify-between items-start border-b border-gray-50 dark:border-slate-850 pb-3">
-                  <div className="space-y-1">
-                    <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white leading-snug">
-                      {b.ashramId?.name}
-                    </h3>
-                    <p className="text-[10px] text-gray-400 font-bold flex items-center gap-0.5">
-                      <MapPin size={10} className="text-[#F28C28]" />{" "}
-                      {b.ashramId?.address?.city}
-                    </p>
+              return (
+                <div
+                  key={b._id}
+                  className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 shadow-sm space-y-4 flex flex-col justify-between transform hover:scale-[1.01] transition-all"
+                >
+                  <div className="flex justify-between items-start border-b border-gray-50 dark:border-slate-850 pb-3">
+                    <div className="space-y-1">
+                      <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white leading-snug">
+                        {b.ashramId?.name}
+                      </h3>
+                      <p className="text-[10px] text-gray-400 font-bold flex items-center gap-0.5">
+                        <MapPin size={10} className="text-[#F28C28]" />{" "}
+                        {b.ashramId?.address?.city}
+                      </p>
+                    </div>
+                    <EnterpriseStatusBadge status={b.status} />
                   </div>
-                  <EnterpriseStatusBadge status={b.status} />
-                </div>
 
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="space-y-1">
-                    <span className="text-[9px] text-gray-400 font-bold block">
-                      Check In
-                    </span>
-                    <span className="font-semibold flex items-center gap-1.5">
-                      <Calendar size={13} className="text-[#F28C28]" />{" "}
-                      {new Date(b.checkInDate).toLocaleDateString()}
-                    </span>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="space-y-1">
+                      <span className="text-[9px] text-gray-400 font-bold block">
+                        Check In
+                      </span>
+                      <span className="font-semibold flex items-center gap-1.5">
+                        <Calendar size={13} className="text-[#F28C28]" />{" "}
+                        {new Date(b.checkInDate).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[9px] text-gray-400 font-bold block">
+                        Check Out
+                      </span>
+                      <span className="font-semibold flex items-center gap-1.5">
+                        <Calendar size={13} className="text-[#F28C28]" />{" "}
+                        {new Date(b.checkOutDate).toLocaleDateString()}
+                      </span>
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <span className="text-[9px] text-gray-400 font-bold block">
-                      Check Out
-                    </span>
-                    <span className="font-semibold flex items-center gap-1.5">
-                      <Calendar size={13} className="text-[#F28C28]" />{" "}
-                      {new Date(b.checkOutDate).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
 
-                {isPending && b.paymentStatus === "pending" && (
-                  <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 rounded-2xl flex flex-col gap-2">
-                    <div className="flex items-start gap-2">
-                      <div className="p-1 bg-amber-100 dark:bg-amber-900/50 rounded-full text-amber-600 dark:text-amber-500 mt-0.5">
-                        <AlertCircle size={14} />
+                  {isPending && b.paymentStatus === "pending" && (
+                    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 rounded-2xl flex flex-col gap-2">
+                      <div className="flex items-start gap-2">
+                        <div className="p-1 bg-amber-100 dark:bg-amber-900/50 rounded-full text-amber-600 dark:text-amber-500 mt-0.5">
+                          <AlertCircle size={14} />
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-amber-800 dark:text-amber-400 font-extrabold block tracking-wider">
+                            Payment Incomplete
+                          </span>
+                          <span className="text-[10px] text-amber-700/80 dark:text-amber-500/80 leading-normal">
+                            Your booking is awaiting payment. Please complete payment to secure your reservation.
+                          </span>
+                        </div>
                       </div>
+                      <div className="flex gap-2 justify-end">
+                        <Link
+                          to={`/ashram/${b.ashramId?._id || b.ashramId}`}
+                          className="px-3.5 py-1.5 bg-amber-500 text-white border border-amber-600 rounded-full text-[10px] font-bold shadow-sm"
+                        >
+                          Retry Payment
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+
+                  {isConfirmed && (
+                    <div className="p-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 rounded-2xl flex items-center justify-between">
                       <div>
-                        <span className="text-[10px] text-amber-800 dark:text-amber-400 font-extrabold block tracking-wider">
-                          Payment Incomplete
+                        <span className="text-[9px] text-[#F28C28] font-extrabold block tracking-wider">
+                          Digital Check-in Pass
                         </span>
-                        <span className="text-[10px] text-amber-700/80 dark:text-amber-500/80 leading-normal">
-                          Your booking is awaiting payment. Please complete payment to secure your reservation.
+                        <span className="text-[10px] text-gray-400 leading-normal">
+                          Present to receptionist on arrival
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-[#0B192C] border border-gray-150 rounded-xl shadow-sm">
+                        <Key size={14} className="text-[#D4AF37]" />
+                        <span className="text-xs font-extrabold tracking-widest text-[#0B192C] dark:text-white">
+                          {b.checkInCode}
                         </span>
                       </div>
                     </div>
-                    <div className="flex gap-2 justify-end">
-                      <Link
-                        to={`/ashram/${b.ashramId?._id || b.ashramId}`}
-                        className="px-3.5 py-1.5 bg-amber-500 text-white border border-amber-600 rounded-full text-[10px] font-bold shadow-sm"
+                  )}
+
+                  {isCancelled && isRefunded && (
+                    <div className="p-3 bg-danger/5 border border-danger/15 rounded-2xl flex items-center gap-2 text-[10px] text-danger font-semibold">
+                      <CheckCircle size={14} /> Refund of stay total cost
+                      processed back to source.
+                    </div>
+                  )}
+
+                  <div className="pt-3 border-t border-gray-150 dark:border-slate-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-900/10 px-3 py-2.5 rounded-2xl">
+                    <div className="flex flex-col">
+                      <span className="text-[9px] text-gray-400 font-bold tracking-wider">
+                        Total Paid
+                      </span>
+                      <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">
+                        {formatCurrency(b.pricing?.totalAmount)}
+                      </span>
+                    </div>
+
+                    {isCheckedOut && (
+                      <button
+                        onClick={() => setReviewBookingId(b._id)}
+                        className="px-3.5 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-full text-[10px] font-bold cursor-pointer"
                       >
-                        Retry Payment
-                      </Link>
-                    </div>
+                        Write Review
+                      </button>
+                    )}
+
+                    {(isConfirmed || isPending) && (
+                      <button
+                        onClick={() => setCancelBookingId(b._id)}
+                        className="px-3.5 py-1.5 bg-danger/10 text-danger border border-danger/20 rounded-full text-[10px] font-bold cursor-pointer flex items-center gap-1 hover:bg-danger/15 transition-all"
+                      >
+                        <Trash2 size={12} /> Cancel Stay
+                      </button>
+                    )}
                   </div>
-                )}
-
-                {isConfirmed && (
-                  <div className="p-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 rounded-2xl flex items-center justify-between">
-                    <div>
-                      <span className="text-[9px] text-[#F28C28] font-extrabold block tracking-wider">
-                        Digital Check-in Pass
-                      </span>
-                      <span className="text-[10px] text-gray-400 leading-normal">
-                        Present to receptionist on arrival
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-[#0B192C] border border-gray-150 rounded-xl shadow-sm">
-                      <Key size={14} className="text-[#D4AF37]" />
-                      <span className="text-xs font-extrabold tracking-widest text-[#0B192C] dark:text-white">
-                        {b.checkInCode}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {isCancelled && isRefunded && (
-                  <div className="p-3 bg-danger/5 border border-danger/15 rounded-2xl flex items-center gap-2 text-[10px] text-danger font-semibold">
-                    <CheckCircle size={14} /> Refund of stay total cost
-                    processed back to source.
-                  </div>
-                )}
-
-                <div className="pt-3 border-t border-gray-150 dark:border-slate-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-900/10 px-3 py-2.5 rounded-2xl">
-                  <div className="flex flex-col">
-                    <span className="text-[9px] text-gray-400 font-bold tracking-wider">
-                      Total Paid
-                    </span>
-                    <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">
-                      {formatCurrency(b.pricing?.totalAmount)}
-                    </span>
-                  </div>
-
-                  {isCheckedOut && (
-                    <button
-                      onClick={() => setReviewBookingId(b._id)}
-                      className="px-3.5 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-full text-[10px] font-bold cursor-pointer"
-                    >
-                      Write Review
-                    </button>
-                  )}
-
-                  {(isConfirmed || isPending) && (
-                    <button
-                      onClick={() => setCancelBookingId(b._id)}
-                      className="px-3.5 py-1.5 bg-danger/10 text-danger border border-danger/20 rounded-full text-[10px] font-bold cursor-pointer flex items-center gap-1 hover:bg-danger/15 transition-all"
-                    >
-                      <Trash2 size={12} /> Cancel Stay
-                    </button>
-                  )}
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+          )}
+        </Paginated>
       )}
 
       {reviewBookingId && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="tv-drawer-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
             onSubmit={handleReviewSubmit}
-            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 shadow-2xl"
+            className="tv-drawer-panel bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 shadow-2xl"
           >
             <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white border-b border-gray-100 dark:border-slate-800 pb-2">
               Review your Stay
@@ -363,10 +368,10 @@ export const CustomerDashboard: React.FC = () => {
       )}
 
       {cancelBookingId && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="tv-drawer-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
             onSubmit={handleCancelBookingSubmit}
-            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 shadow-2xl"
+            className="tv-drawer-panel bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 shadow-2xl"
           >
             <div className="flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2 text-danger">
               <AlertTriangle size={20} />

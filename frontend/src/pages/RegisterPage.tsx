@@ -275,8 +275,7 @@ export const RegisterPage: React.FC = () => {
         className="absolute inset-0 w-full h-full object-cover object-center"
         onError={(e) => {
           e.currentTarget.style.display = "none";
-        }}
-      />
+        }} loading="lazy" decoding="async" />
       {/* Enhanced Multi-layer Atmospheric Dark Overlay */}
       <div className="absolute inset-0 bg-gradient-to-r from-[#0B192C]/95 via-[#0B192C]/80 to-[#0B192C]/65" />
       <div className="absolute inset-0 bg-radial-at-tr from-[#F28C28]/15 via-transparent to-transparent pointer-events-none" />
@@ -388,8 +387,7 @@ export const RegisterPage: React.FC = () => {
                     <img
                       src="/logo/logo.png"
                       alt="Tirvona"
-                      className="w-8 h-8 object-contain"
-                    />
+                      className="w-8 h-8 object-contain" loading="lazy" decoding="async" />
                   </div>
                   <h2 className="text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white tracking-tight flex items-center justify-center gap-1.5">
                     Create Account

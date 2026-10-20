@@ -1,3 +1,4 @@
+import { Paginated } from "../components/shared/Pagination";
 import React, { useState, useEffect } from "react";
 import { ashramUrl } from "../lib/urls";
 import api from "../lib/api";
@@ -306,128 +307,132 @@ export const AllAshramsPage: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filteredAshrams.map((ashram) => {
-            const assignedOwner = ownerUsers.find(
-              (u) => u._id === (ashram.ownerId?._id || ashram.ownerId),
-            );
+        <Paginated items={filteredAshrams} pageSize={10} resetKey={searchQuery+selectedCity}>
+          {(pageItems) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {pageItems.map((ashram) => {
+              const assignedOwner = ownerUsers.find(
+                (u) => u._id === (ashram.ownerId?._id || ashram.ownerId),
+              );
 
-            return (
-              <div
-                key={ashram._id}
-                className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[32px] p-6 shadow-sm flex flex-col justify-between space-y-5"
-              >
-                <div className="space-y-4">
-                  <div className="flex items-start justify-between gap-3 border-b border-gray-100 dark:border-slate-850 pb-4">
-                    <div>
-                      <h3 className="font-extrabold text-lg text-[#0B192C] dark:text-white">
-                        {ashram.name}
-                      </h3>
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-gray-400 mt-1">
-                        <MapPin size={13} className="text-[#F28C28]" />
-                        <span>
-                          {ashram.address?.street
-                            ? `${ashram.address.street}, `
-                            : ""}
-                          {ashram.address?.city || "Rishikesh"},{" "}
-                          {ashram.address?.state || "Uttarakhand"}
+              return (
+                <div
+                  key={ashram._id}
+                  className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[32px] p-6 shadow-sm flex flex-col justify-between space-y-5"
+                >
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between gap-3 border-b border-gray-100 dark:border-slate-850 pb-4">
+                      <div>
+                        <h3 className="font-extrabold text-lg text-[#0B192C] dark:text-white">
+                          {ashram.name}
+                        </h3>
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-gray-400 mt-1">
+                          <MapPin size={13} className="text-[#F28C28]" />
+                          <span>
+                            {ashram.address?.street
+                              ? `${ashram.address.street}, `
+                              : ""}
+                            {ashram.address?.city || "Rishikesh"},{" "}
+                            {ashram.address?.state || "Uttarakhand"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-extrabold capitalize shrink-0 flex items-center gap-1 ${
+                          ashram.status === "approved" ||
+                          ashram.status === "active"
+                            ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                            : "bg-amber-500/10 text-amber-600 border border-amber-500/20"
+                        }`}
+                      >
+                        <ShieldCheck size={13} />
+                        {ashram.status === "approved"
+                          ? "Tirvona Verified"
+                          : ashram.status.replace(/_/g, " ")}
+                      </span>
+                    </div>
+
+                    <div className="bg-blue-50/60 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/40 rounded-2xl p-3 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <Users
+                          size={14}
+                          className="text-[#F28C28] dark:text-amber-400"
+                        />
+                        <span className="font-bold text-gray-700 dark:text-gray-300">
+                          Assigned Owner:
                         </span>
                       </div>
-                    </div>
-
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-extrabold capitalize shrink-0 flex items-center gap-1 ${
-                        ashram.status === "approved" ||
-                        ashram.status === "active"
-                          ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
-                          : "bg-amber-500/10 text-amber-600 border border-amber-500/20"
-                      }`}
-                    >
-                      <ShieldCheck size={13} />
-                      {ashram.status === "approved"
-                        ? "Tirvona Verified"
-                        : ashram.status.replace(/_/g, " ")}
-                    </span>
-                  </div>
-
-                  <div className="bg-blue-50/60 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/40 rounded-2xl p-3 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <Users
-                        size={14}
-                        className="text-[#F28C28] dark:text-amber-400"
-                      />
-                      <span className="font-bold text-gray-700 dark:text-gray-300">
-                        Assigned Owner:
+                      <span className="font-mono font-bold text-[#F28C28] dark:text-amber-400">
+                        {assignedOwner?.email ||
+                          ashram.ownerId?.email ||
+                          "sapt@tirvona.com"}
                       </span>
                     </div>
-                    <span className="font-mono font-bold text-[#F28C28] dark:text-amber-400">
-                      {assignedOwner?.email ||
-                        ashram.ownerId?.email ||
-                        "sapt@tirvona.com"}
-                    </span>
+
+                    <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed font-semibold">
+                      {ashram.description ||
+                        "Spiritual Stay lodging & accommodation."}
+                    </p>
+
+                    <div className="flex flex-wrap gap-1.5">
+                      {(Array.isArray(ashram.amenities) &&
+                      ashram.amenities.length > 0
+                        ? ashram.amenities.slice(0, 4)
+                        : ["Meditation Hall", "Satvik Meals", "Ganga Ghat"]
+                      ).map((item: string, i: number) => (
+                        <span
+                          key={i}
+                          className="px-2.5 py-0.5 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 text-[10px] font-bold"
+                        >
+                          {item}
+                        </span>
+                      ))}
+                    </div>
                   </div>
 
-                  <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed font-semibold">
-                    {ashram.description ||
-                      "Spiritual Stay lodging & accommodation."}
-                  </p>
-
-                  <div className="flex flex-wrap gap-1.5">
-                    {(Array.isArray(ashram.amenities) &&
-                    ashram.amenities.length > 0
-                      ? ashram.amenities.slice(0, 4)
-                      : ["Meditation Hall", "Satvik Meals", "Ganga Ghat"]
-                    ).map((item: string, i: number) => (
-                      <span
-                        key={i}
-                        className="px-2.5 py-0.5 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 text-[10px] font-bold"
-                      >
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between gap-2">
-                  <button
-                    onClick={() => handleOpenEditModal(ashram)}
-                    className="px-4 py-2 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border border-amber-500/20 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer"
-                  >
-                    <Edit3 size={13} /> View & Edit Stay
-                  </button>
-
-                  <div className="flex items-center gap-2">
+                  <div className="pt-4 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between gap-2">
                     <button
-                      onClick={() => navigate("/owner/rooms")}
-                      className="p-2 rounded-full bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 text-gray-700 dark:text-gray-300 cursor-pointer"
-                      title="Manage Rooms"
+                      onClick={() => handleOpenEditModal(ashram)}
+                      className="px-4 py-2 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border border-amber-500/20 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer"
                     >
-                      <Bed size={14} />
+                      <Edit3 size={13} /> View & Edit Stay
                     </button>
 
-                    <Link
-                      to={ashramUrl(ashram)}
-                      target="_blank"
-                      className="p-2 rounded-full bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 text-gray-700 dark:text-gray-300 cursor-pointer"
-                      title="View Public Page"
-                    >
-                      <ExternalLink size={14} />
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => navigate("/owner/rooms")}
+                        className="p-2 rounded-full bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 text-gray-700 dark:text-gray-300 cursor-pointer"
+                        title="Manage Rooms"
+                      >
+                        <Bed size={14} />
+                      </button>
+
+                      <Link
+                        to={ashramUrl(ashram)}
+                        target="_blank"
+                        className="p-2 rounded-full bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 text-gray-700 dark:text-gray-300 cursor-pointer"
+                        title="View Public Page"
+                      >
+                        <ExternalLink size={14} />
+                      </Link>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+          )}
+        </Paginated>
       )}
 
       {selectedAshram && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="fixed inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setSelectedAshram(null)}
           />
-          <div className="relative w-full max-w-3xl bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 space-y-6 max-h-[90vh] overflow-y-auto">
+          <div className="tv-drawer-panel relative w-full max-w-3xl bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 space-y-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-4">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-full bg-[#F28C28]/10 text-[#F28C28] flex items-center justify-center font-bold">
@@ -655,8 +660,7 @@ export const AllAshramsPage: React.FC = () => {
                         <img
                           src={imgUrl}
                           alt={`Stay photo ${idx + 1}`}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                        />
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform" loading="lazy" decoding="async" />
                         <button
                           type="button"
                           onClick={() => handleRemoveImage(idx)}

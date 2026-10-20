@@ -5,6 +5,8 @@ import { visitorArticleService } from "../services/visitorArticleService";
 import { useAuth } from "../contexts/AuthContext";
 import { AutoImageSlider } from "../components/shared/AutoImageSlider";
 import { toast } from "../lib/toast";
+import { RichContent } from "../components/richText/RichContent";
+import { isRichHtml } from "../lib/richText";
 import {
   Calendar,
   Clock,
@@ -381,8 +383,7 @@ export const BlogDetailPage: React.FC = () => {
                   e.currentTarget.onerror = null;
                   e.currentTarget.src =
                     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
-                }}
-              />
+                }} loading="lazy" decoding="async" />
               <span>{author.name || "Tirvona Editorial"}</span>
             </span>
             <span>•</span>
@@ -510,7 +511,11 @@ export const BlogDetailPage: React.FC = () => {
               )}
 
               <div className="space-y-4">
-                {renderFormattedContent(post.content)}
+                {isRichHtml(post.content) ? (
+                  <RichContent html={post.content} />
+                ) : (
+                  renderFormattedContent(post.content)
+                )}
               </div>
 
               <div className="my-6 p-6 rounded-2xl bg-blue-50/70 dark:bg-slate-900/80 border-l-4 border-[#F28C28] space-y-2">
@@ -537,8 +542,7 @@ export const BlogDetailPage: React.FC = () => {
                         <img
                           src={img}
                           alt={`Gallery ${i}`}
-                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                        />
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy" decoding="async" />
                       </div>
                     ))}
                   </div>
@@ -707,8 +711,7 @@ export const BlogDetailPage: React.FC = () => {
                           e.currentTarget.onerror = null;
                           e.currentTarget.src =
                             "/blogs/rishikesh_ashram_1785404729056.png";
-                        }}
-                      />
+                        }} loading="lazy" decoding="async" />
                       <div className="space-y-0.5">
                         <h6 className="font-extrabold text-xs text-[#0B192C] dark:text-white line-clamp-2 group-hover:text-[#F28C28] transition-colors">
                           {item.title}

@@ -1,4 +1,5 @@
 import { Injectable, Logger, OnApplicationBootstrap } from "@nestjs/common";
+import { runAfterStartup } from "../../../common/utils/run-after-startup";
 import { InjectModel } from "../../../database/orm-nest";
 import type { Model } from "../../../database/orm";
 import {
@@ -21,12 +22,14 @@ export class FoodCatalogService implements OnApplicationBootstrap {
     @InjectModel("FoodServiceZone") private readonly zoneModel: Model<any>,
   ) {}
 
-  async onApplicationBootstrap() {
-    try {
-      await this.seedPilotDataIfEmpty();
-    } catch (err: any) {
-      this.logger.warn(`Could not seed food pilot catalogue: ${err.message}`);
-    }
+  onApplicationBootstrap(): void {
+    runAfterStartup(this.logger, "Food pilot catalogue seed", async () => {
+      try {
+        await this.seedPilotDataIfEmpty();
+      } catch (err: any) {
+        this.logger.warn(`Could not seed food pilot catalogue: ${err.message}`);
+      }
+    });
   }
 
   /**

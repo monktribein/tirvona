@@ -1,3 +1,4 @@
+import { Paginated } from "../../components/shared/Pagination";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { getFormattingLocale } from "../../utils/format";
 import {
@@ -23,6 +24,9 @@ import { ImageUploadGrid } from "../../components/shared/ImageUploadGrid";
 import { useNotifications } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../lib/api";
 import { humanizeLabel } from "../../utils/labels";
+import { RichTextEditor } from "../../components/richText/RichTextEditor";
+import { RichContent } from "../../components/richText/RichContent";
+import { isRichHtml } from "../../lib/richText";
 
 export const OwnerVisitorArticlesPage: React.FC = () => {
   const { addNotification, confirmAction } = useNotifications();
@@ -325,122 +329,125 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {articles.map((art) => (
-            <div
-              key={art._id}
-              className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-5"
-            >
-              <div className="flex items-start gap-4 min-w-0">
-                <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gray-100 dark:bg-slate-800 flex items-center justify-center">
-                  {art.featuredImage ? (
-                    <img
-                      src={art.featuredImage}
-                      alt={art.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <FileText size={20} className="text-gray-300 dark:text-slate-700" />
-                  )}
-                </div>
-
-                <div className="space-y-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {art.isVerifiedStay && (
-                      <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 rounded-full text-[10px] font-black flex items-center gap-1">
-                        <ShieldCheck size={11} /> Verified Visitor Stay
-                      </span>
+        <Paginated items={articles} pageSize={10}>
+          {(pageItems) => (
+          <div className="space-y-4">
+            {pageItems.map((art) => (
+              <div
+                key={art._id}
+                className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-5"
+              >
+                <div className="flex items-start gap-4 min-w-0">
+                  <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gray-100 dark:bg-slate-800 flex items-center justify-center">
+                    {art.featuredImage ? (
+                      <img
+                        src={art.featuredImage}
+                        alt={art.title}
+                        className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                    ) : (
+                      <FileText size={20} className="text-gray-300 dark:text-slate-700" />
                     )}
-                    <span className="px-2.5 py-0.5 bg-blue-50 text-[#F28C28] dark:bg-blue-950/40 dark:text-amber-300 rounded-full text-[10px] font-black">
-                      {humanizeLabel(art.category)}
-                    </span>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold capitalize ${
-                        art.status === "approved"
-                          ? "bg-emerald-100 text-emerald-700"
-                          : art.status === "pending"
-                            ? "bg-amber-100 text-amber-700"
-                            : "bg-rose-100 text-rose-700"
-                      }`}
-                    >
-                      {humanizeLabel(art.status)}
-                    </span>
                   </div>
 
-                  <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white line-clamp-1">
-                    {art.title}
-                  </h3>
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {art.isVerifiedStay && (
+                        <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 rounded-full text-[10px] font-black flex items-center gap-1">
+                          <ShieldCheck size={11} /> Verified Visitor Stay
+                        </span>
+                      )}
+                      <span className="px-2.5 py-0.5 bg-blue-50 text-[#F28C28] dark:bg-blue-950/40 dark:text-amber-300 rounded-full text-[10px] font-black">
+                        {humanizeLabel(art.category)}
+                      </span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold capitalize ${
+                          art.status === "approved"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : art.status === "pending"
+                              ? "bg-amber-100 text-amber-700"
+                              : "bg-rose-100 text-rose-700"
+                        }`}
+                      >
+                        {humanizeLabel(art.status)}
+                      </span>
+                    </div>
 
-                  <p className="text-xs text-gray-400 font-semibold flex items-center gap-3">
-                    <span>
-                      By:{" "}
-                      <strong className="text-[#0B192C] dark:text-white">
-                        {art.visitorId?.name || "Visitor"}
-                      </strong>
-                    </span>
-                    <span>
-                      • Ashram:{" "}
-                      <strong className="text-[#0B192C] dark:text-white">
-                        {art.ashramId?.name || "General (no ashram)"}
-                      </strong>
-                    </span>
-                    <span>
-                      • Submitted:{" "}
-                      {new Date(art.createdAt).toLocaleDateString(getFormattingLocale())}
-                    </span>
-                  </p>
+                    <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white line-clamp-1">
+                      {art.title}
+                    </h3>
+
+                    <p className="text-xs text-gray-400 font-semibold flex items-center gap-3">
+                      <span>
+                        By:{" "}
+                        <strong className="text-[#0B192C] dark:text-white">
+                          {art.visitorId?.name || "Visitor"}
+                        </strong>
+                      </span>
+                      <span>
+                        • Ashram:{" "}
+                        <strong className="text-[#0B192C] dark:text-white">
+                          {art.ashramId?.name || "General (no ashram)"}
+                        </strong>
+                      </span>
+                      <span>
+                        • Submitted:{" "}
+                        {new Date(art.createdAt).toLocaleDateString(getFormattingLocale())}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0 w-full md:w-auto justify-end border-t md:border-t-0 border-gray-100 dark:border-slate-800 pt-3 md:pt-0">
+                  <button
+                    onClick={() => setSelectedArticle(art)}
+                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 text-gray-700 dark:text-gray-200 text-xs font-extrabold rounded-full transition-colors cursor-pointer"
+                  >
+                    Inspect &amp; Review
+                  </button>
+
+                  <button
+                    onClick={() => openEditor(art)}
+                    disabled={processing}
+                    className="px-4 py-2 bg-[#FFF4E5] hover:bg-[#FFF4E5] dark:bg-blue-950/40 text-[#F28C28] dark:text-amber-300 text-xs font-extrabold rounded-full transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Pencil size={13} /> Edit
+                  </button>
+
+                  <button
+                    onClick={() => handleDelete(art)}
+                    disabled={processing}
+                    className="px-4 py-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-extrabold rounded-full transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Trash2 size={13} /> Delete
+                  </button>
+
+                  {art.status === "pending" && (
+                    <>
+                      <button
+                        onClick={() => handleApprove(art)}
+                        disabled={processing}
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-full transition-all cursor-pointer shadow-xs"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedArticle(art);
+                          setIsRejectModalOpen(true);
+                        }}
+                        disabled={processing}
+                        className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-full transition-all cursor-pointer shadow-xs"
+                      >
+                        Reject
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
-
-              <div className="flex items-center gap-2 shrink-0 w-full md:w-auto justify-end border-t md:border-t-0 border-gray-100 dark:border-slate-800 pt-3 md:pt-0">
-                <button
-                  onClick={() => setSelectedArticle(art)}
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 text-gray-700 dark:text-gray-200 text-xs font-extrabold rounded-full transition-colors cursor-pointer"
-                >
-                  Inspect &amp; Review
-                </button>
-
-                <button
-                  onClick={() => openEditor(art)}
-                  disabled={processing}
-                  className="px-4 py-2 bg-[#FFF4E5] hover:bg-[#FFF4E5] dark:bg-blue-950/40 text-[#F28C28] dark:text-amber-300 text-xs font-extrabold rounded-full transition-colors cursor-pointer flex items-center gap-1.5"
-                >
-                  <Pencil size={13} /> Edit
-                </button>
-
-                <button
-                  onClick={() => handleDelete(art)}
-                  disabled={processing}
-                  className="px-4 py-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-extrabold rounded-full transition-colors cursor-pointer flex items-center gap-1.5"
-                >
-                  <Trash2 size={13} /> Delete
-                </button>
-
-                {art.status === "pending" && (
-                  <>
-                    <button
-                      onClick={() => handleApprove(art)}
-                      disabled={processing}
-                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-full transition-all cursor-pointer shadow-xs"
-                    >
-                      Approve
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedArticle(art);
-                        setIsRejectModalOpen(true);
-                      }}
-                      disabled={processing}
-                      className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-full transition-all cursor-pointer shadow-xs"
-                    >
-                      Reject
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+          )}
+        </Paginated>
       )}
 
       {selectedArticle && !isRejectModalOpen && (
@@ -520,8 +527,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
                     <img
                       src={selectedArticle.featuredImage}
                       alt={selectedArticle.title}
-                      className="w-full h-full object-cover"
-                    />
+                      className="w-full h-full object-cover" loading="lazy" decoding="async" />
                   </div>
                 ) : !selectedArticle.videoUrl ? (
                   <div className="aspect-video w-full rounded-2xl bg-gray-50 dark:bg-slate-900 border border-dashed border-gray-200 dark:border-slate-800 flex items-center justify-center text-[11px] font-bold text-gray-400">
@@ -602,8 +608,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
                           <img
                             src={img}
                             alt={`Gallery ${i}`}
-                            className="w-full h-full object-cover"
-                          />
+                            className="w-full h-full object-cover" loading="lazy" decoding="async" />
                         </div>
                       ))}
                     </div>
@@ -629,8 +634,12 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
                   <span className="text-gray-400 text-[10px]">
                     Article Body Content
                   </span>
-                  <div className="p-4 bg-gray-50 dark:bg-slate-900 rounded-xl font-medium text-gray-700 dark:text-gray-200 whitespace-pre-line leading-relaxed break-words">
-                    {selectedArticle.content}
+                  <div className="p-4 bg-gray-50 dark:bg-slate-900 rounded-xl font-medium text-gray-700 dark:text-gray-200 leading-relaxed break-words">
+                    {isRichHtml(selectedArticle.content) ? (
+                      <RichContent html={selectedArticle.content} />
+                    ) : (
+                      <div className="whitespace-pre-line">{selectedArticle.content}</div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -708,8 +717,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
                   <img
                     src={editForm.featuredImage}
                     alt="Cover"
-                    className="w-full h-40 object-cover"
-                  />
+                    className="w-full h-40 object-cover" loading="lazy" decoding="async" />
                   <div className="absolute bottom-2 right-2 flex gap-2">
                     <button
                       type="button"
@@ -859,13 +867,12 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
               <label className="text-gray-700 dark:text-gray-300">
                 Article Body Content
               </label>
-              <textarea
-                rows={12}
+              <RichTextEditor
                 value={editForm.content}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, content: e.target.value })
+                onChange={(html) =>
+                  setEditForm((current) => ({ ...current, content: html }))
                 }
-                className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-medium focus:outline-none focus:border-[#F28C28] leading-relaxed"
+                minHeight={280}
               />
             </div>
 

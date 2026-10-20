@@ -331,7 +331,7 @@ const PageShell: React.FC<{ children: React.ReactNode; reference?: string }> = (
 }) => (
   <div className="min-h-screen bg-[#FAF7F2] flex flex-col">
     <header className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 bg-white">
-      <img src="/logo/logo.png" alt="Tirvona" className="h-8 w-8 object-contain" />
+      <img src="/logo/logo.png" alt="Tirvona" className="h-8 w-8 object-contain" loading="lazy" decoding="async" />
       <div>
         <p className="font-extrabold text-gray-900 leading-tight text-sm">Tirvona</p>
         <p className="text-[10px] text-gray-400 leading-tight">

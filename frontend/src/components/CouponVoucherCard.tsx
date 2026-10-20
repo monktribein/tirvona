@@ -263,8 +263,7 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
             <img
               src={imageSrc}
               alt=""
-              className="w-full h-full object-cover object-right"
-            />
+              className="w-full h-full object-cover object-right" loading="lazy" decoding="async" />
             <div className="absolute inset-0 bg-gradient-to-r from-[#FAF9F6] via-[#FAF9F6]/85 to-transparent dark:from-[#0B192C] dark:via-[#0B192C]/85" />
           </div>
         ) : null}

@@ -32,7 +32,8 @@ import { PartnerApiService } from "../application/partner-api.service";
 })
 @Public() // Bypasses standard user JWT guard; uses PartnerApiKeyGuard instead
 @UseGuards(PartnerApiKeyGuard, PartnerPermissionsGuard)
-@Controller({ path: "v1", version: "1" })
+// Version-neutral "v1" prefix like the other public APIs: /api/v1/bookings, ...
+@Controller("v1")
 export class PartnerV1Controller {
   constructor(private readonly partnerApi: PartnerApiService) {}
 

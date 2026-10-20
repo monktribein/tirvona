@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import { toast } from "../lib/toast";
+import { RichContent } from "../components/richText/RichContent";
+import { isRichHtml } from "../lib/richText";
 import {
   Play,
   Eye,
@@ -187,8 +189,7 @@ export const VideoDetailPage: React.FC = () => {
                       "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E"
                     }
                     alt={author.name}
-                    className="w-12 h-12 rounded-full object-cover border-2 border-red-600 shadow-sm"
-                  />
+                    className="w-12 h-12 rounded-full object-cover border-2 border-red-600 shadow-sm" loading="lazy" decoding="async" />
                   <div>
                     <div className="flex items-center gap-1.5">
                       <h4 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
@@ -217,9 +218,13 @@ export const VideoDetailPage: React.FC = () => {
                 </button>
               </div>
 
-              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed font-medium whitespace-pre-line">
-                {post.content}
-              </div>
+              {isRichHtml(post.content) ? (
+                <RichContent html={post.content} className="text-xs sm:text-sm" />
+              ) : (
+                <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed font-medium whitespace-pre-line">
+                  {post.content}
+                </div>
+              )}
 
               {post.tags?.length > 0 && (
                 <div className="pt-4 border-t border-gray-100 dark:border-slate-800 flex flex-wrap gap-2">
@@ -242,8 +247,7 @@ export const VideoDetailPage: React.FC = () => {
                   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E"
                 }
                 alt={author.name}
-                className="w-20 h-20 rounded-full object-cover border-4 border-red-600 shadow-md shrink-0"
-              />
+                className="w-20 h-20 rounded-full object-cover border-4 border-red-600 shadow-md shrink-0" loading="lazy" decoding="async" />
               <div className="space-y-2 text-center sm:text-left">
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                   <h4 className="font-black text-lg text-[#0B192C] dark:text-white">
@@ -313,8 +317,7 @@ export const VideoDetailPage: React.FC = () => {
                       <img
                         src={item.coverImage}
                         alt={item.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                      />
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform" loading="lazy" decoding="async" />
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                         <Play size={14} className="fill-white text-white" />
                       </div>

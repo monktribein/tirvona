@@ -1,3 +1,5 @@
+import { recordQuery } from "../../common/perf/request-perf";
+
 /**
  * Minimal connection abstraction so the driver runs on node-postgres
  * (Supabase) in production and on PGlite (embedded Postgres) in tests.
@@ -30,12 +32,38 @@ export function nodePgPool(connectionString: string, options: { max?: number; ap
     max: options.max ?? 10,
     application_name: options.applicationName ?? "tirvona-api",
     ssl: /sslmode=disable/.test(connectionString) || /@(localhost|127\.0\.0\.1)[:/]/.test(connectionString) ? undefined : { rejectUnauthorized: false },
-    idleTimeoutMillis: 30_000,
+    // Idle connections are kept for 5 minutes (was 30 s) so quiet periods do not
+    // force a new TLS + pooler-auth handshake on the next request, and TCP
+    // keep-alive stops the pooler/NAT from silently dropping them meanwhile.
+    idleTimeoutMillis: Number(process.env.PG_IDLE_TIMEOUT_MS ?? 300_000),
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10_000,
     connectionTimeoutMillis: 15_000,
   });
   // node-postgres reports a broken idle connection on the pool; unhandled, it would crash the process.
   pool.on("error", (error: Error) => console.error(`[pg-pool] idle connection error: ${error.message}`));
-  return withConnectionRetry(pool as PgPool);
+  return withQueryTiming(withConnectionRetry(pool as PgPool));
+}
+
+/** Feeds per-request query count/time to the opt-in PERF_LOG profiler. No-op unless PERF_LOG=true. */
+function withQueryTiming(pool: PgPool): PgPool {
+  if (process.env.PERF_LOG !== "true") return pool;
+  const timed = async (run: () => Promise<QueryResult>): Promise<QueryResult> => {
+    const start = process.hrtime.bigint();
+    try {
+      return await run();
+    } finally {
+      recordQuery(Number(process.hrtime.bigint() - start) / 1e6);
+    }
+  };
+  return {
+    query: (text, params) => timed(() => pool.query(text, params)),
+    connect: async () => {
+      const client = await pool.connect();
+      return { query: (text, params) => timed(() => client.query(text, params)), release: (e) => client.release(e) };
+    },
+    end: () => pool.end(),
+  };
 }
 
 /**

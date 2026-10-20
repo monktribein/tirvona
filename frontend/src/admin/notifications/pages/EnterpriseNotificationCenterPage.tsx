@@ -1,3 +1,4 @@
+import { Paginated } from "../../../components/shared/Pagination";
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { getFormattingLocale } from "../../../utils/format";
 import {
@@ -539,47 +540,51 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
               {emptyMessage}
             </p>
           ) : (
-            <div className="relative pl-6 border-l-2 border-gray-100 dark:border-slate-800 space-y-6">
-              {feed.map((item) => (
-                <div key={`${item.source}-${item.id}`} className="relative group">
-                  <div
-                    className={`absolute -left-[31px] top-1.5 w-4 h-4 rounded-full border-4 border-white dark:border-[#0B192C] ${
-                      item.source === "notification" && !item.isRead
-                        ? "bg-amber-500"
-                        : "bg-[#F28C28]"
-                    }`}
-                  />
+            <Paginated items={feed} pageSize={20}>
+              {(pageItems) => (
+              <div className="relative pl-6 border-l-2 border-gray-100 dark:border-slate-800 space-y-6">
+                {pageItems.map((item) => (
+                  <div key={`${item.source}-${item.id}`} className="relative group">
+                    <div
+                      className={`absolute -left-[31px] top-1.5 w-4 h-4 rounded-full border-4 border-white dark:border-[#0B192C] ${
+                        item.source === "notification" && !item.isRead
+                          ? "bg-amber-500"
+                          : "bg-[#F28C28]"
+                      }`}
+                    />
 
-                  <div className="bg-gray-50 dark:bg-slate-900/60 p-4 rounded-2xl border border-gray-100 dark:border-slate-800 space-y-2">
-                    <div className="flex justify-between items-start gap-3">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-xs text-[#0B192C] dark:text-white">
-                          {item.title}
+                    <div className="bg-gray-50 dark:bg-slate-900/60 p-4 rounded-2xl border border-gray-100 dark:border-slate-800 space-y-2">
+                      <div className="flex justify-between items-start gap-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-xs text-[#0B192C] dark:text-white">
+                            {item.title}
+                          </span>
+                          {sourceBadge(item.source)}
+                          {getSeverityBadge(item.severity)}
+                        </div>
+                        <span className="text-[10px] text-gray-400 font-semibold whitespace-nowrap">
+                          {new Date(item.time).toLocaleString(
+                            getFormattingLocale(),
+                          )}
                         </span>
-                        {sourceBadge(item.source)}
-                        {getSeverityBadge(item.severity)}
                       </div>
-                      <span className="text-[10px] text-gray-400 font-semibold whitespace-nowrap">
-                        {new Date(item.time).toLocaleString(
-                          getFormattingLocale(),
-                        )}
-                      </span>
-                    </div>
 
-                    <p className="text-xs text-gray-600 dark:text-gray-300 font-medium">
-                      {item.detail}
-                    </p>
+                      <p className="text-xs text-gray-600 dark:text-gray-300 font-medium">
+                        {item.detail}
+                      </p>
 
-                    <div className="flex items-center gap-4 text-[10px] text-gray-400 pt-1 font-mono">
-                      <span>{item.actor}</span>
-                      {item.actorMeta && <span>{item.actorMeta}</span>}
+                      <div className="flex items-center gap-4 text-[10px] text-gray-400 pt-1 font-mono">
+                        <span>{item.actor}</span>
+                        {item.actorMeta && <span>{item.actorMeta}</span>}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+              )}
+            </Paginated>
+            )}
+          </div>
       ) : (
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] shadow-sm overflow-hidden">
           <div className="overflow-x-auto">

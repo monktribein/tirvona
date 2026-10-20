@@ -1,3 +1,4 @@
+import { Paginated } from "../components/shared/Pagination";
 import React, { useState, useEffect } from "react";
 import { formatCurrency } from "../utils/format";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -408,208 +409,211 @@ export const ServicesHubPage: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
-            {services.map((item) => (
-              <div
-                key={item._id}
-                className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] overflow-hidden shadow-lg shadow-gray-200/40 dark:shadow-none hover:shadow-2xl transition-all duration-300 flex flex-col justify-between"
-              >
-                <div className="relative h-44 w-full bg-slate-900 overflow-hidden">
-                  <img
-                    src={
-                      item.images?.[0] ||
-                      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E"
-                    }
-                    alt={item.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+          <Paginated items={services} pageSize={12}>
+            {(pageItems) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
+              {pageItems.map((item) => (
+                <div
+                  key={item._id}
+                  className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] overflow-hidden shadow-lg shadow-gray-200/40 dark:shadow-none hover:shadow-2xl transition-all duration-300 flex flex-col justify-between"
+                >
+                  <div className="relative h-44 w-full bg-slate-900 overflow-hidden">
+                    <img
+                      src={
+                        item.images?.[0] ||
+                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E"
+                      }
+                      alt={item.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" decoding="async" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
 
-                  <span className="absolute top-3 left-3 px-3 py-1 bg-[#F28C28] text-white rounded-full text-[10px] font-black tracking-wider shadow-md">
-                    {item.subcategory}
-                  </span>
-
-                  <div className="absolute top-3 right-3 px-2.5 py-1 bg-white/90 dark:bg-[#0B192C]/90 text-[#0B192C] dark:text-white rounded-full text-xs font-black flex items-center gap-1 shadow-sm">
-                    <Star size={12} className="text-amber-400 fill-amber-400" />
-                    <span>{item.rating.toFixed(1)}</span>
-                  </div>
-
-                  <div className="absolute bottom-3 left-3 text-white text-xs font-extrabold flex items-center gap-1">
-                    <MapPin size={12} className="text-[#E58C28]" />
-                    <span>
-                      {item.city}, {item.state}
+                    <span className="absolute top-3 left-3 px-3 py-1 bg-[#F28C28] text-white rounded-full text-[10px] font-black tracking-wider shadow-md">
+                      {item.subcategory}
                     </span>
-                  </div>
-                </div>
 
-                <div className="p-5 space-y-4 flex-grow flex flex-col justify-between">
-                  <div className="space-y-2">
-                    <h3 className="font-black text-base text-[#0B192C] dark:text-white leading-tight">
-                      {item.name}
-                    </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium line-clamp-2">
-                      {item.description || item.tagline}
-                    </p>
-                  </div>
+                    <div className="absolute top-3 right-3 px-2.5 py-1 bg-white/90 dark:bg-[#0B192C]/90 text-[#0B192C] dark:text-white rounded-full text-xs font-black flex items-center gap-1 shadow-sm">
+                      <Star size={12} className="text-amber-400 fill-amber-400" />
+                      <span>{item.rating.toFixed(1)}</span>
+                    </div>
 
-                  <div className="flex flex-wrap gap-1.5 text-[10px] font-extrabold pt-1">
-                    {item.specifications?.pureVeg && (
-                      <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-full">
-                        🟢 100% PURE VEG
+                    <div className="absolute bottom-3 left-3 text-white text-xs font-extrabold flex items-center gap-1">
+                      <MapPin size={12} className="text-[#E58C28]" />
+                      <span>
+                        {item.city}, {item.state}
                       </span>
-                    )}
-                    {item.specifications?.govtVerified && (
-                      <span className="px-2.5 py-0.5 bg-blue-50 text-[#F28C28] border border-blue-200 rounded-full">
-                        ✓ TIRVONA VERIFIED
-                      </span>
-                    )}
-                    {item.specifications?.available24x7 && (
-                      <span className="px-2.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full">
-                        ⏰ 24x7 AVAILABLE
-                      </span>
-                    )}
+                    </div>
                   </div>
 
-                  <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex justify-between items-center">
-                    <div>
-                      <span className="text-[10px] text-gray-400 block font-bold">
-                        Estimated Fare
-                      </span>
-                      <span className="text-base font-black text-[#F28C28] dark:text-white">
-                        {formatCurrency(item.pricing?.amount)}{" "}
-                        <span className="text-[10px] text-gray-400 font-normal">
-                          /{item.pricing?.unit}
+                  <div className="p-5 space-y-4 flex-grow flex flex-col justify-between">
+                    <div className="space-y-2">
+                      <h3 className="font-black text-base text-[#0B192C] dark:text-white leading-tight">
+                        {item.name}
+                      </h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 font-medium line-clamp-2">
+                        {item.description || item.tagline}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap gap-1.5 text-[10px] font-extrabold pt-1">
+                      {item.specifications?.pureVeg && (
+                        <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-full">
+                          🟢 100% PURE VEG
                         </span>
-                      </span>
+                      )}
+                      {item.specifications?.govtVerified && (
+                        <span className="px-2.5 py-0.5 bg-blue-50 text-[#F28C28] border border-blue-200 rounded-full">
+                          ✓ TIRVONA VERIFIED
+                        </span>
+                      )}
+                      {item.specifications?.available24x7 && (
+                        <span className="px-2.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full">
+                          ⏰ 24x7 AVAILABLE
+                        </span>
+                      )}
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <a
-                        href={`tel:${item.contactPhone}`}
-                        className="p-2 bg-gray-100 dark:bg-slate-800 text-[#F28C28] rounded-full hover:bg-gray-200 transition-colors"
-                        title="Call Now"
-                      >
-                        <Phone size={14} />
-                      </a>
-                      <EnterpriseButton
-                        variant="primary"
-                        size="sm"
-                        onClick={() => setSelectedService(item)}
-                      >
-                        Book Now
-                      </EnterpriseButton>
+                    <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex justify-between items-center">
+                      <div>
+                        <span className="text-[10px] text-gray-400 block font-bold">
+                          Estimated Fare
+                        </span>
+                        <span className="text-base font-black text-[#F28C28] dark:text-white">
+                          {formatCurrency(item.pricing?.amount)}{" "}
+                          <span className="text-[10px] text-gray-400 font-normal">
+                            /{item.pricing?.unit}
+                          </span>
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={`tel:${item.contactPhone}`}
+                          className="p-2 bg-gray-100 dark:bg-slate-800 text-[#F28C28] rounded-full hover:bg-gray-200 transition-colors"
+                          title="Call Now"
+                        >
+                          <Phone size={14} />
+                        </a>
+                        <EnterpriseButton
+                          variant="primary"
+                          size="sm"
+                          onClick={() => setSelectedService(item)}
+                        >
+                          Book Now
+                        </EnterpriseButton>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            )}
+          </Paginated>
         )}
-      </section>
+        </section>
 
-      <EnterpriseModal
-        isOpen={Boolean(selectedService)}
-        onClose={() => setSelectedService(null)}
-        title={`Book ${selectedService?.name}`}
-        subtitle="Confirm reservation details & customer details"
-      >
-        {selectedService && (
-          <form
-            onSubmit={handleBookingSubmit}
-            className="space-y-4 text-xs font-bold"
-          >
-            <div className="p-3 bg-[#FFF4E5]/40 border border-blue-200 dark:border-blue-900 rounded-2xl flex justify-between items-center">
-              <div>
-                <span className="text-[10px] text-[#F28C28] block font-bold">
-                  Provider
+        <EnterpriseModal
+          isOpen={Boolean(selectedService)}
+          onClose={() => setSelectedService(null)}
+          title={`Book ${selectedService?.name}`}
+          subtitle="Confirm reservation details & customer details"
+        >
+          {selectedService && (
+            <form
+              onSubmit={handleBookingSubmit}
+              className="space-y-4 text-xs font-bold"
+            >
+              <div className="p-3 bg-[#FFF4E5]/40 border border-blue-200 dark:border-blue-900 rounded-2xl flex justify-between items-center">
+                <div>
+                  <span className="text-[10px] text-[#F28C28] block font-bold">
+                    Provider
+                  </span>
+                  <span className="text-sm font-extrabold text-[#0B192C] dark:text-white">
+                    {selectedService.name}
+                  </span>
+                </div>
+                <span className="text-sm font-black text-[#F28C28]">
+                  {formatCurrency(selectedService.pricing.amount)}
                 </span>
-                <span className="text-sm font-extrabold text-[#0B192C] dark:text-white">
-                  {selectedService.name}
-                </span>
-              </div>
-              <span className="text-sm font-black text-[#F28C28]">
-                {formatCurrency(selectedService.pricing.amount)}
-              </span>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-gray-700 dark:text-gray-300">
-                Reservation Date *
-              </label>
-              <input
-                type="date"
-                required
-                value={bookingDate}
-                min={getTodayYMD()}
-                onChange={(e) => setBookingDate(e.target.value)}
-                className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-gray-700 dark:text-gray-300">
-                  Preferred Time *
-                </label>
-                <input
-                  type="text"
-                  value={bookingTime}
-                  onChange={(e) => setBookingTime(e.target.value)}
-                  placeholder="e.g. 10:00 AM"
-                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl"
-                />
               </div>
 
               <div className="space-y-1">
                 <label className="text-gray-700 dark:text-gray-300">
-                  Guests / Quantity *
+                  Reservation Date *
                 </label>
                 <input
-                  type="number"
-                  min={1}
-                  max={20}
-                  value={guestsCount}
-                  onChange={(e) => setGuestsCount(Number(e.target.value))}
+                  type="date"
+                  required
+                  value={bookingDate}
+                  min={getTodayYMD()}
+                  onChange={(e) => setBookingDate(e.target.value)}
                   className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl"
                 />
               </div>
-            </div>
 
-            <div className="space-y-1">
-              <label className="text-gray-700 dark:text-gray-300">
-                Special Notes / Address Pickup
-              </label>
-              <textarea
-                rows={2}
-                value={specialNotes}
-                onChange={(e) => setSpecialNotes(e.target.value)}
-                placeholder="Mention hotel pickup location or special diet requests..."
-                className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl"
-              />
-            </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-gray-700 dark:text-gray-300">
+                    Preferred Time *
+                  </label>
+                  <input
+                    type="text"
+                    value={bookingTime}
+                    onChange={(e) => setBookingTime(e.target.value)}
+                    placeholder="e.g. 10:00 AM"
+                    className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl"
+                  />
+                </div>
 
-            <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex justify-end gap-2">
-              <EnterpriseButton
-                type="button"
-                variant="outline"
-                onClick={() => setSelectedService(null)}
-              >
-                Cancel
-              </EnterpriseButton>
-              <EnterpriseButton
-                type="submit"
-                variant="primary"
-                loading={isSubmitting}
-              >
-                Confirm & Pay {formatCurrency(
-                  (selectedService.pricing.amount || 500) * guestsCount,
-                )}
-              </EnterpriseButton>
-            </div>
-          </form>
-        )}
-      </EnterpriseModal>
-    </div>
+                <div className="space-y-1">
+                  <label className="text-gray-700 dark:text-gray-300">
+                    Guests / Quantity *
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={guestsCount}
+                    onChange={(e) => setGuestsCount(Number(e.target.value))}
+                    className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-gray-700 dark:text-gray-300">
+                  Special Notes / Address Pickup
+                </label>
+                <textarea
+                  rows={2}
+                  value={specialNotes}
+                  onChange={(e) => setSpecialNotes(e.target.value)}
+                  placeholder="Mention hotel pickup location or special diet requests..."
+                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex justify-end gap-2">
+                <EnterpriseButton
+                  type="button"
+                  variant="outline"
+                  onClick={() => setSelectedService(null)}
+                >
+                  Cancel
+                </EnterpriseButton>
+                <EnterpriseButton
+                  type="submit"
+                  variant="primary"
+                  loading={isSubmitting}
+                >
+                  Confirm & Pay {formatCurrency(
+                    (selectedService.pricing.amount || 500) * guestsCount,
+                  )}
+                </EnterpriseButton>
+              </div>
+            </form>
+          )}
+        </EnterpriseModal>
+      </div>
   );
 };
 

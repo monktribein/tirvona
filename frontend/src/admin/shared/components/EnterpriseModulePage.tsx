@@ -7,6 +7,7 @@ import DayStayManagerModal from "../../ashrams/components/DayStayManagerModal";
 import { EnterprisePageHeader } from "./EnterprisePageHeader";
 import { useNotifications } from "../../../contexts/NotificationContext";
 import api, { getErrorMessage } from "../../../lib/api";
+import { RichTextEditor } from "../../../components/richText/RichTextEditor";
 import {
   ashramService,
   bookingService,
@@ -665,8 +666,7 @@ export const EnterpriseModulePage: React.FC<{
                     <img
                       src={val}
                       alt="Service Thumbnail"
-                      className="w-full h-full object-cover"
-                    />
+                      className="w-full h-full object-cover" loading="lazy" decoding="async" />
                   ) : null}
                 </div>
               ),
@@ -1188,8 +1188,7 @@ export const EnterpriseModulePage: React.FC<{
                       <img
                         src={src}
                         alt="Cover"
-                        className="w-full h-full object-cover"
-                      />
+                        className="w-full h-full object-cover" loading="lazy" decoding="async" />
                     ) : null}
                   </div>
                 );
@@ -1274,7 +1273,7 @@ export const EnterpriseModulePage: React.FC<{
             {
               name: "content",
               label: "Article Body Content",
-              type: "textarea",
+              type: "richtext",
               required: true,
             },
             { name: "tags", label: "Tags (comma separated)", type: "text" },
@@ -3261,10 +3260,10 @@ export const EnterpriseModulePage: React.FC<{
       />
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="tv-drawer-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
             onSubmit={handleSave}
-            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-5xl w-full rounded-[28px] p-6 space-y-5 text-left shadow-2xl animate-in zoom-in-95 duration-150"
+            className="tv-drawer-panel bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-5xl w-full rounded-[28px] p-6 space-y-5 text-left shadow-2xl animate-in zoom-in-95 duration-150"
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <h3 className="font-extrabold text-base sm:text-lg text-[#0B192C] dark:text-white">
@@ -3685,14 +3684,22 @@ export const EnterpriseModulePage: React.FC<{
                   .map((f) => (
                   <div
                     key={f.name}
-                    className={`space-y-1 ${f.type === "textarea" ? "md:col-span-2" : ""}`}
+                    className={`space-y-1 ${f.type === "textarea" || f.type === "richtext" ? "md:col-span-2" : ""}`}
                   >
                     <label className="font-bold text-gray-700 dark:text-gray-300">
                       {f.label}{" "}
                       {f.required && <span className="text-rose-500">*</span>}
                     </label>
 
-                    {f.type === "select" ? (
+                    {f.type === "richtext" ? (
+                      <RichTextEditor
+                        required={f.required}
+                        value={formData[f.name] || ""}
+                        onChange={(html) =>
+                          setFormData((current: any) => ({ ...current, [f.name]: html }))
+                        }
+                      />
+                    ) : f.type === "select" ? (
                       <select
                         required={f.required}
                         value={

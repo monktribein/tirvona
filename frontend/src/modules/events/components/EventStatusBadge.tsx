@@ -30,7 +30,7 @@ export const EventStatusBadge: React.FC<{
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 font-black tracking-wider rounded-full border shadow-2xs ${
+      className={`tv-status-badge inline-flex items-center gap-1.5 font-black tracking-wider rounded-full border shadow-2xs ${
         STATUS_STYLES[status] || STATUS_STYLES.confirmed
       } ${sizeClasses}`}
     >

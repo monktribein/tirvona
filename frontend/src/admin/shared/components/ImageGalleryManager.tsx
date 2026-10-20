@@ -197,8 +197,7 @@ export const ImageGalleryManager: React.FC<ImageGalleryManagerProps> = ({
                 <img
                   src={imgUrl}
                   alt={`Photo Asset ${idx + 1}`}
-                  className="w-full h-full object-cover"
-                />
+                  className="w-full h-full object-cover" loading="lazy" decoding="async" />
 
                 {isCover && (
                   <span className="absolute top-1.5 left-1.5 bg-amber-500 text-black text-[9px] font-black px-2 py-0.5 rounded-full shadow flex items-center gap-1">

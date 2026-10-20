@@ -1,0 +1,129 @@
+/* Shared form and right-side workspace language for every authenticated role. */
+.dashboard-typography :where(form, .tv-drawer-panel) :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.tv-drawer-panel :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="file"]) {
+  min-height: 40px;
+  border: 1px solid rgb(148 163 184 / 0.38);
+  border-radius: 10px;
+  background-color: #f8fafc;
+  color: #0b192c;
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 13px;
+  line-height: 1.35;
+  transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.dark .dashboard-typography :where(form, .tv-drawer-panel) :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.dark .tv-drawer-panel :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="file"]) {
+  border-color: rgb(71 85 105 / 0.8);
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+
+.dashboard-typography :where(form, .tv-drawer-panel) :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+.tv-drawer-panel :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus {
+  border-color: #f28c28;
+  background-color: #fff;
+  box-shadow: 0 0 0 3px rgb(242 140 40 / 0.12);
+  outline: none;
+}
+
+.dark .dashboard-typography :where(form, .tv-drawer-panel) :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+.dark .tv-drawer-panel :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus {
+  background-color: #0b192c;
+}
+
+.dashboard-typography :where(form, .tv-drawer-panel) label,
+.tv-drawer-panel label {
+  color: #334155;
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.dark .dashboard-typography :where(form, .tv-drawer-panel) label,
+.dark .tv-drawer-panel label {
+  color: #cbd5e1;
+}
+
+/* Dashboard spacing utilities add top margins to sibling panels. A fullscreen
+   overlay must stay pinned to the viewport edge, including inside those stacks. */
+:where(.fixed.inset-0),
+.tv-drawer-overlay {
+  margin: 0 !important;
+}
+
+body:has(.tv-drawer-overlay),
+.dashboard-typography main:has(.tv-drawer-overlay) {
+  overflow: hidden !important;
+}
+
+.tv-drawer-overlay.tv-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+  padding: 0;
+  background: rgb(15 23 42 / 0.58);
+  backdrop-filter: blur(4px);
+}
+
+.tv-drawer-panel.tv-drawer-panel {
+  display: flex;
+  width: min(100%, 680px);
+  max-width: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  min-height: 0;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 0;
+  border-left: 1px solid rgb(203 213 225 / 0.7);
+  border-radius: 0;
+  background: #fff;
+  box-shadow: -18px 0 45px rgb(15 23 42 / 0.18);
+  animation: tv-drawer-enter 220ms ease-out both;
+}
+
+.dark .tv-drawer-panel.tv-drawer-panel {
+  border-left-color: rgb(51 65 85 / 0.9);
+  background: #0b192c;
+}
+
+.tv-drawer-header,
+.tv-drawer-footer {
+  flex: 0 0 auto;
+}
+
+.tv-drawer-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.tv-drawer-panel.tv-drawer-panel:where(form) {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@keyframes tv-drawer-enter {
+  from { transform: translateX(32px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@media (max-width: 639px) {
+  .tv-drawer-panel.tv-drawer-panel {
+    width: 100%;
+    border-left: 0;
+    border-radius: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tv-drawer-panel { animation: none; }
+}

@@ -2,10 +2,11 @@ import React, { useState } from "react";
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
 import NotificationDropdown from "../../../components/shared/NotificationDropdown";
+import SharedUiRuntime from "../../../components/dashboard/SharedUiRuntime";
 import GlobalSearch, {
   type SearchableLink,
 } from "../components/GlobalSearch";
-import { isParkingRole } from "../../../utils/roleRedirect";
+import { getLogoHomePath, isParkingRole } from "../../../utils/roleRedirect";
 import { useLanguage } from "../../../contexts/LanguageContext";
 import {
   LayoutDashboard,
@@ -1462,8 +1463,7 @@ export const DashboardLayout: React.FC = () => {
             <img
               src="/logo/logo.png"
               alt="Tirvona"
-              className="w-8 h-8 object-contain"
-            />
+              className="w-8 h-8 object-contain" loading="lazy" decoding="async" />
           </div>
           <div className="flex flex-col">
             <span className="font-black text-lg leading-tight text-[#0B192C] dark:text-white">
@@ -1690,8 +1690,9 @@ export const DashboardLayout: React.FC = () => {
   );
 
   return (
-    <div className="dashboard-shell flex min-h-screen min-h-[100dvh] flex-col bg-[#FAFAFA] text-left text-[#0B192C] dark:bg-[#070F1B] dark:text-white">
-      <header className="sticky top-0 z-30 flex min-h-[64px] sm:min-h-[72px] pt-[env(safe-area-inset-top)] w-full items-center justify-between gap-2 sm:gap-3 border-b border-gray-200 bg-white px-3 shadow-sm sm:px-5 lg:gap-6 lg:px-7 dark:border-slate-800 dark:bg-[#0B192C]">
+    <div className="dashboard-shell dashboard-typography admin-typography flex min-h-screen min-h-[100dvh] flex-col bg-[#FAFAFA] text-left text-[#0B192C] dark:bg-[#070F1B] dark:text-white">
+      <SharedUiRuntime />
+      <header className="tv-dashboard-navbar tv-dashboard-nav-inner sticky top-0 z-30 flex min-h-[64px] pt-[env(safe-area-inset-top)] w-full items-center justify-between gap-2 sm:gap-3 border-b border-gray-200 bg-white px-3 shadow-sm sm:px-5 lg:gap-6 lg:px-7 dark:border-slate-800 dark:bg-[#0B192C]">
         <div className="flex items-center gap-3 shrink-0">
           {!isParkingGuardOnly && (
             <button
@@ -1703,13 +1704,12 @@ export const DashboardLayout: React.FC = () => {
             </button>
           )}
 
-          <Link to="/" className="group flex shrink-0 cursor-pointer items-center gap-3">
+          <Link to={getLogoHomePath(user)} className="group flex shrink-0 cursor-pointer items-center gap-3">
             <div className="flex items-center justify-center rounded-xl border border-gray-200 bg-white p-1.5 shadow-sm transition-all group-hover:border-[#F28C28]/60">
               <img
                 src="/logo/logo.png"
                 alt="Tirvona"
-                className="h-8 w-8 object-contain transition-transform group-hover:scale-105"
-              />
+                className="h-8 w-8 object-contain transition-transform group-hover:scale-105" loading="lazy" decoding="async" />
             </div>
             <div className="hidden flex-col sm:flex">
               <span className="text-lg font-extrabold leading-tight tracking-tight text-[#0B192C] transition-colors group-hover:text-[#F28C28] dark:text-white">
@@ -1802,7 +1802,7 @@ export const DashboardLayout: React.FC = () => {
 
       <div className="flex flex-row flex-grow min-h-0">
         {!isParkingGuardOnly && (
-          <aside className="sticky top-[72px] hidden h-[calc(100vh-72px)] w-[272px] shrink-0 flex-col border-r border-gray-200 bg-white text-[#0B192C] shadow-sm lg:flex dark:border-slate-800 dark:bg-[#0B192C] dark:text-white">
+          <aside data-dashboard-sidebar data-admin-sidebar className="sticky top-16 hidden h-[calc(100vh-4rem)] w-[272px] shrink-0 flex-col border-r border-gray-200 bg-white text-[#0B192C] shadow-sm lg:flex dark:border-slate-800 dark:bg-[#0B192C] dark:text-white">
             {renderSidebarContent(false)}
           </aside>
         )}
@@ -1813,7 +1813,7 @@ export const DashboardLayout: React.FC = () => {
               className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
               onClick={() => setSidebarOpen(false)}
             />
-            <aside className="relative flex flex-col w-72 max-w-[85vw] bg-white dark:bg-[#0B192C] text-[#0B192C] dark:text-white border-r border-gray-200 dark:border-slate-800 shadow-2xl h-[100vh] h-[100dvh] pb-[env(safe-area-inset-bottom)] z-10 overflow-hidden">
+            <aside data-dashboard-sidebar className="relative flex flex-col w-72 max-w-[85vw] bg-white dark:bg-[#0B192C] text-[#0B192C] dark:text-white border-r border-gray-200 dark:border-slate-800 shadow-2xl h-[100vh] h-[100dvh] pb-[env(safe-area-inset-bottom)] z-10 overflow-hidden">
               <button
                 onClick={() => setSidebarOpen(false)}
                 className="absolute top-[max(0.85rem,calc(0.5rem+env(safe-area-inset-top)))] right-3 p-2 text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors z-20"
@@ -1827,8 +1827,10 @@ export const DashboardLayout: React.FC = () => {
         )}
 
         <main className="flex-grow p-3 sm:p-4 lg:p-6 pb-[calc(3.5rem+env(safe-area-inset-bottom))] lg:pb-16 overflow-y-auto min-w-0 bg-[#FAFAFA] dark:bg-[#070F1B]">
-          <SectionSummaryStrip pathname={location.pathname} />
-          <Outlet />
+          <div className="tv-dashboard-page-surface">
+            <SectionSummaryStrip pathname={location.pathname} />
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

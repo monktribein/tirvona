@@ -1,3 +1,4 @@
+import { Paginated } from "../../../components/shared/Pagination";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   AlertCircle,
@@ -174,102 +175,106 @@ export const CircuitControlCenterPage: React.FC = () => {
           <span className="text-sm font-bold text-gray-400">Loading…</span>
         </div>
       ) : (
-        <div className={`${CARD} overflow-x-auto`}>
-          <table className="w-full min-w-[900px] text-sm">
-            <thead className="border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 text-left text-[10px] tracking-wider font-bold text-gray-400 uppercase">
-              <tr>
-                <th className="px-4 py-3">Circuit</th>
-                <th className="px-4 py-3">Stay</th>
-                <th className="px-4 py-3">Length</th>
-                <th className="px-4 py-3">Stops</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-              {circuits.map((circuit) => {
-                const ashram =
-                  typeof circuit.ashramId === "object" ? circuit.ashramId : null;
-                return (
-                  <tr key={circuit._id}>
-                    <td className="px-4 py-3">
-                      <p className="font-bold text-[#0B192C] dark:text-white">
-                        {circuit.name}
-                        {circuit.isFeatured ? (
-                          <Star
-                            size={12}
-                            className="ml-1.5 inline fill-[#D4AF37] text-[#D4AF37]"
-                          />
-                        ) : null}
-                      </p>
-                      <p className="text-[10px] font-bold text-gray-400">
-                        {circuit.startCity ?? "—"} ·{" "}
-                        {difficultyLabel(circuit.difficulty)}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                      {ashram?.name ?? "—"}
-                    </td>
-                    <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                      {formatDuration(circuit.durationDays)}
-                      <span className="block text-[10px] font-bold text-gray-400">
-                        {formatDistance(circuit.totalDistanceKm)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                      {circuit.stopCount ?? 0}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-black tracking-wider ${circuitStatusStyle(circuit.status)}`}
-                      >
-                        {circuitStatusLabel(circuit.status)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          type="button"
-                          title={circuit.isFeatured ? "Unfeature" : "Feature"}
-                          onClick={() => toggleFeatured(circuit)}
-                          className="p-2 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#F28C28] hover:border-[#F28C28] transition-all active:scale-90 cursor-pointer"
+        <Paginated items={circuits} pageSize={15}>
+          {(pageItems) => (
+          <div className={`${CARD} overflow-x-auto`}>
+            <table className="w-full min-w-[900px] text-sm">
+              <thead className="border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 text-left text-[10px] tracking-wider font-bold text-gray-400 uppercase">
+                <tr>
+                  <th className="px-4 py-3">Circuit</th>
+                  <th className="px-4 py-3">Stay</th>
+                  <th className="px-4 py-3">Length</th>
+                  <th className="px-4 py-3">Stops</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+                {pageItems.map((circuit) => {
+                  const ashram =
+                    typeof circuit.ashramId === "object" ? circuit.ashramId : null;
+                  return (
+                    <tr key={circuit._id}>
+                      <td className="px-4 py-3">
+                        <p className="font-bold text-[#0B192C] dark:text-white">
+                          {circuit.name}
+                          {circuit.isFeatured ? (
+                            <Star
+                              size={12}
+                              className="ml-1.5 inline fill-[#D4AF37] text-[#D4AF37]"
+                            />
+                          ) : null}
+                        </p>
+                        <p className="text-[10px] font-bold text-gray-400">
+                          {circuit.startCity ?? "—"} ·{" "}
+                          {difficultyLabel(circuit.difficulty)}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                        {ashram?.name ?? "—"}
+                      </td>
+                      <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                        {formatDuration(circuit.durationDays)}
+                        <span className="block text-[10px] font-bold text-gray-400">
+                          {formatDistance(circuit.totalDistanceKm)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                        {circuit.stopCount ?? 0}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`tv-status-badge inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-black tracking-wider ${circuitStatusStyle(circuit.status)}`}
                         >
-                          <Star
-                            size={13}
-                            className={
-                              circuit.isFeatured
-                                ? "fill-[#D4AF37] text-[#D4AF37]"
-                                : ""
-                            }
-                          />
-                        </button>
-                        {circuit.status === "approved" ? (
+                          {circuitStatusLabel(circuit.status)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
                             type="button"
-                            title="Suspend"
-                            onClick={() => setStatus(circuit, "suspended")}
-                            className="p-2 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-400 transition-all active:scale-90 cursor-pointer"
+                            title={circuit.isFeatured ? "Unfeature" : "Feature"}
+                            onClick={() => toggleFeatured(circuit)}
+                            className="p-2 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#F28C28] hover:border-[#F28C28] transition-all active:scale-90 cursor-pointer"
                           >
-                            <Ban size={13} />
+                            <Star
+                              size={13}
+                              className={
+                                circuit.isFeatured
+                                  ? "fill-[#D4AF37] text-[#D4AF37]"
+                                  : ""
+                              }
+                            />
                           </button>
-                        ) : circuit.status === "suspended" ? (
-                          <button
-                            type="button"
-                            title="Restore"
-                            onClick={() => setStatus(circuit, "approved")}
-                            className="p-2 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-400 transition-all active:scale-90 cursor-pointer"
-                          >
-                            <CheckCircle2 size={13} />
-                          </button>
-                        ) : null}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                          {circuit.status === "approved" ? (
+                            <button
+                              type="button"
+                              title="Suspend"
+                              onClick={() => setStatus(circuit, "suspended")}
+                              className="p-2 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-400 transition-all active:scale-90 cursor-pointer"
+                            >
+                              <Ban size={13} />
+                            </button>
+                          ) : circuit.status === "suspended" ? (
+                            <button
+                              type="button"
+                              title="Restore"
+                              onClick={() => setStatus(circuit, "approved")}
+                              className="p-2 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-400 transition-all active:scale-90 cursor-pointer"
+                            >
+                              <CheckCircle2 size={13} />
+                            </button>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          )}
+        </Paginated>
       )}
     </div>
   );

@@ -161,7 +161,7 @@ const ProductReview: React.FC<{ id: string; onChanged: () => void }> = ({ id, on
       {p.images?.length > 0 && (
         <div className="flex gap-2 overflow-x-auto">
           {p.images.map((src: string) => (
-            <img key={src} src={src} alt="" className="w-24 h-24 rounded-xl object-cover bg-gray-100 shrink-0" />
+            <img key={src} src={src} alt="" className="w-24 h-24 rounded-xl object-cover bg-gray-100 shrink-0" loading="lazy" decoding="async" />
           ))}
         </div>
       )}

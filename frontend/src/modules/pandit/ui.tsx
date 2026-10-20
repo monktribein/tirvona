@@ -173,7 +173,7 @@ export const StatusBadge: React.FC<{ status?: string | null; label?: string; ton
   return (
     <span
       className={cx(
-        "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-bold leading-5 whitespace-nowrap",
+        "tv-status-badge inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-bold leading-5 whitespace-nowrap",
         TONE_CLASS[finalTone],
         className,
       )}
@@ -260,13 +260,13 @@ export const StatTile: React.FC<{
   const body = (
     <>
       <div className="flex items-start justify-between gap-2">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">{label}</span>
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#F28C28]/10 text-[#F28C28]" aria-hidden="true">
+        <span className="tv-stat-label">{label}</span>
+        <span className="tv-stat-icon" aria-hidden="true">
           {icon}
         </span>
       </div>
-      <div className="mt-1.5 text-2xl font-black tabular-nums tracking-tight text-[#0B192C] dark:text-white break-words">{value}</div>
-      {hint && <div className="mt-1 text-[11px] font-semibold text-gray-400">{hint}</div>}
+      <div className="tv-stat-value">{value}</div>
+      {hint && <div className="tv-stat-hint">{hint}</div>}
       {to && cta && (
         <span className="mt-auto inline-flex items-center gap-0.5 pt-2.5 text-[11px] font-bold text-[#B45309] dark:text-[#FFA44D]">
           {cta}
@@ -276,7 +276,7 @@ export const StatTile: React.FC<{
     </>
   );
   const frame =
-    "flex h-full flex-col rounded-2xl border border-[#F28C28]/10 bg-white p-5 shadow-sm transition-all duration-200 dark:border-slate-800 dark:bg-[#0B192C]";
+    "tv-stat";
   if (to && !action)
     return (
       <Link
@@ -489,7 +489,7 @@ const FOCUSABLE =
 
 /**
  * Accessible dialog: role=dialog, labelled, Escape closes, focus is trapped and restored, page scroll is locked.
- * On phones it is a bottom sheet that never exceeds the viewport; from `sm` up it is a centred dialog.
+ * Forms and details default to a right drawer; confirmations opt into a compact dialog.
  */
 export const Modal: React.FC<{
   open: boolean;
@@ -508,7 +508,7 @@ export const Modal: React.FC<{
   /** Extra content in the header, next to the title. */
   headerExtra?: React.ReactNode;
   children: React.ReactNode;
-}> = ({ open, onClose, title, description, size = "md", variant = "dialog", footer, closeOnBackdrop = true, fullHeight, flush, headerExtra, children }) => {
+}> = ({ open, onClose, title, description, size = "md", variant = "drawer", footer, closeOnBackdrop = true, fullHeight, flush, headerExtra, children }) => {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const descId = useId();
@@ -617,6 +617,7 @@ export const ConfirmDialog: React.FC<{
     onClose={loading ? () => undefined : onCancel}
     title={title}
     size="sm"
+    variant="dialog"
     closeOnBackdrop={!loading}
     footer={
       <>

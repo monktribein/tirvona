@@ -1224,8 +1224,7 @@ const AddAshramWizardPage: React.FC = () => {
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             e.currentTarget.style.display = "none";
-                          }}
-                        />
+                          }} loading="lazy" decoding="async" />
                       </div>
                     )}
                   </div>
@@ -2312,8 +2311,7 @@ const AddAshramWizardPage: React.FC = () => {
                     onError={(e) => {
                       e.currentTarget.src =
                         "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
-                    }}
-                  />
+                    }} loading="lazy" decoding="async" />
                 </div>
                 <div className="grid grid-rows-2 gap-3">
                   {formData.galleryUrls.slice(0, 2).map(
@@ -2326,8 +2324,7 @@ const AddAshramWizardPage: React.FC = () => {
                             className="w-full h-full object-cover"
                             onError={(e) => {
                               e.currentTarget.style.display = "none";
-                            }}
-                          />
+                            }} loading="lazy" decoding="async" />
                         </div>
                       ),
                   )}
@@ -2734,7 +2731,7 @@ const AddAshramWizardPage: React.FC = () => {
   const progressPercent = ((step + 1) / STEPS.length) * 100;
 
   return (
-    <div className="space-y-6 text-left max-w-7xl mx-auto pb-12">
+    <div className="space-y-6 text-left pb-12">
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm mb-6">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">

@@ -190,7 +190,7 @@ export const VendorProductsPage: React.FC = () => {
                         cell: (p) => (
                           <span className="flex items-center gap-2.5 min-w-0">
                             {p.images?.[0] ? (
-                              <img src={p.images[0]} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0 hidden md:block" />
+                              <img src={p.images[0]} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0 hidden md:block" loading="lazy" decoding="async" />
                             ) : null}
                             <span className="min-w-0">
                               <span className="block font-bold truncate max-w-[220px]">{p.name}</span>

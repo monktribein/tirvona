@@ -1,3 +1,4 @@
+import { Paginated } from "../../components/shared/Pagination";
 import React, { useState, useEffect, useCallback } from "react";
 import { getErrorMessage } from "../../lib/api";
 import { ashramService, offerService } from "../../services";
@@ -651,148 +652,152 @@ export const AdminOffersPage: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div
-          className={`grid grid-cols-1 xl:grid-cols-2 gap-6 transition-opacity ${
-            refreshing ? "opacity-60" : ""
-          }`}
-        >
-          {filteredOffers.map((offer) => {
-            const isExpired = isOfferExpired(offer);
+        <Paginated items={filteredOffers} pageSize={10}>
+          {(pageItems) => (
+          <div
+            className={`grid grid-cols-1 xl:grid-cols-2 gap-6 transition-opacity ${
+              refreshing ? "opacity-60" : ""
+            }`}
+          >
+            {pageItems.map((offer) => {
+              const isExpired = isOfferExpired(offer);
 
-            const routeObj = TARGET_ROUTES.find(
-              (r) => r.value === (offer.targetRoute || offer.category || "homepage"),
-            );
+              const routeObj = TARGET_ROUTES.find(
+                (r) => r.value === (offer.targetRoute || offer.category || "homepage"),
+              );
 
-            return (
-              <div key={offer._id} className="relative group w-full">
-                <CouponVoucherCard
-                  offer={offer}
-                  isCarouselItem={false}
-                  className="w-full max-w-none"
-                  adminToolbar={
-                    <>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="px-2.5 py-0.5 rounded-full bg-[#FFF4E5]/40 text-[10px] font-black text-[#F28C28] dark:text-amber-400">
-                          {routeObj?.label || "Homepage"}
-                        </span>
-
-                        <span
-                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-black inline-flex items-center gap-1 ${
-                            offer.ashramId?.name
-                              ? "bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300"
-                              : "bg-gray-100 dark:bg-slate-800 text-gray-500"
-                          }`}
-                        >
-                          <MapPin size={9} />
-                          {offer.ashramId?.name || "All stays"}
-                        </span>
-
-                        {isExpired ? (
-                          <span className="px-2.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/40 text-[10px] font-black text-rose-600">
-                            Expired
+              return (
+                <div key={offer._id} className="relative group w-full">
+                  <CouponVoucherCard
+                    offer={offer}
+                    isCarouselItem={false}
+                    className="w-full max-w-none"
+                    adminToolbar={
+                      <>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="px-2.5 py-0.5 rounded-full bg-[#FFF4E5]/40 text-[10px] font-black text-[#F28C28] dark:text-amber-400">
+                            {routeObj?.label || "Homepage"}
                           </span>
-                        ) : offer.status === "active" ? (
-                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-[10px] font-black text-emerald-600">
-                            Active
-                          </span>
-                        ) : (
-                          <span className="px-2.5 py-0.5 rounded-full bg-gray-100 dark:bg-slate-800 text-[10px] font-black text-gray-500">
-                            {offer.status}
-                          </span>
-                        )}
-                      </div>
 
-                      <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
-                        <button
-                          onClick={() => handleView(offer)}
-                          disabled={isBusy(offer._id)}
-                          title="View Offer Details"
-                          aria-label="View offer details"
-                          className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 hover:text-[#F28C28] cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                          {isBusy(offer._id, "view") ? (
-                            <Loader2 size={15} className="animate-spin" />
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-black inline-flex items-center gap-1 ${
+                              offer.ashramId?.name
+                                ? "bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300"
+                                : "bg-gray-100 dark:bg-slate-800 text-gray-500"
+                            }`}
+                          >
+                            <MapPin size={9} />
+                            {offer.ashramId?.name || "All stays"}
+                          </span>
+
+                          {isExpired ? (
+                            <span className="px-2.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/40 text-[10px] font-black text-rose-600">
+                              Expired
+                            </span>
+                          ) : offer.status === "active" ? (
+                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-[10px] font-black text-emerald-600">
+                              Active
+                            </span>
                           ) : (
-                            <Eye size={15} />
+                            <span className="px-2.5 py-0.5 rounded-full bg-gray-100 dark:bg-slate-800 text-[10px] font-black text-gray-500">
+                              {offer.status}
+                            </span>
                           )}
-                        </button>
-                        <button
-                          onClick={() => openEditModal(offer)}
-                          disabled={isBusy(offer._id)}
-                          title="Edit Offer"
-                          aria-label="Edit offer"
-                          className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 hover:text-[#F28C28] cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                          <Edit3 size={15} />
-                        </button>
-                        <button
-                          onClick={() => handleToggleStatus(offer)}
-                          disabled={isBusy(offer._id)}
-                          title={
-                            offer.status === "active"
-                              ? "Disable Offer"
-                              : "Activate Offer"
-                          }
-                          aria-label={
-                            offer.status === "active"
-                              ? "Disable offer"
-                              : "Activate offer"
-                          }
-                          className={`p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-                            offer.status === "active"
-                              ? "text-emerald-600 hover:text-amber-600"
-                              : "text-gray-400 hover:text-emerald-600"
-                          }`}
-                        >
-                          {isBusy(offer._id, "status") ? (
-                            <Loader2 size={15} className="animate-spin" />
-                          ) : (
-                            <Power size={15} />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => handleDuplicate(offer)}
-                          disabled={isBusy(offer._id)}
-                          title="Duplicate Offer"
-                          aria-label="Duplicate offer"
-                          className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 hover:text-emerald-600 cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                          {isBusy(offer._id, "duplicate") ? (
-                            <Loader2 size={15} className="animate-spin" />
-                          ) : (
-                            <DuplicateIcon size={15} />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => setConfirmDelete(offer)}
-                          disabled={isBusy(offer._id)}
-                          title="Delete Offer"
-                          aria-label="Delete offer"
-                          className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 hover:text-rose-600 cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                          {isBusy(offer._id, "delete") ? (
-                            <Loader2 size={15} className="animate-spin" />
-                          ) : (
-                            <Trash2 size={15} />
-                          )}
-                        </button>
-                      </div>
-                    </>
-                  }
-                />
-              </div>
-            );
-          })}
-        </div>
+                        </div>
+
+                        <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
+                          <button
+                            onClick={() => handleView(offer)}
+                            disabled={isBusy(offer._id)}
+                            title="View Offer Details"
+                            aria-label="View offer details"
+                            className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 hover:text-[#F28C28] cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            {isBusy(offer._id, "view") ? (
+                              <Loader2 size={15} className="animate-spin" />
+                            ) : (
+                              <Eye size={15} />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => openEditModal(offer)}
+                            disabled={isBusy(offer._id)}
+                            title="Edit Offer"
+                            aria-label="Edit offer"
+                            className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 hover:text-[#F28C28] cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            <Edit3 size={15} />
+                          </button>
+                          <button
+                            onClick={() => handleToggleStatus(offer)}
+                            disabled={isBusy(offer._id)}
+                            title={
+                              offer.status === "active"
+                                ? "Disable Offer"
+                                : "Activate Offer"
+                            }
+                            aria-label={
+                              offer.status === "active"
+                                ? "Disable offer"
+                                : "Activate offer"
+                            }
+                            className={`p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                              offer.status === "active"
+                                ? "text-emerald-600 hover:text-amber-600"
+                                : "text-gray-400 hover:text-emerald-600"
+                            }`}
+                          >
+                            {isBusy(offer._id, "status") ? (
+                              <Loader2 size={15} className="animate-spin" />
+                            ) : (
+                              <Power size={15} />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleDuplicate(offer)}
+                            disabled={isBusy(offer._id)}
+                            title="Duplicate Offer"
+                            aria-label="Duplicate offer"
+                            className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 hover:text-emerald-600 cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            {isBusy(offer._id, "duplicate") ? (
+                              <Loader2 size={15} className="animate-spin" />
+                            ) : (
+                              <DuplicateIcon size={15} />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => setConfirmDelete(offer)}
+                            disabled={isBusy(offer._id)}
+                            title="Delete Offer"
+                            aria-label="Delete offer"
+                            className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 hover:text-rose-600 cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            {isBusy(offer._id, "delete") ? (
+                              <Loader2 size={15} className="animate-spin" />
+                            ) : (
+                              <Trash2 size={15} />
+                            )}
+                          </button>
+                        </div>
+                      </>
+                    }
+                  />
+                </div>
+              );
+            })}
+          </div>
+          )}
+        </Paginated>
       )}
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
           <div
             role="dialog"
             aria-modal="true"
             aria-label={editOfferId ? "Edit offer" : "Create new offer"}
-            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] max-w-2xl w-full my-4 sm:my-8 shadow-2xl flex flex-col max-h-[calc(100dvh-2rem)] overflow-hidden"
+            className="tv-drawer-panel bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] max-w-2xl w-full my-4 sm:my-8 shadow-2xl flex flex-col max-h-[calc(100dvh-2rem)] overflow-hidden"
           >
             <div className="shrink-0 flex items-start justify-between gap-3 border-b border-gray-100 dark:border-slate-800 px-5 sm:px-8 pt-5 sm:pt-6 pb-4">
               <div className="min-w-0">
@@ -1200,7 +1205,7 @@ export const AdminOffersPage: React.FC = () => {
 
       {viewOffer && (
         <div
-          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
+          className="tv-drawer-overlay fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
           onClick={() => setViewOffer(null)}
         >
           <div
@@ -1208,7 +1213,7 @@ export const AdminOffersPage: React.FC = () => {
             aria-modal="true"
             aria-label="Offer details"
             onClick={(e) => e.stopPropagation()}
-            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] max-w-2xl w-full p-5 sm:p-8 space-y-5 shadow-2xl my-4 sm:my-8"
+            className="tv-drawer-panel bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] max-w-2xl w-full p-5 sm:p-8 space-y-5 shadow-2xl my-4 sm:my-8"
           >
             <div className="flex items-start justify-between border-b border-gray-100 dark:border-slate-800 pb-4 gap-4">
               <div className="min-w-0">
@@ -1322,8 +1327,7 @@ export const AdminOffersPage: React.FC = () => {
               <img
                 src={viewOffer.bannerImage}
                 alt=""
-                className="w-full h-40 object-cover rounded-2xl border border-gray-100 dark:border-slate-800"
-              />
+                className="w-full h-40 object-cover rounded-2xl border border-gray-100 dark:border-slate-800" loading="lazy" decoding="async" />
             )}
 
             <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center sm:justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-100 dark:border-slate-800">

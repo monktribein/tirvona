@@ -1,3 +1,4 @@
+import { Paginated } from "../../components/shared/Pagination";
 import React, { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import {
@@ -381,37 +382,41 @@ export const FoodVendorDashboardPage: React.FC = () => {
 
         {/* Tab 3: Completed / History */}
         {activeTab === "completed" && (
-          <div className="space-y-3">
-            {completedOrders.map((ord) => (
-              <div
-                key={ord._id}
-                className="bg-white dark:bg-[#0B192C] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs"
-              >
-                <div>
-                  <span className="font-bold text-slate-900 dark:text-white">
-                    {ord.orderNumber}
-                  </span>
-                  <span className="text-slate-500 ml-2">
-                    {new Date(ord.createdAt).toLocaleDateString()} • {ord.customerName}
-                  </span>
+          <Paginated items={completedOrders} pageSize={10}>
+            {(pageItems) => (
+            <div className="space-y-3">
+              {pageItems.map((ord) => (
+                <div
+                  key={ord._id}
+                  className="bg-white dark:bg-[#0B192C] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs"
+                >
+                  <div>
+                    <span className="font-bold text-slate-900 dark:text-white">
+                      {ord.orderNumber}
+                    </span>
+                    <span className="text-slate-500 ml-2">
+                      {new Date(ord.createdAt).toLocaleDateString()} • {ord.customerName}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-black text-slate-900 dark:text-white">
+                      ₹{ord.totalRupees}
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        ord.orderStatus === "COMPLETED" || ord.orderStatus === "DELIVERED"
+                          ? "bg-emerald-100 text-emerald-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {ord.orderStatus}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="font-black text-slate-900 dark:text-white">
-                    ₹{ord.totalRupees}
-                  </span>
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                      ord.orderStatus === "COMPLETED" || ord.orderStatus === "DELIVERED"
-                        ? "bg-emerald-100 text-emerald-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {ord.orderStatus}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            )}
+          </Paginated>
         )}
 
         {/* Tab 4: Settlements & Payouts */}
@@ -470,42 +475,46 @@ export const FoodVendorDashboardPage: React.FC = () => {
                   No settlements yet. Tirvona creates one for each period after your orders are completed.
                 </p>
               ) : (
-                <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {settlements.map((st) => (
-                    <div key={st._id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                      <div>
-                        <p className="font-bold text-slate-900 dark:text-white">
-                          {new Date(st.periodStart).toLocaleDateString()} – {new Date(st.periodEnd).toLocaleDateString()}
-                          <span className="text-slate-400 font-medium"> • {st.orderCount} orders • {st.outletId?.brandName}</span>
-                        </p>
-                        <p className="text-[11px] text-slate-400">
-                          Food ₹{st.grossFoodValuePaise / 100} − commission ₹{st.commissionAmountPaise / 100} − GST ₹{(st.taxOnCommissionPaise ?? 0) / 100}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-base font-black text-emerald-600">₹{st.netPayablePaise / 100}</span>
-                        <span
-                          className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
-                            st.status === "paid"
-                              ? "bg-emerald-100 text-emerald-800"
+                <Paginated items={settlements} pageSize={10}>
+                  {(pageItems) => (
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {pageItems.map((st) => (
+                      <div key={st._id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                        <div>
+                          <p className="font-bold text-slate-900 dark:text-white">
+                            {new Date(st.periodStart).toLocaleDateString()} – {new Date(st.periodEnd).toLocaleDateString()}
+                            <span className="text-slate-400 font-medium"> • {st.orderCount} orders • {st.outletId?.brandName}</span>
+                          </p>
+                          <p className="text-[11px] text-slate-400">
+                            Food ₹{st.grossFoodValuePaise / 100} − commission ₹{st.commissionAmountPaise / 100} − GST ₹{(st.taxOnCommissionPaise ?? 0) / 100}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-base font-black text-emerald-600">₹{st.netPayablePaise / 100}</span>
+                          <span
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                              st.status === "paid"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : st.status === "approved"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-amber-100 text-amber-800"
+                            }`}
+                          >
+                            {st.status === "paid"
+                              ? "Paid"
                               : st.status === "approved"
-                                ? "bg-blue-100 text-blue-800"
-                                : "bg-amber-100 text-amber-800"
-                          }`}
-                        >
-                          {st.status === "paid"
-                            ? "Paid"
-                            : st.status === "approved"
-                              ? "Approved, transfer pending"
-                              : "Under review"}
-                        </span>
+                                ? "Approved, transfer pending"
+                                : "Under review"}
+                          </span>
+                        </div>
+                        {st.status === "paid" && st.payoutReference && (
+                          <p className="text-[10px] text-slate-400 sm:basis-full">Bank reference: {st.payoutReference}</p>
+                        )}
                       </div>
-                      {st.status === "paid" && st.payoutReference && (
-                        <p className="text-[10px] text-slate-400 sm:basis-full">Bank reference: {st.payoutReference}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                  )}
+                </Paginated>
               )}
             </div>
           </div>
@@ -514,8 +523,8 @@ export const FoodVendorDashboardPage: React.FC = () => {
 
       {/* Rejection Modal */}
       {rejectOrderId && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#0B192C] rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="tv-drawer-panel bg-white dark:bg-[#0B192C] rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
             <div className="flex items-center gap-2 text-red-600">
               <ShieldAlert size={22} />
               <h3 className="text-base font-extrabold">Reject Order</h3>

@@ -55,8 +55,7 @@ export const CompleteProfileModal: React.FC<Props> = ({
           <img
             src="/logo/logo.png"
             alt="Tirvona"
-            className="w-14 h-14 object-contain inline-block"
-          />
+            className="w-14 h-14 object-contain inline-block" loading="lazy" decoding="async" />
           <h2 className="text-2xl font-black text-[#0B192C] dark:text-white flex items-center justify-center gap-1.5">
             Almost There <ShieldCheck size={20} className="text-[#F28C28]" />
           </h2>

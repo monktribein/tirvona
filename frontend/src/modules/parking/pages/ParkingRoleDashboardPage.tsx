@@ -1,3 +1,4 @@
+import { Paginated } from "../../../components/shared/Pagination";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   Car,
@@ -37,7 +38,7 @@ import {
 import ParkingStatTile from "../components/ParkingStatTile";
 import ParkingStatusBadge from "../components/ParkingStatusBadge";
 import ParkingGuardPanelPage from "./ParkingGuardPanelPage";
-import { AnalyticsBarChart } from "../../../components/dashboard/AnalyticsCharts";
+import { AnalyticsBarChart } from "../../../components/dashboard/LazyAnalyticsCharts";
 
 export const ParkingRoleDashboardPage: React.FC = () => {
   const { user } = useAuth();
@@ -231,7 +232,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen pt-28 pb-16 flex flex-col items-center justify-center">
+      <div className="min-h-[50vh] py-16 flex flex-col items-center justify-center">
         <div className="w-12 h-12 border-4 border-[#F28C28] border-t-transparent rounded-full animate-spin mb-4" />
         <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
           Loading Parking Management...
@@ -521,44 +522,48 @@ export const ParkingRoleDashboardPage: React.FC = () => {
               <Car size={16} className="text-[#F28C28]" /> Facility Booking Roster
             </h3>
 
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[700px] text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-gray-100 dark:border-slate-800 text-[10px] font-black tracking-wider text-gray-400">
-                    <th className="py-3 px-4">Ref Code</th>
-                    <th className="py-3 px-4">Vehicle Number</th>
-                    <th className="py-3 px-4">Vehicle Type</th>
-                    <th className="py-3 px-4">Entry / Exit</th>
-                    <th className="py-3 px-4">Amount</th>
-                    <th className="py-3 px-4">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-slate-800 text-xs font-bold text-[#0B192C] dark:text-white">
-                  {partnerBookings.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-6 text-center text-gray-400 italic">
-                        No bookings found for this location.
-                      </td>
+            <Paginated items={partnerBookings} pageSize={10}>
+              {(pageItems) => (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[700px] text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-gray-100 dark:border-slate-800 text-[10px] font-black tracking-wider text-gray-400">
+                      <th className="py-3 px-4">Ref Code</th>
+                      <th className="py-3 px-4">Vehicle Number</th>
+                      <th className="py-3 px-4">Vehicle Type</th>
+                      <th className="py-3 px-4">Entry / Exit</th>
+                      <th className="py-3 px-4">Amount</th>
+                      <th className="py-3 px-4">Status</th>
                     </tr>
-                  ) : (
-                    partnerBookings.map((b) => (
-                      <tr key={b._id} className="hover:bg-gray-50/50 dark:hover:bg-slate-900/50">
-                        <td className="py-3 px-4 font-mono text-[#F28C28]">{b.bookingReference}</td>
-                        <td className="py-3 px-4 font-black">{b.vehicleNumber}</td>
-                        <td className="py-3 px-4 capitalize">{vehicleLabel(b.vehicleType)}</td>
-                        <td className="py-3 px-4 text-gray-500 dark:text-gray-400">
-                          {formatDateTime(b.entryAt)}
-                        </td>
-                        <td className="py-3 px-4 font-black">{formatCurrency(b.pricing?.totalAmount ?? 0)}</td>
-                        <td className="py-3 px-4">
-                          <ParkingStatusBadge status={b.status} />
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-slate-800 text-xs font-bold text-[#0B192C] dark:text-white">
+                    {partnerBookings.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-6 text-center text-gray-400 italic">
+                          No bookings found for this location.
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    ) : (
+                      pageItems.map((b) => (
+                        <tr key={b._id} className="hover:bg-gray-50/50 dark:hover:bg-slate-900/50">
+                          <td className="py-3 px-4 font-mono text-[#F28C28]">{b.bookingReference}</td>
+                          <td className="py-3 px-4 font-black">{b.vehicleNumber}</td>
+                          <td className="py-3 px-4 capitalize">{vehicleLabel(b.vehicleType)}</td>
+                          <td className="py-3 px-4 text-gray-500 dark:text-gray-400">
+                            {formatDateTime(b.entryAt)}
+                          </td>
+                          <td className="py-3 px-4 font-black">{formatCurrency(b.pricing?.totalAmount ?? 0)}</td>
+                          <td className="py-3 px-4">
+                            <ParkingStatusBadge status={b.status} />
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              )}
+            </Paginated>
           </div>
         </div>
       )}
@@ -676,8 +681,8 @@ export const ParkingRoleDashboardPage: React.FC = () => {
       )}
 
       {showManualCheckInModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="tv-drawer-panel bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
                 <Plus size={16} className="text-[#F28C28]" /> Manual Spot Allocation

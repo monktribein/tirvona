@@ -46,8 +46,7 @@ export const ParkingQrTicket: React.FC<ParkingQrTicketProps> = ({
             <img
               src={pass.image}
               alt={`Parking QR code for booking ${booking.bookingReference}`}
-              className="w-44 h-44 sm:w-52 sm:h-52 block"
-            />
+              className="w-44 h-44 sm:w-52 sm:h-52 block" loading="lazy" decoding="async" />
           </div>
         ) : (
           <div className="w-44 h-44 bg-gray-100 dark:bg-slate-800 rounded-2xl animate-pulse" />

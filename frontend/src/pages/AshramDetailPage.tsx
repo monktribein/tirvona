@@ -1651,8 +1651,7 @@ export const AshramDetailPage: React.FC = () => {
                     e.currentTarget.onerror = null;
                     e.currentTarget.src =
                       "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
-                  }}
-                />
+                  }} loading="lazy" decoding="async" />
               </button>
             ))}
           </div>
@@ -2062,8 +2061,7 @@ export const AshramDetailPage: React.FC = () => {
                 <img
                   src={roomPhotoViewer.images[roomPhotoViewer.index]}
                   alt={`${roomPhotoViewer.name} photo ${roomPhotoViewer.index + 1}`}
-                  className="max-h-[78vh] w-auto max-w-full rounded-2xl object-contain shadow-2xl"
-                />
+                  className="max-h-[78vh] w-auto max-w-full rounded-2xl object-contain shadow-2xl" loading="lazy" decoding="async" />
                 <p className="text-xs font-bold text-white/80">
                   {roomPhotoViewer.name} · {roomPhotoViewer.index + 1} /{" "}
                   {roomPhotoViewer.images.length}
@@ -3042,8 +3040,7 @@ export const AshramDetailPage: React.FC = () => {
                       e.currentTarget.onerror = null;
                       e.currentTarget.src =
                         "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
-                    }}
-                  />
+                    }} loading="lazy" decoding="async" />
                   <span className="absolute bottom-3 right-3 bg-white/95 text-secondary px-2 py-0.5 rounded shadow text-[9px] font-extrabold flex items-center gap-0.5">
                     <Star className="text-[#D4AF37] fill-[#D4AF37]" size={10} />{" "}
                     {rel.rating?.average}

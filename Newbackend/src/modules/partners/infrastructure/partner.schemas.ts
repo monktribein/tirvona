@@ -5,6 +5,7 @@ import {
   PARTNER_PERMISSIONS,
   PARTNER_STATUSES,
   WEBHOOK_DELIVERY_STATUSES,
+  WEBHOOK_ALL_EVENT_TYPES,
   WEBHOOK_EVENT_TYPES,
   WEBHOOK_STATUSES,
 } from "../domain/partner.constants";
@@ -143,7 +144,7 @@ export const PartnerWebhookEventSchema = new Schema(
     webhookId: id("PartnerWebhook", true),
     eventType: {
       type: String,
-      enum: WEBHOOK_EVENT_TYPES,
+      enum: WEBHOOK_ALL_EVENT_TYPES,
       required: true,
       index: true,
     },

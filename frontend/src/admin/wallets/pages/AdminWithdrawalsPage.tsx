@@ -229,7 +229,7 @@ export const AdminWithdrawalsPage: React.FC = () => {
                         {w.requestNumber} · requested {formatDateTimeIN(w.createdAt)}
                       </p>
                     </div>
-                    <span className={`rounded-full border px-3 py-1 text-[11px] font-bold ${WITHDRAWAL_STATUS_TONE[w.status]}`}>
+                    <span className={`tv-status-badge rounded-full border px-3 py-1 text-[11px] font-bold ${WITHDRAWAL_STATUS_TONE[w.status]}`}>
                       {WITHDRAWAL_STATUS_LABEL[w.status]}
                     </span>
                   </div>

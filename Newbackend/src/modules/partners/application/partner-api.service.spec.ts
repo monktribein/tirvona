@@ -55,7 +55,7 @@ describe("PartnerApiService", () => {
         }),
       }),
       countDocuments: jest.fn().mockResolvedValue(1),
-      findOne: jest.fn(),
+      findOne: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue(null) }),
     };
 
     mockPaymentModel = {

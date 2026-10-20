@@ -198,8 +198,7 @@ export const CartDrawer: React.FC = () => {
                     className="w-16 h-16 rounded-xl object-cover bg-gray-100 dark:bg-slate-900 shrink-0"
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).src = FALLBACK_IMAGE;
-                    }}
-                  />
+                    }} loading="lazy" decoding="async" />
                   <div className="flex-1 min-w-0">
                     <h3 className="text-xs font-bold text-[#0B192C] dark:text-white line-clamp-2">
                       {line.name}

@@ -298,7 +298,7 @@ export const ParkingGuardPanelPage: React.FC<ParkingGuardPanelPageProps> = ({
   }
 
   return (
-    <div className={embedded ? "w-full" : "pb-16 lg:pb-24 pt-8 sm:pt-10 min-h-screen"}>
+    <div className={embedded ? "w-full" : "pb-16 lg:pb-24"}>
       <div className={`max-w-3xl mx-auto space-y-4 ${embedded ? "w-full" : "px-4 sm:px-6"}`}>
         <header className="space-y-1">
           <h1 className="inline-flex items-center gap-2.5 text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white">

@@ -36,7 +36,7 @@ export const AutoImageSlider: React.FC<{
       <div
         className={`relative rounded-[28px] overflow-hidden shadow-xl border border-gray-100 dark:border-slate-800 bg-gray-100 dark:bg-slate-800 ${className}`}
       >
-        <img src={slides[0]} alt={alt} className="w-full h-full object-cover" />
+        <img src={slides[0]} alt={alt} className="w-full h-full object-cover" loading="lazy" decoding="async" />
       </div>
     );
 

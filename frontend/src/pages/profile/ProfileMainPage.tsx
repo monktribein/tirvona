@@ -617,7 +617,7 @@ export const ProfileMainPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen pb-24 text-left">
+    <div className="dashboard-typography min-h-screen pb-24 text-left">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3 space-y-6">
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 sm:p-7 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-5">
           <div className="flex items-center gap-4 sm:gap-5">
@@ -935,8 +935,7 @@ export const ProfileMainPage: React.FC = () => {
                               <img
                                 src={image}
                                 alt={b.title}
-                                className="w-full h-full object-cover"
-                              />
+                                className="w-full h-full object-cover" loading="lazy" decoding="async" />
                             </div>
 
                             <div className="space-y-1 min-w-0">
@@ -1066,8 +1065,7 @@ export const ProfileMainPage: React.FC = () => {
                             <img
                               src={item.image}
                               alt={item.name}
-                              className="w-full h-full object-cover"
-                            />
+                              className="w-full h-full object-cover" loading="lazy" decoding="async" />
                             <button
                               onClick={() => handleRemoveWishlist(item.id)}
                               title="Remove from wishlist"
@@ -1157,7 +1155,7 @@ export const ProfileMainPage: React.FC = () => {
                               {t.title}
                             </span>
                             <span
-                              className={`px-2 py-0.5 rounded-full text-[10px] font-black ${t.status === "Paid" ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400" : "bg-blue-50 text-blue-600"}`}
+                              className={`tv-status-badge px-2 py-0.5 rounded-full text-[10px] font-black ${t.status === "Paid" ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400" : "bg-blue-50 text-blue-600"}`}
                             >
                               {t.status}
                             </span>

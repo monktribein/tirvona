@@ -1,3 +1,4 @@
+import { Paginated } from "../components/shared/Pagination";
 import React, { useState, useEffect } from "react";
 import api, { getErrorMessage } from "../lib/api";
 import { formatCurrency } from "../utils/format";
@@ -474,95 +475,98 @@ export const OwnerOffersPage: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredOffers.map((offer) => (
-            <div
-              key={offer._id}
-              className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[32px] overflow-hidden shadow-sm flex flex-col justify-between"
-            >
-              <div>
-                <div className="relative aspect-video bg-black">
-                  {offer.bannerImage ? (
-                    <img
-                      src={offer.bannerImage}
-                      alt={offer.offerTitle}
-                      className="w-full h-full object-cover opacity-90"
-                    />
-                  ) : null}
-                  <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-[#F28C28] text-white text-[10px] font-black">
-                    {offer.offerType}
-                  </span>
-                  <span className="absolute top-3 right-3 px-3 py-1 rounded-full bg-amber-500 text-white text-xs font-black">
-                    {offer.discountType === "Percentage"
-                      ? `${offer.discountValue}% OFF`
-                      : `${formatCurrency(offer.discountValue)} OFF`}
-                  </span>
+        <Paginated items={filteredOffers} pageSize={10}>
+          {(pageItems) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {pageItems.map((offer) => (
+              <div
+                key={offer._id}
+                className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[32px] overflow-hidden shadow-sm flex flex-col justify-between"
+              >
+                <div>
+                  <div className="relative aspect-video bg-black">
+                    {offer.bannerImage ? (
+                      <img
+                        src={offer.bannerImage}
+                        alt={offer.offerTitle}
+                        className="w-full h-full object-cover opacity-90" loading="lazy" decoding="async" />
+                    ) : null}
+                    <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-[#F28C28] text-white text-[10px] font-black">
+                      {offer.offerType}
+                    </span>
+                    <span className="absolute top-3 right-3 px-3 py-1 rounded-full bg-amber-500 text-white text-xs font-black">
+                      {offer.discountType === "Percentage"
+                        ? `${offer.discountValue}% OFF`
+                        : `${formatCurrency(offer.discountValue)} OFF`}
+                    </span>
+                  </div>
+
+                  <div className="p-6 space-y-4">
+                    <div>
+                      <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+                        {offer.offerTitle}
+                      </h3>
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">
+                        {offer.description}
+                      </p>
+                    </div>
+
+                    <div className="bg-blue-50/60 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 rounded-2xl p-3 flex items-center justify-between">
+                      <span className="text-[10px] font-black text-gray-400">
+                        PROMO
+                      </span>
+                      <span className="font-mono font-black text-sm text-[#F28C28] dark:text-amber-400">
+                        {offer.promoCode}
+                      </span>
+                    </div>
+
+                    <div className="text-xs text-gray-400 font-bold flex items-center justify-between">
+                      <span>Valid Till:</span>
+                      <span>
+                        {new Date(offer.validTill).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="p-6 space-y-4">
-                  <div>
-                    <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
-                      {offer.offerTitle}
-                    </h3>
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">
-                      {offer.description}
-                    </p>
-                  </div>
+                <div className="p-6 pt-0 flex items-center justify-between border-t border-gray-100 dark:border-slate-800/80 pt-4 gap-2">
+                  <button
+                    onClick={() => handleOpenWizard(offer)}
+                    className="px-3.5 py-2 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 rounded-xl text-xs font-black flex items-center gap-1 cursor-pointer"
+                  >
+                    <Edit3 size={13} /> Edit
+                  </button>
 
-                  <div className="bg-blue-50/60 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 rounded-2xl p-3 flex items-center justify-between">
-                    <span className="text-[10px] font-black text-gray-400">
-                      PROMO
-                    </span>
-                    <span className="font-mono font-black text-sm text-[#F28C28] dark:text-amber-400">
-                      {offer.promoCode}
-                    </span>
-                  </div>
+                  <button
+                    onClick={() => handleDuplicate(offer._id)}
+                    className="p-2 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 rounded-xl text-xs cursor-pointer"
+                    title="Duplicate Offer"
+                  >
+                    <DuplicateIcon size={14} />
+                  </button>
 
-                  <div className="text-xs text-gray-400 font-bold flex items-center justify-between">
-                    <span>Valid Till:</span>
-                    <span>
-                      {new Date(offer.validTill).toLocaleDateString()}
-                    </span>
-                  </div>
+                  <button
+                    onClick={() => handleDelete(offer._id)}
+                    className="p-2 bg-rose-50 dark:bg-rose-900/20 text-rose-600 rounded-xl text-xs cursor-pointer"
+                    title="Delete Offer"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
               </div>
-
-              <div className="p-6 pt-0 flex items-center justify-between border-t border-gray-100 dark:border-slate-800/80 pt-4 gap-2">
-                <button
-                  onClick={() => handleOpenWizard(offer)}
-                  className="px-3.5 py-2 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 rounded-xl text-xs font-black flex items-center gap-1 cursor-pointer"
-                >
-                  <Edit3 size={13} /> Edit
-                </button>
-
-                <button
-                  onClick={() => handleDuplicate(offer._id)}
-                  className="p-2 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 rounded-xl text-xs cursor-pointer"
-                  title="Duplicate Offer"
-                >
-                  <DuplicateIcon size={14} />
-                </button>
-
-                <button
-                  onClick={() => handleDelete(offer._id)}
-                  className="p-2 bg-rose-50 dark:bg-rose-900/20 text-rose-600 rounded-xl text-xs cursor-pointer"
-                  title="Delete Offer"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+          )}
+        </Paginated>
       )}
 
       {showWizard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="tv-drawer-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="fixed inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setShowWizard(false)}
           />
-          <div className="relative w-full max-w-4xl bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 space-y-6 max-h-[90vh] overflow-y-auto">
+          <div className="tv-drawer-panel relative w-full max-w-4xl bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 space-y-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-4">
               <div>
                 <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">

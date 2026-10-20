@@ -354,8 +354,7 @@ export const SmartContactProfilesPage: React.FC = () => {
                           <img
                             src={profile.photoUrl}
                             alt=""
-                            className="w-9 h-9 rounded-full object-cover border border-gray-200 dark:border-slate-700"
-                          />
+                            className="w-9 h-9 rounded-full object-cover border border-gray-200 dark:border-slate-700" loading="lazy" decoding="async" />
                         ) : (
                           <div className="w-9 h-9 rounded-full bg-[#F28C28]/10 text-[#F28C28] grid place-items-center text-[11px] font-black">
                             {profile.displayName.slice(0, 2).toUpperCase()}

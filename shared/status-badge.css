@@ -1,0 +1,25 @@
+/*
+ * One status treatment for the Admin, Seller and Buyer dashboards.
+ * Tone utilities still provide semantic colour; this layer deliberately removes the chip/pill
+ * container so statuses read as compact, professional text in tables, cards and detail panels.
+ */
+.tv-status-badge,
+.dashboard-typography table :where(span)[class~="text-badge"][class*="rounded-full"],
+.dashboard-typography table :where(td[data-tv-column="status"] span)[class~="rounded-full"][class*="px-"] {
+  display: inline-flex;
+  min-height: auto;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 1.35;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+  white-space: nowrap;
+}

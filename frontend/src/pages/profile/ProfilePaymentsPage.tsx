@@ -1,3 +1,4 @@
+import { Paginated } from "../../components/shared/Pagination";
 import React from "react";
 import { Link } from "react-router-dom";
 import {
@@ -60,43 +61,47 @@ export const ProfilePaymentsPage: React.FC = () => {
             Transaction History
           </h3>
 
-          <div className="divide-y divide-gray-100 dark:divide-slate-800">
-            {transactions.map((t) => (
-              <div
-                key={t.id}
-                className="py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-black text-[#0B192C] dark:text-white">
-                      {t.title}
-                    </span>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-black ${t.status === "Paid" ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"}`}
-                    >
-                      {t.status}
-                    </span>
+          <Paginated items={transactions} pageSize={15}>
+            {(pageItems) => (
+            <div className="divide-y divide-gray-100 dark:divide-slate-800">
+              {pageItems.map((t) => (
+                <div
+                  key={t.id}
+                  className="py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-black text-[#0B192C] dark:text-white">
+                        {t.title}
+                      </span>
+                      <span
+                        className={`tv-status-badge px-2 py-0.5 rounded-full text-[10px] font-black ${t.status === "Paid" ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"}`}
+                      >
+                        {t.status}
+                      </span>
+                    </div>
+                    <p className="text-gray-400 font-medium">
+                      {t.id} • {t.date} via {t.method}
+                    </p>
                   </div>
-                  <p className="text-gray-400 font-medium">
-                    {t.id} • {t.date} via {t.method}
-                  </p>
-                </div>
 
-                <div className="flex items-center gap-4">
-                  <span className="text-base font-black text-[#F28C28] dark:text-white">
-                    {formatCurrency(t.amount)}
-                  </span>
-                  <EnterpriseButton
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5 text-xs"
-                  >
-                    <Download size={14} /> Receipt
-                  </EnterpriseButton>
+                  <div className="flex items-center gap-4">
+                    <span className="text-base font-black text-[#F28C28] dark:text-white">
+                      {formatCurrency(t.amount)}
+                    </span>
+                    <EnterpriseButton
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 text-xs"
+                    >
+                      <Download size={14} /> Receipt
+                    </EnterpriseButton>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            )}
+          </Paginated>
         </div>
       </div>
     </div>

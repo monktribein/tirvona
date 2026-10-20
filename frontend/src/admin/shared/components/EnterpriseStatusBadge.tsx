@@ -8,6 +8,7 @@ import {
   AlertCircle,
   RefreshCw,
 } from "lucide-react";
+import { normalizeStatusText } from "../../../../../shared/status-badge";
 
 export type StatusType =
   | "active"
@@ -36,7 +37,7 @@ export const EnterpriseStatusBadge: React.FC<EnterpriseStatusBadgeProps> = ({
 }) => {
   const { t } = useLanguage();
   const normStatus = String(status || "").toLowerCase();
-  const displayLabel = label || normStatus.replace(/_/g, " ");
+  const displayLabel = normalizeStatusText(label || normStatus.replace(/_/g, " "));
 
   const getStyles = () => {
     switch (normStatus) {
@@ -111,7 +112,7 @@ export const EnterpriseStatusBadge: React.FC<EnterpriseStatusBadgeProps> = ({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 font-black tracking-wider rounded-full border shadow-2xs ${style.bg} ${sizeClasses}`}
+      className={`tv-status-badge inline-flex items-center gap-1.5 font-semibold tracking-wide border ${style.bg} ${sizeClasses}`}
     >
       {style.icon}
       <span className="capitalize">{t(displayLabel)}</span>

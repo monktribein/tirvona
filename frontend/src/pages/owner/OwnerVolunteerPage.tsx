@@ -1,3 +1,4 @@
+import { Paginated } from "../../components/shared/Pagination";
 import React, { useState, useEffect } from "react";
 import {
   Heart,
@@ -415,104 +416,108 @@ export const OwnerVolunteerPage: React.FC = () => {
             Loading stay openings...
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {jobs.length === 0 && (
-              <div className="md:col-span-2 lg:col-span-3 rounded-3xl border border-dashed border-gray-300 bg-white px-6 py-14 text-center dark:border-slate-700 dark:bg-[#0B192C]">
-                <Heart size={28} className="mx-auto text-[#E58C28]" />
-                <h3 className="mt-3 text-base font-black text-[#0B192C] dark:text-white">No opportunities published yet</h3>
-                <p className="mt-1 text-xs font-semibold text-gray-400">Create the first volunteer or career opportunity for a stay you manage.</p>
-                <EnterpriseButton className="mt-5" icon={<Plus size={14} />} onClick={openCreateForm}>
-                  Create Opportunity
-                </EnterpriseButton>
-              </div>
-            )}
-            {jobs.map((job) => (
-              <div
-                key={job._id}
-                className="bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-3xl p-5 shadow-lg flex flex-col justify-between space-y-4"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-[10px] font-black tracking-wider text-[#E58C28] bg-[#E58C28]/10 px-2.5 py-0.5 rounded-full border border-[#E58C28]/20">
-                          {getVolunteerCategoryLabel(job.type)}
-                        </span>
-                        {job.department && job.department !== getVolunteerCategoryLabel(job.type) && (
-                          <span className="text-[10px] font-bold text-gray-500 bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
-                            {job.department}
+          <Paginated items={jobs} pageSize={10}>
+            {(pageItems) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {jobs.length === 0 && (
+                <div className="md:col-span-2 lg:col-span-3 rounded-3xl border border-dashed border-gray-300 bg-white px-6 py-14 text-center dark:border-slate-700 dark:bg-[#0B192C]">
+                  <Heart size={28} className="mx-auto text-[#E58C28]" />
+                  <h3 className="mt-3 text-base font-black text-[#0B192C] dark:text-white">No opportunities published yet</h3>
+                  <p className="mt-1 text-xs font-semibold text-gray-400">Create the first volunteer or career opportunity for a stay you manage.</p>
+                  <EnterpriseButton className="mt-5" icon={<Plus size={14} />} onClick={openCreateForm}>
+                    Create Opportunity
+                  </EnterpriseButton>
+                </div>
+              )}
+              {pageItems.map((job) => (
+                <div
+                  key={job._id}
+                  className="bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-3xl p-5 shadow-lg flex flex-col justify-between space-y-4"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[10px] font-black tracking-wider text-[#E58C28] bg-[#E58C28]/10 px-2.5 py-0.5 rounded-full border border-[#E58C28]/20">
+                            {getVolunteerCategoryLabel(job.type)}
                           </span>
-                        )}
+                          {job.department && job.department !== getVolunteerCategoryLabel(job.type) && (
+                            <span className="text-[10px] font-bold text-gray-500 bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+                              {job.department}
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="text-base font-black text-[#0B192C] dark:text-white mt-1.5">
+                          {job.title}
+                        </h3>
                       </div>
-                      <h3 className="text-base font-black text-[#0B192C] dark:text-white mt-1.5">
-                        {job.title}
-                      </h3>
+                      <EnterpriseStatusBadge
+                        status={job.status === "open" ? "active" : "pending"}
+                      />
                     </div>
-                    <EnterpriseStatusBadge
-                      status={job.status === "open" ? "active" : "pending"}
-                    />
+
+                    <div className="text-xs font-extrabold text-gray-500 space-y-1.5">
+                      <p className="flex items-center gap-1.5">
+                        <MapPin size={13} className="text-[#F28C28]" /> {job.city}
+                        , {job.state}
+                      </p>
+                      <p className="flex items-center gap-1.5">
+                        <HomeIcon size={13} className="text-emerald-500" />{" "}
+                        {job.accommodation === "free_ashram_stay"
+                          ? "Free Stay"
+                          : "Paid Stay"}
+                      </p>
+                      <p className="flex items-center gap-1.5">
+                        <Utensils size={13} className="text-[#E58C28]" />{" "}
+                        {job.food === "satvik_free_3_meals"
+                          ? "Free 3 Satvik Meals"
+                          : "Meals Provided"}
+                      </p>
+                    </div>
+
+                    <div className="bg-gray-50 dark:bg-slate-900 rounded-2xl p-2.5 text-center">
+                      <span className="text-xs font-black text-[#F28C28] dark:text-amber-300">
+                        {job.stipend}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="text-xs font-extrabold text-gray-500 space-y-1.5">
-                    <p className="flex items-center gap-1.5">
-                      <MapPin size={13} className="text-[#F28C28]" /> {job.city}
-                      , {job.state}
-                    </p>
-                    <p className="flex items-center gap-1.5">
-                      <HomeIcon size={13} className="text-emerald-500" />{" "}
-                      {job.accommodation === "free_ashram_stay"
-                        ? "Free Stay"
-                        : "Paid Stay"}
-                    </p>
-                    <p className="flex items-center gap-1.5">
-                      <Utensils size={13} className="text-[#E58C28]" />{" "}
-                      {job.food === "satvik_free_3_meals"
-                        ? "Free 3 Satvik Meals"
-                        : "Meals Provided"}
-                    </p>
-                  </div>
-
-                  <div className="bg-gray-50 dark:bg-slate-900 rounded-2xl p-2.5 text-center">
-                    <span className="text-xs font-black text-[#F28C28] dark:text-amber-300">
-                      {job.stipend}
+                  <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-gray-400">
+                      {job.openingsCount} Openings
                     </span>
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      <EnterpriseButton
+                        size="sm"
+                        variant="ghost"
+                        icon={<Eye size={14} />}
+                        onClick={() => setViewingJob(job)}
+                      >
+                        View
+                      </EnterpriseButton>
+                      <EnterpriseButton
+                        size="sm"
+                        variant="outline"
+                        icon={<Edit size={14} />}
+                        onClick={() => void openEditForm(job)}
+                      >
+                        Edit
+                      </EnterpriseButton>
+                      <EnterpriseButton
+                        size="sm"
+                        variant="danger"
+                        icon={<Trash2 size={14} />}
+                        onClick={() => handleDeleteJob(job._id)}
+                      >
+                        Delete
+                      </EnterpriseButton>
+                    </div>
                   </div>
                 </div>
-
-                <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-gray-400">
-                    {job.openingsCount} Openings
-                  </span>
-                  <div className="flex flex-wrap items-center justify-end gap-2">
-                    <EnterpriseButton
-                      size="sm"
-                      variant="ghost"
-                      icon={<Eye size={14} />}
-                      onClick={() => setViewingJob(job)}
-                    >
-                      View
-                    </EnterpriseButton>
-                    <EnterpriseButton
-                      size="sm"
-                      variant="outline"
-                      icon={<Edit size={14} />}
-                      onClick={() => void openEditForm(job)}
-                    >
-                      Edit
-                    </EnterpriseButton>
-                    <EnterpriseButton
-                      size="sm"
-                      variant="danger"
-                      icon={<Trash2 size={14} />}
-                      onClick={() => handleDeleteJob(job._id)}
-                    >
-                      Delete
-                    </EnterpriseButton>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            )}
+          </Paginated>
         )
       ) : (
         <div className="bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-3xl p-5 shadow-xl overflow-x-auto">

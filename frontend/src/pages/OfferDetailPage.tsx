@@ -190,8 +190,7 @@ export const OfferDetailPage: React.FC = () => {
             <img
               src={offer.bannerImage}
               alt={offer.offerTitle}
-              className="w-full h-48 sm:h-64 object-cover"
-            />
+              className="w-full h-48 sm:h-64 object-cover" loading="lazy" decoding="async" />
           )}
 
           <div className="p-6 sm:p-8 space-y-4">

@@ -649,8 +649,7 @@ export const BookingDetailPage: React.FC = () => {
           <img
             src={ashramImage}
             alt={ashram?.name || "Stay"}
-            className="w-full md:w-56 h-44 rounded-2xl object-cover shrink-0 border border-gray-100 dark:border-slate-800 shadow-sm"
-          />
+            className="w-full md:w-56 h-44 rounded-2xl object-cover shrink-0 border border-gray-100 dark:border-slate-800 shadow-sm" loading="lazy" decoding="async" />
 
           <div className="space-y-3 flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
@@ -1000,7 +999,7 @@ export const BookingDetailPage: React.FC = () => {
 
             <div id="printable-receipt-card" className="space-y-4">
               <div className="bg-gradient-to-r from-[#0B192C] via-[#F28C28] to-[#0B192C] text-white p-4 rounded-2xl text-center relative overflow-hidden">
-                <img src="/logo/logo.png" alt="Tirvona Logo" className="h-6 w-auto mx-auto mb-1 object-contain" />
+                <img src="/logo/logo.png" alt="Tirvona Logo" className="h-6 w-auto mx-auto mb-1 object-contain" loading="lazy" decoding="async" />
                 <p className="text-[10px] font-black tracking-widest text-blue-100 uppercase">
                   Tirvona Sacred Stays
                 </p>

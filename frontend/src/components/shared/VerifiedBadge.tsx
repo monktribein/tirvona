@@ -29,8 +29,7 @@ export const VerifiedBadge: React.FC<VerifiedBadgeProps> = ({
       alt="Verified by Tirvona"
       title={tooltipText}
       aria-label={tooltipText}
-      className={`inline-block ${heightClasses[size]} w-auto object-contain shrink-0 select-none align-middle ${className}`}
-    />
+      className={`inline-block ${heightClasses[size]} w-auto object-contain shrink-0 select-none align-middle ${className}`} loading="lazy" decoding="async" />
   );
 };
 

@@ -19,12 +19,14 @@ import {
   KeyRound,
 } from "lucide-react";
 import { RecordValue } from "./RecordValue";
+import { RichTextEditor } from "../../../components/richText/RichTextEditor";
 import { ImageGalleryManager } from "./ImageGalleryManager";
 import { formatInline, humanizeKey, URL_LIKE } from "../utils/recordFormat";
 import { useLanguage } from "../../../contexts/LanguageContext";
 import { getFormattingLocale } from "../../../utils/format";
 import api, { getErrorMessage } from "../../../lib/api";
 import { useNotifications } from "../../../contexts/NotificationContext";
+import { statusAndActionLast } from "../../../../../shared/table-columns";
 
 const IMAGE_ASSET = /\.(jpe?g|png|webp|gif|svg|avif|heic)($|\?)/i;
 const DOCUMENT_FIELD = /(document|certificate|deed|ownership|pdf|file).*url$|^(trustDeedUrl|fireSafetyCertificateUrl|landOwnershipUrl)$/i;
@@ -65,7 +67,7 @@ const DocumentAssetEditor: React.FC<{
       {value ? (
         <div className="flex flex-wrap items-center gap-3">
           {isUrl && IMAGE_ASSET.test(value) ? (
-            <img src={value} alt={label} className="h-24 w-36 rounded-xl object-cover bg-slate-900" />
+            <img src={value} alt={label} className="h-24 w-36 rounded-xl object-cover bg-slate-900" loading="lazy" decoding="async" />
           ) : (
             <div className="h-16 w-16 rounded-xl bg-[#FFF4E5]/40 text-[#F28C28] flex items-center justify-center">
               <FileText size={24} />
@@ -300,17 +302,18 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
   const [passwordChanging, setPasswordChanging] = useState(false);
 
   const [formData, setFormData] = useState<Record<string, any>>({});
+  const orderedColumns = useMemo(() => statusAndActionLast(columns), [columns]);
   const resolvedFormFields = useMemo<
     NonNullable<EnterpriseDataTableProps["formFields"]>
   >(
     () =>
       formFields ??
-      columns.map((column) => ({
+      orderedColumns.map((column) => ({
         name: column.key,
         label: column.label,
         type: "text",
       })),
-    [formFields, columns],
+    [formFields, orderedColumns],
   );
 
   const filteredData = useMemo(() => {
@@ -387,8 +390,8 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
 
   const handleExportCSV = () => {
     if (filteredData.length === 0) return;
-    const keys = columns.map((c) => c.key);
-    const headers = columns.map((c) => c.label).join(",");
+    const keys = orderedColumns.map((c) => c.key);
+    const headers = orderedColumns.map((c) => c.label).join(",");
     const rows = filteredData.map((row) =>
       keys
         .map((k) => `"${formatInline(row[k]).replace(/"/g, '""')}"`)
@@ -423,7 +426,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
 
   const openCreateModal = () => {
     const initial: Record<string, any> = {};
-    columns.forEach((c) => {
+    orderedColumns.forEach((c) => {
       initial[c.key] = "";
     });
     initial.status = "active";
@@ -578,12 +581,20 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
           ) : (
           <div
             key={field.name}
-            className={field.type === "textarea" ? "space-y-1 sm:col-span-2" : "space-y-1"}
+            className={field.type === "textarea" || field.type === "richtext" ? "space-y-1 sm:col-span-2" : "space-y-1"}
           >
             <label className="text-xs font-bold text-gray-400">
               {t(field.label)}
             </label>
-            {field.type === "select" ? (
+            {field.type === "richtext" ? (
+              <RichTextEditor
+                required={field.required}
+                value={formData[field.name] ?? ""}
+                onChange={(html) =>
+                  setFormData((current) => ({ ...current, [field.name]: html }))
+                }
+              />
+            ) : field.type === "select" ? (
               <select
                 value={formData[field.name] ?? field.options?.[0] ?? ""}
                 onChange={(event) =>
@@ -650,7 +661,8 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
 
   return (
     <div className="space-y-6 text-left w-full">
-      <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-[20px] shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="tv-surface">
+      <div className="tv-surface-bar">
         <div className="relative w-full md:w-80">
           <Search
             className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
@@ -661,7 +673,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
             placeholder={t("Search records...")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full text-xs font-medium text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]"
+            className="w-full pl-10 pr-4 py-2 text-xs font-medium text-[#0B192C] dark:text-white focus:outline-none"
           />
         </div>
 
@@ -675,7 +687,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                 setCurrentPage(1);
                 setSelectedIds([]);
               }}
-              className="px-3 py-1.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none"
+              className="px-3 py-1.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none"
             >
               <option value="all">{t("All Statuses")}</option>
               <option value="active">{t("Active / Approved")}</option>
@@ -705,7 +717,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                 setItemsPerPage(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="px-3 py-1.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none"
+              className="px-3 py-1.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none"
             >
               <option value={10}>10</option>
               <option value={25}>25</option>
@@ -716,7 +728,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
       </div>
 
       {selectedIds.length > 0 && (
-        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 p-4 rounded-[20px] flex items-center justify-between animate-in fade-in">
+        <div className="tv-surface-bulk">
           <span className="text-xs font-bold text-amber-800 dark:text-amber-300">
             {selectedIds.length} item(s) selected
           </span>
@@ -778,14 +790,15 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
         </div>
       )}
 
-      <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm overflow-hidden">
+      <div>
         {tableLoading ? (
           <div className="h-64 flex items-center justify-center text-gray-400 text-xs font-bold animate-pulse">
             {t("Loading data records...")}
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="tv-data-table w-full text-left text-xs border-collapse" aria-label={title}>
+              <caption className="sr-only">{title}</caption>
               <thead>
                 <tr className="border-b border-gray-100 dark:border-slate-800 bg-gray-50/70 dark:bg-slate-900/50 text-gray-400 font-extrabold text-[10px] tracking-wider">
                   <th className="py-4 px-4 w-10 text-center">
@@ -801,13 +814,13 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                       className="rounded border-gray-300 text-[#F28C28] focus:ring-0 cursor-pointer"
                     />
                   </th>
-                  {columns.map((col) => (
-                    <th key={col.key} className="py-4 px-4 font-bold">
+                  {orderedColumns.map((col) => (
+                    <th key={col.key} scope="col" className="py-4 px-4 font-bold">
                         {t(col.label)}
                     </th>
                   ))}
-                   {!columns.some((column) => column.key === "status") && (
-                     <th className="py-4 px-4">Status</th>
+                   {!orderedColumns.some((column) => column.key === "status") && (
+                     <th scope="col" className="py-4 px-4">Status</th>
                    )}
                    {!hideDefaultActionColumns && <th className="py-4 px-4">Created Date</th>}
                    {!hideDefaultActionColumns && <th className="py-4 px-4 text-right">Edit / View</th>}
@@ -818,8 +831,8 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                    <tr>
                      <td
                        colSpan={
-                         columns.length +
-                         (!columns.some((column) => column.key === "status") ? 1 : 0) +
+                         orderedColumns.length +
+                         (!orderedColumns.some((column) => column.key === "status") ? 1 : 0) +
                          (!hideDefaultActionColumns ? 2 : 0) +
                          1
                        }
@@ -850,7 +863,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                             className="rounded border-gray-300 text-[#F28C28] focus:ring-0 cursor-pointer"
                           />
                         </td>
-                        {columns.map((col) => (
+                        {orderedColumns.map((col) => (
                           <td
                             key={col.key}
                             className="py-3.5 px-4 font-medium text-[#0B192C] dark:text-gray-200"
@@ -862,9 +875,9 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                             )}
                           </td>
                         ))}
-                         {!columns.some((column) => column.key === "status") && <td className="py-3.5 px-4">
+                         {!orderedColumns.some((column) => column.key === "status") && <td className="py-3.5 px-4">
                           <span
-                            className={`px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wide ${["active", "approved"].includes(statusStr)
+                            className={`tv-status-badge px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wide ${["active", "approved"].includes(statusStr)
                               ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
                               : ["pending"].includes(statusStr)
                                 ? "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400"
@@ -900,7 +913,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
           </div>
         )}
 
-        <div className="p-4 border-t border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="tv-surface-foot">
           <span className="text-xs text-gray-400 font-medium">
             Showing{" "}
             {filteredData.length === 0
@@ -914,7 +927,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="p-1.5 rounded-full border border-gray-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-800 disabled:opacity-30 cursor-pointer"
+              className="p-1.5 border border-gray-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-800 disabled:opacity-30 cursor-pointer"
             >
               <ChevronLeft size={14} />
             </button>
@@ -924,18 +937,19 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="p-1.5 rounded-full border border-gray-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-800 disabled:opacity-30 cursor-pointer"
+              className="p-1.5 border border-gray-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-800 disabled:opacity-30 cursor-pointer"
             >
               <ChevronRight size={14} />
             </button>
           </div>
         </div>
       </div>
+      </div>
 
       {detailItem && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-4xl w-full rounded-[28px] p-6 space-y-6 text-left shadow-2xl animate-in zoom-in-95 duration-150">
-            <div className="flex justify-between items-start border-b border-gray-100 dark:border-slate-800 pb-4">
+        <div className="tv-drawer-overlay" onMouseDown={() => setDetailItem(null)}>
+          <div role="dialog" aria-modal="true" aria-label={`${recordTitle(detailItem)} details`} onMouseDown={(event) => event.stopPropagation()} className="tv-drawer-panel max-w-2xl text-left">
+            <div className="tv-drawer-header flex justify-between items-start border-b border-gray-100 dark:border-slate-800 px-5 sm:px-6 py-5">
               <div className="space-y-1 text-left">
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <h3 className="font-black text-xl text-[#0B192C] dark:text-white tracking-tight">
@@ -957,17 +971,19 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => {
                   setDetailItem(null);
                   setIsDetailEditing(false);
                 }}
+                aria-label="Close record details"
                 className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-white rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+            <div className="tv-drawer-body space-y-4 px-5 sm:px-6 py-5">
               {isDetailEditing ? (
                 <form id="unified-record-edit-form" onSubmit={handleDetailSubmit}>
                   {renderRecordEditor()}
@@ -995,8 +1011,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
                                   e.currentTarget.style.display = "none";
-                                }}
-                              />
+                                }} loading="lazy" decoding="async" />
                               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-3">
                                 <span className="text-white text-xs font-extrabold">
                                   {detailItem.name || "Stay Listing"} · Cover Photo
@@ -1019,8 +1034,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                       onError={(e) => {
                                         e.currentTarget.style.display = "none";
-                                      }}
-                                    />
+                                      }} loading="lazy" decoding="async" />
                                   </a>
                                 ))}
                               </div>
@@ -1297,10 +1311,14 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
       )}
 
       {isCreateOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="tv-drawer-overlay" onMouseDown={() => setIsCreateOpen(false)}>
           <form
             onSubmit={handleFormSubmit}
-            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-3xl w-full rounded-[28px] p-6 space-y-5 text-left shadow-2xl"
+            onMouseDown={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Create new record"
+            className="tv-drawer-panel max-w-2xl px-5 sm:px-6 py-5 space-y-5 text-left"
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <h3 className="font-bold text-base text-[#0B192C] dark:text-white">
@@ -1308,6 +1326,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
               </h3>
               <button
                 type="button"
+                aria-label="Close create record form"
                 onClick={() => {
                   setIsCreateOpen(false);
                 }}

@@ -1,3 +1,4 @@
+import { Paginated } from "../components/shared/Pagination";
 import React, { useState, useEffect, useCallback } from "react";
 import { ashramUrl } from "../lib/urls";
 import api from "../lib/api";
@@ -168,204 +169,208 @@ export const ManageAshramsPage: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div className="space-y-8">
-          {ashrams.map((ashram) => (
-            <div
-              key={ashram._id}
-              className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[32px] p-6 sm:p-8 shadow-sm space-y-6"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 dark:border-slate-800 pb-6">
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <h2 className="text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white">
-                      {ashram.name}
-                    </h2>
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-extrabold capitalize flex items-center gap-1 ${
-                        ashram.status === "approved" ||
-                        ashram.status === "active"
-                          ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
-                          : "bg-amber-500/10 text-amber-600 border border-amber-500/20"
+        <Paginated items={ashrams} pageSize={10}>
+          {(pageItems) => (
+          <div className="space-y-8">
+            {pageItems.map((ashram) => (
+              <div
+                key={ashram._id}
+                className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[32px] p-6 sm:p-8 shadow-sm space-y-6"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 dark:border-slate-800 pb-6">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <h2 className="text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white">
+                        {ashram.name}
+                      </h2>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-extrabold capitalize flex items-center gap-1 ${
+                          ashram.status === "approved" ||
+                          ashram.status === "active"
+                            ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                            : "bg-amber-500/10 text-amber-600 border border-amber-500/20"
+                        }`}
+                      >
+                        <ShieldCheck size={13} />
+                        {ashram.status === "approved"
+                          ? "Tirvona Verified"
+                          : ashram.status.replace(/_/g, " ")}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs font-bold text-gray-500 dark:text-gray-400">
+                      <MapPin size={14} className="text-[#F28C28]" />
+                      <span>
+                        {ashram.address?.street
+                          ? `${ashram.address.street}, `
+                          : ""}
+                        {ashram.address?.city || "Rishikesh"},{" "}
+                        {ashram.address?.district || ""}{" "}
+                        {ashram.address?.state || "Uttarakhand"} -{" "}
+                        {ashram.address?.pincode || "249201"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap shrink-0">
+                    <button
+                      onClick={() => handleOpenEdit(ashram)}
+                      className="px-4 py-2.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border border-amber-500/20 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <Edit3 size={14} /> Edit Details
+                    </button>
+
+                    <button
+                      onClick={() => navigate(`${consoleBase}/rooms`)}
+                      className="px-4 py-2.5 rounded-full bg-[#F28C28]/10 hover:bg-[#F28C28]/20 text-[#F28C28] border border-[#F28C28]/20 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <Bed size={14} /> Manage Rooms
+                    </button>
+
+                    <button
+                      onClick={() => navigate(`${consoleBase}/calendar`)}
+                      className="px-4 py-2.5 rounded-full bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 border border-indigo-500/20 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <CalendarIcon size={14} /> Rate Calendar
+                    </button>
+
+                    <button
+                      onClick={() => setDayStayAshram(ashram)}
+                      className={`px-4 py-2.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer border ${
+                        ashram.dayStayConfig?.enabled
+                          ? "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 border-emerald-500/20"
+                          : "bg-teal-500/10 hover:bg-teal-500/20 text-teal-600 border-teal-500/20"
                       }`}
                     >
-                      <ShieldCheck size={13} />
-                      {ashram.status === "approved"
-                        ? "Tirvona Verified"
-                        : ashram.status.replace(/_/g, " ")}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs font-bold text-gray-500 dark:text-gray-400">
-                    <MapPin size={14} className="text-[#F28C28]" />
-                    <span>
-                      {ashram.address?.street
-                        ? `${ashram.address.street}, `
-                        : ""}
-                      {ashram.address?.city || "Rishikesh"},{" "}
-                      {ashram.address?.district || ""}{" "}
-                      {ashram.address?.state || "Uttarakhand"} -{" "}
-                      {ashram.address?.pincode || "249201"}
-                    </span>
+                      <Clock size={14} />
+                      {ashram.dayStayConfig?.enabled ? "Short Stay: On" : "Enable Short Stay"}
+                    </button>
+
+                    <Link
+                      to={ashramUrl(ashram)}
+                      target="_blank"
+                      className="p-2.5 rounded-full bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white transition-colors"
+                      title="View Live Public Page"
+                    >
+                      <ExternalLink size={15} />
+                    </Link>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 flex-wrap shrink-0">
-                  <button
-                    onClick={() => handleOpenEdit(ashram)}
-                    className="px-4 py-2.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border border-amber-500/20 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer"
-                  >
-                    <Edit3 size={14} /> Edit Details
-                  </button>
-
-                  <button
-                    onClick={() => navigate(`${consoleBase}/rooms`)}
-                    className="px-4 py-2.5 rounded-full bg-[#F28C28]/10 hover:bg-[#F28C28]/20 text-[#F28C28] border border-[#F28C28]/20 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer"
-                  >
-                    <Bed size={14} /> Manage Rooms
-                  </button>
-
-                  <button
-                    onClick={() => navigate(`${consoleBase}/calendar`)}
-                    className="px-4 py-2.5 rounded-full bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 border border-indigo-500/20 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer"
-                  >
-                    <CalendarIcon size={14} /> Rate Calendar
-                  </button>
-
-                  <button
-                    onClick={() => setDayStayAshram(ashram)}
-                    className={`px-4 py-2.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer border ${
-                      ashram.dayStayConfig?.enabled
-                        ? "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 border-emerald-500/20"
-                        : "bg-teal-500/10 hover:bg-teal-500/20 text-teal-600 border-teal-500/20"
-                    }`}
-                  >
-                    <Clock size={14} />
-                    {ashram.dayStayConfig?.enabled ? "Short Stay: On" : "Enable Short Stay"}
-                  </button>
-
-                  <Link
-                    to={ashramUrl(ashram)}
-                    target="_blank"
-                    className="p-2.5 rounded-full bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white transition-colors"
-                    title="View Live Public Page"
-                  >
-                    <ExternalLink size={15} />
-                  </Link>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 space-y-6">
-                  <div className="bg-gray-50/70 dark:bg-slate-900/70 border border-gray-100 dark:border-slate-800 rounded-2xl p-5 space-y-3">
-                    <h3 className="text-xs font-black tracking-wider text-gray-400 flex items-center gap-2">
-                      <Info size={14} className="text-[#F28C28]" /> About & Bio
-                    </h3>
-                    <p className="text-xs leading-relaxed font-semibold text-slate-700 dark:text-slate-300">
-                      {ashram.description ||
-                        "Spiritual Stay lodging providing quiet sadhana rooms, vegetarian prasad meals, and daily Ganga aarti."}
-                    </p>
-                  </div>
-
-                  {ashram.history && (
-                    <div className="bg-amber-500/5 border border-amber-500/15 rounded-2xl p-5 space-y-3">
-                      <h3 className="text-xs font-black tracking-wider text-amber-600 flex items-center gap-2">
-                        <BookOpen size={14} /> Spiritual Heritage & History
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2 space-y-6">
+                    <div className="bg-gray-50/70 dark:bg-slate-900/70 border border-gray-100 dark:border-slate-800 rounded-2xl p-5 space-y-3">
+                      <h3 className="text-xs font-black tracking-wider text-gray-400 flex items-center gap-2">
+                        <Info size={14} className="text-[#F28C28]" /> About & Bio
                       </h3>
                       <p className="text-xs leading-relaxed font-semibold text-slate-700 dark:text-slate-300">
-                        {ashram.history}
+                        {ashram.description ||
+                          "Spiritual Stay lodging providing quiet sadhana rooms, vegetarian prasad meals, and daily Ganga aarti."}
                       </p>
                     </div>
-                  )}
 
-                  <div className="space-y-3">
-                    <h3 className="text-xs font-black tracking-wider text-gray-400">
-                      Stay Facilities & Services
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {(Array.isArray(ashram.amenities) &&
-                      ashram.amenities.length > 0
-                        ? ashram.amenities
-                        : [
-                            "Meditation Hall",
-                            "Ganga Ghat View",
-                            "Satvik Bhojanalaya",
-                            "Yoga Studio",
-                            "Hot Water",
-                            "Library",
-                          ]
-                      ).map((item: string, i: number) => (
-                        <span
-                          key={i}
-                          className="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#F28C28] dark:text-amber-400 border border-blue-100 dark:border-blue-800 text-xs font-bold flex items-center gap-1.5"
-                        >
-                          <Sparkles size={12} />
-                          {item}
-                        </span>
-                      ))}
+                    {ashram.history && (
+                      <div className="bg-amber-500/5 border border-amber-500/15 rounded-2xl p-5 space-y-3">
+                        <h3 className="text-xs font-black tracking-wider text-amber-600 flex items-center gap-2">
+                          <BookOpen size={14} /> Spiritual Heritage & History
+                        </h3>
+                        <p className="text-xs leading-relaxed font-semibold text-slate-700 dark:text-slate-300">
+                          {ashram.history}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="space-y-3">
+                      <h3 className="text-xs font-black tracking-wider text-gray-400">
+                        Stay Facilities & Services
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {(Array.isArray(ashram.amenities) &&
+                        ashram.amenities.length > 0
+                          ? ashram.amenities
+                          : [
+                              "Meditation Hall",
+                              "Ganga Ghat View",
+                              "Satvik Bhojanalaya",
+                              "Yoga Studio",
+                              "Hot Water",
+                              "Library",
+                            ]
+                        ).map((item: string, i: number) => (
+                          <span
+                            key={i}
+                            className="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#F28C28] dark:text-amber-400 border border-blue-100 dark:border-blue-800 text-xs font-bold flex items-center gap-1.5"
+                          >
+                            <Sparkles size={12} />
+                            {item}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="space-y-6">
-                  <div className="bg-gray-50/70 dark:bg-slate-900/70 border border-gray-100 dark:border-slate-800 rounded-2xl p-5 space-y-3">
-                    <h3 className="text-xs font-black tracking-wider text-gray-400 flex items-center gap-2">
-                      <Sun size={14} className="text-[#E58C28]" /> Sacred
-                      Guidelines & Rules
-                    </h3>
-                    <ul className="space-y-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      {(Array.isArray(ashram.rules) && ashram.rules.length > 0
-                        ? ashram.rules
-                        : [
-                            "Modest traditional attire mandatory",
-                            "No alcohol, tobacco, or non-veg food",
-                            "Silence hours from 10:00 PM to 5:00 AM",
-                            "Daily morning meditation at 6:00 AM",
-                          ]
-                      ).map((rule: string, i: number) => (
-                        <li key={i} className="flex items-start gap-2">
-                          <span className="text-[#E58C28] font-bold">•</span>
-                          <span>{rule}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  <div className="space-y-6">
+                    <div className="bg-gray-50/70 dark:bg-slate-900/70 border border-gray-100 dark:border-slate-800 rounded-2xl p-5 space-y-3">
+                      <h3 className="text-xs font-black tracking-wider text-gray-400 flex items-center gap-2">
+                        <Sun size={14} className="text-[#E58C28]" /> Sacred
+                        Guidelines & Rules
+                      </h3>
+                      <ul className="space-y-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        {(Array.isArray(ashram.rules) && ashram.rules.length > 0
+                          ? ashram.rules
+                          : [
+                              "Modest traditional attire mandatory",
+                              "No alcohol, tobacco, or non-veg food",
+                              "Silence hours from 10:00 PM to 5:00 AM",
+                              "Daily morning meditation at 6:00 AM",
+                            ]
+                        ).map((rule: string, i: number) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="text-[#E58C28] font-bold">•</span>
+                            <span>{rule}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
 
-                  <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-5 space-y-3">
-                    <h3 className="text-xs font-black tracking-wider text-emerald-600 flex items-center gap-2">
-                      <FileCheck size={14} /> Tirvona Verification
-                    </h3>
-                    <div className="space-y-2 text-xs font-bold text-slate-700 dark:text-slate-300">
-                      <div className="flex items-center justify-between">
-                        <span>Trust Deed Certificate:</span>
-                        <span className="text-emerald-600 font-extrabold flex items-center gap-1">
-                          <CheckCircle2 size={12} /> Verified
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Fire Safety Clearance:</span>
-                        <span className="text-emerald-600 font-extrabold flex items-center gap-1">
-                          <CheckCircle2 size={12} /> Approved
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Land Ownership Registry:</span>
-                        <span className="text-emerald-600 font-extrabold flex items-center gap-1">
-                          <CheckCircle2 size={12} /> Verified
-                        </span>
+                    <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-5 space-y-3">
+                      <h3 className="text-xs font-black tracking-wider text-emerald-600 flex items-center gap-2">
+                        <FileCheck size={14} /> Tirvona Verification
+                      </h3>
+                      <div className="space-y-2 text-xs font-bold text-slate-700 dark:text-slate-300">
+                        <div className="flex items-center justify-between">
+                          <span>Trust Deed Certificate:</span>
+                          <span className="text-emerald-600 font-extrabold flex items-center gap-1">
+                            <CheckCircle2 size={12} /> Verified
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span>Fire Safety Clearance:</span>
+                          <span className="text-emerald-600 font-extrabold flex items-center gap-1">
+                            <CheckCircle2 size={12} /> Approved
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span>Land Ownership Registry:</span>
+                          <span className="text-emerald-600 font-extrabold flex items-center gap-1">
+                            <CheckCircle2 size={12} /> Verified
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+          )}
+        </Paginated>
       )}
 
 
 
       {uploadDeedId && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 text-left">
+        <div className="tv-drawer-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="tv-drawer-panel bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 text-left">
             <h3 className="font-bold text-sm text-[#0B192C] dark:text-white flex items-center gap-1.5">
               <Upload size={16} className="text-[#F28C28]" /> Upload Stay
               Deeds & Certificates

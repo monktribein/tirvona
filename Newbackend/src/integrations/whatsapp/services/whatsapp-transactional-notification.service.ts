@@ -82,13 +82,15 @@ export class WhatsAppTransactionalNotificationService implements OnModuleInit {
   onModuleInit(): void {
     if (!this.config?.testMode) return;
     // Only the count is logged; the allow-listed numbers themselves are not.
-    this.logger.warn(
-      JSON.stringify({
-        event: "whatsapp.test_mode_enabled",
-        scope: "transactional_notifications",
-        allowedRecipients: this.config.testRecipients.length,
-      }),
-    );
+    // A warning in production, where test mode left on silently drops real
+    // customers' messages; on a developer machine it is the expected setting.
+    const line = JSON.stringify({
+      event: "whatsapp.test_mode_enabled",
+      scope: "transactional_notifications",
+      allowedRecipients: this.config.testRecipients.length,
+    });
+    if (process.env.NODE_ENV === "production") this.logger.warn(line);
+    else this.logger.log(line);
   }
 
   /**

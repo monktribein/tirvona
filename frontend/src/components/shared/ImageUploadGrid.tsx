@@ -94,8 +94,7 @@ export const ImageUploadGrid: React.FC<{
               <img
                 src={url}
                 alt={`Photo ${index + 1}`}
-                className="w-full h-full object-cover"
-              />
+                className="w-full h-full object-cover" loading="lazy" decoding="async" />
               <button
                 type="button"
                 onClick={() => onChange(value.filter((_, i) => i !== index))}

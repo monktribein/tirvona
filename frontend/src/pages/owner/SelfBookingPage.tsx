@@ -865,7 +865,7 @@ export const SelfBookingPage: React.FC = () => {
 
                   {g.aadhaarImage ? (
                     <div className="relative rounded-xl overflow-hidden border border-gray-200 dark:border-slate-800 max-h-44 bg-slate-950 flex justify-center">
-                      <img src={g.aadhaarImage} alt={`Guest #${idx + 1} ID`} className="max-h-44 object-contain" />
+                      <img src={g.aadhaarImage} alt={`Guest #${idx + 1} ID`} className="max-h-44 object-contain" loading="lazy" decoding="async" />
                     </div>
                   ) : (
                     <div className="flex flex-wrap gap-2.5">
@@ -1024,7 +1024,7 @@ export const SelfBookingPage: React.FC = () => {
 
               {txnProofImage ? (
                 <div className="relative rounded-xl overflow-hidden border border-purple-200 dark:border-purple-900 max-h-48 bg-slate-950 flex justify-center">
-                  <img src={txnProofImage} alt="Transaction Receipt Preview" className="max-h-48 object-contain" />
+                  <img src={txnProofImage} alt="Transaction Receipt Preview" className="max-h-48 object-contain" loading="lazy" decoding="async" />
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-3">
