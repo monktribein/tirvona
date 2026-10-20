@@ -3,6 +3,7 @@ import { Cron, CronExpression } from "@nestjs/schedule";
 import { InjectModel } from "../../../database/orm-nest";
 import type { Model } from "../../../database/orm";
 import { ProviderBookingService } from "./provider-booking.service";
+import { ProviderBookingPaymentService } from "./provider-booking-payment.service";
 import { ProviderConsultationService } from "./provider-consultation.service";
 import { ProviderVerificationService } from "./provider-verification.service";
 import { providerConfig } from "./provider.helpers";
@@ -26,6 +27,7 @@ export class ProviderMaintenanceService {
     private readonly bookingService: ProviderBookingService,
     private readonly consultations: ProviderConsultationService,
     private readonly verification: ProviderVerificationService,
+    private readonly payments: ProviderBookingPaymentService,
   ) {}
 
   /** Unpaid bookings and unanswered consultation requests give their time back. */
@@ -65,6 +67,21 @@ export class ProviderMaintenanceService {
       return none;
     } finally {
       this.sweeping = false;
+    }
+  }
+
+  /**
+   * Gateway refunds are asynchronous: ask the gateway how pending ones ended and retry the ones that failed to
+   * be issued. Until then a refund is shown as pending, never as done.
+   */
+  @Cron(CronExpression.EVERY_10_MINUTES)
+  async reconcileRefunds(): Promise<{ checked: number; changed: number }> {
+    if (!providerConfig().maintenanceEnabled) return { checked: 0, changed: 0 };
+    try {
+      return await this.payments.reconcileRefunds();
+    } catch (error) {
+      this.logger.error(`Refund reconciliation failed: ${(error as Error).message}`);
+      return { checked: 0, changed: 0 };
     }
   }
 

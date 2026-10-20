@@ -6,9 +6,12 @@ import { TransactionService } from "../../../common/database/transaction.service
 import { canonicalPhone } from "../../../common/phone/phone.util";
 import { InAppNotificationService } from "../../notifications/application/in-app-notification.service";
 import {
+  ADVANCE_PAYMENT_WINDOW_HOURS,
   BOOKING_NUMBER_PREFIX,
   BOOKING_TRANSITIONS,
   MAX_BOOKING_HORIZON_DAYS,
+  MAX_MULTI_PANDIT_REQUESTS,
+  MAX_TRAVEL_RADIUS_KM,
   type BookingActor,
   type BookingStatus,
   type BookingTransition,
@@ -16,7 +19,9 @@ import {
 import { providerError } from "../domain/provider.errors";
 import { addDays, localDateOf, zonedToUtc } from "../domain/provider-time.util";
 import { listingBlockers, maskPhone } from "../domain/provider-visibility";
+import { validateShiftTravelFeasibility } from "../domain/travel-distance.util";
 import { parseYouTubeUrl } from "../domain/youtube";
+import { WhatsAppTransactionalNotificationService } from "../../../integrations/whatsapp/services/whatsapp-transactional-notification.service";
 import {
   PLATFORM_FEE_LABEL,
   PLATFORM_FEE_LINE,
@@ -26,8 +31,10 @@ import {
 import { correlationId } from "../infrastructure/request-context";
 import { pageParams } from "../presentation/dto/common.dto";
 import type {
+  AcceptBookingRequestDto,
   BookingListQueryDto,
   BookingTransitionDto,
+  CreateMultiPanditBookingRequestDto,
   CreateProviderBookingDto,
 } from "../presentation/dto/booking.dto";
 import { ProviderAuditService } from "./provider-audit.service";
@@ -46,16 +53,6 @@ import {
   toObjectId,
 } from "./provider.helpers";
 
-/** Customer contact and address open up to the provider once they have accepted the booking. */
-const CONTACT_VISIBLE_FROM: readonly BookingStatus[] = [
-  "PROVIDER_ACCEPTED",
-  "PREPARATION_IN_PROGRESS",
-  "READY_FOR_FULFILMENT",
-  "IN_PROGRESS",
-  "COMPLETED",
-  "SETTLEMENT_PENDING",
-  "CLOSED",
-];
 const CANCELLED: readonly BookingStatus[] = [
   "CANCELLED_BY_CUSTOMER",
   "CANCELLED_BY_PROVIDER",
@@ -104,6 +101,7 @@ export class ProviderBookingService {
     @Inject(forwardRef(() => ProviderBookingPaymentService))
     private readonly payments?: ProviderBookingPaymentService,
     @Optional() private readonly wallet?: ProviderWalletService,
+    @Optional() private readonly whatsapp?: WhatsAppTransactionalNotificationService,
   ) {}
 
   // --------------------------------------------------------------- create
@@ -144,8 +142,55 @@ export class ProviderBookingService {
     if (deliveryMode === "IN_PERSON") this.assertLocation(dto, offering, provider);
 
     const timezone = await this.availability.timezoneOf(provider._id);
+
+    // Check same-day shift travel feasibility
+    if (dto.shift && dto.serviceLocation?.city) {
+      const dayStart = zonedToUtc(localDateOf(start, timezone), "00:00", timezone);
+      const dayEnd = zonedToUtc(addDays(localDateOf(start, timezone), 1), "00:00", timezone);
+      const sameDayBookings = await this.bookings
+        .find({
+          providerId: provider._id,
+          status: {
+            $in: [
+              "CONFIRMED",
+              "PROVIDER_ACCEPTED",
+              "PREPARATION_IN_PROGRESS",
+              "READY_FOR_FULFILMENT",
+              "IN_PROGRESS",
+            ],
+          },
+          scheduledStartAt: { $gte: dayStart, $lt: dayEnd },
+        })
+        .select("scheduledStartAt scheduledEndAt serviceLocation shift")
+        .lean();
+
+      for (const prev of sameDayBookings) {
+        const feas = validateShiftTravelFeasibility({
+          priorEndAt: new Date(prev.scheduledEndAt),
+          newStartAt: start,
+          priorLocation: prev.serviceLocation,
+          newLocation: dto.serviceLocation,
+          maxRadiusKm: MAX_TRAVEL_RADIUS_KM,
+        });
+        if (!feas.feasible) {
+          throw providerError.unprocessable(
+            "TRAVEL_RADIUS_EXCEEDED",
+            feas.reason ?? "Preceding booking on this date is beyond the 50 km straight-line travel radius",
+          );
+        }
+      }
+    }
+
     const titles = await this.snapshotTitles(variant, ritual);
     const pricing = this.pricingSnapshot(offering, deliveryMode);
+    const professional = (offering.baseProfessionalFeeMinor ?? 0) as number;
+    const advancePercent = (offering.advancePercentage ?? 50) as number;
+    const advanceDakshina = Math.round((professional * advancePercent) / 100);
+    const remainingDakshina = professional - advanceDakshina;
+    const travel = Number(pricing.lines.find((l: any) => l.code === "TRAVEL")?.amountMinor || 0);
+    const platformFee = Number(pricing.platformFeeMinor || 0);
+    const advanceRequiredMinor = Number(advanceDakshina) + travel + platformFee;
+    const remainingBalanceMinor = remainingDakshina;
     const holdExpiresAt = new Date(now.getTime() + providerConfig().holdMinutes * 60_000);
 
     const serviceSnapshot = {
@@ -218,13 +263,30 @@ export class ProviderBookingService {
                 scheduledStartAt: start,
                 scheduledEndAt: end,
                 timezone,
-                customerContact: { name: dto.customerName, phone: canonicalPhone(dto.customerPhone) },
+                customerContact: {
+                  name: dto.customerName,
+                  phone: canonicalPhone(dto.customerPhone),
+                  email: dto.customerEmail,
+                },
                 serviceLocation: deliveryMode === "LIVE_ONLINE" ? null : dto.serviceLocation ?? null,
                 customerNotes: dto.notes,
                 status: "PAYMENT_PENDING",
                 stateVersion: 0,
                 holdBlockId: block._id,
                 holdExpiresAt,
+                serviceType: dto.serviceType ?? offering.serviceType ?? "INDIVIDUAL",
+                groupCapacity: dto.groupCapacity ?? offering.groupCapacity ?? null,
+                kathaDetails: dto.kathaDetails ?? offering.kathaDetails ?? null,
+                shift: dto.shift ?? "ANY",
+                advanceRequiredMinor,
+                advancePaidMinor: 0,
+                remainingBalanceMinor,
+                paymentType: "ADVANCE_50",
+                contactUnlocked: false,
+                providerContactSnapshot: {
+                  phone: provider.contactPhone ?? null,
+                  email: provider.contactEmail ?? null,
+                },
               },
             ],
             { session },
@@ -256,6 +318,488 @@ export class ProviderBookingService {
         if ((error as { code?: number }).code === 11000 && attempt < 3) continue;
         throw error;
       }
+    }
+  }
+
+  // ------------------------------------------------ multi-pandit requests
+  /**
+   * Controlled multi-Pandit request workflow:
+   * A customer sends one booking request to up to 5 eligible Pandits.
+   */
+  async createMultiRequest(user: AuthenticatedUser, dto: CreateMultiPanditBookingRequestDto) {
+    if (!dto.candidateProviderIds || dto.candidateProviderIds.length === 0) {
+      throw providerError.badRequest("NO_PROVIDERS_SELECTED", "Select at least 1 provider");
+    }
+    if (dto.candidateProviderIds.length > MAX_MULTI_PANDIT_REQUESTS) {
+      throw providerError.badRequest(
+        "TOO_MANY_PROVIDERS",
+        `You can request at most ${MAX_MULTI_PANDIT_REQUESTS} Pandits in a single request cycle`,
+      );
+    }
+    const { offering, variant, ritual } = await this.offerings.loadSellable(dto.offeringId);
+    const now = new Date();
+    const start = new Date(dto.scheduledStartAt);
+    if (start.getTime() < now.getTime() + offering.minNoticeHours * HOUR)
+      throw providerError.unprocessable(
+        "BOOKING_TOO_SOON",
+        `This service needs at least ${offering.minNoticeHours} hours' notice`,
+      );
+    if (start.getTime() > now.getTime() + MAX_BOOKING_HORIZON_DAYS * 24 * HOUR)
+      throw providerError.unprocessable(
+        "BOOKING_TOO_FAR",
+        `Bookings can be made up to ${MAX_BOOKING_HORIZON_DAYS} days ahead`,
+      );
+    const end = new Date(start.getTime() + offering.durationMinutes * 60_000);
+    const deliveryMode = dto.deliveryMode === "LIVE_ONLINE" ? "LIVE_ONLINE" : "IN_PERSON";
+    const requestGroupId = new Types.ObjectId().toString();
+    const createdBookings: any[] = [];
+
+    for (const providerId of dto.candidateProviderIds) {
+      const provider: any = await this.profileModel.findById(toObjectId(providerId)).lean();
+      if (!provider || listingBlockers(provider, { allowDevFixtures: providerConfig().allowDevFixtures }).length) {
+        continue;
+      }
+      if (sameId(provider.userId, user.id)) continue;
+
+      if (deliveryMode === "IN_PERSON") {
+        try {
+          this.assertLocation(dto as any, offering, provider);
+        } catch {
+          continue;
+        }
+      }
+
+      const timezone = await this.availability.timezoneOf(provider._id);
+      if (dto.shift && dto.serviceLocation?.city) {
+        const dayStart = zonedToUtc(localDateOf(start, timezone), "00:00", timezone);
+        const dayEnd = zonedToUtc(addDays(localDateOf(start, timezone), 1), "00:00", timezone);
+        const sameDayBookings = await this.bookings
+          .find({
+            providerId: provider._id,
+            status: {
+              $in: [
+                "CONFIRMED",
+                "PROVIDER_ACCEPTED",
+                "PREPARATION_IN_PROGRESS",
+                "READY_FOR_FULFILMENT",
+                "IN_PROGRESS",
+              ],
+            },
+            scheduledStartAt: { $gte: dayStart, $lt: dayEnd },
+          })
+          .select("scheduledStartAt scheduledEndAt serviceLocation shift")
+          .lean();
+
+        let feasible = true;
+        for (const prev of sameDayBookings) {
+          const check = validateShiftTravelFeasibility({
+            priorEndAt: new Date(prev.scheduledEndAt),
+            newStartAt: start,
+            priorLocation: prev.serviceLocation,
+            newLocation: dto.serviceLocation,
+            maxRadiusKm: MAX_TRAVEL_RADIUS_KM,
+          });
+          if (!check.feasible) {
+            feasible = false;
+            break;
+          }
+        }
+        if (!feasible) continue;
+      }
+
+      const titles = await this.snapshotTitles(variant, ritual);
+      const pricing = this.pricingSnapshot(offering, deliveryMode);
+      const professional = (offering.baseProfessionalFeeMinor ?? 0) as number;
+      const advancePercent = (offering.advancePercentage ?? 50) as number;
+      const advanceDakshina = Math.round((professional * advancePercent) / 100);
+      const remainingDakshina = professional - advanceDakshina;
+      const travel = Number(pricing.lines.find((l: any) => l.code === "TRAVEL")?.amountMinor || 0);
+      const platformFee = Number(pricing.platformFeeMinor || 0);
+      const advanceRequiredMinor = Number(advanceDakshina) + travel + platformFee;
+      const remainingBalanceMinor = remainingDakshina;
+      const holdExpiresAt = new Date(now.getTime() + 24 * HOUR);
+
+      const serviceSnapshot = {
+        schemaVersion: 1,
+        ritual: titles.ritual,
+        variant: titles.variant,
+        provider: {
+          id: idStr(provider._id),
+          slug: provider.slug,
+          displayName: provider.displayName,
+          providerType: provider.providerType,
+          verificationLevel: provider.verificationLevel,
+        },
+        offering: {
+          id: idStr(offering._id),
+          title: offering.title ?? null,
+          fulfilmentType: offering.fulfilmentType,
+          deliveryMode,
+          durationMinutes: offering.durationMinutes,
+          teamSize: offering.teamSize,
+          inclusions: offering.inclusions ?? [],
+          exclusions: offering.exclusions ?? [],
+          samagriIncluded: Boolean(offering.samagriIncluded),
+          voluntaryDakshinaAllowed: Boolean(offering.voluntaryDakshinaAllowed),
+          destination: offering.destination ?? null,
+        },
+        pricing,
+      };
+
+      const bookingId = new Types.ObjectId();
+      try {
+        const created = await this.transactions.run(async (session) => {
+          const block = await this.calendar.reserve({
+            providerId: provider._id,
+            start,
+            end,
+            blockType: "HOLD",
+            sourceId: bookingId,
+            expiresAt: holdExpiresAt,
+            createdBy: user.id,
+            requireWithinRules: true,
+            session,
+          });
+
+          const [doc] = await this.bookings.create(
+            [
+              {
+                _id: bookingId,
+                bookingNumber: this.bookingNumber(now),
+                customerUserId: toObjectId(user.id),
+                providerId: provider._id,
+                providerUserId: provider.userId,
+                offeringId: offering._id,
+                ritualId: ritual._id,
+                ritualVariantId: variant._id,
+                fulfilmentType: offering.fulfilmentType,
+                deliveryMode,
+                serviceSnapshot,
+                scheduledStartAt: start,
+                scheduledEndAt: end,
+                timezone,
+                customerContact: {
+                  name: dto.customerName,
+                  phone: canonicalPhone(dto.customerPhone),
+                  email: dto.customerEmail,
+                },
+                serviceLocation: deliveryMode === "LIVE_ONLINE" ? null : dto.serviceLocation ?? null,
+                customerNotes: dto.notes,
+                status: "REQUEST_PENDING",
+                stateVersion: 0,
+                holdBlockId: block._id,
+                holdExpiresAt,
+                requestGroupId,
+                candidateProviderIds: dto.candidateProviderIds,
+                serviceType: dto.serviceType ?? offering.serviceType ?? "INDIVIDUAL",
+                groupCapacity: dto.groupCapacity ?? offering.groupCapacity ?? null,
+                kathaDetails: dto.kathaDetails ?? offering.kathaDetails ?? null,
+                shift: dto.shift ?? "ANY",
+                advanceRequiredMinor,
+                advancePaidMinor: 0,
+                remainingBalanceMinor,
+                paymentType: "ADVANCE_50",
+                contactUnlocked: false,
+                providerContactSnapshot: {
+                  phone: provider.contactPhone ?? null,
+                  email: provider.contactEmail ?? null,
+                },
+              },
+            ],
+            { session },
+          );
+
+          await this.history.create(
+            [
+              {
+                bookingId,
+                fromState: null,
+                toState: "REQUEST_PENDING",
+                command: "create_multi_request",
+                actorType: "CUSTOMER",
+                actorId: toObjectId(user.id),
+                correlationId: correlationId(),
+                aggregateVersion: 0,
+              },
+            ],
+            { session },
+          );
+
+          return doc;
+        });
+
+        createdBookings.push(created);
+
+        await this.notifier.notifyUsers([String(provider.userId)], {
+          title: `New Puja Request Received`,
+          body: `You received a new booking request for ${titles.ritual.titles?.en ?? "Puja"}. Open bookings to review and accept.`,
+          deepLink: `/provider/bookings`,
+          kind: "provider.booking.request_pending",
+        });
+      } catch (err) {
+        this.logger.warn(`Failed reserving candidate pandit ${providerId}: ${(err as Error).message}`);
+      }
+    }
+
+    if (!createdBookings.length) {
+      throw providerError.unprocessable(
+        "NO_ELIGIBLE_PROVIDERS",
+        "None of the selected Pandits are eligible or available for this slot",
+      );
+    }
+
+    await this.audit.log(user, "booking.multi_requested", "provider_booking", createdBookings[0]._id, {
+      requestGroupId,
+      providerCount: createdBookings.length,
+    });
+
+    return {
+      success: true,
+      data: {
+        requestGroupId,
+        count: createdBookings.length,
+        bookings: createdBookings.map((b) => this.customerView(b.toObject ? b.toObject() : b)),
+      },
+    };
+  }
+
+  /**
+   * A Pandit accepts the request: moves to ACCEPTED_AWAITING_ADVANCE with 1-hour payment window.
+   */
+  async acceptRequest(user: AuthenticatedUser, bookingId: string, _dto?: AcceptBookingRequestDto) {
+    const booking: any = await this.bookings
+      .findById(toObjectId(bookingId, "bookingId"))
+      .select("+customerContact +serviceLocation +customerNotes")
+      .lean();
+    if (!booking) throw providerError.notFound("BOOKING_NOT_FOUND", "Booking not found");
+    if (!sameId(booking.providerUserId, user.id)) {
+      throw providerError.forbidden("NOT_ASSIGNED_PROVIDER", "Only the assigned Pandit can accept this request");
+    }
+    if (booking.status !== "REQUEST_PENDING") {
+      throw providerError.conflict("INVALID_STATE", `Cannot accept booking in state ${booking.status}`);
+    }
+
+    if (booking.requestGroupId) {
+      const confirmedOther = await this.bookings.findOne({
+        requestGroupId: booking.requestGroupId,
+        status: "CONFIRMED",
+      }).lean();
+      if (confirmedOther) {
+        throw providerError.conflict(
+          "REQUEST_ALREADY_CONFIRMED",
+          "This request has already been confirmed with another Pandit",
+        );
+      }
+    }
+
+    const now = new Date();
+    const advancePaymentDeadlineAt = new Date(now.getTime() + ADVANCE_PAYMENT_WINDOW_HOURS * HOUR);
+
+    const updated = await this.transactions.run(async (session) => {
+      const changed = await this.bookings.findOneAndUpdate(
+        { _id: booking._id, status: "REQUEST_PENDING", stateVersion: booking.stateVersion },
+        {
+          $set: {
+            status: "ACCEPTED_AWAITING_ADVANCE",
+            advancePaymentDeadlineAt,
+            holdExpiresAt: advancePaymentDeadlineAt,
+          },
+          $inc: { stateVersion: 1 },
+        },
+        { new: true, session },
+      );
+      if (!changed)
+        throw providerError.conflict(
+          "BOOKING_STATE_CONFLICT",
+          "Booking state changed. Reload and try again.",
+        );
+
+      await this.history.create(
+        [
+          {
+            bookingId: booking._id,
+            fromState: "REQUEST_PENDING",
+            toState: "ACCEPTED_AWAITING_ADVANCE",
+            command: "accept_request",
+            actorType: "PROVIDER",
+            actorId: toObjectId(user.id),
+            correlationId: correlationId(),
+            aggregateVersion: changed.stateVersion,
+          },
+        ],
+        { session },
+      );
+
+      return changed.toObject();
+    });
+
+    await this.notifier.notifyUsers([String(booking.customerUserId)], {
+      title: `Pandit Accepted Your Request`,
+      body: `Pandit ji accepted your request! You have 1 hour to complete the 50% advance payment to confirm your booking.`,
+      deepLink: `/profile/bookings`,
+      kind: "provider.booking.accepted_awaiting_advance",
+    });
+
+    return { success: true, data: this.providerView(updated) };
+  }
+
+  /**
+   * A Pandit declines the booking request.
+   */
+  async declineRequest(user: AuthenticatedUser, bookingId: string, reasonCode?: string) {
+    const booking: any = await this.bookings
+      .findById(toObjectId(bookingId, "bookingId"))
+      .select("+customerContact +serviceLocation")
+      .lean();
+    if (!booking) throw providerError.notFound("BOOKING_NOT_FOUND", "Booking not found");
+    if (!sameId(booking.providerUserId, user.id)) {
+      throw providerError.forbidden("NOT_ASSIGNED_PROVIDER", "Only the assigned Pandit can decline this request");
+    }
+    if (!["REQUEST_PENDING", "ACCEPTED_AWAITING_ADVANCE"].includes(booking.status)) {
+      throw providerError.conflict("INVALID_STATE", `Cannot decline booking in state ${booking.status}`);
+    }
+
+    const updated = await this.transactions.run(async (session) => {
+      const changed = await this.bookings.findOneAndUpdate(
+        { _id: booking._id, status: booking.status, stateVersion: booking.stateVersion },
+        {
+          $set: {
+            status: "CANCELLED_BY_PROVIDER",
+            cancelledAt: new Date(),
+            cancelReasonCode: reasonCode ?? "DECLINED_BY_PROVIDER",
+          },
+          $inc: { stateVersion: 1 },
+        },
+        { new: true, session },
+      );
+      if (!changed)
+        throw providerError.conflict(
+          "BOOKING_STATE_CONFLICT",
+          "Booking state changed. Reload and try again.",
+        );
+
+      await this.history.create(
+        [
+          {
+            bookingId: booking._id,
+            fromState: booking.status,
+            toState: "CANCELLED_BY_PROVIDER",
+            command: "decline_request",
+            reasonCode: reasonCode ?? "DECLINED_BY_PROVIDER",
+            actorType: "PROVIDER",
+            actorId: toObjectId(user.id),
+            correlationId: correlationId(),
+            aggregateVersion: changed.stateVersion,
+          },
+        ],
+        { session },
+      );
+
+      if (booking.holdBlockId) {
+        await this.calendar.release(booking.holdBlockId, "RELEASED", session);
+      }
+
+      return changed.toObject();
+    });
+
+    await this.notifier.notifyUsers([String(booking.customerUserId)], {
+      title: `Pandit Declined Request`,
+      body: `A Pandit declined your request. You may select another Pandit from your request pool.`,
+      deepLink: `/profile/bookings`,
+      kind: "provider.booking.cancelled_by_provider",
+    });
+
+    return { success: true, data: this.providerView(updated) };
+  }
+
+  private async cancelCompetingRequests(confirmedBooking: any) {
+    if (!confirmedBooking.requestGroupId) return;
+    const siblings = await this.bookings
+      .find({
+        requestGroupId: confirmedBooking.requestGroupId,
+        _id: { $ne: confirmedBooking._id },
+        status: { $in: ["REQUEST_PENDING", "ACCEPTED_AWAITING_ADVANCE"] },
+      })
+      .lean();
+
+    for (const sibling of siblings) {
+      try {
+        await this.transactions.run(async (session) => {
+          await this.bookings.updateOne(
+            { _id: sibling._id },
+            {
+              $set: {
+                status: "CANCELLED_BY_OPS",
+                cancelledAt: new Date(),
+                cancelReasonCode: "ANOTHER_PROVIDER_CONFIRMED",
+              },
+              $inc: { stateVersion: 1 },
+            },
+            { session },
+          );
+          if (sibling.holdBlockId) {
+            await this.calendar.release(sibling.holdBlockId, "RELEASED", session);
+          }
+        });
+        await this.notifier.notifyUsers([String(sibling.providerUserId)], {
+          title: `Booking Update`,
+          body: `Another Pandit was confirmed by the devotee for this request. Your calendar hold has been released.`,
+          deepLink: `/provider/bookings`,
+          kind: "provider.booking.cancelled_by_ops",
+        });
+      } catch (err) {
+        this.logger.warn(`Failed cancelling sibling request ${sibling._id}: ${(err as Error).message}`);
+      }
+    }
+  }
+
+  private async sendWhatsAppConfirmation(booking: any) {
+    const customerPhone = booking.customerContact?.phone;
+    if (!customerPhone) return;
+    const ref = booking.bookingNumber;
+    const serviceName =
+      booking.serviceSnapshot?.ritual?.titles?.en ??
+      booking.serviceSnapshot?.variant?.titles?.en ??
+      "Puja Service";
+    const dateStr = new Date(booking.scheduledStartAt).toLocaleString("en-IN", {
+      timeZone: booking.timezone ?? "Asia/Kolkata",
+    });
+    const advancePaid = (booking.advancePaidMinor ?? 0) / 100;
+    const total = (booking.serviceSnapshot?.pricing?.totalMinor ?? 0) / 100;
+    const remaining = (booking.remainingBalanceMinor ?? 0) / 100;
+
+    const message = [
+      `🙏 *Tirvona Booking Confirmed*`,
+      ``,
+      `*Booking Ref:* ${ref}`,
+      `*Service:* ${serviceName}`,
+      `*Date & Time:* ${dateStr}`,
+      `*Advance Received:* ₹${advancePaid.toLocaleString("en-IN")}`,
+      `*Total Service Fee:* ₹${total.toLocaleString("en-IN")}`,
+      `*Remaining Balance:* ₹${remaining.toLocaleString("en-IN")}`,
+      `*Balance Due:* Before scheduled Puja`,
+      `*Pandit Contact:* Unlocked in My Bookings`,
+      `*Support:* +91 8000000000 / support@tirvona.com`,
+    ].join("\n");
+
+    try {
+      if (this.whatsapp) {
+        await this.whatsapp.sendOutboxEvent({
+          domain: "booking",
+          notificationId: `pandit_${booking._id}_${Date.now()}`,
+          userId: String(booking.customerUserId),
+          event: "confirmed",
+          title: `Puja Booking Confirmed: ${ref}`,
+          message,
+          phone: customerPhone,
+          recipientName: booking.customerContact?.name,
+          occurredAt: new Date(),
+        } as any);
+      } else {
+        this.logger.log(`[WhatsApp Notification Log] To ${customerPhone}: ${message}`);
+      }
+    } catch (err) {
+      this.logger.warn(`WhatsApp notification failed for ${ref}: ${(err as Error).message}`);
     }
   }
 
@@ -429,7 +973,13 @@ export class ProviderBookingService {
       actorType: "SYSTEM",
     });
     await this.notifyCounterpart("SYSTEM", updated, transition.to);
-    if (transition.to === "CONFIRMED") await this.wallet?.notifyEarning(updated);
+    if (transition.to === "CONFIRMED") {
+      await this.wallet?.notifyEarning(updated);
+      if (updated.requestGroupId) {
+        await this.cancelCompetingRequests(updated);
+      }
+      await this.sendWhatsAppConfirmation(updated);
+    }
     return updated;
   }
 
@@ -441,6 +991,11 @@ export class ProviderBookingService {
       if (transition.to === "CONFIRMED") {
         set.confirmedAt = now;
         set.holdExpiresAt = null;
+        set.contactUnlocked = true;
+        const totalMinor = Number(booking.serviceSnapshot?.pricing?.totalMinor || 0);
+        const advanceRequired = booking.advanceRequiredMinor ?? Math.round(totalMinor / 2);
+        set.advancePaidMinor = advanceRequired;
+        set.remainingBalanceMinor = Math.max(0, totalMinor - advanceRequired);
       }
       if (transition.to === "PROVIDER_ACCEPTED") set.acceptedAt = now;
       if (transition.to === "IN_PROGRESS") set.startedAt = now;
@@ -451,6 +1006,7 @@ export class ProviderBookingService {
       }
       const update: Record<string, unknown> = { $set: set, $inc: { stateVersion: 1 } };
       if (ctx.paymentRef) update.$addToSet = { paymentRefs: ctx.paymentRef };
+      if (transition.to === "CONFIRMED" && booking.requestGroupId) await this.claimRequestGroup(booking, session);
 
       const changed = await this.bookings.findOneAndUpdate(
         { _id: booking._id, status: booking.status, stateVersion: booking.stateVersion },
@@ -488,6 +1044,27 @@ export class ProviderBookingService {
         await this.wallet?.reverseEarning(changed, session);
       return changed.toObject();
     });
+  }
+
+  /**
+   * A multi-Pandit request ends with exactly one confirmed Pandit. Inside the
+   * confirming transaction: refuse if a sibling is already confirmed, and touch
+   * the still-open siblings' version so that a sibling being confirmed at the
+   * same moment fails its own conditional update instead of also succeeding.
+   */
+  private async claimRequestGroup(booking: any, session: ClientSession) {
+    const siblings = { requestGroupId: booking.requestGroupId, _id: { $ne: booking._id } };
+    const rival = await this.bookings.findOne({ ...siblings, status: "CONFIRMED" }).select("_id").session(session).lean();
+    if (rival)
+      throw providerError.conflict(
+        "REQUEST_ALREADY_CONFIRMED",
+        "This request has already been confirmed with another Pandit",
+      );
+    await this.bookings.updateMany(
+      { ...siblings, status: { $in: ["REQUEST_PENDING", "ACCEPTED_AWAITING_ADVANCE"] } },
+      { $inc: { stateVersion: 1 } },
+      { session },
+    );
   }
 
   private async calendarEffect(
@@ -718,21 +1295,46 @@ export class ProviderBookingService {
 
   customerView(row: any) {
     const snapshot = row.serviceSnapshot ?? {};
+    const unlocked = Boolean(row.contactUnlocked);
     return {
       ...this.common(row),
       provider: snapshot.provider ?? null,
+      providerContact: unlocked
+        ? row.providerContactSnapshot ?? {
+            phone: row.providerContact?.phone ?? null,
+            email: row.providerContact?.email ?? null,
+          }
+        : null,
+      contactUnlocked: unlocked,
       pricing: snapshot.pricing ?? null,
+      advanceRequiredMinor: row.advanceRequiredMinor ?? null,
+      advancePaidMinor: row.advancePaidMinor ?? 0,
+      remainingBalanceMinor: row.remainingBalanceMinor ?? null,
+      advancePaymentDeadlineAt: row.advancePaymentDeadlineAt ?? null,
+      requestGroupId: row.requestGroupId ?? null,
+      candidateProviderIds: row.candidateProviderIds ?? [],
+      serviceType: row.serviceType ?? "INDIVIDUAL",
+      groupCapacity: row.groupCapacity ?? null,
+      kathaDetails: row.kathaDetails ?? null,
+      shift: row.shift ?? "ANY",
       serviceLocation: row.serviceLocation ?? null,
       notes: row.customerNotes ?? null,
-      holdExpiresAt: row.status === "PAYMENT_PENDING" ? row.holdExpiresAt ?? null : null,
+      holdExpiresAt: ["PAYMENT_PENDING", "ACCEPTED_AWAITING_ADVANCE"].includes(row.status)
+        ? row.holdExpiresAt ?? null
+        : null,
       paymentReferences: row.paymentRefs ?? [],
+      communication: {
+        chatAvailable: unlocked,
+        callAvailable: unlocked,
+        reason: unlocked ? null : "LOCKED_UNTIL_ADVANCE_PAID",
+      },
       nextActions: this.nextActions(row.status, "CUSTOMER"),
     };
   }
 
   providerView(row: any) {
     const snapshot = row.serviceSnapshot ?? {};
-    const open = CONTACT_VISIBLE_FROM.includes(row.status);
+    const open = Boolean(row.contactUnlocked);
     const pricing = snapshot.pricing
       ? {
           currency: snapshot.pricing.currency,
@@ -749,6 +1351,7 @@ export class ProviderBookingService {
       customer: {
         name: row.customerContact?.name ?? null,
         phone: open ? row.customerContact?.phone ?? null : maskPhone(row.customerContact?.phone),
+        email: open ? row.customerContact?.email ?? null : null,
         contactVisible: open,
       },
       serviceLocation: row.serviceLocation
@@ -759,7 +1362,22 @@ export class ProviderBookingService {
           }
         : null,
       notes: open ? row.customerNotes ?? null : null,
+      contactUnlocked: open,
+      advanceRequiredMinor: row.advanceRequiredMinor ?? null,
+      advancePaidMinor: row.advancePaidMinor ?? 0,
+      remainingBalanceMinor: row.remainingBalanceMinor ?? null,
+      advancePaymentDeadlineAt: row.advancePaymentDeadlineAt ?? null,
+      requestGroupId: row.requestGroupId ?? null,
+      serviceType: row.serviceType ?? "INDIVIDUAL",
+      groupCapacity: row.groupCapacity ?? null,
+      kathaDetails: row.kathaDetails ?? null,
+      shift: row.shift ?? "ANY",
       pricing,
+      communication: {
+        chatAvailable: open,
+        callAvailable: open,
+        reason: open ? null : "LOCKED_UNTIL_ADVANCE_PAID",
+      },
       nextActions: this.nextActions(row.status, "PROVIDER"),
     };
   }

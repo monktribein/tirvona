@@ -40,6 +40,7 @@ export interface FoodMeal {
   prepMinutes: number;
   portion: string;
   imageUrl?: string;
+  imageUrls?: string[];
   isAvailable: boolean;
   outlet: {
     id: string;
@@ -112,7 +113,14 @@ export interface FoodOrder {
   deliveryAddress?: string;
   deliveryInstructions?: string;
   orderStatus: string;
+  /** PENDING | PAID | FAILED | REFUNDED. Refund progress is in orderStatus (REFUND_*) and `refund`. */
   paymentStatus: string;
+  refund?: {
+    status: "pending" | "processing" | "refunded" | "failed";
+    amountRupees: number;
+    failureReason?: string;
+    resolvedAt?: string | null;
+  } | null;
   rejectionReason?: string;
   subtotalPaise: number;
   subtotalRupees: number;

@@ -34,16 +34,21 @@ export interface PostgresDriverOptions {
 }
 
 let activeStore: PgStore | null = null;
+/** The store each Mongoose instance was switched to: enabling twice on one instance is a no-op, but another instance still gets its own driver. */
+const storeByInstance = new WeakMap<object, PgStore>();
+const closedStores = new WeakSet<PgStore>();
 
 export function activePostgresStore(): PgStore | null {
   return activeStore;
 }
 
 export function enablePostgresDriver(options: PostgresDriverOptions, instance: typeof mongoose = mongoose): PgStore {
-  if (activeStore) return activeStore;
+  const existing = storeByInstance.get(instance);
+  if (existing && !closedStores.has(existing)) return existing;
   const pool = options.pool ?? nodePgPool(requireString(options.connectionString), { max: options.poolMax });
   const store = new PgStore(pool, options.registry);
-  activeStore = store;
+  storeByInstance.set(instance, store);
+  activeStore ??= store;
   const ttlSweep = options.ttlSweep ?? true;
 
   function PgConnection(this: any, ...args: unknown[]) {
@@ -106,7 +111,10 @@ export function enablePostgresDriver(options: PostgresDriverOptions, instance: t
 
 /** Closes the shared pool. Call on application shutdown. */
 export async function closePostgresDriver(): Promise<void> {
-  if (activeStore) await activeStore.pool.end();
+  if (activeStore) {
+    closedStores.add(activeStore);
+    await activeStore.pool.end();
+  }
   activeStore = null;
 }
 

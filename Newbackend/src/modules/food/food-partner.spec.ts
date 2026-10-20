@@ -116,6 +116,71 @@ describe("Food restaurant partners (owner signup, admin approval, menu)", () => 
     expect(products.rows).toHaveLength(0);
   });
 
+  it("supports up to five images for Thalis / food products with primary image preservation", async () => {
+    await service.register(owner, { businessName: "Radha Rasoi", outlet: outletInput } as any);
+    const outletId = String(outlets.rows[0]._id);
+
+    // 1. Single image item
+    const single = await service.createMenuItem(owner, outletId, {
+      label: "Classic Thali",
+      family: "THALI",
+      pricePaise: 19900,
+      imageUrls: ["https://tirvona.com/img/thali-main.jpg"],
+    } as any);
+    expect(single.imageUrls).toEqual(["https://tirvona.com/img/thali-main.jpg"]);
+    expect(single.imageUrl).toBe("https://tirvona.com/img/thali-main.jpg");
+
+    // 2. Up to five images
+    const fiveImages = [
+      "https://tirvona.com/img/1.jpg",
+      "https://tirvona.com/img/2.jpg",
+      "https://tirvona.com/img/3.jpg",
+      "https://tirvona.com/img/4.jpg",
+      "https://tirvona.com/img/5.jpg",
+    ];
+    const multi = await service.createMenuItem(owner, outletId, {
+      label: "Deluxe Satvik Thali",
+      family: "THALI",
+      pricePaise: 34900,
+      imageUrls: fiveImages,
+    } as any);
+    expect(multi.imageUrls).toHaveLength(5);
+    expect(multi.imageUrls[0]).toBe("https://tirvona.com/img/1.jpg");
+    expect(multi.imageUrl).toBe("https://tirvona.com/img/1.jpg"); // backward-compatible primary
+
+    // 3. Reordering images updates the primary cover image
+    const reordered = [
+      "https://tirvona.com/img/5.jpg",
+      "https://tirvona.com/img/1.jpg",
+      "https://tirvona.com/img/2.jpg",
+    ];
+    const updated = await service.updateMenuItem(owner, multi.id, {
+      imageUrls: reordered,
+    });
+    expect(updated.imageUrls).toEqual(reordered);
+    expect(updated.imageUrl).toBe("https://tirvona.com/img/5.jpg");
+
+    // 4. Adding more than five images is rejected
+    const sixImages = [
+      ...fiveImages,
+      "https://tirvona.com/img/6.jpg",
+    ];
+    await expect(
+      service.createMenuItem(owner, outletId, {
+        label: "Too Many Photos Thali",
+        family: "THALI",
+        pricePaise: 39900,
+        imageUrls: sixImages,
+      } as any),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    await expect(
+      service.updateMenuItem(owner, multi.id, {
+        imageUrls: sixImages,
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
   it("a dish that already has orders is hidden, not deleted", async () => {
     await service.register(owner, { businessName: "Radha Rasoi", outlet: outletInput } as any);
     const outletId = String(outlets.rows[0]._id);

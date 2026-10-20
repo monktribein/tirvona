@@ -23746,6 +23746,71 @@ export const REGISTRY: Registry = {
      "field": "liveStream",
      "column": "live_stream",
      "kind": "json"
+    },
+    {
+     "field": "requestGroupId",
+     "column": "request_group_id",
+     "kind": "string"
+    },
+    {
+     "field": "candidateProviderIds",
+     "column": "candidate_provider_ids",
+     "kind": "objectId[]"
+    },
+    {
+     "field": "serviceType",
+     "column": "service_type",
+     "kind": "string"
+    },
+    {
+     "field": "groupCapacity",
+     "column": "group_capacity",
+     "kind": "json"
+    },
+    {
+     "field": "kathaDetails",
+     "column": "katha_details",
+     "kind": "json"
+    },
+    {
+     "field": "shift",
+     "column": "shift",
+     "kind": "string"
+    },
+    {
+     "field": "travelDistanceKm",
+     "column": "travel_distance_km",
+     "kind": "number"
+    },
+    {
+     "field": "paymentType",
+     "column": "payment_type",
+     "kind": "string"
+    },
+    {
+     "field": "advanceRequiredMinor",
+     "column": "advance_required_minor",
+     "kind": "number"
+    },
+    {
+     "field": "advancePaidMinor",
+     "column": "advance_paid_minor",
+     "kind": "number"
+    },
+    {
+     "field": "remainingBalanceMinor",
+     "column": "remaining_balance_minor",
+     "kind": "number"
+    },
+    {
+     "field": "advancePaymentDeadlineAt",
+     "column": "advance_payment_deadline_at",
+     "kind": "date"
+    },
+    {
+     "field": "contactUnlocked",
+     "column": "contact_unlocked",
+     "kind": "boolean"
     }
    ],
    "indexes": [
@@ -23786,6 +23851,13 @@ export const REGISTRY: Registry = {
      "keys": {
       "status": 1,
       "holdExpiresAt": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "requestGroupId_1",
+     "keys": {
+      "requestGroupId": 1
      },
      "enforced": true
     }
@@ -23907,6 +23979,26 @@ export const REGISTRY: Registry = {
      "field": "updatedAt",
      "column": "updated_at",
      "kind": "date"
+    },
+    {
+     "field": "serviceType",
+     "column": "service_type",
+     "kind": "string"
+    },
+    {
+     "field": "groupCapacity",
+     "column": "group_capacity",
+     "kind": "json"
+    },
+    {
+     "field": "kathaDetails",
+     "column": "katha_details",
+     "kind": "json"
+    },
+    {
+     "field": "advancePercentage",
+     "column": "advance_percentage",
+     "kind": "number"
     }
    ],
    "indexes": [
@@ -26665,6 +26757,11 @@ export const REGISTRY: Registry = {
      "field": "updatedAt",
      "column": "updated_at",
      "kind": "date"
+    },
+    {
+     "field": "imageUrls",
+     "column": "image_urls",
+     "kind": "string[]"
     }
    ],
    "indexes": [
@@ -26730,6 +26827,11 @@ export const REGISTRY: Registry = {
      "field": "updatedAt",
      "column": "updated_at",
      "kind": "date"
+    },
+    {
+     "field": "imageUrls",
+     "column": "image_urls",
+     "kind": "string[]"
     }
    ],
    "indexes": [
@@ -27388,6 +27490,134 @@ export const REGISTRY: Registry = {
      "keys": {
       "status": 1
      },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "food_vendor_payments",
+   "schema": "public",
+   "table": "food_vendor_payments",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "paymentNumber",
+     "column": "payment_number",
+     "kind": "string"
+    },
+    {
+     "field": "vendorId",
+     "column": "vendor_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "amountPaise",
+     "column": "amount_paise",
+     "kind": "number"
+    },
+    {
+     "field": "method",
+     "column": "method",
+     "kind": "string"
+    },
+    {
+     "field": "reference",
+     "column": "reference",
+     "kind": "string"
+    },
+    {
+     "field": "receiptUrl",
+     "column": "receipt_url",
+     "kind": "string"
+    },
+    {
+     "field": "paidAt",
+     "column": "paid_at",
+     "kind": "date"
+    },
+    {
+     "field": "note",
+     "column": "note",
+     "kind": "string"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "recordedBy",
+     "column": "recorded_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "recordedByName",
+     "column": "recorded_by_name",
+     "kind": "string"
+    },
+    {
+     "field": "voidedAt",
+     "column": "voided_at",
+     "kind": "date"
+    },
+    {
+     "field": "voidedBy",
+     "column": "voided_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "voidReason",
+     "column": "void_reason",
+     "kind": "string"
+    },
+    {
+     "field": "idempotencyKey",
+     "column": "idempotency_key",
+     "kind": "string"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "paymentNumber_1",
+     "keys": {
+      "paymentNumber": 1
+     },
+     "unique": true,
+     "enforced": true
+    },
+    {
+     "name": "status_1",
+     "keys": {
+      "status": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_food_vendor_payment_vendor",
+     "keys": {
+      "vendorId": 1,
+      "paidAt": -1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ux_food_vendor_payment_idem",
+     "keys": {
+      "idempotencyKey": 1
+     },
+     "unique": true,
+     "sparse": true,
      "enforced": true
     }
    ]

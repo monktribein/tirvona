@@ -24,6 +24,8 @@ import {
   MAX_AMOUNT_MINOR,
   OFFERABLE_FULFILMENT_TYPES,
   OFFERING_STATUSES,
+  PANDIT_SERVICE_TYPES,
+  PANDIT_SHIFTS,
   PROVIDER_SELF_STATUSES,
   PROVIDER_TYPES,
   SUPPORTED_CURRENCIES,
@@ -33,6 +35,7 @@ import {
   TRAVEL_MODES,
   STAY_ARRANGEMENTS,
 } from "../../domain/provider.constants";
+import { KathaDetailsDto } from "./booking.dto";
 import { PageQueryDto, QueryBoolean } from "./common.dto";
 
 const trim = () =>
@@ -184,6 +187,10 @@ export class CreateOfferingDto {
   @IsOptional() @IsBoolean() voluntaryDakshinaAllowed?: boolean;
   @IsOptional() @apply(...STRING_LIST(10, 40)) tags?: string[];
   @IsOptional() @IsIn(["ACTIVE", "PAUSED"]) status?: string;
+  @IsOptional() @IsIn(PANDIT_SERVICE_TYPES) serviceType?: string;
+  @IsOptional() @IsInt() @Min(1) @Max(500) groupCapacity?: number;
+  @IsOptional() @ValidateNested() @Type(() => KathaDetailsDto) kathaDetails?: KathaDetailsDto;
+  @IsOptional() @IsInt() @Min(10) @Max(100) advancePercentage?: number;
 }
 
 /** Variant and fulfilment type are fixed once created: bookings snapshot them. */
@@ -225,6 +232,15 @@ export class AvailabilityQueryDto {
   @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "from must be YYYY-MM-DD" }) from: string;
   @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "to must be YYYY-MM-DD" }) to?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(15) @Max(1440) durationMinutes?: number;
+  @IsOptional() @IsIn(PANDIT_SHIFTS) shift?: string;
+  @IsOptional() @trim() @IsString() @MaxLength(80) city?: string;
+}
+
+/** The rolling 30-day calendar: every field is optional, 'from' defaults to today in the Pandit's timezone. */
+export class ThirtyDayCalendarQueryDto {
+  @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "from must be YYYY-MM-DD" }) from?: string;
+  @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "to must be YYYY-MM-DD" }) to?: string;
+  @IsOptional() @trim() @IsString() @MaxLength(80) city?: string;
 }
 
 export class CalendarQueryDto extends PageQueryDto {
@@ -262,9 +278,12 @@ export class ProviderSearchQueryDto extends PageQueryDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(MAX_AMOUNT_MINOR) minFeeMinor?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(MAX_AMOUNT_MINOR) maxFeeMinor?: number;
   @IsOptional() @IsIn(PROVIDER_SORTS) sort?: string;
+  @IsOptional() @IsIn(PANDIT_SERVICE_TYPES) serviceType?: string;
+  @IsOptional() @IsIn(PANDIT_SHIFTS) shift?: string;
 }
 
 export class PublicOfferingsQueryDto {
   @IsOptional() @IsIn(FULFILMENT_TYPES) fulfilmentType?: string;
   @IsOptional() @IsEntityId() ritualVariantId?: string;
+  @IsOptional() @IsIn(PANDIT_SERVICE_TYPES) serviceType?: string;
 }

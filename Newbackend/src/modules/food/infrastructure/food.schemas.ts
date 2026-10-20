@@ -7,9 +7,11 @@ import {
   FOOD_MEAL_FAMILIES,
   FOOD_ORDER_STATUSES,
   FOOD_OUTLET_STATUSES,
+  FOOD_PAYMENT_METHODS,
   FOOD_PAYMENT_STATUSES,
   FOOD_REFUND_STATUSES,
   FOOD_SETTLEMENT_STATUSES,
+  FOOD_VENDOR_PAYMENT_STATUSES,
   FOOD_VENDOR_STATUSES,
 } from "../domain/food.constants";
 
@@ -112,6 +114,8 @@ export const FoodProductSchema = new Schema(
     canonicalName: { type: String, required: true, trim: true },
     description: { type: String, trim: true },
     defaultImageUrl: { type: String, trim: true },
+    /** Multi-image gallery: up to 5 images per product/Thali */
+    imageUrls: [{ type: String, trim: true }],
     approvedStatus: {
       type: String,
       enum: ["approved", "pending", "rejected"],
@@ -146,6 +150,8 @@ export const FoodProductVariantSchema = new Schema(
     dailyCapacity: { type: Number, default: 100 },
     cutOffTime: { type: String, trim: true },
     imageUrl: { type: String, trim: true },
+    /** Multi-image gallery: up to 5 images per variant/Thali */
+    imageUrls: [{ type: String, trim: true }],
   },
   opts("food_product_variants"),
 );
@@ -426,6 +432,45 @@ export const FoodSettlementSchema = new Schema(
     paidAt: { type: Date },
   },
   opts("food_settlements"),
+);
+
+/**
+ * 15b. food_vendor_payments
+ * Money Tirvona has paid a kitchen, entered by hand by Super Admin / Finance: a bank transfer or UPI
+ * payment with its receipt image, or cash with no receipt. Never deleted: a mistake is voided.
+ */
+export const FoodVendorPaymentSchema = new Schema(
+  {
+    paymentNumber: { type: String, required: true, unique: true, index: true, trim: true },
+    vendorId: id("FoodVendor", true),
+    amountPaise: { type: Number, required: true },
+    method: { type: String, enum: FOOD_PAYMENT_METHODS, required: true },
+    /** Bank UTR or UPI transaction id, when there is one. */
+    reference: { type: String, trim: true },
+    /** Image of the payment receipt. Always empty for cash. */
+    receiptUrl: { type: String, trim: true },
+    paidAt: { type: Date, required: true },
+    note: { type: String, trim: true },
+    status: {
+      type: String,
+      enum: FOOD_VENDOR_PAYMENT_STATUSES,
+      default: "recorded",
+      index: true,
+    },
+    recordedBy: id("User"),
+    recordedByName: { type: String, trim: true },
+    voidedAt: { type: Date },
+    voidedBy: id("User"),
+    voidReason: { type: String, trim: true },
+    /** Lets a retried request return the payment it already recorded instead of recording it twice. */
+    idempotencyKey: { type: String, trim: true },
+  },
+  opts("food_vendor_payments"),
+);
+FoodVendorPaymentSchema.index({ vendorId: 1, paidAt: -1 }, { name: "ix_food_vendor_payment_vendor" });
+FoodVendorPaymentSchema.index(
+  { idempotencyKey: 1 },
+  { unique: true, sparse: true, name: "ux_food_vendor_payment_idem" },
 );
 
 /**

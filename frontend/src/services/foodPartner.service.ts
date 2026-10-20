@@ -94,12 +94,13 @@ export interface FoodMenuItem {
   dailyCapacity: number;
   cutOffTime: string;
   imageUrl: string;
+  imageUrls?: string[];
   isAvailable: boolean;
 }
 
 export type FoodMenuItemInput = Partial<
   Omit<FoodMenuItem, "id" | "outletId" | "sku" | "family">
-> & { label: string; family: string; pricePaise: number };
+> & { label: string; family: string; pricePaise: number; imageUrls?: string[] };
 
 /** Owner routes act on the caller's own restaurant; admin routes act on any. */
 export type FoodScope = "owner" | "admin";
@@ -219,10 +220,6 @@ export const foodPartnerService = {
   ): Promise<FoodPartnerProfile> {
     const res = await api.post(`/v1/food/admin/vendors/${id}/owner-login`, input);
     return res.data;
-  },
-
-  async setOwnerPassword(id: string, password: string): Promise<void> {
-    await api.post(`/v1/food/admin/vendors/${id}/owner-password`, { password });
   },
 
   async setVendorStatus(

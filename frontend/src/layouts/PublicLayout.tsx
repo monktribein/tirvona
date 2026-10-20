@@ -44,6 +44,16 @@ import {
   Flame,
 } from "lucide-react";
 
+/**
+ * The orange dashboard shortcut in the header pill. From `lg` the nav links fill the pill,
+ * so it turns into a round icon button (the full name stays in its tooltip and aria-label)
+ * instead of its long label pushing the avatar out of the pill. Narrower screens have no
+ * nav links in the pill, so the label fits there.
+ */
+const HEADER_DASHBOARD_LINK =
+  "hidden sm:flex text-xs font-extrabold px-3 py-1.5 lg:px-0 lg:h-9 lg:w-9 lg:justify-center rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white shadow-sm transition-all items-center gap-1.5 shrink-0";
+const HEADER_DASHBOARD_LABEL = "hidden md:inline lg:hidden";
+
 const FooterAccordion: React.FC<{
   title: string;
   titleColor?: string;
@@ -559,10 +569,12 @@ export const PublicLayout: React.FC = () => {
                   {hasOperationalDashboard() && (
                     <Link
                       to={getDashboardPath()}
-                      className="hidden sm:flex text-xs font-extrabold px-3 py-1.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white shadow-sm transition-all items-center gap-1.5 shrink-0"
+                      aria-label={getDashboardLabel()}
+                      title={getDashboardLabel()}
+                      className={HEADER_DASHBOARD_LINK}
                     >
                       <LayoutDashboard size={13} />
-                      <span className="hidden md:inline">
+                      <span className={HEADER_DASHBOARD_LABEL}>
                         {getDashboardLabel()}
                       </span>
                     </Link>
@@ -572,10 +584,11 @@ export const PublicLayout: React.FC = () => {
                     <Link
                       to="/vendor/dashboard"
                       aria-label="Seller Dashboard"
-                      className="hidden sm:flex text-xs font-extrabold px-3 py-1.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white shadow-sm transition-all items-center gap-1.5 shrink-0"
+                      title="Seller Dashboard"
+                      className={HEADER_DASHBOARD_LINK}
                     >
                       <LayoutDashboard size={13} />
-                      <span className="hidden md:inline">Seller Dashboard</span>
+                      <span className={HEADER_DASHBOARD_LABEL}>Seller Dashboard</span>
                     </Link>
                   )}
 
@@ -583,10 +596,11 @@ export const PublicLayout: React.FC = () => {
                     <Link
                       to="/restaurant/dashboard"
                       aria-label="Restaurant Dashboard"
-                      className="hidden sm:flex text-xs font-extrabold px-3 py-1.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white shadow-sm transition-all items-center gap-1.5 shrink-0"
+                      title="Restaurant Dashboard"
+                      className={HEADER_DASHBOARD_LINK}
                     >
                       <LayoutDashboard size={13} />
-                      <span className="hidden md:inline">Restaurant Dashboard</span>
+                      <span className={HEADER_DASHBOARD_LABEL}>Restaurant Dashboard</span>
                     </Link>
                   )}
 
@@ -594,10 +608,11 @@ export const PublicLayout: React.FC = () => {
                     <Link
                       to="/provider/dashboard"
                       aria-label="Pandit Dashboard"
-                      className="hidden sm:flex text-xs font-extrabold px-3 py-1.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white shadow-sm transition-all items-center gap-1.5 shrink-0"
+                      title="Pandit Dashboard"
+                      className={HEADER_DASHBOARD_LINK}
                     >
                       <LayoutDashboard size={13} />
-                      <span className="hidden md:inline">Pandit Dashboard</span>
+                      <span className={HEADER_DASHBOARD_LABEL}>Pandit Dashboard</span>
                     </Link>
                   )}
 

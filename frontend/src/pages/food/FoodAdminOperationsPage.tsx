@@ -1,5 +1,6 @@
 import { Paginated } from "../../components/shared/Pagination";
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   ShieldAlert,
   CheckCircle2,
@@ -209,6 +210,13 @@ export const FoodAdminOperationsPage: React.FC = () => {
               </h3>
               <p className="text-[11px] text-slate-500 leading-relaxed">
                 Customers pay Tirvona on Razorpay. Each restaurant is paid its food value minus commission and GST on commission, directly to the bank account it added.
+              </p>
+              <p className="text-[11px] leading-relaxed p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900">
+                <strong>Paying a kitchen by hand (bank transfer, UPI or cash)?</strong> Record it in{" "}
+                <Link to="/admin/food/wallets" className="font-extrabold underline">
+                  Kitchen Wallets &amp; Payments
+                </Link>{" "}
+                with its receipt. A settlement marked paid here also counts there as money received, so do not pay the same orders both ways.
               </p>
               <div className="flex flex-wrap items-end gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 text-xs">
                 <label className="space-y-1">

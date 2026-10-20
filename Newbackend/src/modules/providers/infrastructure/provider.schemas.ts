@@ -22,6 +22,8 @@ import {
   FULFILMENT_TYPES,
   MALWARE_SCAN_STATUSES,
   OFFERING_STATUSES,
+  PANDIT_SERVICE_TYPES,
+  PANDIT_SHIFTS,
   PROVIDER_STATUSES,
   PROVIDER_TYPES,
   RESOURCE_TYPES,
@@ -236,6 +238,14 @@ export const ProviderOfferingSchema = new Schema(
     exclusions: { type: [String], default: [] },
     samagriIncluded: { type: Boolean, default: false },
     voluntaryDakshinaAllowed: { type: Boolean, default: true },
+    /** Service type: INDIVIDUAL puja, GROUP puja, or multi-day/single-day KATHA */
+    serviceType: { type: String, enum: PANDIT_SERVICE_TYPES, default: "INDIVIDUAL" },
+    /** Configurable group capacity for Group Pujas: { min, max } */
+    groupCapacity: { type: SchemaTypes.Mixed, default: null },
+    /** Katha details: { kathaType, totalDays, dailyHours, samagriDetails } */
+    kathaDetails: { type: SchemaTypes.Mixed, default: null },
+    /** Required advance payment percentage, default 50% */
+    advancePercentage: { type: Number, default: 50, min: 10, max: 100 },
     tags: { type: [String], default: [] },
     status: { type: String, enum: OFFERING_STATUSES, default: "ACTIVE" },
     deletedAt: { type: Date, default: null },
@@ -420,6 +430,23 @@ export const ProviderBookingSchema = new Schema(
     stateVersion: { type: Number, default: 0 },
     holdBlockId: id("ProviderCalendarBlock", { default: null }),
     holdExpiresAt: { type: Date, default: null },
+    /** Multi-Pandit request tracking: links up to 5 candidate requests in a request cycle */
+    requestGroupId: { type: String, trim: true, default: null, index: true },
+    candidateProviderIds: { type: [SchemaTypes.ObjectId], default: [] },
+    /** Service type: INDIVIDUAL, GROUP, or KATHA */
+    serviceType: { type: String, enum: PANDIT_SERVICE_TYPES, default: "INDIVIDUAL" },
+    groupCapacity: { type: SchemaTypes.Mixed, default: null },
+    kathaDetails: { type: SchemaTypes.Mixed, default: null },
+    shift: { type: String, enum: PANDIT_SHIFTS, default: "ANY" },
+    travelDistanceKm: { type: Number, default: null },
+    /** Payment structure: mandatory 50% advance payment rule */
+    paymentType: { type: String, enum: ["FULL", "ADVANCE_50"], default: "ADVANCE_50" },
+    advanceRequiredMinor: { type: Number, default: 0 },
+    advancePaidMinor: { type: Number, default: 0 },
+    remainingBalanceMinor: { type: Number, default: 0 },
+    advancePaymentDeadlineAt: { type: Date, default: null },
+    /** Privacy gate: true ONLY when 50% advance payment is verified */
+    contactUnlocked: { type: Boolean, default: false },
     confirmedAt: Date,
     acceptedAt: Date,
     startedAt: Date,

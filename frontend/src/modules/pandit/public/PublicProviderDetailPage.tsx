@@ -11,7 +11,9 @@ import {
   CheckCircle2,
   ChevronLeft,
   Clock,
+  Compass,
   Loader2,
+  Lock,
   Flame,
   Home,
   MapPin,
@@ -31,7 +33,7 @@ import { getErrorMessage } from "../../../lib/api";
 import { useAuth } from "../../../contexts/AuthContext";
 import { toast } from "../../../lib/toast";
 import { openRazorpayCheckout, type RazorpayResult } from "../../../lib/razorpay";
-import type { ProviderProfile, Offering, ProviderBooking } from "../types/provider.types";
+import type { ProviderProfile, Offering, ProviderBooking, ThirtyDayCalendarData } from "../types/provider.types";
 import { PROVIDER_TYPE_LABELS, STAY_ARRANGEMENT_LABELS, TRAVEL_MODE_LABELS, VERIFICATION_LEVEL_LABELS } from "../types/provider.types";
 import {
   Avatar,
@@ -116,6 +118,12 @@ type OfferingView = Offering & {
   platformFee?: { rateBps: number; percent: number; amountMinor: number; label?: string };
   devoteePriceMinor?: number;
   teamSize?: number;
+  serviceType?: "INDIVIDUAL" | "GROUP" | "KATHA";
+  groupCapacity?: number;
+  kathaDetails?: { kathaName?: string; totalDays?: number; dailyHours?: number; includesSamagri?: boolean; yajamanRequirement?: string };
+  advancePercentage?: number;
+  advanceRequiredMinor?: number;
+  remainingBalanceMinor?: number;
 };
 
 const offeringTitle = (o: OfferingView) =>
@@ -136,6 +144,8 @@ export const PublicProviderDetailPage: React.FC = () => {
 
   const [provider, setProvider] = useState<PublicProvider | null>(null);
   const [offerings, setOfferings] = useState<OfferingView[]>([]);
+  const [thirtyDayCalendar, setThirtyDayCalendar] = useState<ThirtyDayCalendarData | null>(null);
+  const [calendarLoading, setCalendarLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -295,7 +305,11 @@ export const PublicProviderDetailPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const [profileRes, offeringsRes] = await Promise.allSettled([providerPublicService.getById(id), providerPublicService.offeringsOf(id)]);
+      const [profileRes, offeringsRes, calRes] = await Promise.allSettled([
+        providerPublicService.getById(id),
+        providerPublicService.offeringsOf(id),
+        providerPublicService.calendar30DaysOf(id),
+      ]);
       if (profileRes.status === "fulfilled" && profileRes.value.data?.success) {
         setProvider(profileRes.value.data.data);
       } else {
@@ -304,6 +318,9 @@ export const PublicProviderDetailPage: React.FC = () => {
       }
       if (offeringsRes.status === "fulfilled" && offeringsRes.value.data?.success) {
         setOfferings(offeringsRes.value.data.data || []);
+      }
+      if (calRes.status === "fulfilled" && calRes.value.data?.success) {
+        setThirtyDayCalendar(calRes.value.data.data);
       }
     } catch (err) {
       setError(getErrorMessage(err, "Failed to load provider profile."));
@@ -669,6 +686,106 @@ export const PublicProviderDetailPage: React.FC = () => {
             </SectionCard>
           )}
 
+          {/* ── 30-Day Availability & Shifts ────────────────────────── */}
+          {thirtyDayCalendar && thirtyDayCalendar.days?.length > 0 && (
+            <SectionCard
+              title="30-Day Availability & Shift Calendar"
+              description="Real-time availability over the next 30 days. Includes morning (06:00 - 14:00) and evening (14:00 - 22:00) shifts with travel buffer and a 50 km straight-line (not road) distance rule for same-day travel."
+              actions={
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+                  <Compass size={13} className="text-[#F28C28]" />
+                  50 km Straight-Line Radius
+                </span>
+              }
+            >
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                    Shift Available
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+                    Pending Hold
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-slate-300 dark:bg-slate-600" />
+                    Shift Booked / Off
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-2.5 max-h-80 overflow-y-auto p-1">
+                  {thirtyDayCalendar.days.map((d) => {
+                    const isMorningAvail = (d.shifts?.morning?.isBookable ?? d.shifts?.morning?.status === "AVAILABLE");
+                    const isEveningAvail = (d.shifts?.evening?.isBookable ?? d.shifts?.evening?.status === "AVAILABLE");
+                    const dayDate = new Date(d.date + "T12:00:00+05:30");
+                    const dateFormatted = dayDate.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+                    const isAnyAvailable = isMorningAvail || isEveningAvail;
+
+                    return (
+                      <div
+                        key={d.date}
+                        className={cx(
+                          "rounded-xl border p-2.5 transition-all text-left flex flex-col justify-between gap-1.5",
+                          isAnyAvailable
+                            ? "border-slate-200/90 bg-white hover:border-[#F28C28] hover:shadow-xs dark:border-slate-800 dark:bg-[#0B192C]"
+                            : "border-slate-100 bg-slate-50/60 opacity-60 dark:border-slate-800/60 dark:bg-slate-900/40"
+                        )}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-slate-900 dark:text-white">{dateFormatted}</span>
+                          <span className="text-[10px] font-medium text-slate-400">{d.dayOfWeek.slice(0, 3)}</span>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[10px]">
+                            <span className="text-slate-500">Morn (6-14)</span>
+                            <span
+                              className={cx(
+                                "h-2 w-2 rounded-full",
+                                isMorningAvail
+                                  ? "bg-emerald-500"
+                                  : d.shifts?.morning?.hasConfirmedBooking
+                                  ? "bg-slate-400"
+                                  : "bg-slate-200 dark:bg-slate-700"
+                              )}
+                              title={isMorningAvail ? "Morning shift available" : d.shifts?.morning?.reason || "Unavailable"}
+                            />
+                          </div>
+                          <div className="flex items-center justify-between text-[10px]">
+                            <span className="text-slate-500">Eve (14-22)</span>
+                            <span
+                              className={cx(
+                                "h-2 w-2 rounded-full",
+                                isEveningAvail
+                                  ? "bg-emerald-500"
+                                  : d.shifts?.evening?.hasConfirmedBooking
+                                  ? "bg-slate-400"
+                                  : "bg-slate-200 dark:bg-slate-700"
+                              )}
+                              title={isEveningAvail ? "Evening shift available (<=50km radius)" : d.shifts?.evening?.reason || "Unavailable"}
+                            />
+                          </div>
+                        </div>
+                        {isAnyAvailable && offerings[0] && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setBookingDate(d.date);
+                              handleStartBooking(offerings[0]);
+                            }}
+                            className="mt-1 text-center rounded-lg bg-amber-50/80 py-1 text-[10px] font-bold text-[#B45309] hover:bg-[#F28C28] hover:text-white transition-colors dark:bg-amber-950/40 dark:text-[#FFA44D]"
+                          >
+                            Book Day
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </SectionCard>
+          )}
+
           {/* ── Services (Wider 2-to-3 column compact cards layout) ─────────── */}
           <section id="services" aria-labelledby="services-heading" className="scroll-mt-24 space-y-3.5">
             <div>
@@ -701,6 +818,16 @@ export const PublicProviderDetailPage: React.FC = () => {
                             <span className="rounded-full border border-amber-200/70 bg-amber-50/80 px-2.5 py-0.5 text-[10px] font-semibold text-amber-900 dark:border-[#F28C28]/25 dark:bg-[#F28C28]/15 dark:text-[#FFC88A]">
                               {FULFILMENT_LABELS[off.fulfilmentType] || off.fulfilmentType}
                             </span>
+                            {(off.serviceType === "GROUP" || (off as any).groupCapacity) && (
+                              <span className="rounded-full border border-purple-200/80 bg-purple-50 px-2.5 py-0.5 text-[10px] font-semibold text-purple-900 dark:border-purple-800 dark:bg-purple-950/40 dark:text-purple-300">
+                                👥 Group Puja {(off as any).groupCapacity ? `· Max ${(off as any).groupCapacity} Devotees` : ""}
+                              </span>
+                            )}
+                            {(off.serviceType === "KATHA" || (off as any).kathaDetails) && (
+                              <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-[10px] font-semibold text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
+                                📜 {(off as any).kathaDetails?.kathaName || "Bhagwat Katha"} {(off as any).kathaDetails?.totalDays ? `(${(off as any).kathaDetails.totalDays} Days)` : ""}
+                              </span>
+                            )}
                             {off.samagriIncluded && (
                               <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
                                 Puja samagri included
@@ -754,6 +881,16 @@ export const PublicProviderDetailPage: React.FC = () => {
                               <p className="text-[10px] text-slate-400">
                                 + {formatMinor(off.platformFee.amountMinor, offeringCurrency(off))} fee
                               </p>
+                            )}
+                            {offeringFeeMinor(off) != null && (
+                              <div className="mt-1 flex flex-col text-[10px] text-slate-500 dark:text-slate-400">
+                                <span className="text-emerald-700 dark:text-emerald-400 font-semibold">
+                                  50% Advance: {formatMinor(Math.round((offeringFeeMinor(off) ?? 0) / 2), offeringCurrency(off))}
+                                </span>
+                                <span>
+                                  Balance: {formatMinor(Math.round((offeringFeeMinor(off) ?? 0) / 2), offeringCurrency(off))} (on completion)
+                                </span>
+                              </div>
                             )}
                           </div>
                           <div className="flex shrink-0 items-center gap-2">
@@ -923,15 +1060,57 @@ export const PublicProviderDetailPage: React.FC = () => {
             </dl>
             {(bookingResult as any).pricing?.travelPending && <p className="text-xs text-gray-500">Travel is charged at actual cost and added by the provider.</p>}
 
-            {bookingResult.status === "PAYMENT_PENDING" && (
+            {(bookingResult.status === "PAYMENT_PENDING" || bookingResult.status === "ACCEPTED_AWAITING_ADVANCE") && (
               <div className="space-y-3 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-950/30">
-                {(bookingResult as any).holdExpiresAt && (
-                  <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">Your slot is held until {formatWhen((bookingResult as any).holdExpiresAt)}.</p>
+                {(bookingResult.advancePaymentDeadlineAt || (bookingResult as any).holdExpiresAt) && (
+                  <div className="rounded-lg border border-amber-300 bg-amber-100/80 p-3 text-xs text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200">
+                    <p className="font-bold flex items-center gap-1.5">
+                      <Clock size={14} className="text-[#F28C28]" />
+                      1-Hour Advance Payment Deadline: {formatWhen(bookingResult.advancePaymentDeadlineAt || (bookingResult as any).holdExpiresAt)}
+                    </p>
+                    <p className="mt-1 text-[11px] text-amber-800 dark:text-amber-300">
+                      Payment must be completed within 1 hour to secure this booking and unlock direct phone/email contact.
+                    </p>
+                  </div>
                 )}
-                <Toggle checked={useWallet} onChange={setUseWallet} label="Use Tirvona wallet balance" description="Any remaining amount is paid online." />
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-lg bg-emerald-50/90 border border-emerald-200/80 p-2.5 dark:bg-emerald-950/40 dark:border-emerald-800">
+                    <span className="block text-emerald-800 dark:text-emerald-300 font-medium text-[11px]">50% Advance Due Now</span>
+                    <span className="text-base font-bold text-emerald-900 dark:text-emerald-200">
+                      {formatMinor(bookingResult.advanceRequiredMinor || Math.round(((bookingResult as any).pricing?.totalMinor || 0) / 2), (bookingResult as any).pricing?.currency || "INR")}
+                    </span>
+                  </div>
+                  <div className="rounded-lg bg-slate-50 border border-slate-200/80 p-2.5 dark:bg-slate-900/40 dark:border-slate-800">
+                    <span className="block text-slate-600 dark:text-slate-400 font-medium text-[11px]">Remaining Balance</span>
+                    <span className="text-base font-bold text-slate-800 dark:text-white">
+                      {formatMinor(bookingResult.remainingBalanceMinor || Math.round(((bookingResult as any).pricing?.totalMinor || 0) / 2), (bookingResult as any).pricing?.currency || "INR")}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 rounded-lg border border-slate-200/80 bg-white/70 p-2.5 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400">
+                  {bookingResult.contactUnlocked ? (
+                    <>
+                      <CheckCircle2 size={14} className="shrink-0 text-emerald-600" />
+                      <span className="text-emerald-700 dark:text-emerald-400 font-semibold">
+                        Contact Unlocked: You can now call and message {provider.displayName} directly.
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock size={14} className="shrink-0 text-[#F28C28]" />
+                      <span>
+                        Devotee &amp; Pandit contact details are masked. Direct communication unlocks immediately upon verified 50% advance payment.
+                      </span>
+                    </>
+                  )}
+                </div>
+
+                <Toggle checked={useWallet} onChange={setUseWallet} label="Use Tirvona wallet balance" description="Any remaining advance amount is paid online." />
                 {paymentBlocker && <Notice tone="warning">{paymentBlocker}</Notice>}
                 <Button className="w-full" onClick={handlePayBooking} loading={paymentProcessing}>
-                  {paymentProcessing ? "Processing…" : "Pay now"}
+                  {paymentProcessing ? "Processing…" : `Pay 50% Advance (${formatMinor(bookingResult.advanceRequiredMinor || Math.round(((bookingResult as any).pricing?.totalMinor || 0) / 2), (bookingResult as any).pricing?.currency || "INR")})`}
                 </Button>
               </div>
             )}
@@ -1092,9 +1271,21 @@ export const PublicProviderDetailPage: React.FC = () => {
                       {travel > 0 && row("Travel charge", travel)}
                       {platform > 0 && row(`Tirvona platform fee (${selectedOffering.platformFee!.percent}%)`, platform)}
                       <div className="flex justify-between gap-4 border-t border-gray-200 pt-1.5 dark:border-slate-700">
-                        <strong className="text-[#0B192C] dark:text-white">You pay</strong>
+                        <strong className="text-[#0B192C] dark:text-white">Total Ceremony Value</strong>
                         <strong className="text-[#0B192C] dark:text-white">{formatMinor(total, currency)}</strong>
                       </div>
+                      <div className="grid grid-cols-2 gap-2 pt-1 border-t border-gray-100 dark:border-slate-800 text-xs">
+                        <div className="text-emerald-700 dark:text-emerald-400 font-semibold">
+                          50% Advance on Acceptance: {formatMinor(total != null ? Math.round(total / 2) : 0, currency)}
+                        </div>
+                        <div className="text-slate-500 text-right">
+                          Remaining balance: {formatMinor(total != null ? Math.round(total / 2) : 0, currency)}
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-slate-500 flex items-center gap-1 pt-0.5">
+                        <Lock size={12} className="text-[#F28C28] shrink-0" />
+                        Direct phone/email contact unlocks automatically upon verified advance payment.
+                      </p>
                     </>
                   )}
                   {!liveOnline && (selectedOffering as any).travelCharge?.policy === "ACTUALS_AT_COST" && (

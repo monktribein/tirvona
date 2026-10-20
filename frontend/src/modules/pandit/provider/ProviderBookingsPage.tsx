@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { CalendarDays, Clock, Copy, ExternalLink, MapPin, MessageSquare, Phone, RefreshCw, User, Video } from "lucide-react";
+import { AlertCircle, CalendarDays, CheckCircle2, Clock, Copy, ExternalLink, Lock, MapPin, MessageSquare, Phone, RefreshCw, User, Video } from "lucide-react";
 import { ConsultationChatModal } from "../components/ConsultationChatModal";
 import { PujaProcessButton } from "../components/PujaProcessGuide";
 import { YouTubePlayer } from "../components/YouTubeLive";
@@ -33,6 +33,8 @@ const PAGE_SIZE = 20;
 const LIVE_STATUSES = ["CONFIRMED", "PROVIDER_ACCEPTED", "PREPARATION_IN_PROGRESS", "READY_FOR_FULFILMENT", "IN_PROGRESS"];
 
 const BOOKING_FILTERS = [
+  "REQUEST_PENDING",
+  "ACCEPTED_AWAITING_ADVANCE",
   "PAYMENT_PENDING",
   "CONFIRMED",
   "PROVIDER_ACCEPTED",
@@ -47,6 +49,8 @@ const BOOKING_FILTERS = [
 
 /** How each server command is presented. The server decides which commands are available (`nextActions`). */
 const COMMAND_META: Record<string, { label: string; kind: "primary" | "secondary" | "danger" | "confirm" }> = {
+  accept_request: { label: "Accept Request (Starts 1h Countdown)", kind: "primary" },
+  decline_request: { label: "Decline Request", kind: "danger" },
   accept: { label: "Accept booking", kind: "primary" },
   start_preparation: { label: "Start preparation", kind: "primary" },
   mark_ready: { label: "Mark ready", kind: "primary" },
@@ -138,6 +142,32 @@ export const ProviderBookingsPage: React.FC = () => {
       await loadData();
     } catch (err) {
       toast.error(getErrorMessage(err, "Could not update the booking."));
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
+  const handleAcceptRequest = async (bookingId: string) => {
+    setBusyKey(`${bookingId}:accept_request`);
+    try {
+      await pujaBookingService.acceptRequest(bookingId);
+      toast.success("Request accepted! 1-hour 50% advance payment countdown started.");
+      await loadData();
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Could not accept request."));
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
+  const handleDeclineRequest = async (bookingId: string) => {
+    setBusyKey(`${bookingId}:decline_request`);
+    try {
+      await pujaBookingService.declineRequest(bookingId);
+      toast.success("Request declined.");
+      await loadData();
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Could not decline request."));
     } finally {
       setBusyKey(null);
     }
@@ -300,6 +330,15 @@ export const ProviderBookingsPage: React.FC = () => {
                             <p className="mb-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
                               <span>Ref {b.bookingNumber}</span>
                               <StatusBadge status={b.status} />
+                              {b.contactUnlocked ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+                                  <CheckCircle2 size={10} /> Contact Unlocked
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+                                  <Lock size={10} /> Contact Masked
+                                </span>
+                              )}
                             </p>
                             <h2 className="break-words text-base font-extrabold text-[#0B192C] dark:text-white">{title}</h2>
                           </div>
@@ -311,6 +350,64 @@ export const ProviderBookingsPage: React.FC = () => {
                           )}
                         </div>
 
+                        {b.status === "REQUEST_PENDING" && (
+                          <div className="rounded-xl border border-amber-300 bg-amber-50/90 p-4 dark:border-amber-800/60 dark:bg-amber-950/30">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                              <div>
+                                <p className="text-xs font-bold text-amber-950 dark:text-amber-200 flex items-center gap-1.5">
+                                  <AlertCircle size={15} className="text-[#F28C28]" />
+                                  Incoming Devotee Booking Request
+                                </p>
+                                <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-300">
+                                  Accepting sends your confirmation to the devotee and starts their 1-hour 50% advance payment countdown.
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="primary"
+                                  loading={busyKey === `${b.id}:accept_request`}
+                                  onClick={() => handleAcceptRequest(b.id)}
+                                  className="!min-h-[36px] !px-4 !text-xs font-bold"
+                                >
+                                  Accept Request
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  loading={busyKey === `${b.id}:decline_request`}
+                                  onClick={() => handleDeclineRequest(b.id)}
+                                  className="!min-h-[36px] !px-3 !text-xs !border-rose-300 !text-rose-700 hover:bg-rose-50"
+                                >
+                                  Decline
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {b.status === "ACCEPTED_AWAITING_ADVANCE" && (
+                          <div className="rounded-xl border border-blue-200 bg-blue-50/90 p-4 dark:border-blue-900/50 dark:bg-blue-950/30">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                              <div>
+                                <p className="text-xs font-bold text-blue-950 dark:text-blue-200 flex items-center gap-1.5">
+                                  <Clock size={15} className="text-blue-600 dark:text-blue-400" />
+                                  Accepted — Awaiting 50% Advance Payment
+                                </p>
+                                <p className="mt-0.5 text-xs text-blue-800 dark:text-blue-300">
+                                  {b.advancePaymentDeadlineAt
+                                    ? `Devotee deadline: ${when(b.advancePaymentDeadlineAt)} (1 hour window). Calendar slot held temporarily.`
+                                    : "Devotee has 1 hour to complete 50% advance payment to confirm."}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <span className="block text-[11px] text-blue-700 dark:text-blue-300 font-medium">50% Advance Due</span>
+                                <span className="text-sm font-bold text-blue-950 dark:text-blue-100">
+                                  {formatMinor(b.advanceRequiredMinor || Math.round((fee?.amountMinor || 0) / 2), b.pricing?.currency || "INR")}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                         <ul className="grid grid-cols-1 gap-2 border-t border-gray-100 pt-3 text-sm text-gray-700 sm:grid-cols-3 dark:border-slate-800 dark:text-gray-300">
                           <li className="flex items-center gap-2">
                             <Clock size={15} className="shrink-0 text-[#B45309]" aria-hidden="true" />
@@ -320,14 +417,37 @@ export const ProviderBookingsPage: React.FC = () => {
                             <User size={15} className="shrink-0 text-[#F28C28]" aria-hidden="true" />
                             <span className="min-w-0 break-words">{b.customer?.name || "Devotee"}</span>
                           </li>
-                          {b.customer?.phone && (
-                            <li className="flex items-center gap-2">
-                              <Phone size={15} className="shrink-0 text-emerald-600" aria-hidden="true" />
-                              {b.customer.phone}
-                              {!b.customer.contactVisible && <span className="text-xs text-gray-500">(shown in full after payment)</span>}
-                            </li>
-                          )}
+                          <li className="flex items-center gap-2">
+                            <Phone size={15} className="shrink-0 text-emerald-600" aria-hidden="true" />
+                            {b.contactUnlocked ? (
+                              <span className="font-semibold text-slate-800 dark:text-white flex items-center gap-1.5">
+                                {b.customer?.phone || "Phone available"}
+                                <CheckCircle2 size={12} className="text-emerald-600" title="Contact unlocked after payment" />
+                              </span>
+                            ) : (
+                              <span className="text-slate-500 flex items-center gap-1.5">
+                                <Lock size={12} className="text-amber-600" />
+                                {b.customer?.maskedPhone || (b.customer?.phone ? `******${b.customer.phone.slice(-4)}` : "Masked")}
+                                <span className="text-[10px] text-amber-700 dark:text-amber-400 font-medium">(Locked)</span>
+                              </span>
+                            )}
+                          </li>
                         </ul>
+
+                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600 dark:bg-slate-900/50 dark:text-slate-300">
+                          <span>
+                            Dakshina: <strong>{formatMinor(fee?.amountMinor, b.pricing?.currency || "INR")}</strong>
+                          </span>
+                          <span>
+                            50% Advance: <strong>{formatMinor(b.advanceRequiredMinor || Math.round((fee?.amountMinor || 0) / 2), b.pricing?.currency || "INR")}</strong>
+                          </span>
+                          <span>
+                            Remaining Balance: <strong>{formatMinor(b.remainingBalanceMinor || Math.round((fee?.amountMinor || 0) / 2), b.pricing?.currency || "INR")}</strong>
+                          </span>
+                          <span className="text-[11px] text-slate-400">
+                            Wallet: 10% platform fee &amp; 72h hold applies on completion
+                          </span>
+                        </div>
                         {b.deliveryMode === "LIVE_ONLINE" && (
                           <p className="inline-flex items-center gap-1.5 rounded-full bg-rose-600 px-3 py-1 text-xs font-black text-white">
                             <Video size={13} aria-hidden="true" />

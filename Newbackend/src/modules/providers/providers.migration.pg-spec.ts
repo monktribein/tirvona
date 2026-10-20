@@ -126,9 +126,15 @@ describe("provider migration files (real Postgres)", () => {
   });
 
   it("can be applied again after a rollback", async () => {
-    // Re-apply every migration from the provider foundation on, in order (later ones add columns to these tables).
+    // Re-apply, in order, the migrations that touch the provider tables (later ones add columns to them).
+    // Migrations for other modules (partners, food, ...) are not undone by the provider rollback, stay recorded
+    // in schema_migrations and are never re-run by database/migrate.js, so they are not re-run here either.
     const files = readdirSync(MIGRATIONS).filter((f) => /^\d{4}_[a-z0-9_]+\.sql$/.test(f)).sort();
-    for (const file of files.slice(files.indexOf(FOUNDATION))) await pool.query(sqlOf(file));
+    const touchesProviders = (file: string) => PROVIDER_TABLES.some((table) => sqlOf(file).includes(`"${table}"`));
+    const reapplied = files.slice(files.indexOf(FOUNDATION)).filter(touchesProviders);
+    expect(reapplied).toEqual(expect.arrayContaining([FOUNDATION, WALLET]));
+    expect(reapplied).not.toContain("0009_model_changes.sql");
+    for (const file of reapplied) await pool.query(sqlOf(file));
     for (const table of PROVIDER_TABLES) expect(await tableExists(table)).toBe(true);
     await expect(new PgStore(pool, REGISTRY).verifySchema()).resolves.not.toThrow();
   });

@@ -4334,6 +4334,19 @@ export const providerBookings = pgTable("provider_bookings", {
   "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
   "deliveryMode": text("delivery_mode"), // model: deliveryMode
   "liveStream": jsonb("live_stream"), // model: liveStream
+  "requestGroupId": text("request_group_id"), // model: requestGroupId
+  "candidateProviderIds": text("candidate_provider_ids").array(), // model: candidateProviderIds
+  "serviceType": text("service_type"), // model: serviceType
+  "groupCapacity": jsonb("group_capacity"), // model: groupCapacity
+  "kathaDetails": jsonb("katha_details"), // model: kathaDetails
+  "shift": text("shift"), // model: shift
+  "travelDistanceKm": doublePrecision("travel_distance_km"), // model: travelDistanceKm
+  "paymentType": text("payment_type"), // model: paymentType
+  "advanceRequiredMinor": doublePrecision("advance_required_minor"), // model: advanceRequiredMinor
+  "advancePaidMinor": doublePrecision("advance_paid_minor"), // model: advancePaidMinor
+  "remainingBalanceMinor": doublePrecision("remaining_balance_minor"), // model: remainingBalanceMinor
+  "advancePaymentDeadlineAt": timestamp("advance_payment_deadline_at", { withTimezone: true, mode: "date" }), // model: advancePaymentDeadlineAt
+  "contactUnlocked": boolean("contact_unlocked"), // model: contactUnlocked
   _nulls: text("_nulls").array(),
   _extra: jsonb("_extra"),
 });
@@ -4363,6 +4376,10 @@ export const providerOfferings = pgTable("provider_offerings", {
   "deletedAt": timestamp("deleted_at", { withTimezone: true, mode: "date" }), // model: deletedAt
   "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
   "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  "serviceType": text("service_type"), // model: serviceType
+  "groupCapacity": jsonb("group_capacity"), // model: groupCapacity
+  "kathaDetails": jsonb("katha_details"), // model: kathaDetails
+  "advancePercentage": doublePrecision("advance_percentage"), // model: advancePercentage
   _nulls: text("_nulls").array(),
   _extra: jsonb("_extra"),
 });
@@ -4925,6 +4942,7 @@ export const foodProductVariants = pgTable("food_product_variants", {
   "imageUrl": text("image_url"), // model: imageUrl
   "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
   "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  "imageUrls": text("image_urls").array(), // model: imageUrls
   _nulls: text("_nulls").array(),
   _extra: jsonb("_extra"),
 });
@@ -4940,6 +4958,7 @@ export const foodProducts = pgTable("food_products", {
   "skuFamily": text("sku_family"), // model: skuFamily
   "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
   "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  "imageUrls": text("image_urls").array(), // model: imageUrls
   _nulls: text("_nulls").array(),
   _extra: jsonb("_extra"),
 });
@@ -5083,6 +5102,30 @@ export const foodVendors = pgTable("food_vendors", {
   "contactEmail": text("contact_email"), // model: contactEmail
   "settlementProfileId": text("settlement_profile_id"), // model: settlementProfileId
   "status": text("status"), // model: status
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.food_vendor_payments */
+export const foodVendorPayments = pgTable("food_vendor_payments", {
+  id: text("id").primaryKey(), // model: _id
+  "paymentNumber": text("payment_number"), // model: paymentNumber
+  "vendorId": text("vendor_id"), // model: vendorId
+  "amountPaise": doublePrecision("amount_paise"), // model: amountPaise
+  "method": text("method"), // model: method
+  "reference": text("reference"), // model: reference
+  "receiptUrl": text("receipt_url"), // model: receiptUrl
+  "paidAt": timestamp("paid_at", { withTimezone: true, mode: "date" }), // model: paidAt
+  "note": text("note"), // model: note
+  "status": text("status"), // model: status
+  "recordedBy": text("recorded_by"), // model: recordedBy
+  "recordedByName": text("recorded_by_name"), // model: recordedByName
+  "voidedAt": timestamp("voided_at", { withTimezone: true, mode: "date" }), // model: voidedAt
+  "voidedBy": text("voided_by"), // model: voidedBy
+  "voidReason": text("void_reason"), // model: voidReason
+  "idempotencyKey": text("idempotency_key"), // model: idempotencyKey
   "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
   "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
   _nulls: text("_nulls").array(),

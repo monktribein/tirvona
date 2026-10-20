@@ -34,6 +34,22 @@ const MODULE = "provider_booking" as any;
  *   records the outcome; a gateway refund is only ever recorded as INITIATED or
  *   as the gateway's own reported status, never as completed on our say-so.
  */
+const duplicateOf = (error: unknown) => (error as any)?.response?.code === "REQUEST_ALREADY_CONFIRMED";
+const codeOf = (error: unknown) => (error as any)?.response?.code as string | undefined;
+
+/** A booking in one of these states can still take an advance payment; in any other it cannot. */
+const PAYABLE = ["PAYMENT_PENDING", "ACCEPTED_AWAITING_ADVANCE"];
+/** Marks "this payment was handled as a late/unapplied payment"; makes handling exactly-once across callbacks and webhooks. */
+const lateToken = (paymentId: string) => `late:${paymentId}`;
+const alreadySeen = (booking: any, paymentId: string) =>
+  ((booking.paymentRefs ?? []) as string[]).some((ref) => ref === paymentId || ref === lateToken(paymentId));
+/** We retry a refund we failed to issue this many times, then leave it for finance. */
+const MAX_REFUND_ATTEMPTS = 3;
+/** A refund request that never got an answer (e.g. the process died) is looked at again after this long. */
+const REQUESTED_STALE_MS = 10 * 60_000;
+const REFUND_LOOKBACK_MS = 30 * 24 * 3_600_000;
+const gatewayStatus = (status: unknown) => (status ? String(status).toUpperCase() : "PENDING");
+
 @Injectable()
 export class ProviderBookingPaymentService {
   private readonly logger = new Logger(ProviderBookingPaymentService.name);
@@ -62,23 +78,37 @@ export class ProviderBookingPaymentService {
   ) {
     const booking: any = await this.bookings
       .findById(toObjectId(bookingId, "bookingId"))
-      .select("customerUserId status holdExpiresAt serviceSnapshot bookingNumber paymentRefs")
+      .select("customerUserId status holdExpiresAt serviceSnapshot bookingNumber paymentRefs advanceRequiredMinor advancePaymentDeadlineAt requestGroupId")
       .lean();
 
     if (!booking || !sameId(booking.customerUserId, user.id))
       throw providerError.notFound("BOOKING_NOT_FOUND", "Booking not found");
-    if (booking.status !== "PAYMENT_PENDING")
+    if (!["PAYMENT_PENDING", "ACCEPTED_AWAITING_ADVANCE"].includes(booking.status))
       throw providerError.conflict(
         "BOOKING_NOT_PAYABLE",
         `Booking is in state ${booking.status} and cannot accept payment`,
       );
+    if (booking.requestGroupId && (await this.bookings.exists({ requestGroupId: booking.requestGroupId, _id: { $ne: booking._id }, status: "CONFIRMED" })))
+      throw providerError.conflict(
+        "REQUEST_ALREADY_CONFIRMED",
+        "This request has already been confirmed with another Pandit",
+      );
+    if (booking.advancePaymentDeadlineAt && new Date(booking.advancePaymentDeadlineAt) < new Date()) {
+      await this.bookingService.expireHold(String(booking._id));
+      throw providerError.gone(
+        "BOOKING_PAYMENT_DEADLINE_EXPIRED",
+        "The 1-hour advance payment deadline for this booking has expired.",
+      );
+    }
     if (booking.holdExpiresAt && new Date(booking.holdExpiresAt) < new Date())
       throw providerError.gone(
         "BOOKING_HOLD_EXPIRED",
         "The calendar hold for this booking has expired. Please book again.",
       );
 
-    const totalMinor = Number(booking.serviceSnapshot?.pricing?.totalMinor || 0);
+    const totalMinor = Number(
+      booking.advanceRequiredMinor ?? (booking.serviceSnapshot?.pricing?.totalMinor || 0),
+    );
     const totalRupees = totalMinor / 100;
 
     if (totalMinor <= 0) {
@@ -172,7 +202,7 @@ export class ProviderBookingPaymentService {
     }
 
     await this.bookings.updateOne(
-      { _id: booking._id, status: "PAYMENT_PENDING" },
+      { _id: booking._id, status: { $in: ["PAYMENT_PENDING", "ACCEPTED_AWAITING_ADVANCE"] } },
       {
         $set: { paymentOrder: { orderId: order.id, gatewayMinor, walletMinor } },
         $addToSet: { paymentRefs: order.id },
@@ -199,13 +229,21 @@ export class ProviderBookingPaymentService {
   ) {
     const booking: any = await this.bookings
       .findById(toObjectId(bookingId, "bookingId"))
-      .select("customerUserId status serviceSnapshot bookingNumber paymentOrder paymentRefs")
+      .select("customerUserId status serviceSnapshot bookingNumber paymentOrder paymentRefs refund")
       .lean();
     if (!booking || !sameId(booking.customerUserId, user.id))
       throw providerError.notFound("BOOKING_NOT_FOUND", "Booking not found");
 
-    if (booking.status !== "PAYMENT_PENDING")
+    // The same payment delivered again (by the browser and by the webhook) is not news.
+    if (!PAYABLE.includes(booking.status) && alreadySeen(booking, dto.razorpay_payment_id)) {
+      // ...but a payment that was set aside must not be reported as applied.
+      if (((booking.paymentRefs ?? []) as string[]).includes(lateToken(dto.razorpay_payment_id)))
+        throw providerError.conflict(
+          "PAYMENT_NOT_APPLIED",
+          this.unappliedMessage(booking.status, booking.refund?.late?.[dto.razorpay_payment_id]),
+        );
       return { alreadyConfirmed: true, bookingId: booking._id, status: booking.status };
+    }
 
     const keySecret = this.config.get<string>("razorpayKeySecret");
     if (!keySecret)
@@ -223,12 +261,22 @@ export class ProviderBookingPaymentService {
         "This payment does not belong to this booking",
       );
 
+    // A genuine payment for a booking that can no longer use it: never confirm, hand the money back.
+    if (!PAYABLE.includes(booking.status)) {
+      const outcome = await this.handleUnappliedPayment(booking, dto.razorpay_payment_id, {
+        gatewayMinor: Number(booking.paymentOrder.gatewayMinor ?? 0),
+        walletMinor: 0, // the wallet share was only ever held, not spent
+        source: "callback",
+      });
+      throw providerError.conflict("PAYMENT_NOT_APPLIED", this.unappliedMessage(booking.status, outcome.record));
+    }
+
     await this.captureWalletShare(booking);
     await this.bookings.updateOne(
       { _id: booking._id },
       { $addToSet: { paymentRefs: dto.razorpay_payment_id } },
     );
-    const updated = await this.bookingService.confirmPayment(String(booking._id), dto.razorpay_payment_id);
+    const updated = await this.confirmOrRefundDuplicate(booking, dto.razorpay_payment_id);
     return { success: true, data: updated };
   }
 
@@ -243,7 +291,8 @@ export class ProviderBookingPaymentService {
   ): Promise<boolean> {
     const booking: any = await this.bookings.findOne({ paymentRefs: gatewayOrderId });
     if (!booking) return false;
-    if (booking.status !== "PAYMENT_PENDING") return true; // late or duplicate event: nothing to change
+    const payable = PAYABLE.includes(booking.status);
+    if (!payable && alreadySeen(booking, paymentId)) return true; // duplicate event for a payment we already dealt with
     if (booking.paymentOrder?.orderId !== gatewayOrderId) {
       this.logger.error(`Provider booking ${booking.bookingNumber}: payment on superseded order ${gatewayOrderId}; not confirmed, needs reconciliation.`);
       return true;
@@ -259,10 +308,20 @@ export class ProviderBookingPaymentService {
     }
     if (captured.currency && captured.currency !== "INR") return true;
 
+    if (!payable) {
+      await this.handleUnappliedPayment(booking, paymentId, { gatewayMinor: expected, walletMinor: 0, source: "webhook" });
+      return true;
+    }
+
     await this.captureWalletShare(booking);
     await this.bookings.updateOne({ _id: booking._id }, { $addToSet: { paymentRefs: paymentId } });
-    await this.bookingService.confirmPayment(String(booking._id), paymentId);
-    this.logger.log(`Provider booking ${booking.bookingNumber} confirmed via webhook`);
+    try {
+      await this.confirmOrRefundDuplicate(booking, paymentId);
+      this.logger.log(`Provider booking ${booking.bookingNumber} confirmed via webhook`);
+    } catch (error) {
+      if (duplicateOf(error)) return true; // refunded and recorded; a retry of this event changes nothing
+      throw error;
+    }
     return true;
   }
 
@@ -320,10 +379,233 @@ export class ProviderBookingPaymentService {
         }
     }
 
+    // A booking that already holds records of unapplied payments keeps them.
+    if (booking.refund?.late) record.late = booking.refund.late;
     await this.bookings.updateOne({ _id: booking._id }, { $set: { refund: record } });
   }
 
   // ------------------------------------------------------------ internals
+  /**
+   * Confirms the booking. If another Pandit of the same request was confirmed
+   * first, this payment bought nothing: it is refunded (and recorded on the
+   * booking) rather than kept, then the conflict is reported.
+   */
+  private async confirmOrRefundDuplicate(booking: any, paymentId: string) {
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        return await this.bookingService.confirmPayment(String(booking._id), paymentId);
+      } catch (error) {
+        const code = codeOf(error);
+        // Another change landed between our read and the confirmation: look again once.
+        if (code === "BOOKING_STATE_CONFLICT" && attempt === 1) continue;
+        if (duplicateOf(error) || code === "BOOKING_INVALID_TRANSITION" || code === "BOOKING_STATE_CONFLICT") {
+          // The booking was cancelled/expired/confirmed elsewhere while this payment was being applied.
+          // If a concurrent delivery of this same payment confirmed it a moment ago, there is nothing to undo.
+          const now: any = await this.bookings.findById(booking._id).select("status paymentRefs").lean();
+          if (!duplicateOf(error) && now?.status === "CONFIRMED" && ((now.paymentRefs ?? []) as string[]).includes(paymentId))
+            return now;
+          // The wallet share was captured before confirming, so it goes back too.
+          const outcome = await this.handleUnappliedPayment(booking, paymentId, {
+            gatewayMinor: Number(booking.paymentOrder?.gatewayMinor ?? 0),
+            walletMinor: Number(booking.paymentOrder?.walletMinor ?? 0),
+            source: "confirmation",
+          });
+          if (duplicateOf(error)) throw error;
+          throw providerError.conflict("PAYMENT_NOT_APPLIED", this.unappliedMessage(now?.status ?? booking.status, outcome.record));
+        }
+        throw error;
+      }
+    }
+  }
+
+  // ------------------------------------------------------------ late / unapplied payments
+  /**
+   * Money reached us for a booking that cannot use it (cancelled, expired, already
+   * confirmed with someone else...). It never confirms anything. Existing policy
+   * applies: money for a service that is not delivered goes back in full to where
+   * it came from; no fee is taken. Exactly-once per payment id: the first caller
+   * claims it, a duplicate callback/webhook finds the claim and does nothing.
+   * Nothing is reported as refunded until the gateway says so (see reconcileRefunds).
+   */
+  async handleUnappliedPayment(
+    booking: any,
+    paymentId: string,
+    amounts: { gatewayMinor: number; walletMinor: number; source: "callback" | "webhook" | "confirmation" },
+  ): Promise<{ duplicate: boolean; record: any }> {
+    const claimed: any = await this.bookings.findOneAndUpdate(
+      { _id: booking._id, paymentRefs: { $ne: lateToken(paymentId) } },
+      { $addToSet: { paymentRefs: lateToken(paymentId) } },
+      { new: true },
+    );
+    if (!claimed) {
+      const current: any = await this.bookings.findById(booking._id).select("refund").lean();
+      return { duplicate: true, record: current?.refund?.late?.[paymentId] ?? null };
+    }
+
+    const record: any = {
+      paymentId,
+      source: amounts.source,
+      bookingStatus: booking.status,
+      requestedAt: new Date(),
+      wallet: null,
+      gateway: null,
+    };
+    await this.saveLateRecord(booking._id, paymentId, record); // visible to operations from the first moment
+
+    if (amounts.walletMinor > 0) {
+      try {
+        const credited = await this.wallet.credit({
+          userId: String(booking.customerUserId),
+          amount: amounts.walletMinor / 100,
+          module: MODULE,
+          category: "refund",
+          reference: booking.bookingNumber,
+          description: `Refund of unapplied payment for puja ${booking.bookingNumber}`,
+          idempotencyKey: `refund-wallet-late-${booking._id}-${paymentId}`,
+        } as any);
+        record.wallet = { status: credited ? "CREDITED" : "FAILED", amountMinor: amounts.walletMinor };
+      } catch (error) {
+        this.logger.error(`Wallet refund of unapplied payment failed for ${booking.bookingNumber}: ${(error as Error).message}`);
+        record.wallet = { status: "FAILED", amountMinor: amounts.walletMinor };
+      }
+    }
+    record.gateway =
+      amounts.gatewayMinor > 0
+        ? await this.issueGatewayRefund(
+            booking.bookingNumber,
+            { paymentId, amountMinor: amounts.gatewayMinor, status: "REQUESTED", attempts: 0 },
+            "UNAPPLIED_PAYMENT",
+          )
+        : { status: "MANUAL_REQUIRED", paymentId, amountMinor: 0, note: "no gateway amount recorded for this order" };
+    await this.saveLateRecord(booking._id, paymentId, record);
+    this.logger.warn(
+      `Provider booking ${booking.bookingNumber} (${booking.status}) received payment ${paymentId} it cannot use; refund ${record.gateway.status}`,
+    );
+    return { duplicate: false, record };
+  }
+
+  private unappliedMessage(status: string, record: any): string {
+    const gateway = record?.gateway;
+    const refund = !gateway
+      ? "A refund is being arranged."
+      : gateway.status === "PROCESSED"
+        ? "The refund has been processed by the payment gateway."
+        : gateway.status === "MANUAL_REQUIRED" || gateway.status === "GATEWAY_FAILED"
+          ? "Our team has been alerted and will return your money."
+          : gateway.status === "FAILED"
+            ? "The refund could not be issued yet and will be retried automatically."
+            : "A refund has been requested and is being processed by the payment gateway.";
+    return `This booking is no longer open for payment (${String(status).toLowerCase().replace(/_/g, " ")}), so your payment was not applied. ${refund}`;
+  }
+
+  /** Saves one unapplied-payment record without disturbing the booking's cancellation refund. */
+  private async saveLateRecord(bookingId: unknown, paymentId: string, record: any) {
+    await this.bookings.updateOne({ _id: bookingId, refund: null }, { $set: { refund: { late: {} } } });
+    await this.bookings.updateOne({ _id: bookingId }, { $set: { [`refund.late.${paymentId}`]: record } });
+  }
+
+  private razorpayClient(): Razorpay | null {
+    const keyId = this.config.get<string>("razorpayKeyId");
+    const keySecret = this.config.get<string>("razorpayKeySecret");
+    return keyId && keySecret ? new Razorpay({ key_id: keyId, key_secret: keySecret }) : null;
+  }
+
+  /**
+   * Asks the gateway to refund one payment and returns the record to store. Safe to call again for the
+   * same record: before issuing, it looks for a refund the gateway already holds for this booking and
+   * amount (an earlier attempt that succeeded but was never recorded) and adopts it instead of doubling up.
+   */
+  private async issueGatewayRefund(bookingNumber: string, rec: any, reasonCode: string): Promise<any> {
+    const gateway = this.razorpayClient();
+    if (!gateway) return { ...rec, status: "MANUAL_REQUIRED", note: "gateway not configured", updatedAt: new Date() };
+    const attempts = Number(rec.attempts ?? 0) + 1;
+    try {
+      const existing: any = await Promise.resolve()
+        .then(() => (gateway.payments as any).fetchMultipleRefund(rec.paymentId, { count: 100 }))
+        .catch(() => null);
+      const adopted = (existing?.items ?? []).find(
+        (refund: any) =>
+          refund?.notes?.bookingNumber === bookingNumber &&
+          Number(refund.amount) === Number(rec.amountMinor) &&
+          refund.status !== "failed",
+      );
+      const refund: any =
+        adopted ??
+        (await gateway.payments.refund(rec.paymentId, {
+          amount: rec.amountMinor,
+          speed: "normal",
+          notes: { bookingNumber, reason: reasonCode },
+        }));
+      const rest = { ...rec };
+      delete (rest as any).lastError;
+      // The gateway's own word, e.g. PENDING / PROCESSED. Not ours to promote to "refunded".
+      return { ...rest, attempts, refundId: refund?.id, status: gatewayStatus(refund?.status), updatedAt: new Date() };
+    } catch (error) {
+      const detail = (error as any)?.error?.description ?? (error as Error)?.message ?? "refund request failed";
+      this.logger.error(`Gateway refund failed for ${bookingNumber}: ${detail}`);
+      return {
+        ...rec,
+        attempts,
+        status: attempts >= MAX_REFUND_ATTEMPTS ? "MANUAL_REQUIRED" : "FAILED",
+        lastError: String(detail).slice(0, 300),
+        updatedAt: new Date(),
+      };
+    }
+  }
+
+  /**
+   * Moves gateway refunds forward: asks the gateway how a pending refund ended up (PROCESSED or not),
+   * retries a refund we failed to issue (a few times), and looks again at a request that never got an
+   * answer. Covers cancellation refunds and unapplied-payment refunds. Idempotent; run on a schedule.
+   */
+  async reconcileRefunds(now = new Date()): Promise<{ checked: number; changed: number }> {
+    const rows: any[] = await this.bookings
+      .find({ refund: { $ne: null }, updatedAt: { $gte: new Date(now.getTime() - REFUND_LOOKBACK_MS) } })
+      .select("bookingNumber refund")
+      .limit(200)
+      .lean();
+    let checked = 0;
+    let changed = 0;
+    for (const row of rows) {
+      const targets: Array<{ path: string; rec: any }> = [];
+      if (row.refund?.gateway) targets.push({ path: "refund.gateway", rec: row.refund.gateway });
+      for (const [id, late] of Object.entries<any>(row.refund?.late ?? {}))
+        if (late?.gateway) targets.push({ path: `refund.late.${id}.gateway`, rec: late.gateway });
+      for (const { path, rec } of targets) {
+        const next = await this.advanceRefund(row.bookingNumber, rec, now);
+        if (!next) continue;
+        checked += 1;
+        if (next.status !== rec.status || next.refundId !== rec.refundId) changed += 1;
+        await this.bookings.updateOne({ _id: row._id }, { $set: { [path]: next } });
+      }
+    }
+    return { checked, changed };
+  }
+
+  private async advanceRefund(bookingNumber: string, rec: any, now: Date): Promise<any | null> {
+    if (!rec?.paymentId || !(Number(rec.amountMinor) > 0)) return null;
+    const status = String(rec.status ?? "");
+    const age = now.getTime() - new Date(rec.updatedAt ?? rec.requestedAt ?? 0).getTime();
+    if (["PENDING", "INITIATED", "PROCESSING"].includes(status) && rec.refundId) {
+      const gateway = this.razorpayClient();
+      if (!gateway) return null;
+      try {
+        const refund: any = await (gateway.payments as any).fetchRefund(rec.paymentId, rec.refundId);
+        const outcome = gatewayStatus(refund?.status);
+        // A refund the gateway itself reports as failed is not retried blindly: finance looks at it.
+        return { ...rec, status: outcome === "FAILED" ? "GATEWAY_FAILED" : outcome, updatedAt: new Date() };
+      } catch (error) {
+        this.logger.warn(`Could not check refund ${rec.refundId} for ${bookingNumber}: ${(error as Error).message}`);
+        return null;
+      }
+    }
+    const retryable =
+      (status === "FAILED" && Number(rec.attempts ?? 1) < MAX_REFUND_ATTEMPTS) ||
+      (status === "REQUESTED" && age > REQUESTED_STALE_MS) ||
+      ((status === "PENDING" || status === "INITIATED") && !rec.refundId && age > REQUESTED_STALE_MS);
+    return retryable ? this.issueGatewayRefund(bookingNumber, rec, "RETRY") : null;
+  }
+
   /** Captures exactly the wallet share held when the order was opened. A failure stops the confirmation. */
   private async captureWalletShare(booking: any): Promise<void> {
     const walletMinor = Number(booking.paymentOrder?.walletMinor ?? 0);

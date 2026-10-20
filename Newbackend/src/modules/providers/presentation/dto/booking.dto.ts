@@ -1,7 +1,8 @@
-import { DELIVERY_MODES } from "../../domain/provider.constants";
+import { DELIVERY_MODES, PANDIT_SERVICE_TYPES, KATHA_TYPES, PANDIT_SHIFTS, MAX_MULTI_PANDIT_REQUESTS } from "../../domain/provider.constants";
 import { Transform, Type } from "class-transformer";
 import {
   ArrayMaxSize,
+  ArrayMinSize,
   IsArray,
   IsUrl,
   IsBoolean,
@@ -39,16 +40,59 @@ export class ServiceLocationDto {
   @IsOptional() @Matches(/^[0-9A-Za-z -]{3,10}$/) pincode?: string;
 }
 
+export class KathaDetailsDto {
+  @IsIn(KATHA_TYPES) kathaType: string;
+  @IsOptional() @trim() @IsString() @MaxLength(200) title?: string;
+  @IsOptional() @IsInt() @Min(1) @Max(30) numberOfDays?: number;
+  @IsOptional() @trim() @IsString() @MaxLength(500) dailyScheduleDescription?: string;
+  @IsOptional() @IsBoolean() samagriIncluded?: boolean;
+  @IsOptional() @trim() @IsString() @MaxLength(1000) samagriDetails?: string;
+}
+
 export class CreateProviderBookingDto {
   @IsEntityId() offeringId: string;
   @IsISO8601({ strict: true }) @Matches(WITH_OFFSET, { message: "scheduledStartAt must include a timezone offset (e.g. +05:30 or Z)" }) scheduledStartAt: string;
   @trim() @IsString() @MinLength(2) @MaxLength(120) customerName: string;
   @Matches(PHONE, { message: "customerPhone is not a valid phone number" }) customerPhone: string;
+  @IsOptional() @trim() @IsString() @MaxLength(160) customerEmail?: string;
   /** Required when the service is performed at the customer's address. */
   @IsOptional() @ValidateNested() @Type(() => ServiceLocationDto) serviceLocation?: ServiceLocationDto;
   @IsOptional() @trim() @IsString() @MaxLength(500) notes?: string;
   /** LIVE_ONLINE: the pandit performs it live on video (only while their live-online switch is on). */
   @IsOptional() @IsIn(DELIVERY_MODES) deliveryMode?: string;
+  @IsOptional() @IsIn(PANDIT_SERVICE_TYPES) serviceType?: string;
+  @IsOptional() @IsInt() @Min(1) @Max(500) groupCapacity?: number;
+  @IsOptional() @ValidateNested() @Type(() => KathaDetailsDto) kathaDetails?: KathaDetailsDto;
+  @IsOptional() @IsIn(PANDIT_SHIFTS) shift?: string;
+  @IsOptional() @IsArray() @ArrayMaxSize(5) @IsEntityId({ each: true }) candidateProviderIds?: string[];
+}
+
+export class CreateMultiPanditBookingRequestDto {
+  @IsEntityId() offeringId: string;
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(MAX_MULTI_PANDIT_REQUESTS, { message: "A booking request can be sent to at most 5 pandits" })
+  @IsEntityId({ each: true })
+  candidateProviderIds: string[];
+  @IsISO8601({ strict: true }) @Matches(WITH_OFFSET, { message: "scheduledStartAt must include a timezone offset (e.g. +05:30 or Z)" }) scheduledStartAt: string;
+  @trim() @IsString() @MinLength(2) @MaxLength(120) customerName: string;
+  @Matches(PHONE, { message: "customerPhone is not a valid phone number" }) customerPhone: string;
+  @IsOptional() @trim() @IsString() @MaxLength(160) customerEmail?: string;
+  @IsOptional() @ValidateNested() @Type(() => ServiceLocationDto) serviceLocation?: ServiceLocationDto;
+  @IsOptional() @trim() @IsString() @MaxLength(500) notes?: string;
+  @IsOptional() @IsIn(DELIVERY_MODES) deliveryMode?: string;
+  @IsOptional() @IsIn(PANDIT_SERVICE_TYPES) serviceType?: string;
+  @IsOptional() @IsInt() @Min(1) @Max(500) groupCapacity?: number;
+  @IsOptional() @ValidateNested() @Type(() => KathaDetailsDto) kathaDetails?: KathaDetailsDto;
+  @IsOptional() @IsIn(PANDIT_SHIFTS) shift?: string;
+}
+
+export class AcceptBookingRequestDto {
+  @IsOptional() @trim() @IsString() @MaxLength(500) note?: string;
+}
+
+export class DeclineBookingRequestDto {
+  @IsOptional() @trim() @IsString() @MaxLength(60) reasonCode?: string;
 }
 
 /** The YouTube link for this booking's live katha / puja. */

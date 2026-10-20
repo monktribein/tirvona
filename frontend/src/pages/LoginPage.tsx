@@ -26,6 +26,7 @@ import { getErrorMessage } from "../lib/api";
 import { getPostLoginRedirect } from "../utils/roleRedirect";
 import { vendorApi } from "../services/marketplace.service";
 import { foodPartnerService } from "../services/foodPartner.service";
+import { providerSelfService } from "../modules/pandit/services/provider.service";
 
 const GoogleIcon: React.FC = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
@@ -88,9 +89,10 @@ export const LoginPage: React.FC = () => {
     // restaurant: with nowhere else to go, send them to their own dashboard
     // instead of the profile page.
     if (target.url === "/profile" && !target.hasPendingIntent && !redirect) {
-      const [store, restaurant] = await Promise.all([
+      const [store, restaurant, panditProfile] = await Promise.all([
         vendorApi.profile().catch(() => null),
         foodPartnerService.myProfile().catch(() => null),
+        providerSelfService.getProfile({ silent: true }).catch(() => null),
       ]);
       if (store?.data?.data?._id) {
         navigate("/vendor/dashboard", { replace: true });
@@ -99,6 +101,11 @@ export const LoginPage: React.FC = () => {
       // Restaurant owners land on their kitchen console, like sellers do.
       if (restaurant) {
         navigate("/restaurant/dashboard", { replace: true });
+        return;
+      }
+      // Pandits / acharyas land on their provider console.
+      if (panditProfile?.data?.data) {
+        navigate("/provider/dashboard", { replace: true });
         return;
       }
     }

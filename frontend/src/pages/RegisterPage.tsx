@@ -8,7 +8,9 @@ import useGoogleAuth from "../hooks/useGoogleAuth";
 import { isGoogleConfigured } from "../lib/googleAuth";
 import { vendorApi } from "../services/marketplace.service";
 import { foodPartnerService } from "../services/foodPartner.service";
+import { providerSelfService } from "../modules/pandit/services/provider.service";
 import {
+  Flame,
   ShieldCheck,
   Mail,
   Phone,
@@ -61,7 +63,12 @@ export const RegisterPage: React.FC = () => {
   // "seller" is a normal Tirvona account plus a marketplace store: it signs up
   // as a customer (never a stay owner) and its store is then approved by the
   // Super Admin in Admin > Marketplace > Pending Sellers.
-  const [accountType, setAccountType] = useState<"customer" | "owner" | "seller" | "restaurant">("customer");
+  // "pandit" is likewise a normal Tirvona account plus a provider profile
+  // (ONBOARDING). It goes live only after the Super Admin / verification
+  // reviewers approve its identity case in Admin > Verifications.
+  const [accountType, setAccountType] = useState<
+    "customer" | "owner" | "seller" | "restaurant" | "pandit"
+  >("customer");
   const role: "customer" | "owner" = accountType === "owner" ? "owner" : "customer";
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -69,6 +76,10 @@ export const RegisterPage: React.FC = () => {
 
   const [storeName, setStoreName] = useState("");
   const [restaurantName, setRestaurantName] = useState("");
+  const [providerType, setProviderType] = useState("PANDIT");
+  const [panditLanguage, setPanditLanguage] = useState("Hindi");
+  const [panditCity, setPanditCity] = useState("");
+  const [panditExperience, setPanditExperience] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -107,12 +118,34 @@ export const RegisterPage: React.FC = () => {
         await foodPartnerService.register({
           businessName: restaurantName.trim(),
           contactName: name.trim() || undefined,
-          contactPhone: phone.replace(/[s-]/g, "") || undefined,
+          contactPhone: phone.replace(/[\s-]/g, "") || undefined,
         });
       } catch {
         // Already registered, or the name needs fixing: the setup page handles it.
       }
       navigate("/restaurant/profile", { replace: true });
+      return;
+    }
+    if (accountType === "pandit") {
+      const years = parseInt(panditExperience, 10);
+      try {
+        await providerSelfService.createProfile({
+          providerType,
+          displayName: name.trim(),
+          languages: [panditLanguage],
+          homeCity: panditCity.trim() || undefined,
+          experienceYears: Number.isFinite(years) ? years : undefined,
+          contactEmail: email.trim() || undefined,
+          contactPhone: phone.replace(/[\s-]/g, "") || undefined,
+        });
+        // Profile created (ONBOARDING): the dashboard walks through offerings,
+        // availability and the identity verification an admin must approve.
+        navigate("/provider/dashboard", { replace: true });
+      } catch {
+        // Already has a profile, or a field needs fixing: the profile page
+        // loads the existing one or shows the full form to complete.
+        navigate("/provider/profile", { replace: true });
+      }
       return;
     }
     const target = getPostLoginRedirect(userRole || role, redirect);
@@ -186,6 +219,13 @@ export const RegisterPage: React.FC = () => {
       title: "Restaurant / Food Partner",
       desc: "Sell satvik thalis, bowls & combos to pilgrims",
       icon: <Utensils size={16} />,
+      disabled: false,
+    },
+    {
+      id: "pandit" as const,
+      title: "Pandit / Acharya",
+      desc: "Offer pujas, kathas & consultations to devotees",
+      icon: <Flame size={16} />,
       disabled: false,
     },
     {
@@ -542,6 +582,64 @@ export const RegisterPage: React.FC = () => {
                       </div>
                       <p className="text-[10px] text-gray-400 leading-normal pl-0.5">
                         You will add your kitchen, menu and inventory next. Tirvona approves the restaurant before it goes live.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Pandit / Acharya details */}
+                  {accountType === "pandit" && (
+                    <div className="p-3 bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-900/40 rounded-xl space-y-2 animate-in fade-in duration-200">
+                      <div className="flex items-center gap-1.5">
+                        <Flame size={13} className="text-[#F28C28]" />
+                        <span className="text-[10px] font-extrabold text-[#F28C28] tracking-wider uppercase">
+                          Pandit Details
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <select
+                          value={providerType}
+                          onChange={(e) => setProviderType(e.target.value)}
+                          aria-label="You are a"
+                          className="h-9 px-2 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-lg text-[11px] font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]"
+                        >
+                          <option value="PANDIT">Pandit</option>
+                          <option value="PUROHIT">Purohit</option>
+                          <option value="ACHARYA">Acharya</option>
+                          <option value="KATHA_VACHAK">Katha Vachak</option>
+                          <option value="VEDIC_SCHOLAR">Vedic Scholar</option>
+                          <option value="JYOTISHI">Jyotishi</option>
+                        </select>
+                        <select
+                          value={panditLanguage}
+                          onChange={(e) => setPanditLanguage(e.target.value)}
+                          aria-label="Main language"
+                          className="h-9 px-2 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-lg text-[11px] font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]"
+                        >
+                          {["Hindi", "Sanskrit", "English", "Bengali", "Marathi", "Gujarati", "Tamil", "Telugu", "Kannada", "Malayalam", "Punjabi", "Odia", "Bhojpuri", "Maithili"].map((l) => (
+                            <option key={l} value={l}>{l}</option>
+                          ))}
+                        </select>
+                        <input
+                          type="text"
+                          maxLength={80}
+                          placeholder="City (e.g. Mathura)"
+                          value={panditCity}
+                          onChange={(e) => setPanditCity(e.target.value)}
+                          className="h-9 px-2.5 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-lg text-[11px] font-medium text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]"
+                        />
+                        <input
+                          type="number"
+                          min={0}
+                          max={80}
+                          inputMode="numeric"
+                          placeholder="Years of experience"
+                          value={panditExperience}
+                          onChange={(e) => setPanditExperience(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                          className="h-9 px-2.5 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-lg text-[11px] font-medium text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]"
+                        />
+                      </div>
+                      <p className="text-[9px] text-gray-500 dark:text-gray-400 leading-snug">
+                        You can add rituals, pricing and availability next. Your profile goes live after Tirvona verifies your identity.
                       </p>
                     </div>
                   )}

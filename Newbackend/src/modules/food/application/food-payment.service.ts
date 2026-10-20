@@ -3,6 +3,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  Optional,
   ServiceUnavailableException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
@@ -10,6 +11,7 @@ import Razorpay from "razorpay";
 import { InjectModel } from "../../../database/orm-nest";
 import type { Model } from "../../../database/orm";
 import { FoodFinanceService } from "./food-finance.service";
+import { FoodNotificationService } from "./food-notification.service";
 import { createHmac, randomBytes, timingSafeEqual } from "crypto";
 
 const safeEqual = (a: string, b: string): boolean => {
@@ -41,6 +43,7 @@ export class FoodPaymentService {
     private readonly paymentAttemptModel: Model<any>,
     private readonly financeService: FoodFinanceService,
     private readonly config: ConfigService,
+    @Optional() private readonly notifier?: FoodNotificationService,
   ) {
     const keyId = this.config.get<string>("razorpayKeyId");
     const keySecret = this.config.get<string>("razorpayKeySecret");
@@ -376,6 +379,7 @@ export class FoodPaymentService {
     });
 
     await this.financeService.recordOrderPayment(order, gatewayPaymentId);
+    await this.notifier?.notify(order, "paid");
 
     this.logger.log(
       `Order #${order.orderNumber} successfully paid! Awaiting vendor acceptance.`,

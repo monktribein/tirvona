@@ -32,10 +32,12 @@ import {
 jest.mock("razorpay", () => {
   const create = jest.fn();
   const refund = jest.fn();
+  const fetchRefund = jest.fn();
+  const fetchMultipleRefund = jest.fn();
   const Gateway: any = function Gateway() {
-    return { orders: { create }, payments: { refund } };
+    return { orders: { create }, payments: { refund, fetchRefund, fetchMultipleRefund } };
   };
-  Gateway.__mocks = { create, refund };
+  Gateway.__mocks = { create, refund, fetchRefund, fetchMultipleRefund };
   return Gateway;
 });
 
@@ -1101,7 +1103,8 @@ describe("Providers API (real Postgres)", () => {
   // ======================================================== payments (test mode)
   describe("payments, wallet and refunds (gateway mocked, wallet real)", () => {
     const KEY_SECRET = "qa_test_secret_value";
-    const mocks = () => (Razorpay as any).__mocks as { create: jest.Mock; refund: jest.Mock };
+    const mocks = () =>
+      (Razorpay as any).__mocks as { create: jest.Mock; refund: jest.Mock; fetchRefund: jest.Mock; fetchMultipleRefund: jest.Mock };
     const sign = (orderId: string, paymentId: string, secret = KEY_SECRET) =>
       createHmac("sha256", secret).update(`${orderId}|${paymentId}`).digest("hex");
     const Booking = () => app.get(getModelToken("ProviderBooking"));
@@ -1119,6 +1122,9 @@ describe("Providers API (real Postgres)", () => {
       mocks().refund.mockReset();
       mocks().create.mockImplementation(async (input: any) => ({ id: `order_QA${++orderSeq}`, amount: input.amount, currency: input.currency }));
       mocks().refund.mockImplementation(async (paymentId: string, input: any) => ({ id: `rfnd_${paymentId}`, status: "pending", amount: input.amount }));
+      mocks().fetchRefund.mockReset();
+      mocks().fetchMultipleRefund.mockReset();
+      mocks().fetchMultipleRefund.mockResolvedValue({ items: [] });
     });
 
     it("prices the gateway order from the server's snapshot, never from the client", async () => {
@@ -1126,12 +1132,12 @@ describe("Providers API (real Postgres)", () => {
       const res = await post(`/bookings/${id}/payment/order`, buyer, { amount: 1, totalMinor: 1 }).expect(400); // unknown fields refused
       expect(res.body.success).toBe(false);
       const order = await post(`/bookings/${id}/payment/order`, buyer, {}).expect(201);
-      expect(mocks().create).toHaveBeenCalledWith(expect.objectContaining({ amount: 325000, currency: "INR" }));
+      expect(mocks().create).toHaveBeenCalledWith(expect.objectContaining({ amount: 200000, currency: "INR" }));
       expect(order.body.configured).toBe(true);
-      expect(order.body.data).toMatchObject({ amount: 325000, currency: "INR" });
+      expect(order.body.data).toMatchObject({ amount: 200000, currency: "INR" });
       expect(JSON.stringify(order.body)).not.toContain(KEY_SECRET);
       const stored = (await Booking().findById(id).lean()) as any;
-      expect(stored.paymentOrder).toMatchObject({ gatewayMinor: 325000, walletMinor: 0 });
+      expect(stored.paymentOrder).toMatchObject({ gatewayMinor: 200000, walletMinor: 0 });
       expect(stored.status).toBe("PAYMENT_PENDING"); // opening an order confirms nothing
     });
 
@@ -1174,13 +1180,13 @@ describe("Providers API (real Postgres)", () => {
       const svc = app.get(ProviderBookingPaymentService);
       const { buyer, id } = await newBooking(34);
       const order = (await post(`/bookings/${id}/payment/order`, buyer, {}).expect(201)).body.data.orderId;
-      expect(await svc.confirmPaymentFromWebhook("order_UNKNOWN", "pay_X", { amountPaise: 325000 })).toBe(false);
+      expect(await svc.confirmPaymentFromWebhook("order_UNKNOWN", "pay_X", { amountPaise: 200000 })).toBe(false);
       expect(await svc.confirmPaymentFromWebhook(order, "pay_QA4", { amountPaise: 100 })).toBe(true); // claimed, not confirmed
       expect(await svc.confirmPaymentFromWebhook(order, "pay_QA4", undefined)).toBe(true); // no amount: refuse to guess
       expect(((await Booking().findById(id).lean()) as any).status).toBe("PAYMENT_PENDING");
-      expect(await svc.confirmPaymentFromWebhook(order, "pay_QA4", { amountPaise: 325000, currency: "INR" })).toBe(true);
+      expect(await svc.confirmPaymentFromWebhook(order, "pay_QA4", { amountPaise: 200000, currency: "INR" })).toBe(true);
       expect(((await Booking().findById(id).lean()) as any).status).toBe("CONFIRMED");
-      expect(await svc.confirmPaymentFromWebhook(order, "pay_QA4", { amountPaise: 325000 })).toBe(true); // duplicate
+      expect(await svc.confirmPaymentFromWebhook(order, "pay_QA4", { amountPaise: 200000 })).toBe(true); // duplicate
       const rows = await Booking().db.collection("provider_booking_state_history").countDocuments({ bookingId: new Types.ObjectId(id), toState: "CONFIRMED" });
       expect(rows).toBe(1);
     });
@@ -1190,7 +1196,7 @@ describe("Providers API (real Postgres)", () => {
       const { buyer, id } = await newBooking(35);
       const order = (await post(`/bookings/${id}/payment/order`, buyer, {}).expect(201)).body.data.orderId;
       await post(`/bookings/${id}:cancel`, buyer, { reasonCode: "CHANGE_OF_PLAN" }).expect(201);
-      expect(await svc.confirmPaymentFromWebhook(order, "pay_QA5", { amountPaise: 325000 })).toBe(true);
+      expect(await svc.confirmPaymentFromWebhook(order, "pay_QA5", { amountPaise: 200000 })).toBe(true);
       expect(((await Booking().findById(id).lean()) as any).status).toBe("CANCELLED_BY_CUSTOMER");
     });
 
@@ -1200,8 +1206,8 @@ describe("Providers API (real Postgres)", () => {
       await wallet.credit({ userId: buyer.id, amount: 1000, module: "admin", category: "admin_credit", description: "QA credit", idempotencyKey: `qa-credit-${buyer.id}` });
       const { id } = await newBooking(36, buyer);
       const order = await post(`/bookings/${id}/payment/order`, buyer, { useWallet: true }).expect(201);
-      expect(order.body.wallet).toMatchObject({ applied: 1000, gatewayAmount: 2250, total: 3250 });
-      expect(mocks().create).toHaveBeenCalledWith(expect.objectContaining({ amount: 225000 }));
+      expect(order.body.wallet).toMatchObject({ applied: 1000, gatewayAmount: 1000, total: 2000 });
+      expect(mocks().create).toHaveBeenCalledWith(expect.objectContaining({ amount: 100000 }));
       expect(await wallet.availableBalance(buyer.id)).toBe(0); // reserved while the gateway payment is pending
 
       const orderId = order.body.data.orderId;
@@ -1215,11 +1221,11 @@ describe("Providers API (real Postgres)", () => {
 
       await post(`/bookings/${id}:cancel`, panditUser, { reasonCode: "UNAVAILABLE" }).expect(201);
       expect(mocks().refund).toHaveBeenCalledTimes(1);
-      expect(mocks().refund).toHaveBeenCalledWith("pay_SPLIT1", expect.objectContaining({ amount: 225000 })); // only the gateway part
+      expect(mocks().refund).toHaveBeenCalledWith("pay_SPLIT1", expect.objectContaining({ amount: 100000 })); // only the gateway part
       expect(await wallet.availableBalance(buyer.id)).toBe(1000); // only the wallet part
       const refund = ((await Booking().findById(id).lean()) as any).refund;
       expect(refund.wallet).toMatchObject({ status: "CREDITED", amountMinor: 100000 });
-      expect(refund.gateway).toMatchObject({ status: "PENDING", amountMinor: 225000, paymentId: "pay_SPLIT1" }); // the gateway's word, not "refunded"
+      expect(refund.gateway).toMatchObject({ status: "PENDING", amountMinor: 100000, paymentId: "pay_SPLIT1" }); // the gateway's word, not "refunded"
     });
 
     it("pays entirely from the wallet, and reverses the spend if the booking cannot be confirmed", async () => {
@@ -1231,7 +1237,7 @@ describe("Providers API (real Postgres)", () => {
       expect(res.body.walletPaid).toBe(true);
       expect(mocks().create).not.toHaveBeenCalled(); // no gateway order for a wallet-only payment
       expect(((await Booking().findById(id).lean()) as any).status).toBe("CONFIRMED");
-      expect(await wallet.availableBalance(buyer.id)).toBe(1750);
+      expect(await wallet.availableBalance(buyer.id)).toBe(3000);
       await post(`/bookings/${id}:cancel`, buyer, { reasonCode: "CHANGE_OF_PLAN" }).expect(201);
       expect(await wallet.availableBalance(buyer.id)).toBe(5000);
       expect(mocks().refund).not.toHaveBeenCalled();
@@ -1262,6 +1268,429 @@ describe("Providers API (real Postgres)", () => {
         spy.mockRestore();
       }
       expect(((await Booking().findById(id).lean()) as any).status).toBe("PAYMENT_PENDING");
+    });
+
+    describe("a payment that arrives for a booking that can no longer use it", () => {
+      const Booking = () => app.get(getModelToken("ProviderBooking"));
+      const svc = () => app.get(ProviderBookingPaymentService);
+      const bookingSvc = () => app.get(ProviderBookingService);
+      const ADVANCE = 200000;
+      /** A booking with an open gateway order, as it is just before the customer pays. */
+      const openOrder = async (daysAhead: number) => {
+        const { buyer, id } = await newBooking(daysAhead);
+        const orderId = (await post(`/bookings/${id}/payment/order`, buyer, {}).expect(201)).body.data.orderId as string;
+        return { buyer, id, orderId };
+      };
+      const callback = (orderId: string, paymentId: string) => ({
+        razorpay_order_id: orderId, razorpay_payment_id: paymentId, razorpay_signature: sign(orderId, paymentId),
+      });
+      const refundsFor = (paymentId: string) => mocks().refund.mock.calls.filter((c) => c[0] === paymentId);
+      const lateOf = async (id: string, paymentId: string) => ((await Booking().findById(id).lean()) as any).refund?.late?.[paymentId];
+      const statusOf = async (id: string) => ((await Booking().findById(id).lean()) as any).status;
+      const cancel = (buyer: TestUser, id: string) => post(`/bookings/${id}:cancel`, buyer, { reasonCode: "CHANGE_OF_PLAN" }).expect(201);
+
+      it("after the customer cancelled: never confirms, and starts exactly one refund of what the gateway took", async () => {
+        const { buyer, id, orderId } = await openOrder(80);
+        await cancel(buyer, id);
+        const res = await post(`/bookings/${id}/payment`, buyer, callback(orderId, "pay_LATE1")).expect(409);
+        expect(res.body.code).toBe("PAYMENT_NOT_APPLIED");
+        expect(res.body.message).toMatch(/not applied/);
+        expect(res.body.message).not.toMatch(/has been refunded|refunded successfully/i);
+        expect(await statusOf(id)).toBe("CANCELLED_BY_CUSTOMER");
+        expect(refundsFor("pay_LATE1")).toHaveLength(1);
+        expect(refundsFor("pay_LATE1")[0][1]).toMatchObject({ amount: ADVANCE });
+        const record = await lateOf(id, "pay_LATE1");
+        expect(record.gateway).toMatchObject({ status: "PENDING", amountMinor: ADVANCE, refundId: "rfnd_pay_LATE1", attempts: 1 }); // the gateway's word, not "refunded"
+        expect(record).toMatchObject({ source: "callback", bookingStatus: "CANCELLED_BY_CUSTOMER" });
+      });
+
+      it("after the hold expired: the webhook records the payment and refunds it, and the booking stays expired", async () => {
+        const { id, orderId } = await openOrder(81);
+        await bookingSvc().expireHold(id);
+        const expired = await statusOf(id);
+        expect(expired).not.toBe("PAYMENT_PENDING");
+        expect(await svc().confirmPaymentFromWebhook(orderId, "pay_LATE2", { amountPaise: ADVANCE, currency: "INR" })).toBe(true);
+        expect(await statusOf(id)).toBe(expired);
+        expect(refundsFor("pay_LATE2")).toHaveLength(1);
+        expect((await lateOf(id, "pay_LATE2")).gateway.status).toBe("PENDING");
+        const stored: any = await Booking().findById(id).lean();
+        expect(stored.confirmedAt ?? null).toBeNull();
+        expect(stored.contactUnlocked).not.toBe(true);
+      });
+
+      it("a webhook for the wrong amount is not refunded or confirmed blindly", async () => {
+        const { buyer, id, orderId } = await openOrder(82);
+        await cancel(buyer, id);
+        expect(await svc().confirmPaymentFromWebhook(orderId, "pay_LATE3", { amountPaise: 100 })).toBe(true);
+        expect(await svc().confirmPaymentFromWebhook(orderId, "pay_LATE3", undefined)).toBe(true);
+        expect(refundsFor("pay_LATE3")).toHaveLength(0);
+        expect(await lateOf(id, "pay_LATE3")).toBeUndefined();
+      });
+
+      it("duplicate callbacks and webhooks for one late payment refund once, and never claim it was applied", async () => {
+        const { buyer, id, orderId } = await openOrder(83);
+        await cancel(buyer, id);
+        for (let i = 0; i < 3; i += 1) {
+          const again = await post(`/bookings/${id}/payment`, buyer, callback(orderId, "pay_LATE4")).expect(409);
+          expect(again.body.code).toBe("PAYMENT_NOT_APPLIED");
+        }
+        for (let i = 0; i < 3; i += 1) expect(await svc().confirmPaymentFromWebhook(orderId, "pay_LATE4", { amountPaise: ADVANCE })).toBe(true);
+        expect(refundsFor("pay_LATE4")).toHaveLength(1);
+        expect(await statusOf(id)).toBe("CANCELLED_BY_CUSTOMER");
+      });
+
+      it("a callback and a webhook arriving at the same moment refund once", async () => {
+        const { buyer, id, orderId } = await openOrder(84);
+        await cancel(buyer, id);
+        const results = await Promise.all([
+          post(`/bookings/${id}/payment`, buyer, callback(orderId, "pay_LATE5")),
+          svc().confirmPaymentFromWebhook(orderId, "pay_LATE5", { amountPaise: ADVANCE }),
+          post(`/bookings/${id}/payment`, buyer, callback(orderId, "pay_LATE5")),
+          svc().confirmPaymentFromWebhook(orderId, "pay_LATE5", { amountPaise: ADVANCE }),
+        ]);
+        expect(results[0].status).toBe(409);
+        expect(results[2].status).toBe(409);
+        expect(results[1]).toBe(true);
+        expect(results[3]).toBe(true);
+        expect(refundsFor("pay_LATE5")).toHaveLength(1);
+        expect(await statusOf(id)).toBe("CANCELLED_BY_CUSTOMER");
+      });
+
+      it("cancelled while the payment was being applied: the payment is set aside, not lost", async () => {
+        const { buyer, id, orderId } = await openOrder(85);
+        // The customer cancels in the instant between our read of the booking and its confirmation.
+        const real = bookingSvc().confirmPayment.bind(bookingSvc());
+        const spy = jest.spyOn(bookingSvc(), "confirmPayment").mockImplementationOnce(async (bookingId: string, ref: string) => {
+          await cancel(buyer, id);
+          return real(bookingId, ref);
+        });
+        try {
+          const res = await post(`/bookings/${id}/payment`, buyer, callback(orderId, "pay_RACE1")).expect(409);
+          expect(res.body.code).toBe("PAYMENT_NOT_APPLIED");
+        } finally {
+          spy.mockRestore();
+        }
+        expect(await statusOf(id)).toBe("CANCELLED_BY_CUSTOMER");
+        expect(refundsFor("pay_RACE1")).toHaveLength(1);
+      });
+
+      it("a refund we fail to issue is recorded as failed, retried, and handed to finance after repeated failure", async () => {
+        const { buyer, id, orderId } = await openOrder(86);
+        await cancel(buyer, id);
+        mocks().refund.mockImplementation(async (paymentId: string) => {
+          if (paymentId === "pay_FAIL9") throw new Error("gateway down");
+          return { id: `rfnd_${paymentId}`, status: "pending" };
+        });
+        const res = await post(`/bookings/${id}/payment`, buyer, callback(orderId, "pay_FAIL9")).expect(409);
+        expect(res.body.message).toMatch(/retried automatically/);
+        expect((await lateOf(id, "pay_FAIL9")).gateway).toMatchObject({ status: "FAILED", attempts: 1, lastError: "gateway down" });
+        expect(JSON.stringify(await lateOf(id, "pay_FAIL9"))).not.toMatch(/REFUNDED|PROCESSED|SUCCESS/);
+
+        await svc().reconcileRefunds();
+        expect((await lateOf(id, "pay_FAIL9")).gateway).toMatchObject({ status: "FAILED", attempts: 2 });
+        await svc().reconcileRefunds();
+        expect((await lateOf(id, "pay_FAIL9")).gateway).toMatchObject({ status: "MANUAL_REQUIRED", attempts: 3 }); // finance's turn
+        const calls = refundsFor("pay_FAIL9").length;
+        await svc().reconcileRefunds();
+        expect(refundsFor("pay_FAIL9")).toHaveLength(calls); // no endless retrying
+
+        // A retry that works takes it forward (here: a fresh failed record on another booking).
+        const second = await openOrder(87);
+        await cancel(second.buyer, second.id);
+        mocks().refund.mockRejectedValueOnce(new Error("temporary"));
+        await post(`/bookings/${second.id}/payment`, second.buyer, callback(second.orderId, "pay_RETRY9")).expect(409);
+        expect((await lateOf(second.id, "pay_RETRY9")).gateway.status).toBe("FAILED");
+        await svc().reconcileRefunds();
+        expect((await lateOf(second.id, "pay_RETRY9")).gateway).toMatchObject({ status: "PENDING", attempts: 2, refundId: "rfnd_pay_RETRY9" });
+      });
+
+      it("a retry adopts a refund the gateway already holds instead of refunding twice", async () => {
+        const { buyer, id, orderId } = await openOrder(88);
+        await cancel(buyer, id);
+        const booking: any = await Booking().findById(id).lean();
+        // The first attempt reached the gateway but our process died before saving the answer.
+        mocks().refund.mockRejectedValueOnce(new Error("socket hang up"));
+        await post(`/bookings/${id}/payment`, buyer, callback(orderId, "pay_ADOPT1")).expect(409);
+        mocks().fetchMultipleRefund.mockResolvedValue({
+          items: [{ id: "rfnd_existing", status: "processed", amount: ADVANCE, notes: { bookingNumber: booking.bookingNumber } }],
+        });
+        await svc().reconcileRefunds();
+        expect(refundsFor("pay_ADOPT1")).toHaveLength(1); // only the failed first attempt
+        expect((await lateOf(id, "pay_ADOPT1")).gateway).toMatchObject({ refundId: "rfnd_existing", status: "PROCESSED" });
+      });
+
+      it("reconciliation: a pending refund becomes PROCESSED only when the gateway says so; a gateway failure goes to finance", async () => {
+        const a = await openOrder(89);
+        const b = await openOrder(90);
+        await cancel(a.buyer, a.id);
+        await cancel(b.buyer, b.id);
+        await post(`/bookings/${a.id}/payment`, a.buyer, callback(a.orderId, "pay_RECON1")).expect(409);
+        await post(`/bookings/${b.id}/payment`, b.buyer, callback(b.orderId, "pay_RECON2")).expect(409);
+
+        mocks().fetchRefund.mockImplementation(async (paymentId: string) => ({ id: `rfnd_${paymentId}`, status: paymentId === "pay_RECON1" ? "pending" : "pending" }));
+        await svc().reconcileRefunds();
+        expect((await lateOf(a.id, "pay_RECON1")).gateway.status).toBe("PENDING"); // still not done: not reported as done
+
+        mocks().fetchRefund.mockImplementation(async (paymentId: string) => ({
+          id: `rfnd_${paymentId}`,
+          status: paymentId === "pay_RECON1" ? "processed" : "failed",
+        }));
+        const before = refundsFor("pay_RECON2").length;
+        await svc().reconcileRefunds();
+        expect((await lateOf(a.id, "pay_RECON1")).gateway.status).toBe("PROCESSED");
+        expect((await lateOf(b.id, "pay_RECON2")).gateway.status).toBe("GATEWAY_FAILED");
+        await svc().reconcileRefunds();
+        expect(refundsFor("pay_RECON2")).toHaveLength(before); // a failure the gateway reports is not blindly retried
+        expect((await lateOf(a.id, "pay_RECON1")).gateway.status).toBe("PROCESSED"); // final states stay final
+      });
+
+      it("a second payment on a booking that is already confirmed is refunded and does not disturb the booking", async () => {
+        const { buyer, id, orderId } = await openOrder(91);
+        await post(`/bookings/${id}/payment`, buyer, callback(orderId, "pay_FIRST9")).expect(201);
+        expect(await statusOf(id)).toBe("CONFIRMED");
+        const res = await post(`/bookings/${id}/payment`, buyer, callback(orderId, "pay_SECOND9")).expect(409);
+        expect(res.body.code).toBe("PAYMENT_NOT_APPLIED");
+        expect(refundsFor("pay_SECOND9")).toHaveLength(1);
+        expect(refundsFor("pay_FIRST9")).toHaveLength(0);
+        const stored: any = await Booking().findById(id).lean();
+        expect(stored.status).toBe("CONFIRMED");
+        expect(stored.paymentRefs).toEqual(expect.arrayContaining([orderId, "pay_FIRST9"]));
+        // the genuine payment repeating is still just a repeat
+        const repeat = await post(`/bookings/${id}/payment`, buyer, callback(orderId, "pay_FIRST9")).expect(201);
+        expect(repeat.body.alreadyConfirmed).toBe(true);
+      });
+
+      it("a late payment for a cancelled booking cannot confirm another Pandit's booking of the same request", async () => {
+        const first = await openOrder(92);
+        const winner = await openOrder(93);
+        await cancel(first.buyer, first.id);
+        await bookingSvc().confirmPayment(winner.id, "pay_WINNER9");
+        await post(`/bookings/${first.id}/payment`, first.buyer, callback(first.orderId, "pay_LATE9")).expect(409);
+        expect(await statusOf(winner.id)).toBe("CONFIRMED");
+        const w: any = await Booking().findById(winner.id).lean();
+        expect(w.paymentRefs).not.toContain("pay_LATE9");
+        expect(w.refund ?? null).toBeNull();
+        expect(refundsFor("pay_LATE9")).toHaveLength(1);
+      });
+
+      it("a cancellation refund of a paid booking is kept alongside a later unapplied payment", async () => {
+        const { buyer, id, orderId } = await openOrder(94);
+        await post(`/bookings/${id}/payment`, buyer, callback(orderId, "pay_PAID9")).expect(201);
+        await post(`/bookings/${id}:cancel`, panditUser, { reasonCode: "UNAVAILABLE" }).expect(201);
+        await post(`/bookings/${id}/payment`, buyer, callback(orderId, "pay_AFTER9")).expect(409);
+        const refund = ((await Booking().findById(id).lean()) as any).refund;
+        expect(refund.gateway).toMatchObject({ paymentId: "pay_PAID9", amountMinor: ADVANCE });
+        expect(refund.late.pay_AFTER9.gateway).toMatchObject({ paymentId: "pay_AFTER9", amountMinor: ADVANCE });
+        expect(refundsFor("pay_PAID9")).toHaveLength(1);
+        expect(refundsFor("pay_AFTER9")).toHaveLength(1);
+      });
+
+      it("a forged signature or another booking's order is rejected, never refunded or applied", async () => {
+        const { buyer, id, orderId } = await openOrder(95);
+        await cancel(buyer, id);
+        const forged = await post(`/bookings/${id}/payment`, buyer, { ...callback(orderId, "pay_FORGED"), razorpay_signature: "a".repeat(64) });
+        expect(forged.status).toBe(400);
+        const wrongOrder = await post(`/bookings/${id}/payment`, buyer, callback("order_SOMEONE_ELSE", "pay_FOREIGN"));
+        expect(wrongOrder.status).toBe(400);
+        expect(refundsFor("pay_FORGED")).toHaveLength(0);
+        expect(refundsFor("pay_FOREIGN")).toHaveLength(0);
+        await post(`/bookings/${id}/payment`, newUser(), callback(orderId, "pay_STRANGER")).expect(404);
+        expect(refundsFor("pay_STRANGER")).toHaveLength(0);
+      });
+    });
+
+    describe("multi-pandit request group: one Pandit per request", () => {
+      const Block = () => app.get(getModelToken("ProviderCalendarBlock"));
+      /** A sibling booking in the same request group, for another Pandit, with its own calendar hold. */
+      const addSibling = async (firstId: string, groupId: string) => {
+        const first: any = await Booking().findById(firstId).lean();
+        await Booking().updateOne({ _id: first._id }, { $set: { requestGroupId: groupId, status: "ACCEPTED_AWAITING_ADVANCE" } }); // both Pandits have accepted
+        const hold: any = await Block().findById(first.holdBlockId).lean();
+        const siblingId = new Types.ObjectId();
+        const holdRest = { ...hold };
+        delete holdRest._id;
+        delete holdRest.createdAt;
+        delete holdRest.updatedAt;
+        const siblingHold: any = await Block().create({
+          ...holdRest, sourceId: siblingId,
+          startAt: new Date(new Date(hold.startAt).getTime() + 30 * 86_400_000), endAt: new Date(new Date(hold.endAt).getTime() + 30 * 86_400_000),
+        });
+        const bookingRest = { ...first };
+        delete bookingRest._id;
+        delete bookingRest.createdAt;
+        delete bookingRest.updatedAt;
+        await Booking().create({
+          ...bookingRest, _id: siblingId, bookingNumber: `PJ-SIB-${siblingId.toHexString().slice(-8)}`,
+          holdBlockId: siblingHold._id, requestGroupId: groupId, status: "ACCEPTED_AWAITING_ADVANCE", paymentRefs: [], stateVersion: 1,
+        });
+        return String(siblingId);
+      };
+      const statusOf = async (id: string) => ((await Booking().findById(id).lean()) as any).status;
+
+      it("confirms exactly one Pandit when both are paid at the same moment, and cancels the other", async () => {
+        const svc = app.get(ProviderBookingService);
+        const { id } = await newBooking(46);
+        const siblingId = await addSibling(id, new Types.ObjectId().toHexString());
+        const results = await Promise.allSettled([svc.confirmPayment(id, "pay_RACE_A"), svc.confirmPayment(siblingId, "pay_RACE_B")]);
+        const statuses = [await statusOf(id), await statusOf(siblingId)];
+        expect(statuses.filter((x) => x === "CONFIRMED")).toHaveLength(1);
+        expect(statuses.filter((x) => x === "CANCELLED_BY_OPS")).toHaveLength(1);
+        expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+      });
+
+      it("refuses to confirm a second Pandit once the request is already confirmed", async () => {
+        const svc = app.get(ProviderBookingService);
+        const { id } = await newBooking(47);
+        const siblingId = await addSibling(id, new Types.ObjectId().toHexString());
+        await svc.confirmPayment(id, "pay_FIRST");
+        await expect(svc.confirmPayment(siblingId, "pay_SECOND")).rejects.toMatchObject({ response: { code: expect.stringMatching(/REQUEST_ALREADY_CONFIRMED|BOOKING_INVALID_TRANSITION/) } });
+        expect(await statusOf(id)).toBe("CONFIRMED");
+        expect(await statusOf(siblingId)).not.toBe("CONFIRMED");
+      });
+
+      it("cannot open a payment order for a Pandit once another one is confirmed", async () => {
+        const svc = app.get(ProviderBookingService);
+        const { buyer, id } = await newBooking(48);
+        const siblingId = await addSibling(id, new Types.ObjectId().toHexString());
+        await svc.confirmPayment(id, "pay_WON");
+        const res = await post(`/bookings/${siblingId}/payment/order`, buyer, {}).expect(409);
+        expect(["REQUEST_ALREADY_CONFIRMED", "BOOKING_NOT_PAYABLE"]).toContain(res.body.code); // the loser is already cancelled
+        expect(mocks().create).not.toHaveBeenCalled();
+      });
+
+      it("refunds a payment that landed for the losing Pandit instead of keeping it", async () => {
+        const { buyer, id } = await newBooking(49);
+        const siblingId = await addSibling(id, new Types.ObjectId().toHexString());
+        const orderId = (await post(`/bookings/${siblingId}/payment/order`, buyer, {}).expect(201)).body.data.orderId; // opened while both were open
+        // The winner is confirmed but the loser has not been swept yet: the narrow window in which the loser can still be paid.
+        await Booking().updateOne({ _id: new Types.ObjectId(id) }, { $set: { status: "CONFIRMED" } });
+        const callback = { razorpay_order_id: orderId, razorpay_payment_id: "pay_LOSER", razorpay_signature: sign(orderId, "pay_LOSER") };
+        const res = await post(`/bookings/${siblingId}/payment`, buyer, callback);
+        expect(res.status).toBe(409);
+        expect(res.body.code).toBe("REQUEST_ALREADY_CONFIRMED");
+        expect(mocks().refund).toHaveBeenCalledTimes(1);
+        expect(mocks().refund).toHaveBeenCalledWith("pay_LOSER", expect.objectContaining({ amount: 200000 }));
+        const loser: any = await Booking().findById(siblingId).lean();
+        expect(loser.status).not.toBe("CONFIRMED");
+        expect(loser.refund.late.pay_LOSER.gateway).toMatchObject({ paymentId: "pay_LOSER", amountMinor: 200000, status: "PENDING" });
+        expect(await statusOf(id)).toBe("CONFIRMED");
+      });
+    });
+  });
+
+  // ============================================================ 30-day calendar
+  describe("rolling 30-day availability calendar", () => {
+    const viewer = newUser("customer", "Calendar Viewer");
+    const cal = (query = "", user: TestUser = viewer) => get(`/providers/${panditId}/calendar-30-days${query}`, user);
+    const dayOf = (body: any, date: string) => body.data.days.find((d: any) => d.date === date);
+    const bookConfirmed = async (daysAhead: number, city = "Haridwar") => {
+      const buyer = newUser("customer", "Cal Buyer");
+      const res = await post("/bookings", buyer, {
+        offeringId, scheduledStartAt: slot(daysAhead), customerName: "Cal Buyer", customerPhone: "9876500020",
+        serviceLocation: { city, state: "Uttarakhand" },
+      }).expect(201);
+      await app.get(ProviderBookingService).confirmPayment(res.body.data.id, `pay_CAL${daysAhead}`);
+      return res.body.data.id as string;
+    };
+
+    it("covers exactly 30 consecutive local days starting today, with a morning and an evening shift each", async () => {
+      const res = await cal().expect(200);
+      const days = res.body.data.days;
+      expect(days).toHaveLength(30);
+      expect(days[0].date).toBe(istDate(0));
+      expect(days[29].date).toBe(istDate(29));
+      days.forEach((d: any, i: number) => {
+        expect(d.date).toBe(istDate(i));
+        expect(d.shifts.morning.shift).toBe("MORNING");
+        expect(d.shifts.evening.shift).toBe("EVENING");
+      });
+      expect(res.body.data.timezone).toBe("Asia/Kolkata");
+    });
+
+    it("works without any query (the browser sends none) and shows the same days to a signed-out visitor", async () => {
+      const anon = await get(`/providers/${panditId}/calendar-30-days`).expect(200);
+      expect(anon.body.data.days).toHaveLength(30);
+      expect(JSON.stringify(anon.body)).not.toMatch(/customerContact|phone|9876500/);
+      const own = await get("/provider/calendar-30-days", panditUser).expect(200);
+      expect(own.body.data.days.map((d: any) => d.date)).toEqual(anon.body.data.days.map((d: any) => d.date));
+    });
+
+    it("accepts a sub-range and the full 30 days, and refuses anything wider, backwards or not a real date", async () => {
+      const one = await cal(`?from=${istDate(5)}&to=${istDate(5)}`).expect(200);
+      expect(one.body.data.days).toHaveLength(1);
+      expect((await cal(`?from=${istDate(2)}&to=${istDate(31)}`).expect(200)).body.data.days).toHaveLength(30);
+      expect((await cal(`?from=${istDate(2)}&to=${istDate(32)}`).expect(400)).body.code).toBe("RANGE_TOO_LARGE");
+      expect((await cal("?from=2026-01-01&to=2999-12-31").expect(400)).body.code).toBe("RANGE_TOO_LARGE");
+      expect((await cal(`?from=${istDate(9)}&to=${istDate(3)}`).expect(400)).body.code).toBe("INVALID_RANGE");
+      expect((await cal("?from=2026-02-30").expect(400)).body.code).toBe("INVALID_DATE");
+      await cal("?from=tomorrow").expect(400);
+    });
+
+    it("never offers a shift that has already ended", async () => {
+      const past = await cal(`?from=${istDate(-1)}&to=${istDate(-1)}`).expect(200);
+      expect(past.body.data.days[0].shifts.morning.status).toBe("UNAVAILABLE");
+      expect(past.body.data.days[0].shifts.evening.status).toBe("UNAVAILABLE");
+    });
+
+    it("marks a shift BOOKED only for a confirmed booking, not for an unpaid one", async () => {
+      const buyer = newUser("customer", "Unpaid Buyer");
+      await post("/bookings", buyer, {
+        offeringId, scheduledStartAt: slot(23), customerName: "Unpaid Buyer", customerPhone: "9876500021",
+        serviceLocation: { city: "Haridwar", state: "Uttarakhand" },
+      }).expect(201);
+      const unpaid = dayOf((await cal().expect(200)).body, istDate(23));
+      expect(unpaid.shifts.morning.hasConfirmedBooking).toBe(false);
+      expect(unpaid.shifts.morning.status).toBe("HELD"); // the unpaid request holds the slot
+      await bookConfirmed(21);
+      const paid = dayOf((await cal().expect(200)).body, istDate(21));
+      expect(paid.shifts.morning).toMatchObject({ status: "BOOKED", hasConfirmedBooking: true, bookingCount: 1 });
+      expect(paid.shifts.evening.status).toBe("AVAILABLE"); // a morning puja does not shut the evening
+      expect(paid.confirmedBookingCount).toBe(1);
+    });
+
+    it("same-day evening follows the 50 km straight-line rule from the morning booking", async () => {
+      await bookConfirmed(22);
+      const day = istDate(22);
+      const evening = async (city?: string) =>
+        dayOf((await cal(`?from=${day}&to=${day}${city ? `&city=${encodeURIComponent(city)}` : ""}`).expect(200)).body, day).shifts.evening;
+
+      expect((await evening()).status).toBe("AVAILABLE"); // no destination asked: nothing to check
+      expect((await evening("Haridwar")).status).toBe("AVAILABLE"); // same city
+      expect((await evening("haridwar")).status).toBe("AVAILABLE"); // case-insensitive
+      const near = await evening("Rishikesh"); // about 20 km away
+      expect(near.status).toBe("AVAILABLE");
+      expect(near.distanceKm).toBeGreaterThan(0);
+      expect(near.distanceKm).toBeLessThanOrEqual(50);
+
+      const far = await evening("Delhi"); // about 180 km away
+      expect(far).toMatchObject({ status: "OUT_OF_RANGE" });
+      expect(far.distanceKm).toBeGreaterThan(50);
+      expect(far.reason).toMatch(/straight line, not road distance/);
+      expect(far.reason).not.toMatch(/null|undefined/);
+
+      const unknown = await evening("Zzyzx");
+      expect(unknown.status).toBe("OUT_OF_RANGE"); // fail closed: an unlocatable city is never offered as eligible
+      expect(unknown.reason).toMatch(/straight line/);
+      expect(unknown.reason).not.toMatch(/null|undefined/);
+    });
+
+    it("a manual block holds both shifts, and releasing it frees them", async () => {
+      const day = istDate(24);
+      const block = await post("/provider/calendar-blocks", panditUser, { startDate: day, endDate: day, reason: "Travel" }).expect(201);
+      const held = dayOf((await cal(`?from=${day}&to=${day}`).expect(200)).body, day);
+      expect(held.hasHold).toBe(true);
+      expect(held.shifts.morning.status).toBe("HELD");
+      expect(held.shifts.evening.status).toBe("HELD");
+      expect(JSON.stringify(held)).not.toContain("Travel"); // the reason stays private
+      await http().delete(`${V2}/provider/calendar-blocks/${block.body.data.id}`).set(as(panditUser)).set("Idempotency-Key", idemKey()).expect(200);
+      const freed = dayOf((await cal(`?from=${day}&to=${day}`).expect(200)).body, day);
+      expect(freed.shifts.morning.status).toBe("AVAILABLE");
+      expect(freed.shifts.evening.status).toBe("AVAILABLE");
+    });
+
+    it("a day the Pandit does not work is unavailable in both shifts", async () => {
+      const hidden = await get("/provider/calendar-30-days", newUser("customer", "Not A Pandit"));
+      expect([403, 404]).toContain(hidden.status); // only a registered provider has an own calendar
     });
   });
 

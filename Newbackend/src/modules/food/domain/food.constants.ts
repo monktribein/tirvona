@@ -46,6 +46,12 @@ export const FOOD_PAYMENT_STATUSES = [
 ] as const;
 export type FoodPaymentStatus = (typeof FOOD_PAYMENT_STATUSES)[number];
 
+/**
+ * Older records may hold a refund state in paymentStatus ("REFUND_FAILED"), which is not a payment status:
+ * the payment itself was PAID. Anything leaving the API is mapped through this.
+ */
+export const canonicalPaymentStatus = (status: string) => (status === "REFUND_FAILED" ? "PAID" : status);
+
 export const FOOD_DIETARY_TAGS = [
   "vegetarian",
   "satvik",
@@ -84,6 +90,17 @@ export const FOOD_SETTLEMENT_STATUSES = [
   "disputed",
 ] as const;
 export type FoodSettlementStatus = (typeof FOOD_SETTLEMENT_STATUSES)[number];
+
+/** How Tirvona handed a kitchen its money. Cash is the only method without a receipt. */
+export const FOOD_PAYMENT_METHODS = ["bank_transfer", "upi", "cash"] as const;
+export type FoodPaymentMethod = (typeof FOOD_PAYMENT_METHODS)[number];
+
+/** A payment that was entered by mistake is voided, never deleted, so the history stays complete. */
+export const FOOD_VENDOR_PAYMENT_STATUSES = ["recorded", "voided"] as const;
+export type FoodVendorPaymentStatus = (typeof FOOD_VENDOR_PAYMENT_STATUSES)[number];
+
+/** A kitchen has earned an order once it was handed over (and paid for): picked up, delivered or completed. */
+export const FOOD_FULFILLED_ORDER_STATUSES = ["PICKED_UP", "DELIVERED", "COMPLETED"] as const;
 
 export const FOOD_LEDGER_ENTRY_TYPES = [
   "order_payment",

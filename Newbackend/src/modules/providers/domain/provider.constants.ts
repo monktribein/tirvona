@@ -239,12 +239,43 @@ export const CALENDAR_BLOCK_STATUSES = ["ACTIVE", "RELEASED", "EXPIRED"] as cons
 export const DEFAULT_TIMEZONE = "Asia/Kolkata";
 export const MAX_SLOTS_PER_DAY = 6;
 export const MAX_AVAILABILITY_QUERY_DAYS = 62;
+/** The rolling calendar shown to customers and Pandits. */
+export const THIRTY_DAY_CALENDAR_DAYS = 30;
 export const MAX_BLOCK_DAYS = 120;
 /** Unpaid bookings keep their calendar hold this long (SRS FR-AV-002). */
 export const DEFAULT_HOLD_MINUTES = 15;
 
+// ------------------------------------------------------------- service types
+export const PANDIT_SERVICE_TYPES = [
+  "INDIVIDUAL",
+  "GROUP",
+  "KATHA",
+] as const;
+export type PanditServiceType = (typeof PANDIT_SERVICE_TYPES)[number];
+
+export const KATHA_TYPES = [
+  "BHAGWAT_KATHA",
+  "SHIV_PURAN",
+  "RAM_KATHA",
+  "SUNDARKAND",
+  "SATYANARAYAN_KATHA",
+  "DEVI_BHAGWAT",
+  "OTHER",
+] as const;
+export type KathaType = (typeof KATHA_TYPES)[number];
+
+export const PANDIT_SHIFTS = ["MORNING", "EVENING", "ANY"] as const;
+export type PanditShift = (typeof PANDIT_SHIFTS)[number];
+
+export const MAX_MULTI_PANDIT_REQUESTS = 5;
+export const ADVANCE_PAYMENT_WINDOW_HOURS = 1;
+export const MAX_TRAVEL_RADIUS_KM = 50;
+export const DEFAULT_ADVANCE_PERCENTAGE = 50;
+
 // ---------------------------------------------------------------- bookings
 export const BOOKING_STATUSES = [
+  "REQUEST_PENDING",
+  "ACCEPTED_AWAITING_ADVANCE",
   "PAYMENT_PENDING",
   "PAYMENT_FAILED",
   "CONFIRMED",
@@ -266,6 +297,7 @@ export type BookingActor = "CUSTOMER" | "PROVIDER" | "OPS" | "SYSTEM";
 
 /** A booking in one of these states holds the provider's calendar. */
 export const CALENDAR_HOLDING_STATUSES: readonly BookingStatus[] = [
+  "ACCEPTED_AWAITING_ADVANCE",
   "PAYMENT_PENDING",
   "CONFIRMED",
   "PROVIDER_ACCEPTED",
@@ -298,6 +330,56 @@ export interface BookingTransition {
  */
 export const BOOKING_TRANSITIONS: Record<BookingStatus, readonly BookingTransition[]> =
   {
+    REQUEST_PENDING: [
+      { command: "accept_request", to: "ACCEPTED_AWAITING_ADVANCE", actors: ["PROVIDER"] },
+      {
+        command: "decline_request",
+        to: "CANCELLED_BY_PROVIDER",
+        actors: ["PROVIDER"],
+        reasons: ["UNAVAILABLE", "OUT_OF_SERVICE_AREA", "PERSONAL_EMERGENCY", "OTHER"],
+      },
+      {
+        command: "cancel",
+        to: "CANCELLED_BY_CUSTOMER",
+        actors: ["CUSTOMER"],
+        reasons: ["CHANGE_OF_PLAN", "FOUND_ALTERNATIVE", "OTHER"],
+      },
+      {
+        command: "expire",
+        to: "CANCELLED_BY_OPS",
+        actors: ["SYSTEM"],
+        reasons: ["REQUEST_EXPIRED"],
+      },
+      {
+        command: "cancel_by_ops",
+        to: "CANCELLED_BY_OPS",
+        actors: ["OPS"],
+        reasons: ["OPS_DECISION", "ANOTHER_PROVIDER_CONFIRMED"],
+      },
+    ],
+    ACCEPTED_AWAITING_ADVANCE: [
+      { command: "confirm_advance", to: "CONFIRMED", actors: ["SYSTEM"] },
+      { command: "confirm_payment", to: "CONFIRMED", actors: ["SYSTEM"] },
+      { command: "fail_payment", to: "PAYMENT_FAILED", actors: ["SYSTEM"] },
+      {
+        command: "cancel",
+        to: "CANCELLED_BY_CUSTOMER",
+        actors: ["CUSTOMER"],
+        reasons: ["CHANGE_OF_PLAN", "FOUND_ALTERNATIVE", "OTHER"],
+      },
+      {
+        command: "expire_hold",
+        to: "CANCELLED_BY_OPS",
+        actors: ["SYSTEM"],
+        reasons: ["ADVANCE_PAYMENT_TIMEOUT", "HOLD_EXPIRED"],
+      },
+      {
+        command: "cancel_by_ops",
+        to: "CANCELLED_BY_OPS",
+        actors: ["OPS"],
+        reasons: ["ANOTHER_PROVIDER_CONFIRMED", "OPS_DECISION"],
+      },
+    ],
     PAYMENT_PENDING: [
       { command: "confirm_payment", to: "CONFIRMED", actors: ["SYSTEM"] },
       { command: "fail_payment", to: "PAYMENT_FAILED", actors: ["SYSTEM"] },

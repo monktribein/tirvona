@@ -3,6 +3,7 @@ import { ConfigModule } from "@nestjs/config";
 import { OrmModule } from "../../database/orm-nest";
 import { AuditModule } from "../audit/audit.module";
 import { NotificationsModule } from "../notifications/notifications.module";
+import { WhatsAppModule } from "../../integrations/whatsapp/whatsapp.module";
 import { payoutConfig } from "../payouts/config/payout.config";
 import { BankAccountCrypto } from "../payouts/infrastructure/bank-account.crypto";
 import { UserSchema } from "../users/infrastructure/persistence/user.schema";
@@ -63,6 +64,7 @@ import { VerificationCasesController } from "./presentation/verification.control
   imports: [
     AuditModule,
     NotificationsModule,
+    WhatsAppModule,
     WalletModule,
     OrmModule.forFeature(PROVIDER_MODELS),
     OrmModule.forFeature(PROVIDER_WALLET_MODELS),

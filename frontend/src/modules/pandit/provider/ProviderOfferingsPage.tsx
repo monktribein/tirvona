@@ -57,6 +57,9 @@ type OfferingView = {
   samagriIncluded?: boolean;
   voluntaryDakshinaAllowed?: boolean;
   status: string;
+  serviceType?: "INDIVIDUAL" | "GROUP" | "KATHA";
+  groupCapacity?: number;
+  kathaDetails?: { kathaName?: string; totalDays?: number; dailyHours?: number; includesSamagri?: boolean; yajamanRequirement?: string };
   ritual?: { titles?: Record<string, string> } | null;
   variant?: { titles?: Record<string, string> } | null;
 };
@@ -78,6 +81,11 @@ const OfferingFormModal: React.FC<{
 
   const [selectedVariantId, setSelectedVariantId] = useState(offering?.ritualVariantId || "");
   const [fulfilmentType, setFulfilmentType] = useState(offering?.fulfilmentType || "LOCAL_HOME");
+  const [serviceType, setServiceType] = useState<"INDIVIDUAL" | "GROUP" | "KATHA">(offering?.serviceType || "INDIVIDUAL");
+  const [groupCapacity, setGroupCapacity] = useState(String(offering?.groupCapacity ?? 25));
+  const [kathaName, setKathaName] = useState(offering?.kathaDetails?.kathaName || "Shrimad Bhagwat Katha");
+  const [kathaDays, setKathaDays] = useState(String(offering?.kathaDetails?.totalDays ?? 7));
+  const [kathaHours, setKathaHours] = useState(String(offering?.kathaDetails?.dailyHours ?? 4));
   const [title, setTitle] = useState(offering?.title || "");
   const [description, setDescription] = useState(offering?.description || "");
   const [durationMinutes, setDurationMinutes] = useState(String(offering?.durationMinutes ?? 60));
@@ -118,9 +126,17 @@ const OfferingFormModal: React.FC<{
 
     setSaving(true);
     try {
-      const shared = {
+      const shared: any = {
         title: title.trim() || undefined,
         description: description.trim() || undefined,
+        serviceType,
+        groupCapacity: serviceType === "GROUP" ? Number(groupCapacity) || 25 : undefined,
+        kathaDetails: serviceType === "KATHA" ? {
+          kathaName: kathaName.trim() || "Bhagwat Katha",
+          totalDays: Number(kathaDays) || 7,
+          dailyHours: Number(kathaHours) || 4,
+          includesSamagri: samagriIncluded,
+        } : undefined,
         durationMinutes: Number(durationMinutes),
         teamSize: Number(teamSize),
         minNoticeHours: Number(minNoticeHours),
@@ -196,6 +212,68 @@ const OfferingFormModal: React.FC<{
               </select>
             </Field>
           )}
+          <Field label="Ceremony format" required>
+            <select
+              className={inputClass}
+              value={serviceType}
+              onChange={(e) => setServiceType(e.target.value as any)}
+            >
+              <option value="INDIVIDUAL">Individual / Family Puja</option>
+              <option value="GROUP">Group Puja (Multiple Yajamans)</option>
+              <option value="KATHA">Katha Ceremony (Bhagwat / Ram Katha / Shiv Puran)</option>
+            </select>
+          </Field>
+
+          {serviceType === "GROUP" && (
+            <Field label="Group capacity (Max Yajamans)" required hint="Maximum number of devotees who can participate together.">
+              <input
+                type="number"
+                min={2}
+                max={500}
+                className={inputClass}
+                value={groupCapacity}
+                onChange={(e) => setGroupCapacity(e.target.value)}
+              />
+            </Field>
+          )}
+
+          {serviceType === "KATHA" && (
+            <div className="space-y-3 rounded-xl border border-amber-200 bg-amber-50/60 p-3.5 dark:border-amber-900/40 dark:bg-amber-950/20">
+              <p className="text-xs font-bold text-amber-900 dark:text-amber-200">Katha Configuration</p>
+              <Field label="Katha Name" required>
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={kathaName}
+                  onChange={(e) => setKathaName(e.target.value)}
+                  placeholder="e.g. Shrimad Bhagwat Katha Gyan Yajna"
+                />
+              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Duration (Total Days)" required>
+                  <input
+                    type="number"
+                    min={1}
+                    max={30}
+                    className={inputClass}
+                    value={kathaDays}
+                    onChange={(e) => setKathaDays(e.target.value)}
+                  />
+                </Field>
+                <Field label="Daily Session Hours" required>
+                  <input
+                    type="number"
+                    min={1}
+                    max={12}
+                    className={inputClass}
+                    value={kathaHours}
+                    onChange={(e) => setKathaHours(e.target.value)}
+                  />
+                </Field>
+              </div>
+            </div>
+          )}
+
           <Field label="Custom title" hint="Optional. Replaces the ritual name on your profile.">
             <input type="text" className={inputClass} value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Full Vivah ceremony with Saptapadi" />
           </Field>
@@ -249,6 +327,16 @@ const OfferingCard: React.FC<{
         <div className="mb-1 flex flex-wrap items-center gap-2">
           <h2 className="break-words text-base font-extrabold text-[#0B192C] dark:text-white">{nameOf(offering)}</h2>
           <StatusBadge status={offering.status} />
+          {(offering.serviceType === "GROUP" || offering.groupCapacity) && (
+            <span className="rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-semibold text-purple-800 dark:border-purple-800 dark:bg-purple-950/40 dark:text-purple-300">
+              👥 Group Puja · Max {offering.groupCapacity || 25} Devotees
+            </span>
+          )}
+          {(offering.serviceType === "KATHA" || offering.kathaDetails) && (
+            <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
+              📜 {offering.kathaDetails?.kathaName || "Katha Service"} ({offering.kathaDetails?.totalDays || 7} Days)
+            </span>
+          )}
         </div>
         <p className="text-xs text-gray-500">{FULFILMENT_LABELS[offering.fulfilmentType] || offering.fulfilmentType}</p>
         {offering.description && <p className="mt-2 line-clamp-2 text-sm text-gray-600 dark:text-gray-300">{offering.description}</p>}
