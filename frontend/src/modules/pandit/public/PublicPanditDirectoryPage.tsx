@@ -16,6 +16,8 @@ import {
   Send,
   ShieldCheck,
   Sparkles,
+  Users,
+  X,
 } from "lucide-react";
 import { providerPublicService, pujaBookingService, ritualCatalogService } from "../services/provider.service";
 import { toast } from "../../../lib/toast";

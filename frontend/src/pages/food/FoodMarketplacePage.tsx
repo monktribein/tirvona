@@ -640,63 +640,90 @@ export const FoodMarketplacePage: React.FC = () => {
                 const isThali = meal.family === "THALI";
                 const isCombo = meal.family === "COMBO";
 
-                return (
-                  <div
-                    key={meal.id}
-                    className="group bg-white dark:bg-[#0B192C] rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
-                  >
-                    <div>
-                      {/* Meal Image & Badge */}
-                      <div className="relative h-48 w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
-                        <img
-                          src={meal.imageUrl}
-                          alt={meal.label}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          loading="lazy"
-                        />
-                        <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-slate-900/80 backdrop-blur-md text-amber-300 border border-amber-400/30">
-                            {isThali
-                              ? "थाली Thali"
-                              : isCombo
-                              ? "कॉम्बो Combo"
-                              : "बाउल Bowl"}
-                          </span>
-                          {meal.dietaryTags?.includes("satvik") && (
-                            <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-emerald-600/90 text-white backdrop-blur-xs flex items-center gap-1">
-                              <Sparkles size={10} /> सात्विक
-                            </span>
-                          )}
-                          {meal.dietaryTags?.includes("no_onion_garlic") && (
-                            <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-blue-600/90 text-white backdrop-blur-xs">
-                              No Onion/Garlic
-                            </span>
-                          )}
-                        </div>
+              return (
+                <div
+                  key={meal.id}
+                  className="group bg-white dark:bg-[#0B192C] rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+                >
+                  <div>
+                    {/* Meal Image & Badge */}
+                    {(() => {
+                      const mealImages = (meal.imageUrls && meal.imageUrls.length > 0)
+                        ? meal.imageUrls
+                        : meal.imageUrl ? [meal.imageUrl] : [];
+                      const primaryImage = mealImages[0] || meal.imageUrl || "";
 
-                        <div className="absolute bottom-3 right-3 px-2 py-1 rounded-full bg-black/70 backdrop-blur-xs text-[10px] font-bold text-slate-200 flex items-center gap-1">
-                          <Clock size={11} className="text-amber-400" />
-                          <span>{meal.prepMinutes} mins</span>
-                        </div>
-                      </div>
-
-                      {/* Meal Information */}
-                      <div className="p-5">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <h3 className="text-base font-extrabold text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                              {meal.label}
-                            </h3>
-                            {meal.outlet && (
-                              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
-                                <span>By {meal.outlet.brandName}</span>
-                                <span className="text-amber-500 font-bold">
-                                  ★ {meal.outlet.rating}
-                                </span>
-                              </p>
+                      return (
+                        <div
+                          className="relative h-48 w-full overflow-hidden bg-slate-100 dark:bg-slate-800 cursor-pointer"
+                          onClick={() => {
+                            setGalleryMeal(meal);
+                            setGalleryIndex(0);
+                          }}
+                        >
+                          <img
+                            src={primaryImage}
+                            alt={meal.label}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            loading="lazy"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src =
+                                "https://placehold.co/400x300?text=Satvik+Meal";
+                            }}
+                          />
+                          <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-slate-900/80 backdrop-blur-md text-amber-300 border border-amber-400/30">
+                              {isThali
+                                ? "थाली Thali"
+                                : isCombo
+                                ? "कॉम्बो Combo"
+                                : "बाउल Bowl"}
+                            </span>
+                            {meal.dietaryTags?.includes("satvik") && (
+                              <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-emerald-600/90 text-white backdrop-blur-xs flex items-center gap-1">
+                                <Sparkles size={10} /> सात्विक
+                              </span>
+                            )}
+                            {meal.dietaryTags?.includes("no_onion_garlic") && (
+                              <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-blue-600/90 text-white backdrop-blur-xs">
+                                No Onion/Garlic
+                              </span>
                             )}
                           </div>
+
+                          {/* Up to 5 photos indicator badge */}
+                          {mealImages.length > 1 && (
+                            <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-slate-900/85 backdrop-blur-md text-[10px] font-extrabold text-white flex items-center gap-1 border border-white/20 shadow-md">
+                              <Image size={11} className="text-amber-400" />
+                              <span>{mealImages.length} Photos</span>
+                            </div>
+                          )}
+
+                          <div className="absolute bottom-3 right-3 px-2 py-1 rounded-full bg-black/70 backdrop-blur-xs text-[10px] font-bold text-slate-200 flex items-center gap-1">
+                            <Clock size={11} className="text-amber-400" />
+                            <span>{meal.prepMinutes} mins</span>
+                          </div>
                         </div>
+                      );
+                    })()}
+
+                    {/* Meal Information */}
+                    <div className="p-5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h3 className="text-base font-extrabold text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                            {meal.label}
+                          </h3>
+                          {meal.outlet && (
+                            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                              <span>By {meal.outlet.brandName}</span>
+                              <span className="text-amber-500 font-bold">
+                                ★ {meal.outlet.rating}
+                              </span>
+                            </p>
+                          )}
+                        </div>
+                      </div>
 
                         {/* Contents / Description */}
                         <p className="mt-2.5 text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
