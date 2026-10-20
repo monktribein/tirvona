@@ -241,6 +241,7 @@ const FOOD_ADMIN_LINKS = [
   { label: "Restaurants", path: "/admin/food/vendors" },
   { label: "Awaiting Approval", path: "/admin/food/vendors?status=pending_verification" },
   { label: "Create Restaurant", path: "/admin/food/vendors?new=1" },
+  { label: "Kitchen Wallets & Payments", path: "/admin/food/wallets" },
   { label: "Orders, Exceptions & Payouts", path: "/admin/food" },
 ];
 
@@ -266,6 +267,11 @@ const RESTAURANT_GROUPS: NavGroup[] = [
     groupName: "Menu & Inventory",
     icon: <UtensilsCrossed size={15} />,
     links: [{ label: "Dishes, Prices & Stock", path: "/restaurant/menu" }],
+  },
+  {
+    groupName: "Wallet",
+    icon: <Wallet size={15} />,
+    links: [{ label: "Payments & Balance", path: "/restaurant/wallet" }],
   },
   {
     groupName: "My Restaurant",

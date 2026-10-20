@@ -13,10 +13,12 @@ export function fakeModel(initial: any[] = []) {
         if ("$ne" in val) return String(row[key]) !== String(val.$ne);
         if ("$regex" in val)
           return new RegExp(val.$regex, val.$options).test(String(row[key] ?? ""));
-        if ("$gte" in val || "$lte" in val) {
+        if ("$gte" in val || "$lte" in val || "$gt" in val || "$lt" in val) {
           const v = new Date(row[key]).getTime();
           if ("$gte" in val && v < new Date(val.$gte).getTime()) return false;
           if ("$lte" in val && v > new Date(val.$lte).getTime()) return false;
+          if ("$gt" in val && v <= new Date(val.$gt).getTime()) return false;
+          if ("$lt" in val && v >= new Date(val.$lt).getTime()) return false;
           return true;
         }
       }
@@ -53,8 +55,10 @@ export function fakeModel(initial: any[] = []) {
       },
       sort: (spec: Record<string, 1 | -1>) => {
         const [[key, dir]] = Object.entries(spec ?? { _id: 1 });
+        // Rows created in the same millisecond keep their insertion order (reversed for a descending sort).
+        const position = (row: any) => list.indexOf(row);
         result = [...result].sort((a, b) =>
-          a[key] > b[key] ? dir : a[key] < b[key] ? -dir : 0,
+          a[key] > b[key] ? dir : a[key] < b[key] ? -dir : dir * (position(a) - position(b)),
         );
         return q;
       },
@@ -76,21 +80,29 @@ export function fakeModel(initial: any[] = []) {
       };
       return q;
     },
+    countDocuments: async (f?: any) => rows.filter((r) => matches(r, f)).length,
     findById: async (id: any) => wrap(rows.find((r) => String(r._id) === String(id))),
     findOneAndUpdate: async (f: any, update: any) => {
       const row = rows.find((r) => matches(r, f));
       if (!row) return null;
-      Object.assign(row, update.$set ?? update);
+      Object.assign(row, update.$set ?? update, { updatedAt: new Date() });
+      return wrap(row);
+    },
+    findByIdAndUpdate: async (id: any, update: any) => {
+      const row = rows.find((r) => String(r._id) === String(id));
+      if (!row) return null;
+      Object.assign(row, update.$set ?? update, { updatedAt: new Date() });
       return wrap(row);
     },
     updateOne: async (f: any, update: any) => {
       const row = rows.find((r) => matches(r, f));
-      if (row) Object.assign(row, update.$set ?? update);
+      if (row) Object.assign(row, update.$set ?? update, { updatedAt: new Date() });
       return { modifiedCount: row ? 1 : 0 };
     },
     exists: async (f?: any) => (rows.some((r) => matches(r, f)) ? { _id: 1 } : null),
     create: async (data: any) => {
-      const row = { _id: newId(), createdAt: new Date(), ...data };
+      const now = new Date();
+      const row = { _id: newId(), createdAt: now, updatedAt: now, ...data };
       rows.push(row);
       return wrap(row);
     },

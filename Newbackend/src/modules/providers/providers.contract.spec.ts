@@ -79,6 +79,7 @@ describe("providers API surface", () => {
       [
         "GET /api/v2/providers",
         "GET /api/v2/providers/:providerId",
+        "GET /api/v2/providers/:providerId/calendar-30-days",
         "GET /api/v2/providers/:providerId/offerings",
         "GET /api/v2/rituals",
         "GET /api/v2/rituals/:ritualId",

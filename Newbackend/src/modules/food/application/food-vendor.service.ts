@@ -5,6 +5,7 @@ import {
 } from "@nestjs/common";
 import { InjectModel } from "../../../database/orm-nest";
 import type { Model } from "../../../database/orm";
+import { FOOD_FULFILLED_ORDER_STATUSES } from "../domain/food.constants";
 
 @Injectable()
 export class FoodVendorService {
@@ -121,7 +122,8 @@ export class FoodVendorService {
       }),
       this.orderModel.find({
         outletId: { $in: outletIds },
-        orderStatus: "COMPLETED",
+        // Handed over, not only COMPLETED: the kitchen has no button that completes a delivered order.
+        orderStatus: { $in: [...FOOD_FULFILLED_ORDER_STATUSES] },
         paymentStatus: "PAID",
       }),
       this.orderModel.countDocuments({

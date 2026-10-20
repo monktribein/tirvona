@@ -83,6 +83,10 @@ export class ProviderOfferingService {
         voluntaryDakshinaAllowed: dto.voluntaryDakshinaAllowed ?? true,
         tags: dto.tags ?? [],
         status: dto.status ?? "ACTIVE",
+        serviceType: dto.serviceType ?? "INDIVIDUAL",
+        groupCapacity: dto.groupCapacity ?? null,
+        kathaDetails: dto.kathaDetails ?? null,
+        advancePercentage: dto.advancePercentage ?? 50,
       });
     } catch (error) {
       if ((error as { code?: number }).code === 11000)
@@ -135,8 +139,12 @@ export class ProviderOfferingService {
       "voluntaryDakshinaAllowed",
       "tags",
       "status",
+      "serviceType",
+      "groupCapacity",
+      "kathaDetails",
+      "advancePercentage",
     ] as const)
-      if (dto[key] !== undefined) fields[key] = dto[key];
+      if (dto[key as keyof UpdateOfferingDto] !== undefined) fields[key] = dto[key as keyof UpdateOfferingDto];
     if (dto.travelCharge) fields.travelCharge = next.travelCharge;
     if (!Object.keys(fields).length)
       throw providerError.badRequest("NOTHING_TO_UPDATE", "No changes supplied");

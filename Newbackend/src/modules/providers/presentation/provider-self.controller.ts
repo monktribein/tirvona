@@ -21,6 +21,8 @@ import { ProviderProfileService } from "../application/provider-profile.service"
 import { Idempotent } from "../infrastructure/idempotency.interceptor";
 import { ConsultationListQueryDto } from "./dto/booking.dto";
 import {
+  AvailabilityQueryDto,
+  ThirtyDayCalendarQueryDto,
   CalendarQueryDto,
   CreateCalendarBlockDto,
   CreateOfferingDto,
@@ -142,6 +144,11 @@ export class ProviderSelfController {
     @Param("blockId", ObjectIdPipe) blockId: string,
   ) {
     return this.availability.releaseBlock(user, blockId);
+  }
+
+  @Get("calendar-30-days")
+  thirtyDayCalendar(@CurrentUser() user: AuthenticatedUser, @Query() query: ThirtyDayCalendarQueryDto) {
+    return this.availability.getOwnThirtyDayCalendar(user, query);
   }
 
   // ------------------------------------------------- operations dashboards

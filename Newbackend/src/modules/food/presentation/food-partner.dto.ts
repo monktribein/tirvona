@@ -157,6 +157,13 @@ export class FoodMenuItemDto {
   @IsOptional() @IsInt() @Min(0) @Max(100_000) dailyCapacity?: number;
   @IsOptional() @Matches(TIME, { message: "cutOffTime must be HH:MM" }) cutOffTime?: string;
   @IsOptional() @trim() @IsString() @MaxLength(500) imageUrl?: string;
+  /** Multi-image gallery: 1 to 5 images per product */
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(5, { message: "A food product can have at most 5 images" })
+  @IsString({ each: true })
+  @MaxLength(500, { each: true })
+  imageUrls?: string[];
   @IsOptional() @IsBoolean() isAvailable?: boolean;
 }
 
@@ -175,6 +182,13 @@ export class FoodMenuItemUpdateDto {
   @IsOptional() @IsInt() @Min(0) @Max(100_000) dailyCapacity?: number;
   @IsOptional() @Matches(TIME, { message: "cutOffTime must be HH:MM" }) cutOffTime?: string;
   @IsOptional() @trim() @IsString() @MaxLength(500) imageUrl?: string;
+  /** Multi-image gallery: 1 to 5 images per product */
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(5, { message: "A food product can have at most 5 images" })
+  @IsString({ each: true })
+  @MaxLength(500, { each: true })
+  imageUrls?: string[];
   @IsOptional() @IsBoolean() isAvailable?: boolean;
 }
 

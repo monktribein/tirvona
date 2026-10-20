@@ -6,6 +6,7 @@ import {
 } from "@nestjs/common";
 import { InjectModel } from "../../../database/orm-nest";
 import type { Model } from "../../../database/orm";
+import { canonicalPaymentStatus } from "../domain/food.constants";
 
 @Injectable()
 export class FoodAdminService {
@@ -88,7 +89,7 @@ export class FoodAdminService {
         .populate("outletId", "brandName contactPhone")
         .lean(),
       this.refundModel
-        .find({ status: { $in: ["pending", "failed"] } })
+        .find({ status: { $in: ["pending", "processing", "failed"] } })
         .sort({ createdAt: -1 })
         .limit(50)
         .populate("orderId")
@@ -101,8 +102,12 @@ export class FoodAdminService {
     ]);
 
     return {
-      vendorExceptions: timedOutOrders,
-      pendingRefunds,
+      vendorExceptions: timedOutOrders.map((order: any) => ({ ...order, paymentStatus: canonicalPaymentStatus(order.paymentStatus) })),
+      pendingRefunds: pendingRefunds.map((refund: any) =>
+        refund.orderId && typeof refund.orderId === "object"
+          ? { ...refund, orderId: { ...refund.orderId, paymentStatus: canonicalPaymentStatus(refund.orderId.paymentStatus) } }
+          : refund,
+      ),
       openComplaints: complaints,
     };
   }

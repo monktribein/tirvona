@@ -8,13 +8,16 @@ import { ProviderBookingPaymentService } from "../application/provider-booking-p
 import { ProviderZoomService } from "../application/provider-zoom.service";
 import { Idempotent } from "../infrastructure/idempotency.interceptor";
 import {
+  AcceptBookingRequestDto,
   BookingListQueryDto,
   BookingLiveStreamDto,
   BookingTransitionDto,
   CancelWithReasonDto,
   ConfirmProviderPaymentDto,
+  CreateMultiPanditBookingRequestDto,
   CreatePaymentOrderDto,
   CreateProviderBookingDto,
+  DeclineBookingRequestDto,
 } from "./dto/booking.dto";
 import { ObjectIdPipe } from "./object-id.pipe";
 import { ProviderApi } from "./provider-api.decorator";
@@ -40,6 +43,32 @@ export class ProviderBookingsController {
   @Idempotent("provider.booking.create", { sensitive: true })
   create(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateProviderBookingDto) {
     return this.bookings.create(user, dto);
+  }
+
+  @Post("multi-request")
+  @Idempotent("provider.booking.multi_request", { sensitive: true })
+  createMultiRequest(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateMultiPanditBookingRequestDto) {
+    return this.bookings.createMultiRequest(user, dto);
+  }
+
+  @Post(":bookingId/accept-request")
+  @Idempotent("provider.booking.accept_request", { sensitive: true })
+  acceptRequest(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("bookingId", ObjectIdPipe) bookingId: string,
+    @Body() dto?: AcceptBookingRequestDto,
+  ) {
+    return this.bookings.acceptRequest(user, bookingId, dto);
+  }
+
+  @Post(":bookingId/decline-request")
+  @Idempotent("provider.booking.decline_request", { sensitive: true })
+  declineRequest(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("bookingId", ObjectIdPipe) bookingId: string,
+    @Body() dto?: DeclineBookingRequestDto,
+  ) {
+    return this.bookings.declineRequest(user, bookingId, dto?.reasonCode);
   }
 
   /** `?role=provider` lists the bookings made with the caller's provider profile. */

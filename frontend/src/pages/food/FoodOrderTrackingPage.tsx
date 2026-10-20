@@ -152,6 +152,9 @@ export const FoodOrderTrackingPage: React.FC = () => {
     "VENDOR_REJECTED",
     "VENDOR_TIMEOUT",
     "REFUNDED",
+    "REFUND_PENDING",
+    "REFUND_PROCESSING",
+    "REFUND_FAILED",
     "PAYMENT_FAILED",
   ].includes(order.orderStatus);
 
@@ -278,6 +281,16 @@ export const FoodOrderTrackingPage: React.FC = () => {
                 {order.paymentStatus === "REFUNDED" && (
                   <p className="mt-0.5 font-bold text-emerald-600 dark:text-emerald-400">
                     ✓ Full refund processed back to your original payment method.
+                  </p>
+                )}
+                {["REFUND_PENDING", "REFUND_PROCESSING"].includes(order.orderStatus) && (
+                  <p className="mt-0.5 font-bold text-amber-600 dark:text-amber-400">
+                    Your refund has been started. It can take 5 to 7 working days to reach your original payment method.
+                  </p>
+                )}
+                {order.orderStatus === "REFUND_FAILED" && (
+                  <p className="mt-0.5 font-bold text-red-600 dark:text-red-400">
+                    We could not complete your refund yet. Our team has been alerted and will retry it or contact you.
                   </p>
                 )}
               </div>

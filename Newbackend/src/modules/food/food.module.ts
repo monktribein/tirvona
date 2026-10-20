@@ -22,6 +22,7 @@ import {
   FoodServiceZoneSchema,
   FoodSettlementSchema,
   FoodVendorDocumentSchema,
+  FoodVendorPaymentSchema,
   FoodVendorSchema,
 } from "./infrastructure/food.schemas";
 import { BookingSchema } from "../bookings/infrastructure/persistence/booking.schemas";
@@ -33,6 +34,10 @@ import { FoodFinanceService } from "./application/food-finance.service";
 import { FoodVendorService } from "./application/food-vendor.service";
 import { FoodAdminService } from "./application/food-admin.service";
 import { FoodPartnerService } from "./application/food-partner.service";
+import { FoodWalletService } from "./application/food-wallet.service";
+import { FoodNotificationService } from "./application/food-notification.service";
+import { FoodMaintenanceService } from "./application/food-maintenance.service";
+import { NotificationsModule } from "../notifications/notifications.module";
 import { UserSchema } from "../users/infrastructure/persistence/user.schema";
 import { FoodPublicController } from "./presentation/food-public.controller";
 import { FoodVendorController } from "./presentation/food-vendor.controller";
@@ -42,6 +47,7 @@ import { FoodWebhookController } from "./presentation/food-webhook.controller";
 @Module({
   imports: [
     ConfigModule.forFeature(payoutConfig),
+    NotificationsModule,
     OrmModule.forFeature([
       { name: "FoodVendor", schema: FoodVendorSchema },
       { name: "FoodOutlet", schema: FoodOutletSchema },
@@ -60,6 +66,7 @@ import { FoodWebhookController } from "./presentation/food-webhook.controller";
       { name: "FoodSettlement", schema: FoodSettlementSchema },
       { name: "FoodServiceZone", schema: FoodServiceZoneSchema },
       { name: "FoodVendorDocument", schema: FoodVendorDocumentSchema },
+      { name: "FoodVendorPayment", schema: FoodVendorPaymentSchema },
       {
         name: "FoodReviewAndComplaint",
         schema: FoodReviewAndComplaintSchema,
@@ -85,6 +92,9 @@ import { FoodWebhookController } from "./presentation/food-webhook.controller";
     FoodVendorService,
     FoodAdminService,
     FoodPartnerService,
+    FoodWalletService,
+    FoodNotificationService,
+    FoodMaintenanceService,
   ],
   exports: [
     FoodCatalogService,

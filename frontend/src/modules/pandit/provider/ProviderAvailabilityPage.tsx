@@ -11,9 +11,9 @@
  */
 
 import React, { useCallback, useEffect, useState } from "react";
-import { Calendar, Plus, Save, Trash2 } from "lucide-react";
+import { Calendar, CalendarDays, Clock, Compass, Plus, Save, Trash2 } from "lucide-react";
 import { providerSelfService } from "../services/provider.service";
-import type { AvailabilityRules, WeeklyRule, CalendarBlock, CreateCalendarBlockInput } from "../types/provider.types";
+import type { AvailabilityRules, WeeklyRule, CalendarBlock, CreateCalendarBlockInput, ThirtyDayCalendarData } from "../types/provider.types";
 import { getErrorMessage } from "../../../lib/api";
 import { toast } from "../../../lib/toast";
 import {
@@ -145,6 +145,7 @@ export const ProviderAvailabilityPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [thirtyDays, setThirtyDays] = useState<ThirtyDayCalendarData | null>(null);
 
   const [newBlock, setNewBlock] = useState<CreateCalendarBlockInput>({ startDate: "", endDate: "", reason: "" });
   const [blockError, setBlockError] = useState<string | null>(null);
@@ -153,7 +154,11 @@ export const ProviderAvailabilityPage: React.FC = () => {
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const [rulesRes, blocksRes] = await Promise.allSettled([providerSelfService.getAvailabilityRules(), providerSelfService.listCalendarBlocks()]);
+    const [rulesRes, blocksRes, thirtyRes] = await Promise.allSettled([
+      providerSelfService.getAvailabilityRules(),
+      providerSelfService.listCalendarBlocks(),
+      providerSelfService.getThirtyDayCalendar(),
+    ]);
 
     if (rulesRes.status === "fulfilled" && rulesRes.value.data?.success) {
       const data = rulesRes.value.data.data as AvailabilityRules;
@@ -166,6 +171,7 @@ export const ProviderAvailabilityPage: React.FC = () => {
       setError(getErrorMessage(rulesRes.reason, "Failed to load your schedule."));
     }
     if (blocksRes.status === "fulfilled" && blocksRes.value.data?.success) setBlocks(blocksRes.value.data.data || []);
+    if (thirtyRes.status === "fulfilled" && thirtyRes.value.data?.success) setThirtyDays(thirtyRes.value.data.data);
     setDirty(false);
     setLoading(false);
   }, []);
@@ -271,7 +277,106 @@ export const ProviderAvailabilityPage: React.FC = () => {
         </Notice>
       )}
       {dirty && <Notice tone="info">You have unsaved changes.</Notice>}
-      {scheduleError && <ErrorNotice message={scheduleError} />}
+      {/* ── 30-Day Rolling Availability Calendar & Shifts ── */}
+      {thirtyDays && thirtyDays.days?.length > 0 && (
+        <SectionCard
+          title="30-Day Rolling Calendar & Shifts"
+          description="Rolling 30-day forecast showing morning (06:00 - 14:00) and evening (14:00 - 22:00) shift availability, holds, confirmed bookings, and 50 km travel buffer radius."
+          actions={
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+              <Compass size={13} className="text-[#F28C28]" />
+              50 km Radius Enforced
+            </span>
+          }
+        >
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                Available Shift
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+                Hold Pending
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-slate-400" />
+                Confirmed Booking
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-slate-200 dark:bg-slate-700" />
+                Shift Off / Blocked
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 max-h-72 overflow-y-auto p-1">
+              {thirtyDays.days.map((d) => {
+                const dayDate = new Date(d.date + "T12:00:00+05:30");
+                const dateFormatted = dayDate.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+                const morning = d.shifts?.morning;
+                const evening = d.shifts?.evening;
+
+                return (
+                  <div
+                    key={d.date}
+                    className="rounded-xl border border-slate-200/90 bg-white p-2.5 dark:border-slate-800 dark:bg-[#0B192C] flex flex-col justify-between gap-1.5 text-left"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-900 dark:text-white">{dateFormatted}</span>
+                      <span className="text-[10px] font-medium text-slate-400">{d.dayOfWeek.slice(0, 3)}</span>
+                    </div>
+
+                    <div className="space-y-1 text-[11px]">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500">Morn (6-14)</span>
+                        <span
+                          className={cx(
+                            "h-2 w-2 rounded-full",
+                            morning?.hasConfirmedBooking
+                              ? "bg-slate-500"
+                              : (morning?.isBookable ?? morning?.status === "AVAILABLE")
+                              ? "bg-emerald-500"
+                              : "bg-slate-200 dark:bg-slate-700"
+                          )}
+                          title={morning?.hasConfirmedBooking ? "Confirmed booking in morning" : (morning?.isBookable ?? morning?.status === "AVAILABLE") ? "Morning available" : "Off"}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500">Eve (14-22)</span>
+                        <span
+                          className={cx(
+                            "h-2 w-2 rounded-full",
+                            evening?.hasConfirmedBooking
+                              ? "bg-slate-500"
+                              : (evening?.isBookable ?? evening?.status === "AVAILABLE")
+                              ? "bg-emerald-500"
+                              : "bg-slate-200 dark:bg-slate-700"
+                          )}
+                          title={evening?.hasConfirmedBooking ? "Confirmed booking in evening" : (evening?.isBookable ?? evening?.status === "AVAILABLE") ? "Evening available" : "Off"}
+                        />
+                      </div>
+                    </div>
+
+                    {d.confirmedBookingCount > 0 ? (
+                      <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-center text-[10px] font-semibold text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+                        {d.confirmedBookingCount} Booked
+                      </span>
+                    ) : d.hasHold ? (
+                      <span className="rounded bg-amber-50 px-1.5 py-0.5 text-center text-[10px] font-semibold text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+                        1 Hold
+                      </span>
+                    ) : (
+                      <span className="rounded bg-slate-50 px-1.5 py-0.5 text-center text-[10px] text-slate-400 dark:bg-slate-900/40">
+                        Open
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </SectionCard>
+      )}
 
       <SectionCard
         title="Weekly schedule"

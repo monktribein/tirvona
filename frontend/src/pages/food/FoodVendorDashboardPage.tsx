@@ -7,15 +7,16 @@ import {
   Power,
   RefreshCw,
   ShieldAlert,
-  FileText,
-  ExternalLink,
+  Wallet,
 } from "lucide-react";
 import { foodService } from "../../services/food.service";
 import type { FoodOrder } from "../../services/food.service";
+import { foodWalletService } from "../../services/foodWallet.service";
+import type { FoodWallet } from "../../services/foodWallet.service";
 import { useMyRestaurant } from "../../modules/food/useMyRestaurant";
 import { VendorStatusBanner } from "../../modules/food/foodUi";
 import { EnterprisePageHeader } from "../../admin/shared/components/EnterprisePageHeader";
-import { Chips, Stat } from "../../modules/marketplace/ui";
+import { Chips, Stat, inr } from "../../modules/marketplace/ui";
 
 export const FoodVendorDashboardPage: React.FC = () => {
   const { profile, state: profileState } = useMyRestaurant();
@@ -23,6 +24,7 @@ export const FoodVendorDashboardPage: React.FC = () => {
   const [orders, setOrders] = useState<FoodOrder[]>([]);
   const [outlets, setOutlets] = useState<any[]>([]);
   const [settlements, setSettlements] = useState<any[]>([]);
+  const [wallet, setWallet] = useState<FoodWallet | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<
@@ -36,11 +38,20 @@ export const FoodVendorDashboardPage: React.FC = () => {
 
   useEffect(() => {
     loadDashboard();
+    loadWallet();
     const interval = setInterval(() => {
       loadDashboard(true);
     }, 15000); // 15s refresh for kitchen orders
     return () => clearInterval(interval);
   }, []);
+
+  // Not part of the 15-second refresh: it adds up every delivered order, so it loads on open and on Refresh.
+  const loadWallet = () => {
+    foodWalletService
+      .wallet("owner")
+      .then(setWallet)
+      .catch(() => setWallet(null));
+  };
 
   const loadDashboard = async (silent = false) => {
     if (!silent) setLoading(true);
@@ -141,15 +152,12 @@ export const FoodVendorDashboardPage: React.FC = () => {
           icon={<Utensils size={20} />}
           actions={
             <div className="flex flex-wrap items-center gap-2">
-              <Link
-                to="/food"
-                className="px-4 py-2 rounded-full border border-gray-200 dark:border-slate-700 text-xs font-extrabold inline-flex items-center gap-1.5 hover:border-[#F28C28] hover:text-[#F28C28] transition-colors"
-              >
-                View public Food page <ExternalLink size={12} />
-              </Link>
               <button
                 type="button"
-                onClick={() => loadDashboard(true)}
+                onClick={() => {
+                  loadDashboard(true);
+                  loadWallet();
+                }}
                 className="px-4 py-2 rounded-full border border-gray-200 dark:border-slate-700 text-xs font-extrabold inline-flex items-center gap-1.5 hover:border-[#F28C28] transition-colors"
               >
                 <RefreshCw size={13} className={refreshing ? "animate-spin text-[#F28C28]" : ""} />
@@ -198,10 +206,17 @@ export const FoodVendorDashboardPage: React.FC = () => {
             tone="ok"
           />
           <Stat
-            label="Estimated payout"
-            value={`₹${stats?.estimatedSettlementRupees ?? 0}`}
-            hint="After commission"
-            icon={<FileText size={16} />}
+            label="Tirvona owes you"
+            value={wallet ? inr(Math.max(0, wallet.summary.remainingPaise) / 100) : "—"}
+            hint={
+              wallet
+                ? wallet.summary.remainingPaise < 0
+                  ? "Paid ahead of your orders. Open your wallet"
+                  : `For ${wallet.summary.deliveredOrders} delivered order${wallet.summary.deliveredOrders === 1 ? "" : "s"}. Open your wallet`
+                : "Open your wallet"
+            }
+            icon={<Wallet size={16} />}
+            to="/restaurant/wallet"
           />
         </div>
 
@@ -402,6 +417,12 @@ export const FoodVendorDashboardPage: React.FC = () => {
         {/* Tab 4: Settlements & Payouts */}
         {activeTab === "settlement" && (
           <div className="space-y-4">
+            <Link
+              to="/restaurant/wallet"
+              className="block p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs font-bold text-amber-900 hover:bg-amber-100 transition-colors"
+            >
+              Your balance and every payment from Tirvona, with its receipt, are in your Wallet →
+            </Link>
             <div className="bg-white dark:bg-[#0B192C] p-6 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-4">
               <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
                 How you get paid

@@ -1,18 +1,26 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Award,
   BookOpen,
   CalendarDays,
+  Check,
+  CheckCircle2,
+  Clock,
   Filter,
   Flame,
   MapPin,
   MessageSquare,
   RotateCcw,
   Search,
+  Send,
   ShieldCheck,
+  Sparkles,
+  Users,
+  X,
 } from "lucide-react";
-import { providerPublicService, ritualCatalogService } from "../services/provider.service";
+import { providerPublicService, pujaBookingService, ritualCatalogService } from "../services/provider.service";
+import { toast } from "../../../lib/toast";
 import type { ProviderSearchParams } from "../types/provider.types";
 import { PROVIDER_TYPE_LABELS, VERIFICATION_LEVEL_LABELS } from "../types/provider.types";
 import { getErrorMessage } from "../../../lib/api";
@@ -183,6 +191,7 @@ const ProviderCardSkeleton: React.FC = () => (
 );
 
 export const PublicPanditDirectoryPage: React.FC = () => {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [filters, setFilters] = useState<Filters>(() => readFilters(searchParams));
   // The text box updates immediately; the request waits until typing pauses.
@@ -196,6 +205,49 @@ export const PublicPanditDirectoryPage: React.FC = () => {
   const [total, setTotal] = useState(0);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const requestId = useRef(0);
+
+  // Multi-Pandit booking request state (maximum 5 Pandits per Tirvona policy)
+  const [selectedPandits, setSelectedPandits] = useState<Array<{ id: string; name: string; avatarUrl?: string; city?: string }>>([]);
+  const [multiModalOpen, setMultiModalOpen] = useState(false);
+  const [serviceTypeTab, setServiceTypeTab] = useState<"ALL" | "INDIVIDUAL" | "GROUP" | "KATHA">("ALL");
+
+  // Multi-request modal form state
+  const [multiServiceType, setMultiServiceType] = useState<"INDIVIDUAL" | "GROUP" | "KATHA">("INDIVIDUAL");
+  const [multiRitualName, setMultiRitualName] = useState("");
+  const [multiDate, setMultiDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  });
+  const [multiShift, setMultiShift] = useState<"MORNING" | "EVENING" | "ANY">("MORNING");
+  const [multiCustomerName, setMultiCustomerName] = useState("");
+  const [multiCustomerPhone, setMultiCustomerPhone] = useState("");
+  const [multiCustomerCity, setMultiCustomerCity] = useState("Vrindavan");
+  const [multiCustomerAddress, setMultiCustomerAddress] = useState("");
+  const [multiNotes, setMultiNotes] = useState("");
+  const [submittingMulti, setSubmittingMulti] = useState(false);
+
+  const toggleSelectPandit = (p: any) => {
+    const exists = selectedPandits.some((x) => x.id === p.id);
+    if (exists) {
+      setSelectedPandits((prev) => prev.filter((x) => x.id !== p.id));
+    } else {
+      if (selectedPandits.length >= 5) {
+        toast.error("You can select a maximum of 5 Pandits for a booking request.");
+        return;
+      }
+      setSelectedPandits((prev) => [
+        ...prev,
+        {
+          id: p.id,
+          name: p.displayName,
+          avatarUrl: p.avatarUrl,
+          city: p.homeCity,
+        },
+      ]);
+      toast.success(`${p.displayName} added to request list (${selectedPandits.length + 1}/5)`);
+    }
+  };
 
   // Published rituals for the filter. The list carries locale-keyed titles.
   useEffect(() => {
@@ -414,6 +466,36 @@ export const PublicPanditDirectoryPage: React.FC = () => {
           </Link>
         </Card>
 
+        {/* Service Type Discovery Tabs: All, Individual Puja, Group Puja, Bhagwat Katha */}
+        <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-3">
+          <span className="text-xs font-bold text-gray-500 mr-1 flex items-center gap-1">
+            <Sparkles size={13} className="text-[#F28C28]" /> Offering Type:
+          </span>
+          {[
+            { id: "ALL", label: "All Rituals & Pujas", icon: <Flame size={12} /> },
+            { id: "INDIVIDUAL", label: "Individual / Home Puja", icon: <Award size={12} /> },
+            { id: "GROUP", label: "Group Puja (Samuhik)", icon: <Users size={12} /> },
+            { id: "KATHA", label: "Bhagwat Katha & Katha", icon: <BookOpen size={12} /> },
+          ].map((tab) => {
+            const active = serviceTypeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setServiceTypeTab(tab.id as any)}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                  active
+                    ? "bg-[#F28C28] text-white shadow-xs"
+                    : "bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700"
+                }`}
+              >
+                {tab.icon}
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
         {/* Results Counter Above Grid (ensuring left filter & cards align at the exact same top baseline) */}
         <div className="mb-3.5 flex items-center justify-between">
           <p role="status" aria-live="polite" className="text-xs sm:text-sm font-semibold text-gray-500 dark:text-gray-400">
@@ -484,10 +566,19 @@ export const PublicPanditDirectoryPage: React.FC = () => {
                   const languagesList = p.languages?.length > 0 ? p.languages.slice(0, 2).join(", ") : "Sanskrit, Hindi";
                   const bioSnippet = p.bio?.trim() || "Authentic Vedic rituals and pujas performed according to scriptural Vidhi and traditional Shastras.";
                   const specs = p.specializations?.length > 0 ? p.specializations : ["Vedic Puja", "Havan & Yagya", "Griha Shanti"];
+                  const isPanditSelected = selectedPandits.some((x) => x.id === p.id);
 
                   return (
                     <li key={p.id} className="flex">
-                      <Card as="article" className="group relative flex w-full flex-col justify-between overflow-hidden rounded-2xl border border-amber-100/90 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#F28C28]/40 hover:shadow-lg dark:border-slate-800 dark:bg-[#0B192C]">
+                      <Card
+                        as="article"
+                        className={cx(
+                          "group relative flex w-full flex-col justify-between overflow-hidden rounded-2xl border bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:bg-[#0B192C]",
+                          isPanditSelected
+                            ? "border-[#F28C28] ring-2 ring-[#F28C28]/35 shadow-md"
+                            : "border-amber-100/90 hover:border-[#F28C28]/40 dark:border-slate-800",
+                        )}
+                      >
                         <div className="space-y-3">
                           <div className="flex items-start gap-3">
                             <Avatar name={p.displayName} src={p.avatarUrl} size={46} className="ring-2 ring-[#F28C28]/20 shrink-0" />
@@ -499,12 +590,27 @@ export const PublicPanditDirectoryPage: React.FC = () => {
                                   </span>
                                   {verified && <StatusBadge status={p.verificationLevel} label={VERIFICATION_LEVEL_LABELS[p.verificationLevel]} tone="success" />}
                                 </div>
-                                {(p as any).liveOnline && (
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-rose-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white motion-reduce:animate-none" aria-hidden="true" />
-                                    Live
-                                  </span>
-                                )}
+                                <div className="flex items-center gap-1.5">
+                                  {(p as any).liveOnline && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-rose-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white motion-reduce:animate-none" aria-hidden="true" />
+                                      Live
+                                    </span>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleSelectPandit(p)}
+                                    title={isPanditSelected ? "Remove from multi-request" : "Select for multi-request (up to 5 Pandits)"}
+                                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold transition-all cursor-pointer ${
+                                      isPanditSelected
+                                        ? "bg-[#F28C28] text-white shadow-xs"
+                                        : "bg-gray-100 hover:bg-amber-100 text-gray-700 dark:bg-slate-800 dark:text-gray-300 dark:hover:bg-slate-700"
+                                    }`}
+                                  >
+                                    {isPanditSelected ? <Check size={10} className="stroke-[3]" /> : <Send size={9} />}
+                                    <span>{isPanditSelected ? "Selected" : "+ Request"}</span>
+                                  </button>
+                                </div>
                               </div>
                               <h3 className="break-words text-base font-bold leading-tight text-[#0B192C] transition-colors group-hover:text-[#B45309] dark:text-white dark:group-hover:text-[#FFA44D]">
                                 <Link to={profilePath} className="focus-visible:outline-none focus-visible:underline">
@@ -613,6 +719,250 @@ export const PublicPanditDirectoryPage: React.FC = () => {
         }
       >
         <FilterFields filters={filters} rituals={rituals} onChange={updateFilters} />
+      </Modal>
+      {/* ── Multi-Pandit Request Floating Action Dock ── */}
+      {selectedPandits.length > 0 && (
+        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 w-11/12 max-w-2xl bg-slate-900/95 dark:bg-slate-950/95 backdrop-blur-md text-white rounded-2xl px-4 py-3 shadow-2xl border border-amber-500/40 flex items-center justify-between gap-3 animate-in fade-in slide-in-from-bottom-5">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#F28C28] font-bold text-xs text-white">
+              {selectedPandits.length}
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-bold truncate">
+                {selectedPandits.length} of 5 Pandits Selected
+              </p>
+              <p className="text-[10px] text-slate-300 truncate">
+                Dispatches request to up to 5 verified Pandits. First to accept gets 1-hr payment lock.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setSelectedPandits([])}
+              className="text-[11px] font-bold text-slate-400 hover:text-white px-2 py-1 cursor-pointer"
+            >
+              Clear
+            </button>
+            <Button
+              variant="primary"
+              className="!h-9 !px-4 !text-xs !font-bold rounded-full !bg-[#F28C28] hover:!bg-[#D97706]"
+              onClick={() => setMultiModalOpen(true)}
+            >
+              <Send size={13} className="mr-1" />
+              Request Pandits
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Multi-Pandit Request Submission Modal ── */}
+      <Modal
+        open={multiModalOpen}
+        onClose={() => setMultiModalOpen(false)}
+        title="Request Up to 5 Pandits"
+        description="Your puja request will be dispatched simultaneously to the selected verified Pandits. As soon as the first Pandit accepts, you will have exactly 1 hour to complete the 50% advance payment."
+      >
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (selectedPandits.length === 0) {
+              toast.error("Please select at least 1 Pandit.");
+              return;
+            }
+            if (selectedPandits.length > 5) {
+              toast.error("You can select at most 5 Pandits.");
+              return;
+            }
+            if (!multiCustomerPhone.trim()) {
+              toast.error("Please provide your phone number.");
+              return;
+            }
+            setSubmittingMulti(true);
+            try {
+              const res = await pujaBookingService.createMultiRequest({
+                candidateProviderIds: selectedPandits.map((p) => p.id),
+                serviceType: multiServiceType,
+                scheduledDate: multiDate,
+                shift: multiShift,
+                serviceLocation: {
+                  city: multiCustomerCity,
+                  line1: multiCustomerAddress,
+                  notes: multiNotes,
+                },
+                customerContact: {
+                  fullName: multiCustomerName,
+                  phone: multiCustomerPhone,
+                },
+              });
+              if (res.data?.success) {
+                toast.success(
+                  `Booking request sent to ${selectedPandits.length} Pandits! Track incoming responses in your bookings.`,
+                );
+                setSelectedPandits([]);
+                setMultiModalOpen(false);
+                navigate("/profile/bookings");
+              } else {
+                toast.error(res.data?.message || "Failed to create multi-pandit request.");
+              }
+            } catch (err: any) {
+              toast.error(getErrorMessage(err, "Failed to submit booking requests."));
+            } finally {
+              setSubmittingMulti(false);
+            }
+          }}
+          className="space-y-4"
+        >
+          {/* Selected Pandits list */}
+          <div>
+            <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
+              Selected Pandits ({selectedPandits.length}/5)
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {selectedPandits.map((p) => (
+                <span
+                  key={p.id}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 px-2.5 py-1 text-xs font-bold text-amber-900 dark:text-amber-300"
+                >
+                  <Avatar name={p.name} src={p.avatarUrl} size={18} />
+                  <span>{p.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPandits((prev) => prev.filter((x) => x.id !== p.id))}
+                    className="ml-0.5 text-amber-600 hover:text-rose-600"
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Service Type" required>
+              <select
+                className={inputClass}
+                value={multiServiceType}
+                onChange={(e) => setMultiServiceType(e.target.value as any)}
+              >
+                <option value="INDIVIDUAL">Individual / Home Puja</option>
+                <option value="GROUP">Group Puja (Samuhik)</option>
+                <option value="KATHA">Katha (Bhagwat Katha / Shiv Katha)</option>
+              </select>
+            </Field>
+
+            <Field label="Ritual / Puja Name" hint="e.g. Satyanarayan Puja, Bhagwat Katha">
+              <input
+                className={inputClass}
+                value={multiRitualName}
+                onChange={(e) => setMultiRitualName(e.target.value)}
+                placeholder="e.g. Rudrabhishek, Satyanarayan Katha"
+              />
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Preferred Date" required>
+              <input
+                type="date"
+                className={inputClass}
+                required
+                min={new Date().toISOString().slice(0, 10)}
+                value={multiDate}
+                onChange={(e) => setMultiDate(e.target.value)}
+              />
+            </Field>
+
+            <Field label="Preferred Shift" required>
+              <select
+                className={inputClass}
+                value={multiShift}
+                onChange={(e) => setMultiShift(e.target.value as any)}
+              >
+                <option value="MORNING">Morning Shift (06:00 - 14:00)</option>
+                <option value="EVENING">Evening Shift (14:00 - 22:00)</option>
+                <option value="ANY">Any Shift / Flexible</option>
+              </select>
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Your Full Name" required>
+              <input
+                className={inputClass}
+                required
+                value={multiCustomerName}
+                onChange={(e) => setMultiCustomerName(e.target.value)}
+                placeholder="Devotee name for sankalp"
+              />
+            </Field>
+
+            <Field label="Phone Number" required hint="Stored securely. Private until payment.">
+              <input
+                type="tel"
+                className={inputClass}
+                required
+                value={multiCustomerPhone}
+                onChange={(e) => setMultiCustomerPhone(e.target.value)}
+                placeholder="10-digit mobile number"
+              />
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Puja City" required>
+              <input
+                className={inputClass}
+                required
+                value={multiCustomerCity}
+                onChange={(e) => setMultiCustomerCity(e.target.value)}
+                placeholder="e.g. Vrindavan, Varanasi, Noida"
+              />
+            </Field>
+
+            <Field label="Puja Address / Venue">
+              <input
+                className={inputClass}
+                value={multiCustomerAddress}
+                onChange={(e) => setMultiCustomerAddress(e.target.value)}
+                placeholder="House / Apartment / Ashram address"
+              />
+            </Field>
+          </div>
+
+          <Field label="Special Sankalp Notes / Gotra / Requirements">
+            <textarea
+              className={inputClass}
+              rows={2}
+              value={multiNotes}
+              onChange={(e) => setMultiNotes(e.target.value)}
+              placeholder="Provide Gotra, family member names, or samagri preferences"
+            />
+          </Field>
+
+          {/* Privacy & Payment Policy Notice */}
+          <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-[11px] space-y-1 text-amber-900 dark:text-amber-200">
+            <p className="font-extrabold flex items-center gap-1">
+              <ShieldCheck size={14} className="text-[#F28C28]" />
+              Mandatory Booking Security &amp; Privacy Rules:
+            </p>
+            <ul className="list-disc pl-4 space-y-0.5 text-[10px] text-amber-800 dark:text-amber-300">
+              <li>Your phone number &amp; Pandit contact details remain <strong>strictly masked</strong> until 50% advance payment is completed.</li>
+              <li>Once any Pandit accepts, a <strong>1-hour payment deadline countdown</strong> begins.</li>
+              <li>Only one Pandit can be confirmed; competing holds are cancelled automatically upon verified payment.</li>
+            </ul>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" type="button" onClick={() => setMultiModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit" disabled={submittingMulti || selectedPandits.length === 0}>
+              <Send size={13} className="mr-1" />
+              {submittingMulti ? "Sending Requests…" : `Send Requests to ${selectedPandits.length} Pandits`}
+            </Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

@@ -211,6 +211,12 @@ export const toPublicOffering = (offering: any, catalogue?: { ritual?: any; vari
   /** Tirvona's fee on top of the professional fee, and what the devotee pays before any travel charge. */
   platformFee: { rateBps: feeBps, percent: feeBps / 100, amountMinor: fee, label: PLATFORM_FEE_LABEL },
   devoteePriceMinor: offering.baseProfessionalFeeMinor + fee,
+  serviceType: offering.serviceType ?? "INDIVIDUAL",
+  groupCapacity: offering.groupCapacity ?? null,
+  kathaDetails: offering.kathaDetails ?? null,
+  advancePercentage: offering.advancePercentage ?? 50,
+  advanceRequiredMinor: Math.round(((offering.baseProfessionalFeeMinor * (offering.advancePercentage ?? 50)) / 100)) + fee,
+  remainingBalanceMinor: offering.baseProfessionalFeeMinor - Math.round(((offering.baseProfessionalFeeMinor * (offering.advancePercentage ?? 50)) / 100)),
   travelCharge: offering.travelCharge ?? { policy: "NONE" },
   inclusions: offering.inclusions ?? [],
   exclusions: offering.exclusions ?? [],

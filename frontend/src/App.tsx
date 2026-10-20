@@ -355,6 +355,8 @@ const FoodVendorDashboardPage = namedPage(
 );
 const AdminFoodVendorsPage = lazy(() => import("./admin/food/AdminFoodVendorsPage"));
 const AdminFoodVendorDetailPage = lazy(() => import("./admin/food/AdminFoodVendorDetailPage"));
+const AdminFoodWalletsPage = lazy(() => import("./admin/food/AdminFoodWalletsPage"));
+const RestaurantWalletPage = lazy(() => import("./modules/food/RestaurantWalletPage"));
 const RestaurantProfilePage = namedPage(
   () => import("./modules/food/RestaurantPages"),
   "RestaurantProfilePage",
@@ -1308,6 +1310,7 @@ const AppContent: React.FC = () => {
             />
             <Route path="/admin/food/vendors" element={<AdminFoodVendorsPage />} />
             <Route path="/admin/food/vendors/:vendorId" element={<AdminFoodVendorDetailPage />} />
+            <Route path="/admin/food/wallets" element={<AdminFoodWalletsPage />} />
             <Route
               path="/admin/parking/control"
               element={<ParkingControlCenterPage />}
@@ -1477,6 +1480,7 @@ const AppContent: React.FC = () => {
             <Route path="/restaurant/dashboard" element={<FoodVendorDashboardPage />} />
             <Route path="/restaurant/orders" element={<FoodVendorDashboardPage />} />
             <Route path="/restaurant/menu" element={<RestaurantMenuPage />} />
+            <Route path="/restaurant/wallet" element={<RestaurantWalletPage />} />
             <Route path="/restaurant/profile" element={<RestaurantProfilePage />} />
           </Route>
 

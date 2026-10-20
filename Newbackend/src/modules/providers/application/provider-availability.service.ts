@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Optional } from "@nestjs/common";
 import { InjectModel } from "../../../database/orm-nest";
 import type { Model } from "../../../database/orm";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
@@ -8,6 +8,7 @@ import {
   flattenWeeklyRules,
   freeWindowsOn,
   groupWeeklyRules,
+  rruleDays,
   weeklyRrule,
   type RuleRecord,
   type WeeklyRuleInput,
@@ -15,10 +16,13 @@ import {
 import {
   DEFAULT_TIMEZONE,
   MAX_AVAILABILITY_QUERY_DAYS,
+  THIRTY_DAY_CALENDAR_DAYS,
   MAX_BLOCK_DAYS,
+  MAX_TRAVEL_RADIUS_KM,
   PROVIDER_MANAGED_BLOCK_TYPES,
   type CalendarBlockType,
 } from "../domain/provider.constants";
+import { validateTravelDistance } from "../domain/travel-distance.util";
 import { providerError } from "../domain/provider.errors";
 import {
   addDays,
@@ -32,6 +36,7 @@ import {
 } from "../domain/provider-time.util";
 import type {
   AvailabilityQueryDto,
+  ThirtyDayCalendarQueryDto,
   CalendarQueryDto,
   CreateCalendarBlockDto,
   PutAvailabilityRulesDto,
@@ -54,6 +59,9 @@ export class ProviderAvailabilityService {
     private readonly calendar: ProviderCalendarService,
     private readonly projection: ProviderProjectionService,
     private readonly audit: ProviderAuditService,
+    @Optional()
+    @InjectModel("ProviderBooking")
+    private readonly bookingModel?: Model<any>,
   ) {}
 
   // ---------------------------------------------------------------- rules
@@ -242,6 +250,159 @@ export class ProviderAvailabilityService {
         })),
       });
     }
+    return {
+      success: true,
+      data: {
+        providerId: idStr(provider._id),
+        timezone,
+        scheduleConfigured: rules.length > 0,
+        days,
+      },
+    };
+  }
+
+  /**
+   * 30-day calendar with morning and evening shift breakdowns and same-day travel feasibility.
+   */
+  async getOwnThirtyDayCalendar(user: AuthenticatedUser, query: ThirtyDayCalendarQueryDto) {
+    const provider = await this.profiles.requireOwn(user);
+    return this.buildThirtyDayCalendar(provider, query);
+  }
+
+  async getThirtyDayCalendar(
+    actor: AuthenticatedUser | undefined,
+    idOrSlug: string,
+    query: ThirtyDayCalendarQueryDto,
+  ) {
+    const provider = await this.resolveVisible(actor, idOrSlug);
+    return this.buildThirtyDayCalendar(provider, query);
+  }
+
+  private async buildThirtyDayCalendar(provider: any, query: ThirtyDayCalendarQueryDto) {
+    const rules = await this.calendar.activeRules(provider._id);
+    const timezone = rules[0]?.timezone ?? DEFAULT_TIMEZONE;
+    const now = new Date();
+    const today = localDateOf(now, timezone);
+    const from = query.from || today;
+    const to = query.to || addDays(from, THIRTY_DAY_CALENDAR_DAYS - 1);
+    if (!isRealIsoDate(from) || !isRealIsoDate(to))
+      throw providerError.badRequest("INVALID_DATE", "Dates must be real calendar dates (YYYY-MM-DD)");
+    if (to < from) throw providerError.badRequest("INVALID_RANGE", "'to' must not be before 'from'");
+    if (daysBetween(from, to) + 1 > THIRTY_DAY_CALENDAR_DAYS)
+      throw providerError.badRequest(
+        "RANGE_TOO_LARGE",
+        `The calendar covers at most ${THIRTY_DAY_CALENDAR_DAYS} days at a time`,
+      );
+
+    const windowStart = zonedToUtc(from, "00:00", timezone);
+    const windowEnd = zonedToUtc(addDays(to, 1), "00:00", timezone);
+    const blocks = await this.calendar.liveBlocks(provider._id, windowStart, windowEnd);
+
+    const confirmedBookings = this.bookingModel
+      ? await this.bookingModel
+          .find({
+            providerId: provider._id,
+            status: {
+              $in: [
+                "CONFIRMED",
+                "PROVIDER_ACCEPTED",
+                "PREPARATION_IN_PROGRESS",
+                "READY_FOR_FULFILMENT",
+                "IN_PROGRESS",
+              ],
+            },
+            scheduledStartAt: { $gte: windowStart, $lte: windowEnd },
+          })
+          .select("scheduledStartAt scheduledEndAt serviceLocation shift status")
+          .lean()
+      : [];
+
+    const days = [];
+    for (let date = from; date <= to; date = addDays(date, 1)) {
+      const dayOfWeek = dayOfWeekOf(date);
+      const dayRules = rules.filter((r) => rruleDays(r.rrule).includes(dayOfWeek));
+      const dayStart = zonedToUtc(date, "00:00", timezone);
+      const dayEnd = zonedToUtc(addDays(date, 1), "00:00", timezone);
+      const dayBlocks = blocks.filter((b) => b.start < dayEnd && b.end > dayStart);
+      const dayBookings = confirmedBookings.filter(
+        (b: any) => localDateOf(b.scheduledStartAt, timezone) === date,
+      );
+
+      // Morning shift: 06:00 to 14:00
+      const morningStart = zonedToUtc(date, "06:00", timezone);
+      const morningEnd = zonedToUtc(date, "14:00", timezone);
+      const morningBookings = dayBookings.filter(
+        (b: any) =>
+          new Date(b.scheduledStartAt) < morningEnd && new Date(b.scheduledEndAt) > morningStart,
+      );
+      const morningBlocks = dayBlocks.filter(
+        (b) => b.start < morningEnd && b.end > morningStart,
+      );
+
+      // Evening shift: 14:00 to 22:00
+      const eveningStart = zonedToUtc(date, "14:00", timezone);
+      const eveningEnd = zonedToUtc(date, "22:00", timezone);
+      const eveningBookings = dayBookings.filter(
+        (b: any) =>
+          new Date(b.scheduledStartAt) < eveningEnd && new Date(b.scheduledEndAt) > eveningStart,
+      );
+      const eveningBlocks = dayBlocks.filter(
+        (b) => b.start < eveningEnd && b.end > eveningStart,
+      );
+
+      let morningStatus = "AVAILABLE";
+      if (morningEnd <= now) morningStatus = "UNAVAILABLE";
+      else if (morningBookings.length > 0) morningStatus = "BOOKED";
+      else if (morningBlocks.length > 0) morningStatus = "HELD";
+      else if (!dayRules.some((r) => r.window.startTime < "14:00" && r.window.endTime > "06:00"))
+        morningStatus = "UNAVAILABLE";
+
+      let eveningStatus = "AVAILABLE";
+      let eveningReason: string | undefined;
+      let eveningDistanceKm: number | undefined;
+      if (eveningEnd <= now) eveningStatus = "UNAVAILABLE";
+      else if (eveningBookings.length > 0) eveningStatus = "BOOKED";
+      else if (eveningBlocks.length > 0) eveningStatus = "HELD";
+      else if (!dayRules.some((r) => r.window.startTime < "22:00" && r.window.endTime > "14:00"))
+        eveningStatus = "UNAVAILABLE";
+
+      // Travel radius constraint: if morning booking exists and query has target city
+      if (eveningStatus === "AVAILABLE" && morningBookings.length > 0 && query.city) {
+        const morningCity = morningBookings[0].serviceLocation?.city;
+        if (morningCity && morningCity.toLowerCase() !== query.city.toLowerCase()) {
+          const distCheck = validateTravelDistance(morningCity, query.city, MAX_TRAVEL_RADIUS_KM);
+          eveningDistanceKm = distCheck.distanceKm ?? undefined;
+          if (!distCheck.valid) {
+            eveningStatus = "OUT_OF_RANGE";
+            eveningReason = `Preceding morning booking in ${morningCity} is ${distCheck.distanceKm !== null ? `${distCheck.distanceKm} km` : "an unknown distance"} away in a straight line, not road distance (max allowed same-day travel radius is ${MAX_TRAVEL_RADIUS_KM} km, straight-line)`;
+          }
+        }
+      }
+
+      days.push({
+        date,
+        dayOfWeek,
+        shifts: {
+          morning: {
+            shift: "MORNING",
+            status: morningStatus,
+            hasConfirmedBooking: morningBookings.length > 0,
+            bookingCount: morningBookings.length,
+          },
+          evening: {
+            shift: "EVENING",
+            status: eveningStatus,
+            hasConfirmedBooking: eveningBookings.length > 0,
+            bookingCount: eveningBookings.length,
+            reason: eveningReason,
+            distanceKm: eveningDistanceKm,
+          },
+        },
+        confirmedBookingCount: dayBookings.length,
+        hasHold: dayBlocks.length > 0,
+      });
+    }
+
     return {
       success: true,
       data: {

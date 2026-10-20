@@ -14,6 +14,7 @@ import { FoodOrderService } from "../application/food-order.service";
 import { FoodVendorService } from "../application/food-vendor.service";
 import { FoodFinanceService } from "../application/food-finance.service";
 import { FoodPartnerService } from "../application/food-partner.service";
+import { FoodWalletService } from "../application/food-wallet.service";
 import {
   FoodMenuItemDto,
   FoodMenuItemUpdateDto,
@@ -22,6 +23,7 @@ import {
   RegisterFoodVendorDto,
   UpdateFoodVendorDto,
 } from "./food-partner.dto";
+import { FoodWalletOrdersQueryDto } from "./food-wallet.dto";
 
 @Controller("v1/food/vendor")
 export class FoodVendorController {
@@ -30,6 +32,7 @@ export class FoodVendorController {
     private readonly vendorService: FoodVendorService,
     private readonly financeService: FoodFinanceService,
     private readonly partner: FoodPartnerService,
+    private readonly wallet: FoodWalletService,
   ) {}
 
   // ---- Restaurant owner self-service (scoped to the caller's own restaurant)
@@ -166,6 +169,21 @@ export class FoodVendorController {
   @Get("stats")
   async getStats(@CurrentUser() user: AuthenticatedUser) {
     return this.vendorService.getVendorDashboardStats(user.id);
+  }
+
+  /** What Tirvona owes this kitchen, what it has paid so far, and each payment with its receipt. */
+  @Get("wallet")
+  async getWallet(@CurrentUser() user: AuthenticatedUser) {
+    return this.wallet.walletForOwner(user.id);
+  }
+
+  /** The delivered orders behind the wallet, newest first. */
+  @Get("wallet/orders")
+  async getWalletOrders(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: FoodWalletOrdersQueryDto,
+  ) {
+    return this.wallet.earningsForOwner(user.id, query.page, query.limit);
   }
 
   @Get("settlements")

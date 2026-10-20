@@ -3,18 +3,28 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  Optional,
 } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import Razorpay from "razorpay";
 import { InjectModel } from "../../../database/orm-nest";
 import type { Model } from "../../../database/orm";
 import { randomBytes } from "crypto";
 import { BankAccountCrypto } from "../../payouts/infrastructure/bank-account.crypto";
 import { RazorpayXPayoutProvider } from "../../payouts/providers/razorpayx-payout.provider";
 import { mapProviderStatus } from "../../payouts/domain/payout.types";
+import { gstOnCommissionPaise } from "../domain/food-wallet";
 import {
   bankFingerprint,
   decodeAccountNumber,
   hasBankDetails,
 } from "./food-bank";
+
+/** A paid order can be refunded. "REFUND_FAILED" is the legacy paymentStatus of an order whose refund failed; it is still a paid order. */
+const REFUNDABLE_PAYMENT_STATUSES = ["PAID", "REFUND_FAILED"];
+const MAX_REFUND_TRIES = 3;
+const REFUND_RETRY_WAIT_MS = 15 * 60_000;
+const INTERRUPTED_REFUND_MS = 10 * 60_000;
 
 @Injectable()
 export class FoodFinanceService {
@@ -31,7 +41,49 @@ export class FoodFinanceService {
     @InjectModel("FoodVendor") private readonly vendorModel: Model<any>,
     private readonly crypto: BankAccountCrypto,
     private readonly payoutProvider: RazorpayXPayoutProvider,
+    @Optional()
+    @InjectModel("FoodPaymentAttempt")
+    private readonly paymentAttemptModel?: Model<any>,
+    @Optional() private readonly config?: ConfigService,
   ) {}
+
+  /** Razorpay client for customer refunds, or null when no live keys are configured. */
+  private refundGateway(): Razorpay | null {
+    const keyId = this.config?.get<string>("razorpayKeyId");
+    const keySecret = this.config?.get<string>("razorpayKeySecret");
+    return keyId && keySecret
+      ? new Razorpay({ key_id: keyId, key_secret: keySecret })
+      : null;
+  }
+
+  private async recordRefundFailure(
+    order: any,
+    reason: string,
+    initiatedBy: string,
+    failureReason: string,
+    paymentAttemptId?: unknown,
+  ) {
+    const failedRecord = await this.refundModel.create({
+      orderId: order._id,
+      paymentAttemptId: paymentAttemptId ?? undefined,
+      amountPaise: order.totalPaise,
+      reason,
+      gatewayRefundId: null,
+      status: "failed",
+      failureReason,
+      initiatedBy,
+      resolvedAt: null,
+    });
+
+    // The payment itself is still PAID (we hold the money); only the order's refund state changes.
+    // "REFUND_FAILED" is not a payment status, so paymentStatus is left alone.
+    await this.orderModel.findByIdAndUpdate(order._id, { orderStatus: "REFUND_FAILED" });
+
+    this.logger.error(
+      `Refund gateway failure recorded for Order #${order.orderNumber}: flagged for finance escalation`,
+    );
+    return failedRecord;
+  }
 
   /**
    * Posts immutable double-entry ledger records upon successful order payment.
@@ -103,52 +155,114 @@ export class FoodFinanceService {
     initiatedBy: string = "system",
     simulateGatewayFailure: boolean = false,
   ) {
-    if (!order || order.paymentStatus !== "PAID") {
+    if (!order || !REFUNDABLE_PAYMENT_STATUSES.includes(order.paymentStatus)) {
       this.logger.warn(
         `Refund skipped for Order #${order?.orderNumber}: order was not paid`,
       );
       return null;
     }
 
+    // A refund that is pending or done is final for this order. A failed one is history: the retry creates a new record.
     const existingRefund = await this.refundModel.findOne({
       orderId: order._id,
+      status: { $ne: "failed" },
     });
     if (existingRefund) {
       return existingRefund;
     }
 
-    const gatewayRefundId = `REF-${Date.now()}-${randomBytes(3).toString("hex").toUpperCase()}`;
+    // Claim the order before touching the gateway. Two cancellations arriving
+    // together (customer + vendor, or a retry) both pass the check above; only
+    // the one whose conditional update succeeds may call Razorpay, so a payment
+    // is never refunded twice. The claim is replaced by REFUNDED or
+    // REFUND_FAILED below.
+    const claimed = await this.orderModel.findOneAndUpdate(
+      { _id: order._id, paymentStatus: { $in: REFUNDABLE_PAYMENT_STATUSES }, orderStatus: { $ne: "REFUND_PROCESSING" } },
+      { $set: { orderStatus: "REFUND_PROCESSING" } },
+      { new: true },
+    );
+    if (!claimed) {
+      this.logger.warn(`Refund for Order #${order.orderNumber} is already being processed`);
+      return this.refundModel.findOne({ orderId: order._id, status: { $ne: "failed" } }); // null while the winner is mid-flight
+    }
 
     if (simulateGatewayFailure) {
-      const failedRecord = await this.refundModel.create({
+      return this.recordRefundFailure(order, reason, initiatedBy, "Simulated gateway failure");
+    }
+
+    // The money went in through a real gateway payment, so it has to come back
+    // the same way. Only local "demo" payments (never created in production) are
+    // refunded on paper alone. Without a payment-attempt model (unit tests) the
+    // refund is bookkeeping only.
+    let gatewayRefundId = `REF-${Date.now()}-${randomBytes(3).toString("hex").toUpperCase()}`;
+    let refundStatus: "refunded" | "processing" = "refunded";
+    let paymentAttemptId: unknown;
+    if (this.paymentAttemptModel) {
+      const attempt: any = await this.paymentAttemptModel.findOne({
         orderId: order._id,
-        amountPaise: order.totalPaise,
-        reason,
-        gatewayRefundId: null,
-        status: "failed",
-        initiatedBy,
-        resolvedAt: null,
+        status: "success",
       });
-
-      await this.orderModel.findByIdAndUpdate(order._id, {
-        paymentStatus: "REFUND_FAILED",
-        orderStatus: "REFUND_FAILED",
-      });
-
-      this.logger.error(
-        `Refund gateway failure recorded for Order #${order.orderNumber}: flagged for finance escalation`,
-      );
-      return failedRecord;
+      paymentAttemptId = attempt?._id;
+      if (attempt?.gatewayProvider === "razorpay") {
+        const gateway = this.refundGateway();
+        if (!gateway || !attempt.gatewayPaymentId) {
+          return this.recordRefundFailure(
+            order,
+            reason,
+            initiatedBy,
+            "Razorpay is not configured or the payment id is missing",
+            paymentAttemptId,
+          );
+        }
+        try {
+          // An earlier attempt may have reached Razorpay without us recording the answer: adopt that refund
+          // instead of creating a second one.
+          const held: any = await Promise.resolve()
+            .then(() => (gateway.payments as any).fetchMultipleRefund(attempt.gatewayPaymentId, { count: 100 }))
+            .catch(() => null);
+          const adopted = (held?.items ?? []).find(
+            (r: any) =>
+              r?.notes?.foodOrderId === String(order._id) &&
+              Number(r.amount) === Number(order.totalPaise) &&
+              r.status !== "failed",
+          );
+          const refund: any =
+            adopted ??
+            (await gateway.payments.refund(attempt.gatewayPaymentId, {
+              amount: order.totalPaise,
+              speed: "normal",
+              receipt: String(order.orderNumber).slice(0, 40),
+              notes: { module: "food", foodOrderId: String(order._id), reason: reason.slice(0, 200) },
+            }));
+          if (refund.status === "failed")
+            return this.recordRefundFailure(order, reason, initiatedBy, "Razorpay reported the refund as failed", paymentAttemptId);
+          gatewayRefundId = String(refund.id);
+          if (refund.status === "pending") refundStatus = "processing";
+        } catch (error: any) {
+          const detail = error?.error?.description || error?.message || "Razorpay refund failed";
+          this.logger.error(`Razorpay refund for Order #${order.orderNumber} failed: ${detail}`);
+          return this.recordRefundFailure(order, reason, initiatedBy, String(detail), paymentAttemptId);
+        }
+      } else if (attempt?.gatewayProvider !== "demo") {
+        return this.recordRefundFailure(
+          order,
+          reason,
+          initiatedBy,
+          "No captured gateway payment found for this order",
+          paymentAttemptId,
+        );
+      }
     }
 
     const refundRecord = await this.refundModel.create({
       orderId: order._id,
+      paymentAttemptId: paymentAttemptId ?? undefined,
       amountPaise: order.totalPaise,
       reason,
       gatewayRefundId,
-      status: "refunded",
+      status: refundStatus,
       initiatedBy,
-      resolvedAt: new Date(),
+      resolvedAt: refundStatus === "refunded" ? new Date() : null,
     });
 
     // Post refund ledger entries (reversing customer debit)
@@ -165,17 +279,104 @@ export class FoodFinanceService {
       actorId: initiatedBy,
     });
 
-    // Update order payment status
-    await this.orderModel.findByIdAndUpdate(order._id, {
-      paymentStatus: "REFUNDED",
-      orderStatus: "REFUNDED",
-    });
+    // "REFUNDED" only once the gateway has finished; until then the order says the refund is processing
+    // and the payment stays PAID.
+    await this.orderModel.findByIdAndUpdate(
+      order._id,
+      refundStatus === "refunded"
+        ? { paymentStatus: "REFUNDED", orderStatus: "REFUNDED" }
+        : { orderStatus: "REFUND_PROCESSING" },
+    );
 
     this.logger.log(
-      `Refund completed for Order #${order.orderNumber}: ₹${order.totalPaise / 100} (${reason})`,
+      `Refund ${refundStatus} for Order #${order.orderNumber}: ₹${order.totalPaise / 100} (${reason})`,
     );
 
     return refundRecord;
+  }
+
+  /** The order's current refund, newest first, for display. Null when it has none. */
+  async latestRefund(orderId: unknown) {
+    const rows = await this.refundModel.find({ orderId }).sort({ createdAt: -1 }).limit(1).lean();
+    return rows[0] ?? null;
+  }
+
+  /**
+   * Asks Razorpay how refunds that were still pending ended. Returns what changed so the caller can tell the
+   * customer. A refund counts as done only when the gateway says processed.
+   */
+  async reconcileProcessingRefunds(): Promise<Array<{ orderId: unknown; outcome: "refunded" | "failed" }>> {
+    const gateway = this.refundGateway();
+    if (!gateway || !this.paymentAttemptModel) return [];
+    const pending: any[] = await this.refundModel.find({ status: "processing" }).limit(100).lean();
+    const changes: Array<{ orderId: unknown; outcome: "refunded" | "failed" }> = [];
+    for (const refund of pending) {
+      const attempt: any = await this.paymentAttemptModel.findOne({ orderId: refund.orderId, status: "success" });
+      if (!attempt?.gatewayPaymentId || !refund.gatewayRefundId) continue;
+      try {
+        const result: any = await (gateway.payments as any).fetchRefund(attempt.gatewayPaymentId, refund.gatewayRefundId);
+        if (result?.status === "processed") {
+          await this.refundModel.findByIdAndUpdate(refund._id, { status: "refunded", resolvedAt: new Date() });
+          await this.orderModel.findByIdAndUpdate(refund.orderId, { paymentStatus: "REFUNDED", orderStatus: "REFUNDED" });
+          changes.push({ orderId: refund.orderId, outcome: "refunded" });
+        } else if (result?.status === "failed") {
+          await this.refundModel.findByIdAndUpdate(refund._id, {
+            status: "failed",
+            failureReason: "Razorpay reported the refund as failed",
+          });
+          await this.orderModel.findByIdAndUpdate(refund.orderId, { orderStatus: "REFUND_FAILED" });
+          changes.push({ orderId: refund.orderId, outcome: "failed" });
+        }
+      } catch (error: any) {
+        this.logger.warn(`Could not check refund ${refund.gatewayRefundId}: ${error?.message ?? error}`);
+      }
+    }
+    return changes;
+  }
+
+  /**
+   * An order claimed for refund whose process died before the gateway answered would sit in REFUND_PROCESSING
+   * forever. After a grace period it is flagged failed so the retry (which first looks for a refund already held
+   * by the gateway) can take over. Returns how many were flagged.
+   */
+  async recoverInterruptedRefunds(now = new Date()): Promise<number> {
+    const stuck: any[] = await this.orderModel
+      .find({
+        orderStatus: "REFUND_PROCESSING",
+        paymentStatus: { $in: REFUNDABLE_PAYMENT_STATUSES },
+        updatedAt: { $lt: new Date(now.getTime() - INTERRUPTED_REFUND_MS) },
+      })
+      .limit(50);
+    let flagged = 0;
+    for (const order of stuck) {
+      const live = await this.refundModel.findOne({ orderId: order._id, status: { $ne: "failed" } });
+      if (live) continue; // a refund exists; reconciliation follows it
+      await this.recordRefundFailure(
+        order,
+        "Interrupted refund",
+        "system",
+        "The refund was interrupted before the gateway answered; it will be retried after checking the gateway",
+      );
+      flagged += 1;
+    }
+    return flagged;
+  }
+
+  /** Orders whose refund failed and is due another try (a few tries, spaced out; then it stays for finance). */
+  async refundsDueForRetry(now = new Date()): Promise<any[]> {
+    const failed: any[] = await this.orderModel
+      .find({
+        orderStatus: "REFUND_FAILED",
+        paymentStatus: { $in: REFUNDABLE_PAYMENT_STATUSES },
+        updatedAt: { $lt: new Date(now.getTime() - REFUND_RETRY_WAIT_MS) },
+      })
+      .limit(50);
+    const due: any[] = [];
+    for (const order of failed) {
+      const failures = await this.refundModel.countDocuments({ orderId: order._id, status: "failed" });
+      if (failures < MAX_REFUND_TRIES) due.push(order);
+    }
+    return due;
   }
 
   /**
@@ -224,7 +425,7 @@ export class FoodFinanceService {
     const commissionAmountPaise = Math.round(
       (grossFoodValuePaise * commissionBps) / 10000,
     );
-    const taxOnCommissionPaise = Math.round(commissionAmountPaise * 0.18); // 18% GST on commission
+    const taxOnCommissionPaise = gstOnCommissionPaise(commissionAmountPaise); // 18% GST on commission
     const deliveryRetainedPaise = 0;
     const adjustmentsPaise = 0;
     const netPayablePaise =

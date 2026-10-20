@@ -14,6 +14,7 @@ import { FoodOrderService } from "../application/food-order.service";
 import { FoodAdminService } from "../application/food-admin.service";
 import { FoodFinanceService } from "../application/food-finance.service";
 import { FoodPartnerService } from "../application/food-partner.service";
+import { FoodWalletService } from "../application/food-wallet.service";
 import { Roles } from "../../../common/decorators/roles.decorator";
 import {
   AdminCreateFoodVendorDto,
@@ -28,6 +29,11 @@ import {
   FoodVendorStatusDto,
   UpdateFoodVendorDto,
 } from "./food-partner.dto";
+import {
+  FoodWalletOrdersQueryDto,
+  RecordFoodPaymentDto,
+  VoidFoodPaymentDto,
+} from "./food-wallet.dto";
 
 const FINANCE = ["super_admin", "finance_manager"];
 
@@ -40,6 +46,7 @@ export class FoodAdminController {
     private readonly adminService: FoodAdminService,
     private readonly financeService: FoodFinanceService,
     private readonly partner: FoodPartnerService,
+    private readonly wallet: FoodWalletService,
   ) {}
 
   // ---- Restaurants: create, approve, edit, and manage their outlets and menu
@@ -165,6 +172,49 @@ export class FoodAdminController {
   @Get("admin/exceptions")
   async getExceptions() {
     return this.adminService.getExceptionQueue();
+  }
+
+  // ---- Kitchen wallets: what Tirvona owes each kitchen, and the payments it has made
+
+  /** Every restaurant's balance, biggest amount owed first. */
+  @Roles(...FINANCE)
+  @Get("admin/wallets")
+  async walletsOverview() {
+    return this.wallet.overview();
+  }
+
+  @Roles(...FINANCE)
+  @Get("admin/vendors/:id/wallet")
+  async getWallet(@Param("id") id: string) {
+    return this.wallet.walletForAdmin(id);
+  }
+
+  @Roles(...FINANCE)
+  @Get("admin/vendors/:id/wallet/orders")
+  async getWalletOrders(@Param("id") id: string, @Query() query: FoodWalletOrdersQueryDto) {
+    return this.wallet.earningsForAdmin(id, query.page, query.limit);
+  }
+
+  /** Records money Tirvona paid the kitchen: with a receipt image, or as cash. */
+  @Roles(...FINANCE)
+  @Post("admin/vendors/:id/payments")
+  async recordPayment(
+    @Param("id") id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: RecordFoodPaymentDto,
+  ) {
+    return this.wallet.recordPayment({ id: user.id, name: user.name }, id, dto);
+  }
+
+  /** Takes a wrongly entered payment out of the totals; it stays in the history as void. */
+  @Roles(...FINANCE)
+  @Post("admin/payments/:id/void")
+  async voidPayment(
+    @Param("id") id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: VoidFoodPaymentDto,
+  ) {
+    return this.wallet.voidPayment({ id: user.id, name: user.name }, id, dto.reason);
   }
 
   @Roles(...FINANCE)

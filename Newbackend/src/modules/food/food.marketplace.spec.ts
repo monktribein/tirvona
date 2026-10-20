@@ -610,7 +610,8 @@ describe("Tirvona Food & Dining Marketplace — Acceptance Test Suite (TF-QA-01 
 
     order.orderStatus = "PAID_AWAITING_VENDOR";
     order.paymentStatus = "PAID";
-    await order.save();
+    // Persist the paid state in the store itself: the refund claims the stored order, not this copy.
+    await mockOrderModel.findByIdAndUpdate(order._id, { orderStatus: "PAID_AWAITING_VENDOR", paymentStatus: "PAID" });
 
     // Trigger refund with simulated gateway failure
     const refund = await financeService.initiateRefund(

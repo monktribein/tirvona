@@ -223,6 +223,15 @@ export interface OfferingDestination {
   label?: string;
 }
 
+export interface KathaDetails {
+  kathaType: string;
+  title?: string;
+  numberOfDays?: number;
+  dailyScheduleDescription?: string;
+  samagriIncluded?: boolean;
+  samagriDetails?: string;
+}
+
 export interface Offering {
   id: string;
   providerId?: string;
@@ -244,6 +253,12 @@ export interface Offering {
   voluntaryDakshinaAllowed?: boolean;
   tags?: string[];
   status: string;
+  serviceType?: "INDIVIDUAL" | "GROUP" | "KATHA";
+  groupCapacity?: number;
+  kathaDetails?: KathaDetails;
+  advancePercentage?: number;
+  advanceRequiredMinor?: number;
+  remainingBalanceMinor?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -266,6 +281,10 @@ export interface CreateOfferingInput {
   voluntaryDakshinaAllowed?: boolean;
   tags?: string[];
   status?: string;
+  serviceType?: "INDIVIDUAL" | "GROUP" | "KATHA";
+  groupCapacity?: number;
+  kathaDetails?: KathaDetails;
+  advancePercentage?: number;
 }
 
 export type UpdateOfferingInput = Partial<Omit<CreateOfferingInput, "ritualVariantId" | "fulfilmentType">> & {
@@ -412,6 +431,20 @@ export interface ProviderBooking {
   notes?: string;
   holdExpiresAt?: string | null;
   paymentRefs?: string[];
+  serviceType?: "INDIVIDUAL" | "GROUP" | "KATHA";
+  groupCapacity?: number;
+  kathaDetails?: KathaDetails;
+  shift?: "MORNING" | "EVENING" | "ANY";
+  advanceRequiredMinor?: number;
+  advancePaidMinor?: number;
+  remainingBalanceMinor?: number;
+  advancePaymentDeadlineAt?: string | null;
+  contactUnlocked?: boolean;
+  requestGroupId?: string | null;
+  candidateProviderIds?: string[];
+  providerContact?: { phone?: string | null; email?: string | null } | null;
+  communication?: { chatAvailable: boolean; callAvailable: boolean; reason?: string | null };
+  nextActions?: Array<{ command: string; reasons?: string[] | null }>;
   createdAt?: string;
   stateVersion?: number;
   zoomMeeting?: {
@@ -423,6 +456,51 @@ export interface ProviderBooking {
     status?: string;
     createdAt?: string;
   };
+}
+
+export interface CreateMultiPanditBookingRequestInput {
+  offeringId: string;
+  candidateProviderIds: string[];
+  scheduledStartAt: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  serviceLocation?: { line1?: string; city: string; state: string; pincode?: string };
+  notes?: string;
+  deliveryMode?: string;
+  serviceType?: "INDIVIDUAL" | "GROUP" | "KATHA";
+  groupCapacity?: number;
+  kathaDetails?: KathaDetails;
+  shift?: "MORNING" | "EVENING" | "ANY";
+}
+
+export interface ShiftAvailability {
+  shift: "MORNING" | "EVENING";
+  status: "AVAILABLE" | "UNAVAILABLE" | "HELD" | "BOOKED" | "OUT_OF_RANGE";
+  isBookable?: boolean;
+  isAvailable?: boolean;
+  hasConfirmedBooking: boolean;
+  bookingCount?: number;
+  reason?: string;
+  distanceKm?: number;
+}
+
+export interface ThirtyDayCalendarDay {
+  date: string;
+  dayOfWeek: string;
+  shifts: {
+    morning: ShiftAvailability;
+    evening: ShiftAvailability;
+  };
+  confirmedBookingCount: number;
+  hasHold: boolean;
+}
+
+export interface ThirtyDayCalendarData {
+  providerId: string;
+  timezone: string;
+  scheduleConfigured: boolean;
+  days: ThirtyDayCalendarDay[];
 }
 
 // ── Ritual catalog (public) ───────────────────────────────────────────────────

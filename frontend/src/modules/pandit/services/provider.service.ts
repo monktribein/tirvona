@@ -80,6 +80,19 @@ export const providerPublicService = {
       `${V2}/providers/${encodeURIComponent(providerId)}/availability`,
       { params },
     ),
+
+  /**
+   * Get 30-day calendar availability for a provider (rolling 30 days, shifts, travel radius).
+   * Backend: GET /api/v2/providers/:providerId/calendar-30-days
+   */
+  calendar30DaysOf: (
+    providerId: string,
+    params: { from?: string; to?: string; city?: string } = {},
+  ) =>
+    api.get<any>(
+      `${V2}/providers/${encodeURIComponent(providerId)}/calendar-30-days`,
+      { params },
+    ),
 };
 
 // ── Provider self-management ──────────────────────────────────────────────────
@@ -221,6 +234,13 @@ export const providerSelfService = {
    */
   listConsultations: (params: { status?: string; page?: number } = {}) =>
     api.get<any>(`${V2}/provider/consultations`, { params }),
+
+  /**
+   * Get own 30-day rolling calendar with shifts, holds, and bookings.
+   * Backend: GET /api/v2/provider/calendar-30-days
+   */
+  getThirtyDayCalendar: (params: { from?: string; to?: string } = {}) =>
+    api.get<any>(`${V2}/provider/calendar-30-days`, { params }),
 };
 
 // ── Puja bookings (/api/v2/bookings) ─────────────────────────────────────────
@@ -254,6 +274,28 @@ export const pujaBookingService = {
    */
   create: (data: unknown) =>
     api.post<{ success: boolean; data: ProviderBooking }>(`${V2}/bookings`, data),
+
+  /**
+   * Submit a multi-pandit booking request (up to 5 candidate pandits).
+   * Backend: POST /api/v2/bookings/multi-request
+   */
+  createMultiRequest: (data: unknown) =>
+    api.post<any>(`${V2}/bookings/multi-request`, data),
+
+  /**
+   * Accept an incoming booking request (Pandit action).
+   * Starts the 1-hour payment countdown.
+   * Backend: POST /api/v2/bookings/:bookingId/accept-request
+   */
+  acceptRequest: (bookingId: string, data: { note?: string } = {}) =>
+    api.post<any>(`${V2}/bookings/${bookingId}/accept-request`, data),
+
+  /**
+   * Decline an incoming booking request (Pandit action).
+   * Backend: POST /api/v2/bookings/:bookingId/decline-request
+   */
+  declineRequest: (bookingId: string, data: { reasonCode?: string } = {}) =>
+    api.post<any>(`${V2}/bookings/${bookingId}/decline-request`, data),
 
   /**
    * Create a payment order for a puja booking (wallet split or Razorpay order).

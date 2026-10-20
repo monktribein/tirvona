@@ -12,6 +12,7 @@ import { RitualCatalogService } from "../application/ritual-catalog.service";
 import { RitualSearchQueryDto } from "./dto/catalog.dto";
 import {
   AvailabilityQueryDto,
+  ThirtyDayCalendarQueryDto,
   ProviderSearchQueryDto,
   PublicOfferingsQueryDto,
 } from "./dto/provider.dto";
@@ -78,5 +79,15 @@ export class ProvidersPublicController {
     @Query() query: AvailabilityQueryDto,
   ) {
     return this.availability.query(user, providerId, query);
+  }
+
+  @Public()
+  @Get(":providerId/calendar-30-days")
+  thirtyDayCalendar(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("providerId", IdOrSlugPipe) providerId: string,
+    @Query() query: ThirtyDayCalendarQueryDto,
+  ) {
+    return this.availability.getThirtyDayCalendar(user, providerId, query);
   }
 }

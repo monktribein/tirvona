@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Store } from "lucide-react";
 import { EnterprisePageHeader } from "../shared/components/EnterprisePageHeader";
 import { EnterpriseButton } from "../shared/components/EnterpriseButton";
@@ -9,6 +9,7 @@ import type { LoadState } from "../../modules/marketplace/ui";
 import { foodPartnerService } from "../../services/foodPartner.service";
 import type { FoodPartnerProfile, FoodVendor } from "../../services/foodPartner.service";
 import { FoodMenuManager } from "../../modules/food/FoodMenuManager";
+import { FoodWalletView } from "../../modules/food/FoodWalletView";
 import { VendorStatusPill } from "../../modules/food/foodUi";
 import { VendorWorkspace } from "../../modules/food/VendorWorkspace";
 
@@ -22,10 +23,13 @@ const MOVES: Record<FoodVendor["status"], Array<{ to: FoodVendor["status"]; labe
   rejected: [{ to: "active", label: "Approve", primary: true }],
 };
 
-/** Login ID of the owner, plus creating the login or setting a new password (the old one is never shown: it is stored hashed). */
+/**
+ * The owner's details for review. Owners choose their own password when they register, so
+ * the admin only reviews and approves; the one exception is a restaurant with no owner at
+ * all (e.g. seeded data), where the admin can attach a login.
+ */
 const OwnerLoginPanel: React.FC<{ profile: FoodPartnerProfile; onChanged: () => void | Promise<unknown> }> = ({ profile, onChanged }) => {
   const { vendor, owner } = profile;
-  const [password, setPassword] = useState("");
   const [form, setForm] = useState({ ownerName: vendor.contactName ?? "", email: vendor.contactEmail ?? "", phone: vendor.contactPhone ?? "", password: "" });
   const [busy, setBusy] = useState(false);
 
@@ -48,39 +52,24 @@ const OwnerLoginPanel: React.FC<{ profile: FoodPartnerProfile; onChanged: () => 
   };
 
   return (
-    <Panel title="Owner login">
+    <Panel title={owner ? "Owner details" : "Owner login"}>
       {owner ? (
-        <div className="space-y-4">
-          <div className="grid sm:grid-cols-3 gap-3 text-xs">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider font-black text-gray-400">Owner</p>
-              <p className="font-bold">{owner.name || "—"}</p>
-            </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-wider font-black text-gray-400">Login ID (email)</p>
-              <p className="font-bold break-all">
-                {owner.email} <button type="button" className="text-[#F28C28] ml-1" onClick={() => copy(owner.email ?? "")}>Copy</button>
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-wider font-black text-gray-400">Login ID (mobile)</p>
-              <p className="font-bold">{owner.phone || "—"}</p>
-            </div>
+        <div className="grid sm:grid-cols-3 gap-3 text-xs">
+          <div>
+            <p className="text-[10px] uppercase tracking-wider font-black text-gray-400">Owner</p>
+            <p className="font-bold">{owner.name || "—"}</p>
           </div>
-          <p className="text-[11px] text-gray-500">The owner signs in with either the email or the mobile number. Passwords are stored hashed, so the current one cannot be shown: set a new one below and share it with the owner.</p>
-          <form
-            className="flex flex-wrap items-end gap-2"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              if (await run(() => foodPartnerService.setOwnerPassword(vendor._id, password), "New password set")) setPassword("");
-            }}
-          >
-            <Field label="New password" hint="Any password works, with no rules.">
-              <input className={inputClass} autoComplete="off" required value={password} onChange={(e) => setPassword(e.target.value)} />
-            </Field>
-            <EnterpriseButton type="submit" size="sm" loading={busy} disabled={busy || !password}>Set new password</EnterpriseButton>
-            {password && <EnterpriseButton variant="outline" size="sm" onClick={() => copy(`Login: ${owner.email} / ${owner.phone}\nPassword: ${password}`)}>Copy login details</EnterpriseButton>}
-          </form>
+          <div>
+            <p className="text-[10px] uppercase tracking-wider font-black text-gray-400">Email</p>
+            <p className="font-bold break-all">
+              {owner.email || "—"}
+              {owner.email && <button type="button" className="text-[#F28C28] ml-1" onClick={() => copy(owner.email ?? "")}>Copy</button>}
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-wider font-black text-gray-400">Mobile</p>
+            <p className="font-bold">{owner.phone || "—"}</p>
+          </div>
         </div>
       ) : (
         <form
@@ -107,9 +96,11 @@ const OwnerLoginPanel: React.FC<{ profile: FoodPartnerProfile; onChanged: () => 
 /** One restaurant as the Super Admin sees it: status, owner login, kitchens, menu and inventory. */
 export const AdminFoodVendorDetailPage: React.FC = () => {
   const { vendorId = "" } = useParams();
+  const [params] = useSearchParams();
   const [profile, setProfile] = useState<FoodPartnerProfile | null>(null);
   const [state, setState] = useState<LoadState>("loading");
-  const [tab, setTab] = useState("menu");
+  // The wallet list links here with ?tab=wallet.
+  const [tab, setTab] = useState(params.get("tab") === "wallet" ? "wallet" : "menu");
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -178,11 +169,14 @@ export const AdminFoodVendorDetailPage: React.FC = () => {
         options={[
           { value: "menu", label: "Menu & Inventory" },
           { value: "profile", label: "Details & Kitchens" },
+          { value: "wallet", label: "Wallet & Payments" },
         ]}
       />
 
       {tab === "menu" ? (
         <FoodMenuManager scope="admin" outlets={profile.outlets} />
+      ) : tab === "wallet" ? (
+        <FoodWalletView scope="admin" vendorId={vendor._id} />
       ) : (
         <VendorWorkspace scope="admin" profile={profile} onChanged={load} />
       )}

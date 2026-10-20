@@ -342,7 +342,12 @@ export class FoodCatalogService implements OnApplicationBootstrap {
         priceRupees: v.pricePaise / 100,
         prepMinutes: v.prepMinutes,
         portion: v.portion,
-        imageUrl: v.imageUrl || v.productId?.defaultImageUrl,
+        imageUrl: v.imageUrl || v.productId?.defaultImageUrl || (v.imageUrls?.[0] || v.productId?.imageUrls?.[0] || ""),
+        imageUrls: v.imageUrls?.length
+          ? v.imageUrls
+          : (v.productId?.imageUrls?.length
+              ? v.productId.imageUrls
+              : [v.imageUrl || v.productId?.defaultImageUrl].filter(Boolean)),
         isAvailable: v.isAvailable,
         outlet: outlet
           ? {
@@ -414,8 +419,12 @@ export class FoodCatalogService implements OnApplicationBootstrap {
         priceRupees: v.pricePaise / 100,
         prepMinutes: v.prepMinutes,
         portion: v.portion,
-        isAvailable: v.isAvailable,
-        imageUrl: v.imageUrl || v.productId?.defaultImageUrl,
+        imageUrl: v.imageUrl || v.productId?.defaultImageUrl || (v.imageUrls?.[0] || v.productId?.imageUrls?.[0] || ""),
+        imageUrls: v.imageUrls?.length
+          ? v.imageUrls
+          : (v.productId?.imageUrls?.length
+              ? v.productId.imageUrls
+              : [v.imageUrl || v.productId?.defaultImageUrl].filter(Boolean)),
       });
     }
 

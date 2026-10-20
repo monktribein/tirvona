@@ -254,6 +254,8 @@ export class FoodPartnerService {
   }
 
   private menuRow(v: any) {
+    const rawImages = v.imageUrls?.length ? v.imageUrls : [v.imageUrl].filter(Boolean);
+    const imageUrls = Array.isArray(rawImages) ? rawImages : [];
     return {
       id: String(v._id),
       outletId: String(v.outletId),
@@ -268,20 +270,29 @@ export class FoodPartnerService {
       portion: v.portion ?? "",
       dailyCapacity: v.dailyCapacity,
       cutOffTime: v.cutOffTime ?? "",
-      imageUrl: v.imageUrl ?? "",
+      imageUrl: v.imageUrl ?? (imageUrls[0] || ""),
+      imageUrls,
       isAvailable: Boolean(v.isAvailable),
     };
   }
 
   async createMenuItem(actor: FoodActor, outletId: string, dto: FoodMenuItemDto) {
     const outlet = await this.requireOutlet(actor, outletId);
+    const rawImages = dto.imageUrls ?? (dto.imageUrl ? [dto.imageUrl] : []);
+    const cleanImages = rawImages.filter((img) => typeof img === "string" && img.trim().length > 0);
+    if (cleanImages.length > 5) {
+      throw new BadRequestException("A food product can have at most 5 images");
+    }
+    const primaryImage = cleanImages[0] ?? dto.imageUrl ?? "";
+
     // Dishes of an approved restaurant go live with it; a pending restaurant is
     // hidden from customers as a whole, so the dish needs no separate approval.
     const product = await this.productModel.create({
       family: dto.family,
       canonicalName: dto.label,
       description: dto.description,
-      defaultImageUrl: dto.imageUrl,
+      defaultImageUrl: primaryImage,
+      imageUrls: cleanImages,
       approvedStatus: "approved",
       skuFamily: `PARTNER-${dto.family}`,
     });
@@ -300,7 +311,8 @@ export class FoodPartnerService {
       portion: dto.portion,
       dailyCapacity: dto.dailyCapacity,
       cutOffTime: dto.cutOffTime,
-      imageUrl: dto.imageUrl,
+      imageUrl: primaryImage,
+      imageUrls: cleanImages,
       isAvailable: dto.isAvailable ?? true,
     });
     return this.menuRow({ ...variant.toObject(), productId: product.toObject() });
@@ -308,9 +320,21 @@ export class FoodPartnerService {
 
   async updateMenuItem(actor: FoodActor, variantId: string, dto: FoodMenuItemUpdateDto) {
     const variant = await this.requireVariant(actor, variantId);
-    const { family, description, ...rest } = dto;
+    const { family, description, imageUrls: newImageUrls, ...rest } = dto;
     for (const [key, value] of Object.entries(rest))
       if (value !== undefined) variant.set(key, value);
+
+    if (newImageUrls !== undefined) {
+      const cleanImages = newImageUrls.filter((img) => typeof img === "string" && img.trim().length > 0);
+      if (cleanImages.length > 5) {
+        throw new BadRequestException("A food product can have at most 5 images");
+      }
+      variant.set("imageUrls", cleanImages);
+      // The cover always follows the gallery; removing every image clears it
+      // instead of leaving a stale cover behind.
+      variant.imageUrl = cleanImages[0] ?? "";
+    }
+
     await variant.save();
 
     const product = await this.productModel.findById(variant.productId);
@@ -318,7 +342,8 @@ export class FoodPartnerService {
       if (family) product.family = family;
       if (description !== undefined) product.description = description;
       if (dto.label) product.canonicalName = dto.label;
-      if (dto.imageUrl !== undefined) product.defaultImageUrl = dto.imageUrl;
+      if (newImageUrls !== undefined || variant.imageUrl) product.defaultImageUrl = variant.imageUrl ?? "";
+      if (variant.imageUrls) product.imageUrls = variant.imageUrls;
       await product.save();
     }
     return this.menuRow({
