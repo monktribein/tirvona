@@ -536,7 +536,8 @@ export class ProviderBookingPaymentService {
           speed: "normal",
           notes: { bookingNumber, reason: reasonCode },
         }));
-      const { lastError: _drop, ...rest } = rec;
+      const rest = { ...rec };
+      delete (rest as any).lastError;
       // The gateway's own word, e.g. PENDING / PROCESSED. Not ours to promote to "refunded".
       return { ...rest, attempts, refundId: refund?.id, status: gatewayStatus(refund?.status), updatedAt: new Date() };
     } catch (error) {

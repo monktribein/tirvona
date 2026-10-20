@@ -1,14 +1,14 @@
+import * as crypto from "node:crypto";
 import { Types } from "../../../database/orm";
 import {
-  haversineDistanceKm,
   validateTravelDistance,
   validateShiftTravelFeasibility,
 } from "../domain/travel-distance.util";
 import { ProviderBookingPaymentService } from "../application/provider-booking-payment.service";
 import {
+  BOOKING_TRANSITIONS,
   MAX_MULTI_PANDIT_REQUESTS,
   MAX_TRAVEL_RADIUS_KM,
-  ADVANCE_PAYMENT_WINDOW_HOURS,
 } from "../domain/provider.constants";
 
 describe("Pandit Booking Enhancements & Production Safety", () => {
@@ -317,7 +317,6 @@ describe("Pandit Booking Enhancements & Production Safety", () => {
     });
 
     it("rejects payment confirmation when payment order ID does not match", async () => {
-      const crypto = require("node:crypto");
       const orderId = "order_mismatch_456";
       const paymentId = "pay_xyz_123";
       const validSig = crypto
@@ -387,21 +386,19 @@ describe("Pandit Booking Enhancements & Production Safety", () => {
 
   describe("State transitions and sibling cancellation safety", () => {
     it("allows confirm_payment transition from ACCEPTED_AWAITING_ADVANCE state", () => {
-      const { BOOKING_TRANSITIONS } = require("../domain/provider.constants");
       const transitions = BOOKING_TRANSITIONS.ACCEPTED_AWAITING_ADVANCE;
       const confirmCommand = transitions.find((t: any) => t.command === "confirm_payment");
       expect(confirmCommand).toBeDefined();
-      expect(confirmCommand.to).toBe("CONFIRMED");
-      expect(confirmCommand.actors).toContain("SYSTEM");
+      expect(confirmCommand?.to).toBe("CONFIRMED");
+      expect(confirmCommand?.actors).toContain("SYSTEM");
     });
 
     it("allows confirm_advance transition from ACCEPTED_AWAITING_ADVANCE state", () => {
-      const { BOOKING_TRANSITIONS } = require("../domain/provider.constants");
       const transitions = BOOKING_TRANSITIONS.ACCEPTED_AWAITING_ADVANCE;
       const confirmAdvance = transitions.find((t: any) => t.command === "confirm_advance");
       expect(confirmAdvance).toBeDefined();
-      expect(confirmAdvance.to).toBe("CONFIRMED");
-      expect(confirmAdvance.actors).toContain("SYSTEM");
+      expect(confirmAdvance?.to).toBe("CONFIRMED");
+      expect(confirmAdvance?.actors).toContain("SYSTEM");
     });
   });
 });

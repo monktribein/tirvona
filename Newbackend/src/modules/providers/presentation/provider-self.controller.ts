@@ -21,7 +21,6 @@ import { ProviderProfileService } from "../application/provider-profile.service"
 import { Idempotent } from "../infrastructure/idempotency.interceptor";
 import { ConsultationListQueryDto } from "./dto/booking.dto";
 import {
-  AvailabilityQueryDto,
   ThirtyDayCalendarQueryDto,
   CalendarQueryDto,
   CreateCalendarBlockDto,

@@ -1507,12 +1507,18 @@ describe("Providers API (real Postgres)", () => {
         await Booking().updateOne({ _id: first._id }, { $set: { requestGroupId: groupId, status: "ACCEPTED_AWAITING_ADVANCE" } }); // both Pandits have accepted
         const hold: any = await Block().findById(first.holdBlockId).lean();
         const siblingId = new Types.ObjectId();
-        const { _id: _b, createdAt: _c, updatedAt: _u, ...holdRest } = hold;
+        const holdRest = { ...hold };
+        delete holdRest._id;
+        delete holdRest.createdAt;
+        delete holdRest.updatedAt;
         const siblingHold: any = await Block().create({
           ...holdRest, sourceId: siblingId,
           startAt: new Date(new Date(hold.startAt).getTime() + 30 * 86_400_000), endAt: new Date(new Date(hold.endAt).getTime() + 30 * 86_400_000),
         });
-        const { _id: _i, createdAt: _c2, updatedAt: _u2, ...bookingRest } = first;
+        const bookingRest = { ...first };
+        delete bookingRest._id;
+        delete bookingRest.createdAt;
+        delete bookingRest.updatedAt;
         await Booking().create({
           ...bookingRest, _id: siblingId, bookingNumber: `PJ-SIB-${siblingId.toHexString().slice(-8)}`,
           holdBlockId: siblingHold._id, requestGroupId: groupId, status: "ACCEPTED_AWAITING_ADVANCE", paymentRefs: [], stateVersion: 1,
@@ -1553,7 +1559,6 @@ describe("Providers API (real Postgres)", () => {
       });
 
       it("refunds a payment that landed for the losing Pandit instead of keeping it", async () => {
-        const svc = app.get(ProviderBookingService);
         const { buyer, id } = await newBooking(49);
         const siblingId = await addSibling(id, new Types.ObjectId().toHexString());
         const orderId = (await post(`/bookings/${siblingId}/payment/order`, buyer, {}).expect(201)).body.data.orderId; // opened while both were open
@@ -1576,7 +1581,6 @@ describe("Providers API (real Postgres)", () => {
   // ============================================================ 30-day calendar
   describe("rolling 30-day availability calendar", () => {
     const viewer = newUser("customer", "Calendar Viewer");
-    const Booking = () => app.get(getModelToken("ProviderBooking"));
     const cal = (query = "", user: TestUser = viewer) => get(`/providers/${panditId}/calendar-30-days${query}`, user);
     const dayOf = (body: any, date: string) => body.data.days.find((d: any) => d.date === date);
     const bookConfirmed = async (daysAhead: number, city = "Haridwar") => {

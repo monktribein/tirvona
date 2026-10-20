@@ -36,7 +36,6 @@ import type {
   BookingTransitionDto,
   CreateMultiPanditBookingRequestDto,
   CreateProviderBookingDto,
-  DeclineBookingRequestDto,
 } from "../presentation/dto/booking.dto";
 import { ProviderAuditService } from "./provider-audit.service";
 import { ProviderAvailabilityService } from "./provider-availability.service";
@@ -54,16 +53,6 @@ import {
   toObjectId,
 } from "./provider.helpers";
 
-/** Customer contact and address open up to the provider once they have accepted the booking. */
-const CONTACT_VISIBLE_FROM: readonly BookingStatus[] = [
-  "PROVIDER_ACCEPTED",
-  "PREPARATION_IN_PROGRESS",
-  "READY_FOR_FULFILMENT",
-  "IN_PROGRESS",
-  "COMPLETED",
-  "SETTLEMENT_PENDING",
-  "CLOSED",
-];
 const CANCELLED: readonly BookingStatus[] = [
   "CANCELLED_BY_CUSTOMER",
   "CANCELLED_BY_PROVIDER",
@@ -577,7 +566,7 @@ export class ProviderBookingService {
   /**
    * A Pandit accepts the request: moves to ACCEPTED_AWAITING_ADVANCE with 1-hour payment window.
    */
-  async acceptRequest(user: AuthenticatedUser, bookingId: string, dto?: AcceptBookingRequestDto) {
+  async acceptRequest(user: AuthenticatedUser, bookingId: string, _dto?: AcceptBookingRequestDto) {
     const booking: any = await this.bookings
       .findById(toObjectId(bookingId, "bookingId"))
       .select("+customerContact +serviceLocation +customerNotes")
