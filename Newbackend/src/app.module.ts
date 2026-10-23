@@ -54,6 +54,7 @@ import { WalletApiModule } from "./modules/wallet/wallet-api.module";
 import { ProvidersModule } from "./modules/providers/providers.module";
 import { PartnersModule } from "./modules/partners/partners.module";
 import { FoodModule } from "./modules/food/food.module";
+import { HrModule } from "./modules/hr/hr.module";
 import {
   hybridRateLimitTracker,
   ipRateLimitTracker,
@@ -156,6 +157,7 @@ import {
     ProvidersModule,
     PartnersModule,
     FoodModule,
+    HrModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

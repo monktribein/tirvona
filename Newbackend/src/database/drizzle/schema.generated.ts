@@ -5131,3 +5131,211 @@ export const foodVendorPayments = pgTable("food_vendor_payments", {
   _nulls: text("_nulls").array(),
   _extra: jsonb("_extra"),
 });
+
+/** public.hr_attendance */
+export const hrAttendance = pgTable("hr_attendance", {
+  id: text("id").primaryKey(), // model: _id
+  "employeeId": text("employee_id"), // model: employeeId
+  "date": text("date"), // model: date
+  "officeId": text("office_id"), // model: officeId
+  "status": text("status"), // model: status
+  "checkInAt": timestamp("check_in_at", { withTimezone: true, mode: "date" }), // model: checkInAt
+  "checkOutAt": timestamp("check_out_at", { withTimezone: true, mode: "date" }), // model: checkOutAt
+  "source": text("source"), // model: source
+  "note": text("note"), // model: note
+  "updatedBy": text("updated_by"), // model: updatedBy
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.hr_attendance_corrections */
+export const hrAttendanceCorrections = pgTable("hr_attendance_corrections", {
+  id: text("id").primaryKey(), // model: _id
+  "employeeId": text("employee_id"), // model: employeeId
+  "date": text("date"), // model: date
+  "requestedStatus": text("requested_status"), // model: requestedStatus
+  "requestedCheckInAt": timestamp("requested_check_in_at", { withTimezone: true, mode: "date" }), // model: requestedCheckInAt
+  "requestedCheckOutAt": timestamp("requested_check_out_at", { withTimezone: true, mode: "date" }), // model: requestedCheckOutAt
+  "reason": text("reason"), // model: reason
+  "status": text("status"), // model: status
+  "requestedBy": text("requested_by"), // model: requestedBy
+  "decidedBy": text("decided_by"), // model: decidedBy
+  "decidedByName": text("decided_by_name"), // model: decidedByName
+  "decidedAt": timestamp("decided_at", { withTimezone: true, mode: "date" }), // model: decidedAt
+  "decisionNote": text("decision_note"), // model: decisionNote
+  "before": jsonb("before"), // model: before
+  "after": jsonb("after"), // model: after
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.hr_departments */
+export const hrDepartments = pgTable("hr_departments", {
+  id: text("id").primaryKey(), // model: _id
+  "name": text("name"), // model: name
+  "nameKey": text("name_key"), // model: nameKey
+  "description": text("description"), // model: description
+  "active": boolean("active"), // model: active
+  "createdBy": text("created_by"), // model: createdBy
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.hr_designations */
+export const hrDesignations = pgTable("hr_designations", {
+  id: text("id").primaryKey(), // model: _id
+  "name": text("name"), // model: name
+  "nameKey": text("name_key"), // model: nameKey
+  "departmentId": text("department_id"), // model: departmentId
+  "active": boolean("active"), // model: active
+  "createdBy": text("created_by"), // model: createdBy
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.hr_employees */
+export const hrEmployees = pgTable("hr_employees", {
+  id: text("id").primaryKey(), // model: _id
+  "employeeCode": text("employee_code"), // model: employeeCode
+  "userId": text("user_id"), // model: userId
+  "fullName": text("full_name"), // model: fullName
+  "workEmail": text("work_email"), // model: workEmail
+  "phone": text("phone"), // model: phone
+  "photoUrl": text("photo_url"), // model: photoUrl
+  "primaryOfficeId": text("primary_office_id"), // model: primaryOfficeId
+  "officeIds": text("office_ids").array(), // model: officeIds
+  "departmentId": text("department_id"), // model: departmentId
+  "designationId": text("designation_id"), // model: designationId
+  "reportingManagerId": text("reporting_manager_id"), // model: reportingManagerId
+  "status": text("status"), // model: status
+  "employmentType": text("employment_type"), // model: employmentType
+  "joiningDate": text("joining_date"), // model: joiningDate
+  "responsibilities": text("responsibilities"), // model: responsibilities
+  "skills": text("skills").array(), // model: skills
+  "notes": text("notes"), // model: notes
+  "deactivatedAt": timestamp("deactivated_at", { withTimezone: true, mode: "date" }), // model: deactivatedAt
+  "deactivationReason": text("deactivation_reason"), // model: deactivationReason
+  "createdBy": text("created_by"), // model: createdBy
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.hr_leaves */
+export const hrLeaves = pgTable("hr_leaves", {
+  id: text("id").primaryKey(), // model: _id
+  "employeeId": text("employee_id"), // model: employeeId
+  "fromDate": text("from_date"), // model: fromDate
+  "toDate": text("to_date"), // model: toDate
+  "type": text("type"), // model: type
+  "reason": text("reason"), // model: reason
+  "status": text("status"), // model: status
+  "requestedBy": text("requested_by"), // model: requestedBy
+  "decidedBy": text("decided_by"), // model: decidedBy
+  "decidedByName": text("decided_by_name"), // model: decidedByName
+  "decidedAt": timestamp("decided_at", { withTimezone: true, mode: "date" }), // model: decidedAt
+  "decisionNote": text("decision_note"), // model: decisionNote
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.hr_offices */
+export const hrOffices = pgTable("hr_offices", {
+  id: text("id").primaryKey(), // model: _id
+  "code": text("code"), // model: code
+  "name": text("name"), // model: name
+  "nameKey": text("name_key"), // model: nameKey
+  "address": text("address"), // model: address
+  "city": text("city"), // model: city
+  "phone": text("phone"), // model: phone
+  "email": text("email"), // model: email
+  "active": boolean("active"), // model: active
+  "createdBy": text("created_by"), // model: createdBy
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.hr_settings */
+export const hrSettings = pgTable("hr_settings", {
+  id: text("id").primaryKey(), // model: _id
+  "key": text("key"), // model: key
+  "weeklyOffDays": doublePrecision("weekly_off_days").array(), // model: weeklyOffDays
+  "dueSoonHours": doublePrecision("due_soon_hours"), // model: dueSoonHours
+  "employeeSeq": doublePrecision("employee_seq"), // model: employeeSeq
+  "updatedBy": text("updated_by"), // model: updatedBy
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.hr_task_events */
+export const hrTaskEvents = pgTable("hr_task_events", {
+  id: text("id").primaryKey(), // model: _id
+  "taskId": text("task_id"), // model: taskId
+  "type": text("type"), // model: type
+  "actorId": text("actor_id"), // model: actorId
+  "actorName": text("actor_name"), // model: actorName
+  "fromStatus": text("from_status"), // model: fromStatus
+  "toStatus": text("to_status"), // model: toStatus
+  "message": text("message"), // model: message
+  "data": jsonb("data"), // model: data
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.hr_tasks */
+export const hrTasks = pgTable("hr_tasks", {
+  id: text("id").primaryKey(), // model: _id
+  "taskNumber": text("task_number"), // model: taskNumber
+  "groupId": text("group_id"), // model: groupId
+  "title": text("title"), // model: title
+  "description": text("description"), // model: description
+  "expectedOutcome": text("expected_outcome"), // model: expectedOutcome
+  "employeeId": text("employee_id"), // model: employeeId
+  "officeId": text("office_id"), // model: officeId
+  "departmentId": text("department_id"), // model: departmentId
+  "createdBy": text("created_by"), // model: createdBy
+  "createdByName": text("created_by_name"), // model: createdByName
+  "assignedDate": text("assigned_date"), // model: assignedDate
+  "dueAt": timestamp("due_at", { withTimezone: true, mode: "date" }), // model: dueAt
+  "priority": text("priority"), // model: priority
+  "status": text("status"), // model: status
+  "progressPercent": doublePrecision("progress_percent"), // model: progressPercent
+  "progressNote": text("progress_note"), // model: progressNote
+  "blockedReason": text("blocked_reason"), // model: blockedReason
+  "completionSummary": text("completion_summary"), // model: completionSummary
+  "deliverableUrl": text("deliverable_url"), // model: deliverableUrl
+  "reviewStatus": text("review_status"), // model: reviewStatus
+  "reviewComment": text("review_comment"), // model: reviewComment
+  "reviewedBy": text("reviewed_by"), // model: reviewedBy
+  "reviewedByName": text("reviewed_by_name"), // model: reviewedByName
+  "reviewedAt": timestamp("reviewed_at", { withTimezone: true, mode: "date" }), // model: reviewedAt
+  "rejectionCount": doublePrecision("rejection_count"), // model: rejectionCount
+  "startedAt": timestamp("started_at", { withTimezone: true, mode: "date" }), // model: startedAt
+  "submittedAt": timestamp("submitted_at", { withTimezone: true, mode: "date" }), // model: submittedAt
+  "completedAt": timestamp("completed_at", { withTimezone: true, mode: "date" }), // model: completedAt
+  "cancelledAt": timestamp("cancelled_at", { withTimezone: true, mode: "date" }), // model: cancelledAt
+  "dueSoonNotified": boolean("due_soon_notified"), // model: dueSoonNotified
+  "overdueNotified": boolean("overdue_notified"), // model: overdueNotified
+  "idempotencyKey": text("idempotency_key"), // model: idempotencyKey
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
