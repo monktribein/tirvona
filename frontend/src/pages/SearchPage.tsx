@@ -1039,27 +1039,27 @@ export const SearchPage: React.FC = () => {
                       <img
                         src={
                           ashram.images?.[0] ||
-                          "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E"
+                          "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 240 160' preserveAspectRatio='xMidYMid slice'%3E%3Crect width='240' height='160' fill='%23f1f5f9'/%3E%3Cg transform='translate(108 68)' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/g%3E%3C/svg%3E"
                         }
                         alt={ashram.name}
                         className={`w-full h-full object-cover transition-all ${!isAvailable ? "grayscale-[15%]" : ""}`}
                         onError={(e) => {
                           e.currentTarget.onerror = null;
                           e.currentTarget.src =
-                            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
+                            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 240 160' preserveAspectRatio='xMidYMid slice'%3E%3Crect width='240' height='160' fill='%23f1f5f9'/%3E%3Cg transform='translate(108 68)' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/g%3E%3C/svg%3E";
                         }} loading="lazy" decoding="async" />
                       {ashram.discovery?.distanceKm != null && (
-                        <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-extrabold text-[#F28C28] shadow-sm">
+                        <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-extrabold text-[#F28C28] shadow-sm">
                           {ashram.discovery.distanceKm} km away
                         </span>
                       )}
                       {(ashram.images?.length ?? 0) > 1 && (
-                        <span className="absolute bottom-3 right-3 rounded-full bg-slate-950/75 px-2 py-1 text-[9px] font-bold text-white">
+                        <span className="absolute bottom-3 right-3 rounded-full bg-slate-950/75 px-2 py-1 text-[11px] font-bold text-white">
                           {ashram.images.length} images
                         </span>
                       )}
                       {!isAvailable && (
-                        <span className="absolute top-3 right-3 rounded-full bg-rose-600 text-white px-2.5 py-1 text-[10px] font-black uppercase tracking-wider shadow-md">
+                        <span className="absolute top-3 right-3 rounded-full bg-rose-600 text-white px-2.5 py-1 text-xs font-black uppercase tracking-wider shadow-md">
                           Not Available
                         </span>
                       )}
@@ -1077,32 +1077,37 @@ export const SearchPage: React.FC = () => {
                                 className="h-9 sm:h-11 w-auto object-contain inline-block shrink-0 align-middle max-w-[140px]" loading="lazy" decoding="async" />
                             )}
                           </h3>
-                          <div className="flex items-center gap-1 text-xs font-bold text-[#0B192C] dark:text-accent">
-                            <Star
-                              className="text-[#D4AF37] fill-[#D4AF37]"
-                              size={13}
-                            />
-                            <span>
-                              {Number(ashram.rating?.average) > 0
-                                ? Number(ashram.rating.average).toFixed(1)
-                                : "New"}
+                          {Number(ashram.rating?.average) > 0 ? (
+                            <div className="flex items-center gap-1 text-sm font-bold text-[#0B192C] dark:text-accent shrink-0">
+                              <Star
+                                className="text-[#D4AF37] fill-[#D4AF37]"
+                                size={14}
+                              />
+                              <span>{Number(ashram.rating.average).toFixed(1)}</span>
+                              {Number(ashram.rating?.count) > 0 && (
+                                <span className="text-xs text-gray-400 font-medium">
+                                  ({Number(ashram.rating.count)})
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="shrink-0 rounded-full bg-[#F28C28]/10 px-2.5 py-0.5 text-[11px] font-extrabold text-[#B45309] dark:text-amber-300">
+                              New
                             </span>
-                            <span className="text-[10px] text-gray-400 font-medium">
-                              ({Number(ashram.rating?.count ?? 0)})
-                            </span>
-                          </div>
+                          )}
                         </div>
-                        <p className="text-[10px] text-gray-400 font-bold flex items-center gap-1">
+                        <p className="text-xs text-gray-400 font-bold flex items-center gap-1">
                           <MapPin size={10} className="text-[#F28C28]" />{" "}
                           {ashram.address?.city}, {ashram.address?.state}
                         </p>
-                        <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">
-                          {ashram.description ||
-                            "Spiritual lodging offering simple bedding, prayers, and vegetarian boarding."}
-                        </p>
+                        {ashram.description && (
+                          <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2">
+                            {ashram.description}
+                          </p>
+                        )}
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2 text-[10px] font-semibold text-slate-600 dark:text-slate-300 sm:grid-cols-4">
+                      <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300 sm:grid-cols-4">
                         <span className="flex items-center gap-1.5 rounded-xl bg-slate-50 px-2.5 py-2 dark:bg-slate-900">
                           <BedDouble size={13} className="text-[#F28C28]" />
                           {ashram.discovery?.rooms?.totalInventory ?? 0} rooms
@@ -1149,7 +1154,7 @@ export const SearchPage: React.FC = () => {
                       {(ashram.discovery?.spiritualSchedule?.dailySchedule ||
                         ashram.discovery?.spiritualSchedule?.activities?.length >
                           0) && (
-                        <p className="flex items-start gap-1.5 text-[10px] leading-relaxed text-slate-500 dark:text-slate-300">
+                        <p className="flex items-start gap-1.5 text-xs leading-relaxed text-slate-500 dark:text-slate-300">
                           <Clock size={13} className="mt-0.5 shrink-0 text-[#F28C28]" />
                           <span className="line-clamp-2">
                             {ashram.discovery.spiritualSchedule.dailySchedule ||
@@ -1162,7 +1167,7 @@ export const SearchPage: React.FC = () => {
 
                       <div className="flex flex-wrap gap-1 items-center">
                         {ashram.dayStayConfig?.enabled && (
-                          <span className="text-[9px] font-black bg-[#E58C28]/15 text-[#E58C28] border border-[#E58C28]/30 px-2 py-0.5 rounded-md flex items-center gap-1">
+                          <span className="text-[11px] font-black bg-[#E58C28]/15 text-[#E58C28] border border-[#E58C28]/30 px-2 py-0.5 rounded-md flex items-center gap-1">
                             <Sparkles size={10} /> Day Rest Available
                           </span>
                         )}
@@ -1171,7 +1176,7 @@ export const SearchPage: React.FC = () => {
                           .map((am: string, i: number) => (
                             <span
                               key={i}
-                              className="text-[9px] font-bold bg-gray-50 dark:bg-slate-900 text-gray-500 px-2 py-0.5 rounded-md"
+                              className="text-[11px] font-bold bg-gray-50 dark:bg-slate-900 text-gray-500 px-2 py-0.5 rounded-md"
                             >
                               {am}
                             </span>
@@ -1181,7 +1186,7 @@ export const SearchPage: React.FC = () => {
 
                     <div className="w-full md:w-40 md:border-l border-gray-100 dark:border-slate-800 pl-0 md:pl-6 flex md:flex-col justify-between md:justify-center items-center md:items-end gap-4 shrink-0">
                       <div className="flex flex-col md:text-right">
-                        <span className="text-[9px] text-gray-400 font-bold tracking-wider">
+                        <span className="text-[11px] text-gray-400 font-bold tracking-wider">
                           Starts From
                         </span>
                         {ashram.lowestNightPrice != null ? (
@@ -1189,8 +1194,8 @@ export const SearchPage: React.FC = () => {
                             <span className="text-base font-extrabold text-[#0B192C] dark:text-white">
                               {formatCurrency(ashram.lowestNightPrice)}
                             </span>
-                            <span className="text-[9px] text-gray-400 font-bold">
-                              per night / bed
+                            <span className="text-[11px] text-gray-400 font-bold">
+                              per night
                             </span>
                           </>
                         ) : (

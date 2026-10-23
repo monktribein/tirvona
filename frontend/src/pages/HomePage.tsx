@@ -1071,7 +1071,7 @@ export const HomePage: React.FC = () => {
 
       <section
         onClick={() => publishedFeatured._id && navigate(`/featured-banner/${publishedFeatured._id}`)}
-        className={`order-5 relative w-full aspect-[16/7] sm:aspect-[21/9] lg:aspect-[1920/540] min-h-[280px] sm:min-h-[360px] lg:min-h-[440px] flex items-center justify-center overflow-hidden rounded-none shadow-2xl mb-14 lg:mb-24 ${publishedFeatured._id ? "cursor-pointer" : ""}`}
+        className={`order-5 relative w-full aspect-[16/9] sm:aspect-[16/8] lg:aspect-[1920/720] min-h-[340px] sm:min-h-[440px] lg:min-h-[560px] flex items-center justify-center overflow-hidden rounded-none shadow-2xl mb-14 lg:mb-24 ${publishedFeatured._id ? "cursor-pointer" : ""}`}
       >
         {publishedFeatured.bannerImage || publishedFeatured.imageUrl || publishedFeatured.image ? (
           <img
@@ -1196,7 +1196,7 @@ export const HomePage: React.FC = () => {
             speed={30}
             renderItem={(item: StoreProduct, idx: number) => {
               const fallbackImg =
-                "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
+                "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 240 160' preserveAspectRatio='xMidYMid slice'%3E%3Crect width='240' height='160' fill='%23f1f5f9'/%3E%3Cg transform='translate(108 68)' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/g%3E%3C/svg%3E";
               const imgUrl = item.images[0] || fallbackImg;
               const name = item.name;
               const subtitle = item.vendor?.name ?? item.templeSource ?? "";
@@ -1432,7 +1432,7 @@ export const HomePage: React.FC = () => {
                         <img
                           src={
                             ashram.images?.[0] ||
-                            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E"
+                            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 240 160' preserveAspectRatio='xMidYMid slice'%3E%3Crect width='240' height='160' fill='%23f1f5f9'/%3E%3Cg transform='translate(108 68)' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/g%3E%3C/svg%3E"
                           }
                           alt={ashram.name}
                           className={`w-full h-full object-cover ${!isAvailable ? "grayscale-[20%]" : ""}`}
@@ -1440,7 +1440,7 @@ export const HomePage: React.FC = () => {
                           onError={(e) => {
                             e.currentTarget.onerror = null;
                             e.currentTarget.src =
-                              "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
+                              "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 240 160' preserveAspectRatio='xMidYMid slice'%3E%3Crect width='240' height='160' fill='%23f1f5f9'/%3E%3Cg transform='translate(108 68)' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/g%3E%3C/svg%3E";
                           }}
                         />
 
@@ -1611,7 +1611,7 @@ export const HomePage: React.FC = () => {
                             onError={(e) => {
                               e.currentTarget.onerror = null;
                               e.currentTarget.src =
-                                "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
+                                "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 240 160' preserveAspectRatio='xMidYMid slice'%3E%3Crect width='240' height='160' fill='%23f1f5f9'/%3E%3Cg transform='translate(108 68)' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/g%3E%3C/svg%3E";
                             }} loading="lazy" decoding="async" />
                           <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300 truncate">
                             {author.name || "Tirvona Editorial"}

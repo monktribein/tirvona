@@ -356,6 +356,14 @@ const FoodVendorDashboardPage = namedPage(
 const AdminFoodVendorsPage = lazy(() => import("./admin/food/AdminFoodVendorsPage"));
 const AdminFoodVendorDetailPage = lazy(() => import("./admin/food/AdminFoodVendorDetailPage"));
 const AdminFoodWalletsPage = lazy(() => import("./admin/food/AdminFoodWalletsPage"));
+const HrDashboardPage = lazy(() => import("./admin/hr/HrDashboardPage"));
+const HrEmployeesPage = lazy(() => import("./admin/hr/HrEmployeesPage"));
+const HrTasksPage = lazy(() => import("./admin/hr/HrTasksPage"));
+const HrAttendancePage = lazy(() => import("./admin/hr/HrAttendancePage"));
+const HrStructurePage = lazy(() => import("./admin/hr/HrStructurePage"));
+const HrReportsPage = lazy(() => import("./admin/hr/HrReportsPage"));
+const HrSettingsPage = lazy(() => import("./admin/hr/HrSettingsPage"));
+const HrMyWorkPage = lazy(() => import("./admin/hr/HrMyWorkPage"));
 const RestaurantWalletPage = lazy(() => import("./modules/food/RestaurantWalletPage"));
 const RestaurantProfilePage = namedPage(
   () => import("./modules/food/RestaurantPages"),
@@ -1126,6 +1134,26 @@ const AppContent: React.FC = () => {
               </ProtectedRoute>
             }
           />
+
+          {/* HR Management. Open to any signed-in user because HR staff, managers and employees are
+            told apart by HR permissions and their employee profile, not by role; the API decides
+            what each one may see and do, and the pages show an honest "no access" state otherwise. */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/admin/hr" element={<HrDashboardPage />} />
+            <Route path="/admin/hr/employees" element={<HrEmployeesPage />} />
+            <Route path="/admin/hr/tasks" element={<HrTasksPage />} />
+            <Route path="/admin/hr/attendance" element={<HrAttendancePage />} />
+            <Route path="/admin/hr/structure" element={<HrStructurePage />} />
+            <Route path="/admin/hr/reports" element={<HrReportsPage />} />
+            <Route path="/admin/hr/settings" element={<HrSettingsPage />} />
+            <Route path="/admin/hr/my-work" element={<HrMyWorkPage />} />
+          </Route>
 
           {/* Support Management console. Which tickets each role sees is enforced by the backend. */}
           <Route

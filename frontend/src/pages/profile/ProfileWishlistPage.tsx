@@ -15,7 +15,7 @@ export const ProfileWishlistPage: React.FC = () => {
       name: "Swarg Stay Divine Residency",
       city: "Rishikesh, Uttarakhand",
       image:
-        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E",
+        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 240 160' preserveAspectRatio='xMidYMid slice'%3E%3Crect width='240' height='160' fill='%23f1f5f9'/%3E%3Cg transform='translate(108 68)' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/g%3E%3C/svg%3E",
       rating: 4.9,
       price: 1200,
     },
@@ -24,7 +24,7 @@ export const ProfileWishlistPage: React.FC = () => {
       name: "Parmarth Niketan Stay",
       city: "Rishikesh, Uttarakhand",
       image:
-        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E",
+        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 240 160' preserveAspectRatio='xMidYMid slice'%3E%3Crect width='240' height='160' fill='%23f1f5f9'/%3E%3Cg transform='translate(108 68)' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/g%3E%3C/svg%3E",
       rating: 5.0,
       price: 800,
     },
@@ -33,7 +33,7 @@ export const ProfileWishlistPage: React.FC = () => {
       name: "Kashi Annapurna Heritage Bhavan",
       city: "Varanasi, Uttar Pradesh",
       image:
-        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E",
+        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 240 160' preserveAspectRatio='xMidYMid slice'%3E%3Crect width='240' height='160' fill='%23f1f5f9'/%3E%3Cg transform='translate(108 68)' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/g%3E%3C/svg%3E",
       rating: 4.8,
       price: 1500,
     },

@@ -8,6 +8,7 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import api, { getErrorMessage } from "../../../lib/api";
+import { optimizeImageForUpload } from "../../../services";
 import { useNotifications } from "../../../contexts/NotificationContext";
 
 interface ImageGalleryManagerProps {
@@ -42,7 +43,7 @@ export const ImageGalleryManager: React.FC<ImageGalleryManagerProps> = ({
     setUploading(true);
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", await optimizeImageForUpload(file));
       formData.append("folder", "admin-gallery");
 
       const res = await api.post("/uploads", formData, {

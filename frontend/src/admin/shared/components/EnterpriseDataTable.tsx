@@ -25,6 +25,7 @@ import { formatInline, humanizeKey, URL_LIKE } from "../utils/recordFormat";
 import { useLanguage } from "../../../contexts/LanguageContext";
 import { getFormattingLocale } from "../../../utils/format";
 import api, { getErrorMessage } from "../../../lib/api";
+import { optimizeImageForUpload } from "../../../services";
 import { useNotifications } from "../../../contexts/NotificationContext";
 import { statusAndActionLast } from "../../../../../shared/table-columns";
 
@@ -45,7 +46,7 @@ const DocumentAssetEditor: React.FC<{
     setError("");
     try {
       const body = new FormData();
-      body.append("file", file);
+      body.append("file", await optimizeImageForUpload(file));
       body.append("folder", "admin-documents");
       const response = await api.post("/uploads", body, {
         headers: { "Content-Type": "multipart/form-data" },

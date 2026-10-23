@@ -27621,6 +27621,1089 @@ export const REGISTRY: Registry = {
      "enforced": true
     }
    ]
+  },
+  {
+   "database": "test",
+   "collection": "hr_attendance",
+   "schema": "public",
+   "table": "hr_attendance",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "employeeId",
+     "column": "employee_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "date",
+     "column": "date",
+     "kind": "string"
+    },
+    {
+     "field": "officeId",
+     "column": "office_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "checkInAt",
+     "column": "check_in_at",
+     "kind": "date"
+    },
+    {
+     "field": "checkOutAt",
+     "column": "check_out_at",
+     "kind": "date"
+    },
+    {
+     "field": "source",
+     "column": "source",
+     "kind": "string"
+    },
+    {
+     "field": "note",
+     "column": "note",
+     "kind": "string"
+    },
+    {
+     "field": "updatedBy",
+     "column": "updated_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "ux_hr_attendance_employee_day",
+     "keys": {
+      "employeeId": 1,
+      "date": 1
+     },
+     "unique": true,
+     "enforced": true
+    },
+    {
+     "name": "ix_hr_attendance_date_office",
+     "keys": {
+      "date": 1,
+      "officeId": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "hr_attendance_corrections",
+   "schema": "public",
+   "table": "hr_attendance_corrections",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "employeeId",
+     "column": "employee_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "date",
+     "column": "date",
+     "kind": "string"
+    },
+    {
+     "field": "requestedStatus",
+     "column": "requested_status",
+     "kind": "string"
+    },
+    {
+     "field": "requestedCheckInAt",
+     "column": "requested_check_in_at",
+     "kind": "date"
+    },
+    {
+     "field": "requestedCheckOutAt",
+     "column": "requested_check_out_at",
+     "kind": "date"
+    },
+    {
+     "field": "reason",
+     "column": "reason",
+     "kind": "string"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "requestedBy",
+     "column": "requested_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "decidedBy",
+     "column": "decided_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "decidedByName",
+     "column": "decided_by_name",
+     "kind": "string"
+    },
+    {
+     "field": "decidedAt",
+     "column": "decided_at",
+     "kind": "date"
+    },
+    {
+     "field": "decisionNote",
+     "column": "decision_note",
+     "kind": "string"
+    },
+    {
+     "field": "before",
+     "column": "before",
+     "kind": "json"
+    },
+    {
+     "field": "after",
+     "column": "after",
+     "kind": "json"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "status_1",
+     "keys": {
+      "status": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_hr_correction_employee_day",
+     "keys": {
+      "employeeId": 1,
+      "date": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "hr_departments",
+   "schema": "public",
+   "table": "hr_departments",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "name",
+     "column": "name",
+     "kind": "string"
+    },
+    {
+     "field": "nameKey",
+     "column": "name_key",
+     "kind": "string"
+    },
+    {
+     "field": "description",
+     "column": "description",
+     "kind": "string"
+    },
+    {
+     "field": "active",
+     "column": "active",
+     "kind": "boolean"
+    },
+    {
+     "field": "createdBy",
+     "column": "created_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "nameKey_1",
+     "keys": {
+      "nameKey": 1
+     },
+     "unique": true,
+     "enforced": true
+    },
+    {
+     "name": "active_1",
+     "keys": {
+      "active": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "hr_designations",
+   "schema": "public",
+   "table": "hr_designations",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "name",
+     "column": "name",
+     "kind": "string"
+    },
+    {
+     "field": "nameKey",
+     "column": "name_key",
+     "kind": "string"
+    },
+    {
+     "field": "departmentId",
+     "column": "department_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "active",
+     "column": "active",
+     "kind": "boolean"
+    },
+    {
+     "field": "createdBy",
+     "column": "created_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "active_1",
+     "keys": {
+      "active": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ux_hr_designation_department_name",
+     "keys": {
+      "departmentId": 1,
+      "nameKey": 1
+     },
+     "unique": true,
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "hr_employees",
+   "schema": "public",
+   "table": "hr_employees",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "employeeCode",
+     "column": "employee_code",
+     "kind": "string"
+    },
+    {
+     "field": "userId",
+     "column": "user_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "fullName",
+     "column": "full_name",
+     "kind": "string"
+    },
+    {
+     "field": "workEmail",
+     "column": "work_email",
+     "kind": "string"
+    },
+    {
+     "field": "phone",
+     "column": "phone",
+     "kind": "string"
+    },
+    {
+     "field": "photoUrl",
+     "column": "photo_url",
+     "kind": "string"
+    },
+    {
+     "field": "primaryOfficeId",
+     "column": "primary_office_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "officeIds",
+     "column": "office_ids",
+     "kind": "objectId[]"
+    },
+    {
+     "field": "departmentId",
+     "column": "department_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "designationId",
+     "column": "designation_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "reportingManagerId",
+     "column": "reporting_manager_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "employmentType",
+     "column": "employment_type",
+     "kind": "string"
+    },
+    {
+     "field": "joiningDate",
+     "column": "joining_date",
+     "kind": "string"
+    },
+    {
+     "field": "responsibilities",
+     "column": "responsibilities",
+     "kind": "string"
+    },
+    {
+     "field": "skills",
+     "column": "skills",
+     "kind": "string[]"
+    },
+    {
+     "field": "notes",
+     "column": "notes",
+     "kind": "string"
+    },
+    {
+     "field": "deactivatedAt",
+     "column": "deactivated_at",
+     "kind": "date"
+    },
+    {
+     "field": "deactivationReason",
+     "column": "deactivation_reason",
+     "kind": "string"
+    },
+    {
+     "field": "createdBy",
+     "column": "created_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "employeeCode_1",
+     "keys": {
+      "employeeCode": 1
+     },
+     "unique": true,
+     "enforced": true
+    },
+    {
+     "name": "userId_1",
+     "keys": {
+      "userId": 1
+     },
+     "unique": true,
+     "sparse": true,
+     "enforced": true
+    },
+    {
+     "name": "workEmail_1",
+     "keys": {
+      "workEmail": 1
+     },
+     "unique": true,
+     "sparse": true,
+     "enforced": true
+    },
+    {
+     "name": "phone_1",
+     "keys": {
+      "phone": 1
+     },
+     "unique": true,
+     "sparse": true,
+     "enforced": true
+    },
+    {
+     "name": "status_1",
+     "keys": {
+      "status": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_hr_employee_office",
+     "keys": {
+      "primaryOfficeId": 1,
+      "status": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_hr_employee_offices",
+     "keys": {
+      "officeIds": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_hr_employee_department",
+     "keys": {
+      "departmentId": 1,
+      "status": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_hr_employee_manager",
+     "keys": {
+      "reportingManagerId": 1,
+      "status": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "hr_leaves",
+   "schema": "public",
+   "table": "hr_leaves",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "employeeId",
+     "column": "employee_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "fromDate",
+     "column": "from_date",
+     "kind": "string"
+    },
+    {
+     "field": "toDate",
+     "column": "to_date",
+     "kind": "string"
+    },
+    {
+     "field": "type",
+     "column": "type",
+     "kind": "string"
+    },
+    {
+     "field": "reason",
+     "column": "reason",
+     "kind": "string"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "requestedBy",
+     "column": "requested_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "decidedBy",
+     "column": "decided_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "decidedByName",
+     "column": "decided_by_name",
+     "kind": "string"
+    },
+    {
+     "field": "decidedAt",
+     "column": "decided_at",
+     "kind": "date"
+    },
+    {
+     "field": "decisionNote",
+     "column": "decision_note",
+     "kind": "string"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "status_1",
+     "keys": {
+      "status": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_hr_leave_employee",
+     "keys": {
+      "employeeId": 1,
+      "fromDate": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_hr_leave_status_dates",
+     "keys": {
+      "status": 1,
+      "fromDate": 1,
+      "toDate": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "hr_offices",
+   "schema": "public",
+   "table": "hr_offices",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "code",
+     "column": "code",
+     "kind": "string"
+    },
+    {
+     "field": "name",
+     "column": "name",
+     "kind": "string"
+    },
+    {
+     "field": "nameKey",
+     "column": "name_key",
+     "kind": "string"
+    },
+    {
+     "field": "address",
+     "column": "address",
+     "kind": "string"
+    },
+    {
+     "field": "city",
+     "column": "city",
+     "kind": "string"
+    },
+    {
+     "field": "phone",
+     "column": "phone",
+     "kind": "string"
+    },
+    {
+     "field": "email",
+     "column": "email",
+     "kind": "string"
+    },
+    {
+     "field": "active",
+     "column": "active",
+     "kind": "boolean"
+    },
+    {
+     "field": "createdBy",
+     "column": "created_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "code_1",
+     "keys": {
+      "code": 1
+     },
+     "unique": true,
+     "enforced": true
+    },
+    {
+     "name": "nameKey_1",
+     "keys": {
+      "nameKey": 1
+     },
+     "unique": true,
+     "enforced": true
+    },
+    {
+     "name": "active_1",
+     "keys": {
+      "active": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "hr_settings",
+   "schema": "public",
+   "table": "hr_settings",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "key",
+     "column": "key",
+     "kind": "string"
+    },
+    {
+     "field": "weeklyOffDays",
+     "column": "weekly_off_days",
+     "kind": "number[]"
+    },
+    {
+     "field": "dueSoonHours",
+     "column": "due_soon_hours",
+     "kind": "number"
+    },
+    {
+     "field": "employeeSeq",
+     "column": "employee_seq",
+     "kind": "number"
+    },
+    {
+     "field": "updatedBy",
+     "column": "updated_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "key_1",
+     "keys": {
+      "key": 1
+     },
+     "unique": true,
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "hr_task_events",
+   "schema": "public",
+   "table": "hr_task_events",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "taskId",
+     "column": "task_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "type",
+     "column": "type",
+     "kind": "string"
+    },
+    {
+     "field": "actorId",
+     "column": "actor_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "actorName",
+     "column": "actor_name",
+     "kind": "string"
+    },
+    {
+     "field": "fromStatus",
+     "column": "from_status",
+     "kind": "string"
+    },
+    {
+     "field": "toStatus",
+     "column": "to_status",
+     "kind": "string"
+    },
+    {
+     "field": "message",
+     "column": "message",
+     "kind": "string"
+    },
+    {
+     "field": "data",
+     "column": "data",
+     "kind": "json"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "ix_hr_task_event_task",
+     "keys": {
+      "taskId": 1,
+      "createdAt": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "hr_tasks",
+   "schema": "public",
+   "table": "hr_tasks",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "taskNumber",
+     "column": "task_number",
+     "kind": "string"
+    },
+    {
+     "field": "groupId",
+     "column": "group_id",
+     "kind": "string"
+    },
+    {
+     "field": "title",
+     "column": "title",
+     "kind": "string"
+    },
+    {
+     "field": "description",
+     "column": "description",
+     "kind": "string"
+    },
+    {
+     "field": "expectedOutcome",
+     "column": "expected_outcome",
+     "kind": "string"
+    },
+    {
+     "field": "employeeId",
+     "column": "employee_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "officeId",
+     "column": "office_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "departmentId",
+     "column": "department_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "createdBy",
+     "column": "created_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "createdByName",
+     "column": "created_by_name",
+     "kind": "string"
+    },
+    {
+     "field": "assignedDate",
+     "column": "assigned_date",
+     "kind": "string"
+    },
+    {
+     "field": "dueAt",
+     "column": "due_at",
+     "kind": "date"
+    },
+    {
+     "field": "priority",
+     "column": "priority",
+     "kind": "string"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "progressPercent",
+     "column": "progress_percent",
+     "kind": "number"
+    },
+    {
+     "field": "progressNote",
+     "column": "progress_note",
+     "kind": "string"
+    },
+    {
+     "field": "blockedReason",
+     "column": "blocked_reason",
+     "kind": "string"
+    },
+    {
+     "field": "completionSummary",
+     "column": "completion_summary",
+     "kind": "string"
+    },
+    {
+     "field": "deliverableUrl",
+     "column": "deliverable_url",
+     "kind": "string"
+    },
+    {
+     "field": "reviewStatus",
+     "column": "review_status",
+     "kind": "string"
+    },
+    {
+     "field": "reviewComment",
+     "column": "review_comment",
+     "kind": "string"
+    },
+    {
+     "field": "reviewedBy",
+     "column": "reviewed_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "reviewedByName",
+     "column": "reviewed_by_name",
+     "kind": "string"
+    },
+    {
+     "field": "reviewedAt",
+     "column": "reviewed_at",
+     "kind": "date"
+    },
+    {
+     "field": "rejectionCount",
+     "column": "rejection_count",
+     "kind": "number"
+    },
+    {
+     "field": "startedAt",
+     "column": "started_at",
+     "kind": "date"
+    },
+    {
+     "field": "submittedAt",
+     "column": "submitted_at",
+     "kind": "date"
+    },
+    {
+     "field": "completedAt",
+     "column": "completed_at",
+     "kind": "date"
+    },
+    {
+     "field": "cancelledAt",
+     "column": "cancelled_at",
+     "kind": "date"
+    },
+    {
+     "field": "dueSoonNotified",
+     "column": "due_soon_notified",
+     "kind": "boolean"
+    },
+    {
+     "field": "overdueNotified",
+     "column": "overdue_notified",
+     "kind": "boolean"
+    },
+    {
+     "field": "idempotencyKey",
+     "column": "idempotency_key",
+     "kind": "string"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "taskNumber_1",
+     "keys": {
+      "taskNumber": 1
+     },
+     "unique": true,
+     "enforced": true
+    },
+    {
+     "name": "groupId_1",
+     "keys": {
+      "groupId": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "priority_1",
+     "keys": {
+      "priority": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "status_1",
+     "keys": {
+      "status": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_hr_task_employee_date",
+     "keys": {
+      "employeeId": 1,
+      "assignedDate": -1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_hr_task_office_date",
+     "keys": {
+      "officeId": 1,
+      "assignedDate": -1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_hr_task_department_date",
+     "keys": {
+      "departmentId": 1,
+      "assignedDate": -1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_hr_task_status_due",
+     "keys": {
+      "status": 1,
+      "dueAt": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_hr_task_date",
+     "keys": {
+      "assignedDate": -1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ix_hr_task_completed",
+     "keys": {
+      "completedAt": -1
+     },
+     "enforced": true
+    },
+    {
+     "name": "ux_hr_task_idem",
+     "keys": {
+      "idempotencyKey": 1
+     },
+     "unique": true,
+     "sparse": true,
+     "enforced": true
+    }
+   ]
   }
  ]
 };

@@ -327,27 +327,6 @@ export const RegisterPage: React.FC = () => {
               </div>
             ))}
           </div>
-
-          {/* Stat Banner */}
-          <div className="bg-gradient-to-r from-white/5 via-white/8 to-white/5 backdrop-blur-md border border-white/10 p-4 rounded-2xl flex items-center justify-around shadow-xl">
-            {[
-              { n: "100%", l: "Free to Join" },
-              { n: "2 min", l: "Fast Onboarding" },
-              { n: "1,200+", l: "Verified Stays" },
-            ].map((s, i) => (
-              <React.Fragment key={s.l}>
-                {i > 0 && <div className="h-8 w-px bg-white/15" />}
-                <div className="text-center px-2">
-                  <p className="text-xl sm:text-2xl font-black bg-gradient-to-r from-white via-amber-100 to-amber-300 bg-clip-text text-transparent">
-                    {s.n}
-                  </p>
-                  <p className="text-[10px] text-slate-300 font-bold mt-0.5 tracking-wide">
-                    {s.l}
-                  </p>
-                </div>
-              </React.Fragment>
-            ))}
-          </div>
         </div>
 
         {/* Right Column: Registration Card Container */}
