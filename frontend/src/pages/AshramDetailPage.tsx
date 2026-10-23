@@ -80,6 +80,8 @@ import {
   Tag,
   MessageSquare,
   Clock,
+  Home,
+  Users,
 } from "lucide-react";
 import {
   checkAshramBookingAvailable,
@@ -91,6 +93,18 @@ import {
   type VolunteerJobItem,
 } from "../services/volunteer.service";
 import { useProfileAutoFill } from "../hooks/useProfileAutoFill";
+import {
+  ExpandableText,
+  FacilitiesGrid,
+  FactTile,
+  NearbyPlaces,
+  PanelStep,
+  PriceRow,
+  PropertyRulesSection,
+  QuantityStepper,
+  SectionCard,
+} from "./ashram-detail/PropertySections";
+import { formatPolicyTime } from "./ashram-detail/propertyRules";
 import {
   trackViewProperty,
   trackSelectRoom,
@@ -104,20 +118,8 @@ import {
   trackClickWhatsApp,
 } from "../lib/analytics";
 
-/**
- * Renders an owner-set "HH:MM" policy time as "12:00 PM". Values that already
- * carry AM/PM are shown as written; anything unset or unreadable falls back.
- */
-const formatPolicyClock = (clock: unknown, fallback: string): string => {
-  const text = String(clock ?? "").trim();
-  if (!text) return fallback;
-  if (/\b(am|pm)\b/i.test(text)) return text;
-  const match = /^(\d{1,2}):(\d{2})/.exec(text);
-  if (!match || Number(match[1]) > 23) return fallback;
-  const hours = Number(match[1]);
-  const suffix = hours >= 12 ? "PM" : "AM";
-  return `${hours % 12 === 0 ? 12 : hours % 12}:${match[2]} ${suffix}`;
-};
+const scrollToSection = (id: string) =>
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
 export const AshramDetailPage: React.FC = () => {
   const { id, city, ashramSlug } = useParams();
@@ -165,6 +167,7 @@ export const AshramDetailPage: React.FC = () => {
   const [rooms, setRooms] = useState<any[]>([]);
   const [selectedDayStayRoomId, setSelectedDayStayRoomId] = useState<string>("");
   const [expandedRoomId, setExpandedRoomId] = useState<string | null>(null);
+  const [amenitiesOpenId, setAmenitiesOpenId] = useState<string | null>(null);
   const [roomPhotoViewer, setRoomPhotoViewer] = useState<{
     name: string;
     images: string[];
@@ -1315,51 +1318,6 @@ export const AshramDetailPage: React.FC = () => {
     }
   };
 
-  const getAmenityIcon = (amName: string) => {
-    const name = amName.toLowerCase();
-    if (name.includes("wifi"))
-      return (
-        <span className="font-bold text-[9px] bg-primary/10 text-primary px-2.5 py-1 rounded-full">
-          WiFi
-        </span>
-      );
-    if (name.includes("food") || name.includes("meal"))
-      return (
-        <span className="font-bold text-[9px] bg-success/10 text-success px-2.5 py-1 rounded-full">
-          Satvik Food
-        </span>
-      );
-    if (name.includes("meditation"))
-      return (
-        <span className="font-bold text-[9px] bg-amber-500/10 text-amber-700 px-2.5 py-1 rounded-full">
-          Dhyan Hall
-        </span>
-      );
-    if (name.includes("yoga"))
-      return (
-        <span className="font-bold text-[9px] bg-purple-500/10 text-purple-600 px-2.5 py-1 rounded-full">
-          Yoga
-        </span>
-      );
-    if (name.includes("cow") || name.includes("shelter"))
-      return (
-        <span className="font-bold text-[9px] bg-yellow-500/10 text-yellow-700 px-2.5 py-1 rounded-full">
-          Goshala
-        </span>
-      );
-    if (name.includes("river") || name.includes("view"))
-      return (
-        <span className="font-bold text-[9px] bg-blue-500/10 text-blue-600 px-2.5 py-1 rounded-full">
-          Ganga View
-        </span>
-      );
-    return (
-      <span className="font-bold text-[9px] bg-gray-50 text-gray-500 px-2.5 py-1 rounded-full">
-        {amName}
-      </span>
-    );
-  };
-
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-6 py-20 animate-pulse bg-white rounded-[28px] h-80 border border-gray-100" />
@@ -1586,30 +1544,37 @@ export const AshramDetailPage: React.FC = () => {
 
       <div className="space-y-3 -mt-4">
         <div
-          className="relative w-full aspect-video rounded-[24px] overflow-hidden shadow-sm cursor-zoom-in group bg-gray-100 dark:bg-slate-900"
+          className={`relative w-full rounded-[24px] overflow-hidden shadow-sm group bg-gray-100 dark:bg-slate-900 ${galleryImages.length > 0 ? "aspect-video cursor-zoom-in" : "aspect-[21/5] min-h-[160px]"}`}
           onClick={() => galleryImages.length > 0 && setLightboxOpen(true)}
           onTouchStart={(e) => {
             touchStartX.current = e.touches[0].clientX;
           }}
           onTouchEnd={onHeroTouchEnd}
         >
-          <AnimatePresence mode="wait">
-            <motion.img
-              key={activeImageIndex}
-              src={galleryImages[activeImageIndex] || galleryImages[0]}
-              alt="Stay view"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.35, ease: "easeInOut" }}
-              className="absolute inset-0 w-full h-full object-cover"
-              onError={(e) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src =
-                  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
-              }}
-            />
-          </AnimatePresence>
+          {galleryImages.length > 0 ? (
+            <AnimatePresence mode="wait">
+              <motion.img
+                key={activeImageIndex}
+                src={galleryImages[activeImageIndex] || galleryImages[0]}
+                alt="Stay view"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.35, ease: "easeInOut" }}
+                className="absolute inset-0 w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src =
+                    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 240 160' preserveAspectRatio='xMidYMid slice'%3E%3Crect width='240' height='160' fill='%23f1f5f9'/%3E%3Cg transform='translate(108 68)' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/g%3E%3C/svg%3E";
+                }}
+              />
+            </AnimatePresence>
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-gray-400 dark:text-slate-500">
+              <BedDouble size={28} />
+              <p className="text-sm font-semibold">No photos have been added for this stay yet.</p>
+            </div>
+          )}
 
           {galleryImages.length > 1 && (
             <div className="absolute top-4 left-4 px-2.5 py-1 rounded-full bg-black/45 text-white text-[10px] font-bold backdrop-blur-sm">
@@ -1650,7 +1615,7 @@ export const AshramDetailPage: React.FC = () => {
                   onError={(e) => {
                     e.currentTarget.onerror = null;
                     e.currentTarget.src =
-                      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
+                      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 240 160' preserveAspectRatio='xMidYMid slice'%3E%3Crect width='240' height='160' fill='%23f1f5f9'/%3E%3Cg transform='translate(108 68)' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/g%3E%3C/svg%3E";
                   }} loading="lazy" decoding="async" />
               </button>
             ))}
@@ -1716,67 +1681,125 @@ export const AshramDetailPage: React.FC = () => {
         </div>
       )}
 
+      <nav
+        aria-label="Page sections"
+        className="flex gap-2 overflow-x-auto pb-1 -mt-2 scrollbar-none"
+        style={{ scrollbarWidth: "none" }}
+      >
+        {(
+          [
+            ["about", "Overview", true],
+            ["room-categories", "Rooms", rooms.length > 0],
+            ["facilities", "Facilities", Array.isArray(ashram.amenities) && ashram.amenities.length > 0],
+            ["property-rules", "Rules & Policies", true],
+            ["guest-reviews", "Reviews", true],
+            ["stay-location", "Location", true],
+          ] as Array<[string, string, boolean]>
+        )
+          .filter(([, , show]) => show)
+          .map(([sectionId, label]) => (
+            <button
+              key={sectionId}
+              type="button"
+              onClick={() => scrollToSection(sectionId)}
+              className="shrink-0 px-4 py-2 rounded-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-extrabold text-gray-700 dark:text-gray-200 hover:border-[#F28C28] hover:text-[#F28C28] transition-colors cursor-pointer"
+            >
+              {label}
+            </button>
+          ))}
+      </nav>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
-            <div className="flex items-center justify-between gap-3 border-b border-gray-50 dark:border-slate-850 pb-3">
-              <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
-                About the Retreat
-              </h3>
-              <div className="flex items-center gap-1 bg-gray-50 dark:bg-slate-900 px-3 py-1 border border-gray-150 dark:border-slate-800 rounded-full shrink-0">
-                <Star className="text-[#D4AF37] fill-[#D4AF37]" size={12} />
-                <span className="text-[11px] font-extrabold text-[#0B192C] dark:text-white">
-                  {ashram.rating?.average} / 5
-                </span>
+        <div className="lg:col-span-2 space-y-6">
+          <SectionCard
+            id="about"
+            title="About the Retreat"
+            icon={<Home size={18} />}
+            aside={
+              Number(ashram.rating?.average) > 0 ? (
+                <div
+                  className="flex items-center gap-1.5 bg-gray-50 dark:bg-slate-900 px-3 py-1 border border-gray-200 dark:border-slate-800 rounded-full shrink-0"
+                  aria-label={`Rated ${ashram.rating.average} out of 5`}
+                >
+                  <Star className="text-[#D4AF37] fill-[#D4AF37]" size={13} />
+                  <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">
+                    {ashram.rating.average} / 5
+                  </span>
+                </div>
+              ) : undefined
+            }
+          >
+            {ashram.description && <ExpandableText text={String(ashram.description)} />}
+
+            {(formatPolicyTime(ashram.policies?.checkInTime) ||
+              formatPolicyTime(ashram.policies?.checkOutTime) ||
+              rooms.length > 0) && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {formatPolicyTime(ashram.policies?.checkInTime) && (
+                  <FactTile
+                    icon={<Clock size={17} />}
+                    label="Check-in"
+                    value={formatPolicyTime(ashram.policies?.checkInTime)}
+                  />
+                )}
+                {formatPolicyTime(ashram.policies?.checkOutTime) && (
+                  <FactTile
+                    icon={<Clock size={17} />}
+                    label="Check-out"
+                    value={formatPolicyTime(ashram.policies?.checkOutTime)}
+                  />
+                )}
+                {rooms.length > 0 && (
+                  <FactTile
+                    icon={<BedDouble size={17} />}
+                    label="Room categories"
+                    value={rooms.length}
+                  />
+                )}
               </div>
-            </div>
-            <p className="text-xs text-gray-500 leading-relaxed font-medium">
-              {ashram.description}
-            </p>
+            )}
 
             {ashram.history && (
               <div className="pt-4 border-t border-gray-100 dark:border-slate-800 space-y-2">
-                <h4 className="text-xs font-bold text-[#F28C28] tracking-wider">
+                <h4 className="text-sm font-extrabold text-[#F28C28]">
                   Historical Significance
                 </h4>
-                <p className="text-xs text-gray-500 leading-relaxed italic bg-gray-50/50 dark:bg-slate-900/10 p-4 rounded-2xl border border-dashed border-gray-100 dark:border-slate-850">
+                <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed italic bg-gray-50/60 dark:bg-slate-900/40 p-4 rounded-2xl border border-dashed border-gray-200 dark:border-slate-800">
                   "{ashram.history}"
                 </p>
               </div>
             )}
-          </div>
+          </SectionCard>
 
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
-            <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
-              Facilities & Spiritual Activities
-            </h3>
-            <div className="flex flex-wrap gap-2.5">
-              {ashram.amenities?.map((am: string, i: number) => (
-                <div key={i} className="flex items-center gap-1">
-                  {getAmenityIcon(am)}
-                </div>
-              ))}
-            </div>
-          </div>
+          {Array.isArray(ashram.amenities) && ashram.amenities.length > 0 && (
+            <SectionCard
+              id="facilities"
+              title="Facilities & Spiritual Activities"
+              icon={<Sparkles size={18} />}
+            >
+              <FacilitiesGrid items={ashram.amenities.filter((a: unknown) => typeof a === "string" && a.trim())} />
+            </SectionCard>
+          )}
 
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
-            <div className="flex items-center justify-between border-b border-gray-50 dark:border-slate-850 pb-3 flex-wrap gap-2">
-              <div className="flex items-center gap-2.5">
-                <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white">
-                  Available Room Categories
-                </h3>
+          <SectionCard
+            id="room-categories"
+            title="Available Room Categories"
+            icon={<BedDouble size={18} />}
+            aside={
+              <div className="flex items-center gap-2 flex-wrap">
                 {!checkAshramBookingAvailable(ashram) && (
                   <span className="px-2.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/60 text-[11px] font-black uppercase tracking-wider">
                     Not Available
                   </span>
                 )}
+                {availableOffers.some((o) => o.isLastMinuteDeal) && (
+                  <span className="px-3 py-1 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[11px] font-black flex items-center gap-1 border border-rose-200 dark:border-rose-900/40">
+                    <Sparkles size={11} className="animate-pulse" /> ⚡ Last Minute Deals Available Today
+                  </span>
+                )}
               </div>
-              {availableOffers.some((o) => o.isLastMinuteDeal) && (
-                <span className="px-3 py-1 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-black flex items-center gap-1 border border-rose-200 dark:border-rose-900/40">
-                  <Sparkles size={11} className="animate-pulse" /> ⚡ Last Minute Deals Available Today
-                </span>
-              )}
-            </div>
+            }
+          >
             <div className="space-y-4">
               {rooms.map((r) => {
                 const isLastMinuteOffer = (o: any) =>
@@ -1858,124 +1881,170 @@ export const AshramDetailPage: React.FC = () => {
                   );
                 };
 
+                const roomAmenities: string[] = Array.isArray(r.amenities)
+                  ? r.amenities.filter((a: unknown) => typeof a === "string" && a.trim())
+                  : [];
+                const amenitiesOpen = amenitiesOpenId === String(r._id);
+                const shownAmenities = amenitiesOpen ? roomAmenities : roomAmenities.slice(0, 5);
+                const bookable = checkAshramBookingAvailable(ashram);
+                const atRoomLimit = selectedRoomCount >= requestedRoomCount;
+
                 return (
-                  <div
+                  <article
                     key={r._id}
-                    onClick={roomImages.length > 0 ? toggleRoomPhotos : undefined}
-                    aria-expanded={roomImages.length > 0 ? isExpanded : undefined}
-                    className={`p-4 sm:p-5 border rounded-[20px] transition-all relative overflow-hidden ${roomImages.length > 0 ? "cursor-pointer" : ""} ${
+                    aria-label={r.name}
+                    className={`relative overflow-hidden rounded-[22px] border transition-all ${
                       selectedQty > 0
                         ? "border-[#F28C28] bg-[#F28C28]/5 shadow-sm ring-1 ring-[#F28C28]/30"
-                        : "border-gray-100 dark:border-slate-800 hover:bg-gray-50/50 dark:hover:bg-slate-800/10"
+                        : "border-gray-100 dark:border-slate-800 hover:border-gray-200 dark:hover:border-slate-700"
                     }`}
                   >
-                    {isDeal && discountPercent > 0 && (
-                      <div className="absolute top-0 right-0">
-                        <span className="text-[9px] font-black uppercase px-3 py-1 rounded-bl-xl shadow-sm flex items-center gap-1 bg-gradient-to-r from-rose-600 to-amber-500 text-white">
-                          <Sparkles size={10} />
-                          {roomDeal ? "⚡ Last Minute Deal" : "⚡ Special Rate"} &bull; {discountPercent}% OFF
-                        </span>
-                      </div>
-                    )}
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div className="space-y-1.5 min-w-0 pr-4 sm:pr-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">
-                          {r.name}
-                        </span>
-                        {isDeal && (
-                          <span className="text-[10px] font-black bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 px-2 py-0.5 rounded-full">
-                            {discountPercent}% OFF
+                    <div className="flex flex-col sm:flex-row">
+                      {roomImages.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={toggleRoomPhotos}
+                          aria-expanded={isExpanded}
+                          aria-label={`${isExpanded ? "Hide" : "View"} photos of ${r.name}`}
+                          className="group relative sm:w-60 shrink-0 aspect-[16/10] sm:aspect-auto sm:min-h-[210px] bg-gray-100 dark:bg-slate-900 overflow-hidden cursor-pointer"
+                        >
+                          <img
+                            src={roomImages[0]}
+                            alt=""
+                            loading="lazy"
+                            decoding="async"
+                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                          <span className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-sm">
+                            <Maximize2 size={11} />
+                            {isExpanded ? "Hide photos" : `${roomImages.length} photo${roomImages.length === 1 ? "" : "s"}`}
+                          </span>
+                        </button>
+                      )}
+
+                      <div className="flex-1 min-w-0 p-4 sm:p-5 flex flex-col gap-3">
+                        {isDeal && discountPercent > 0 && (
+                          <span className="self-start inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-rose-600 to-amber-500 px-3 py-1 text-[11px] font-black uppercase text-white shadow-sm">
+                            <Sparkles size={11} />
+                            {roomDeal ? "⚡ Last Minute Deal" : "⚡ Special Rate"} &bull; {discountPercent}% OFF
                           </span>
                         )}
-                      </div>
-                      <span className="text-[10px] text-gray-400 block font-bold capitalize tracking-wide">
-                        {r.type.replace("_", " ")} • {r.acType} • Capacity:{" "}
-                        {r.capacity} Guests
-                      </span>
-                      <p className="text-[10px] text-gray-500 max-w-md">
-                        {r.description ||
-                          "Simple clean room with standard Vedic facilities."}
-                      </p>
-                    </div>
-                    <div className="flex flex-col sm:items-end text-left sm:text-right shrink-0 pt-2 sm:pt-0">
-                      <span className="text-[10px] text-gray-400 font-bold tracking-wider uppercase">
-                        Room Rate
-                      </span>
-                      {isDeal && discountedPrice < r.basePrice ? (
-                        <div className="flex flex-col sm:items-end">
-                          <span className="text-[11px] text-gray-400 line-through font-bold">
-                            {formatCurrency(r.basePrice)}
-                          </span>
-                          <span className="text-sm sm:text-base font-black text-emerald-600 dark:text-emerald-400">
-                            {formatCurrency(discountedPrice)}{" "}
-                            <span className="text-[10px] text-gray-400 font-bold">/ night</span>
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-sm font-extrabold text-[#0B192C] dark:text-white">
-                          {formatCurrency(r.basePrice)} / night
-                        </span>
-                      )}
-                      
-                      <div
-                        onClick={(e) => e.stopPropagation()}
-                        className="flex flex-col sm:items-end gap-2 mt-3"
-                      >
-                        <div className="flex items-center gap-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-full p-1 shadow-sm cursor-default">
-                          <button
-                            onClick={() => handleUpdateRoomQty(r._id, -1)}
-                            className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-rose-600 transition-colors disabled:opacity-30"
-                            disabled={selectedQty === 0 || !checkAshramBookingAvailable(ashram)}
-                          >
-                            <span className="text-lg leading-none font-medium">−</span>
-                          </button>
-                          <span className="text-sm font-black text-[#0B192C] dark:text-white w-4 text-center">
-                            {selectedQty}
-                          </span>
-                          <button
-                            onClick={() => {
-                              handleUpdateRoomQty(r._id, 1);
-                              if (isDeal && roomDeal?.promoCode && (!appliedPromo || appliedPromo !== roomDeal.promoCode)) {
-                                setCouponCode(roomDeal.promoCode);
-                                handleApplyAvailableOffer(roomDeal);
-                              }
-                            }}
-                            className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-emerald-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                            disabled={selectedRoomCount >= requestedRoomCount || !checkAshramBookingAvailable(ashram)}
-                          >
-                            <span className="text-lg leading-none font-medium">＋</span>
-                          </button>
+
+                        <div className="space-y-2 min-w-0">
+                          <h4 className="text-base font-extrabold text-[#0B192C] dark:text-white leading-snug">
+                            {r.name}
+                          </h4>
+                          <div className="flex flex-wrap items-center gap-1.5 text-xs font-bold text-gray-600 dark:text-gray-300">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 dark:bg-slate-800 px-2.5 py-1 capitalize">
+                              <BedDouble size={12} /> {String(r.type ?? "").replace(/_/g, " ")}
+                            </span>
+                            {r.acType && (
+                              <span className="rounded-full bg-gray-100 dark:bg-slate-800 px-2.5 py-1">{r.acType}</span>
+                            )}
+                            <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 dark:bg-slate-800 px-2.5 py-1">
+                              <Users size={12} /> Sleeps {r.capacity}
+                            </span>
+                          </div>
+                          {r.description && (
+                            <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-300">{r.description}</p>
+                          )}
                         </div>
 
-                        {shortStayOpen && r.dayStayConfig?.enabled === true && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedDayStayRoomId(String(r._id));
-                              // The short stay card is only rendered in short stay mode,
-                              // so switch first and scroll once it has mounted.
-                              setShowOvernightBooking(false);
-                              setTimeout(() => {
-                                document
-                                  .getElementById("day-stay-card")
-                                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
-                              }, 50);
-                            }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-200 dark:text-black text-[11px] font-bold transition-all cursor-pointer border border-black dark:border-white shadow-2xs"
-                          >
-                            <Clock size={11} />
-                            <span>Short Stay (From ₹{shortStayFromPrice(r)})</span>
-                          </button>
+                        {roomAmenities.length > 0 && (
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {shownAmenities.map((amenity, idx) => (
+                              <span
+                                key={`${amenity}_${idx}`}
+                                className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-400"
+                              >
+                                <CheckCircle size={11} /> {amenity}
+                              </span>
+                            ))}
+                            {roomAmenities.length > 5 && (
+                              <button
+                                type="button"
+                                onClick={() => setAmenitiesOpenId(amenitiesOpen ? null : String(r._id))}
+                                aria-expanded={amenitiesOpen}
+                                className="text-xs font-extrabold text-[#F28C28] hover:text-[#B45309] cursor-pointer px-1"
+                              >
+                                {amenitiesOpen ? "Show less" : `+${roomAmenities.length - 5} more`}
+                              </button>
+                            )}
+                          </div>
+                        )}
+
+                        <div className="mt-auto flex flex-col gap-3 pt-3 border-t border-gray-100 dark:border-slate-800 sm:flex-row sm:items-end sm:justify-between">
+                          <div>
+                            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Price per night</p>
+                            {isDeal && discountedPrice < r.basePrice ? (
+                              <div className="flex items-baseline gap-2 flex-wrap">
+                                <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums">
+                                  {formatCurrency(discountedPrice)}
+                                </span>
+                                <span className="text-sm text-gray-400 line-through font-bold tabular-nums">
+                                  {formatCurrency(r.basePrice)}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-xl font-black text-[#0B192C] dark:text-white tabular-nums">
+                                {formatCurrency(r.basePrice)}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex flex-col gap-2 sm:items-end">
+                            <QuantityStepper
+                              value={selectedQty}
+                              label={`${r.name} room`}
+                              canDecrease={selectedQty > 0 && bookable}
+                              canIncrease={!atRoomLimit && bookable}
+                              onDecrease={() => handleUpdateRoomQty(r._id, -1)}
+                              onIncrease={() => {
+                                handleUpdateRoomQty(r._id, 1);
+                                if (isDeal && roomDeal?.promoCode && (!appliedPromo || appliedPromo !== roomDeal.promoCode)) {
+                                  setCouponCode(roomDeal.promoCode);
+                                  handleApplyAvailableOffer(roomDeal);
+                                }
+                              }}
+                            />
+                            {bookable && atRoomLimit && selectedQty === 0 && (
+                              <p className="text-[11px] font-semibold text-gray-500 sm:text-right">
+                                You have chosen all {requestedRoomCount} room{requestedRoomCount === 1 ? "" : "s"}. Remove one or raise the room count to add this.
+                              </p>
+                            )}
+                            {shortStayOpen && r.dayStayConfig?.enabled === true && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedDayStayRoomId(String(r._id));
+                                  // The short stay card is only rendered in short stay mode,
+                                  // so switch first and scroll once it has mounted.
+                                  setShowOvernightBooking(false);
+                                  setTimeout(() => {
+                                    document
+                                      .getElementById("day-stay-card")
+                                      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                                  }, 50);
+                                }}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-gray-300 dark:border-slate-600 text-[#0B192C] dark:text-white hover:bg-gray-50 dark:hover:bg-slate-800 text-xs font-bold transition-all cursor-pointer"
+                              >
+                                <Clock size={12} />
+                                <span>Short Stay (From ₹{shortStayFromPrice(r)})</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {selectedQty > 0 && (
+                          <p className="rounded-xl bg-[#F28C28]/10 px-3 py-2 text-sm font-extrabold text-[#B45309] dark:text-amber-300">
+                            {selectedQty} × {r.name} · {formatCurrency(discountedPrice * selectedQty)} per night
+                          </p>
                         )}
                       </div>
                     </div>
-                    </div>
+
                     {isExpanded && (
-                      <div
-                        onClick={(e) => e.stopPropagation()}
-                        className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-800 space-y-3 cursor-default"
-                      >
+                      <div className="p-4 sm:p-5 border-t border-gray-100 dark:border-slate-800">
                         <div className="flex gap-2.5 overflow-x-auto snap-x snap-mandatory pb-2">
                           {roomImages.map((src, idx) => (
                             <button
@@ -1989,7 +2058,7 @@ export const AshramDetailPage: React.FC = () => {
                                 })
                               }
                               aria-label={`Open ${r.name} photo ${idx + 1}`}
-                              className="group relative shrink-0 snap-start w-44 sm:w-56 aspect-[4/3] rounded-xl overflow-hidden border border-gray-100 dark:border-slate-800 bg-gray-100 dark:bg-slate-900"
+                              className="group relative shrink-0 snap-start w-44 sm:w-56 aspect-[4/3] rounded-xl overflow-hidden border border-gray-100 dark:border-slate-800 bg-gray-100 dark:bg-slate-900 cursor-pointer"
                             >
                               <img
                                 src={src}
@@ -2003,25 +2072,32 @@ export const AshramDetailPage: React.FC = () => {
                             </button>
                           ))}
                         </div>
-                        {Array.isArray(r.amenities) && r.amenities.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5">
-                            {r.amenities.map((amenity: string, idx: number) => (
-                              <span
-                                key={`${amenity}_${idx}`}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 text-[10px] font-bold text-emerald-700 dark:text-emerald-400"
-                              >
-                                <CheckCircle size={10} /> {amenity}
-                              </span>
-                            ))}
-                          </div>
-                        )}
                       </div>
                     )}
-                  </div>
+                  </article>
                 );
               })}
             </div>
-          </div>
+
+            {Object.keys(selectedRooms).length > 0 && checkAshramBookingAvailable(ashram) && (
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl bg-[#FFF4E5] dark:bg-[#F28C28]/10 border border-[#F28C28]/30 px-4 py-3">
+                <p className="text-sm font-extrabold text-[#0B192C] dark:text-white">
+                  {Object.values(selectedRooms).reduce((a, b) => a + b, 0)} room
+                  {Object.values(selectedRooms).reduce((a, b) => a + b, 0) === 1 ? "" : "s"} selected
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleBookNowClick();
+                    scrollToSection("booking-engine");
+                  }}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[#F28C28] hover:bg-[#B45309] px-5 py-2.5 text-sm font-extrabold text-white shadow-md transition-all cursor-pointer"
+                >
+                  Continue to booking <ArrowRight size={14} />
+                </button>
+              </div>
+            )}
+          </SectionCard>
 
           {roomPhotoViewer && (
             <div
@@ -2085,43 +2161,7 @@ export const AshramDetailPage: React.FC = () => {
             </div>
           )}
 
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
-            <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
-              Rules & Policies
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
-              <div className="space-y-3">
-                <h4 className="font-bold text-[#F28C28] tracking-wider text-[10px]">
-                  Guidelines for Guests
-                </h4>
-                <ul className="text-gray-500 space-y-2 list-disc pl-5">
-                  {ashram.rules?.map((rule: string, i: number) => (
-                    <li key={i}>{rule}</li>
-                  ))}
-                </ul>
-              </div>
-              <div className="space-y-3">
-                <h4 className="font-bold text-[#F28C28] tracking-wider text-[10px]">
-                  Check-in Policies
-                </h4>
-                <div className="space-y-1.5 text-gray-500">
-                  <p>
-                    <strong>Check-in Time:</strong> {formatPolicyClock(ashram.policies?.checkInTime, "12:00 PM")}
-                  </p>
-                  <p>
-                    <strong>Check-out Time:</strong> {formatPolicyClock(ashram.policies?.checkOutTime, "11:00 AM")}
-                  </p>
-                  <p>
-                    <strong>Nearby Attractions:</strong>{" "}
-                    {(Array.isArray(ashram.nearbyAttractions) ? ashram.nearbyAttractions : [])
-                      .map((a: any) => (typeof a === "string" ? a : a?.name))
-                      .filter(Boolean)
-                      .join(", ") || "Temples & Ghats"}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <PropertyRulesSection ashram={ashram} />
 
           {volunteerJobs.length > 0 && (
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-4 shadow-sm">
@@ -2177,7 +2217,7 @@ export const AshramDetailPage: React.FC = () => {
             </div>
           )}
 
-          <div className="space-y-5">
+          <div id="guest-reviews" className="scroll-mt-24 space-y-5">
             <GuestReviewsCarousel
               compact
               reviews={reviews}
@@ -2250,9 +2290,14 @@ export const AshramDetailPage: React.FC = () => {
           {(!shortStayOpen || showOvernightBooking === true) && (
           <div id="booking-engine" className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-4 sm:p-6 shadow-sm space-y-6 relative overflow-visible z-40">
             <div className="absolute top-0 inset-x-0 h-1 bg-[#F28C28]" />
-            <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
-              Overnight Stay Booking
-            </h3>
+            <div className="space-y-0.5">
+              <h3 className="font-extrabold text-lg text-[#0B192C] dark:text-white">
+                Overnight Stay Booking
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Choose your dates and rooms, then review the price before you pay.
+              </p>
+            </div>
 
             {restoredNotice && (
               <div className="p-3 bg-[#F28C28]/10 border border-[#F28C28]/20 rounded-xl flex items-center justify-between text-xs font-semibold text-[#F28C28] space-x-2">
@@ -2279,7 +2324,8 @@ export const AshramDetailPage: React.FC = () => {
             )}
 
             {!bookingSuccess ? (
-              <form onSubmit={handleBookingSubmit} className="space-y-4">
+              <form onSubmit={handleBookingSubmit} className="space-y-5">
+                <PanelStep number={1} title="Dates, guests & rooms">
                 <div className="relative z-50 p-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl">
                   <DateRangePicker
                     checkIn={checkIn}
@@ -2296,22 +2342,8 @@ export const AshramDetailPage: React.FC = () => {
                   />
                 </div>
 
-                <div className="p-3.5 bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-800 rounded-[20px] space-y-1 select-none">
-                  <span className="text-[9px] text-gray-400 font-bold tracking-wider">
-                    Active Category
-                  </span>
-                  <span className="text-xs font-extrabold text-secondary dark:text-white block leading-tight">
-                    {Object.keys(selectedRooms).length > 0
-                      ? `Book ${Object.values(selectedRooms).reduce((a, b) => a + b, 0)} ${Object.values(selectedRooms).reduce((a, b) => a + b, 0) === 1 ? "Room" : "Rooms"}`
-                      : firstSelectedRoom?.name}
-                  </span>
-                  <span className="text-[10px] font-bold text-[#F28C28]">
-                    {formatCurrency(firstSelectedRoom?.basePrice || 0)} / bed per night
-                  </span>
-                </div>
-
                 <div className="space-y-1">
-                  <label className="text-[10px] font-extrabold tracking-wider text-gray-400">
+                  <label className="text-xs font-extrabold tracking-wider text-gray-400">
                     Guests & Rooms
                   </label>
                   <GuestRoomSelector
@@ -2331,11 +2363,54 @@ export const AshramDetailPage: React.FC = () => {
                   />
                 </div>
 
-                <div className="pt-3 border-t border-gray-100 dark:border-slate-800 space-y-3">
-                  <span className="text-[10px] font-extrabold tracking-wider text-gray-400 block">
-                    Add-on Services (Dynamic Pricing)
-                  </span>
+                <div
+                  className="rounded-2xl border border-gray-100 dark:border-slate-800 bg-gray-50/60 dark:bg-slate-900/40 p-3.5 space-y-2"
+                  aria-live="polite"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                      Selected rooms
+                    </span>
+                    {Object.keys(selectedRooms).length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => scrollToSection("room-categories")}
+                        className="text-xs font-extrabold text-[#F28C28] hover:text-[#B45309] cursor-pointer"
+                      >
+                        Change
+                      </button>
+                    )}
+                  </div>
+                  {Object.keys(selectedRooms).length === 0 ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      No room selected yet.{" "}
+                      <button
+                        type="button"
+                        onClick={() => scrollToSection("room-categories")}
+                        className="font-extrabold text-[#F28C28] hover:text-[#B45309] cursor-pointer"
+                      >
+                        Choose rooms
+                      </button>{" "}
+                      to see your price.
+                    </p>
+                  ) : (
+                    <ul className="space-y-1.5">
+                      {Object.entries(selectedRooms).map(([roomId, quantity]) => {
+                        const room = rooms.find((rm) => String(rm._id) === roomId);
+                        if (!room) return null;
+                        return (
+                          <li key={roomId} className="flex items-start justify-between gap-3 text-sm font-semibold text-[#0B192C] dark:text-white">
+                            <span className="min-w-0 break-words">{room.name}</span>
+                            <span className="shrink-0 font-black tabular-nums">× {quantity}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+                </PanelStep>
 
+                <PanelStep number={2} title="Add-on services">
                   {availableAddOns.filter((a: any) => a.enabled !== false)
                     .length === 0 ? (
                     <p className="text-[11px] text-gray-400 italic">
@@ -2373,7 +2448,7 @@ export const AshramDetailPage: React.FC = () => {
                                     {item.name}
                                   </span>
                                 </div>
-                                <span className="text-[10px] font-bold text-[#F28C28] block">
+                                <span className="text-xs font-bold text-[#F28C28] block">
                                   {formatCurrency(item.price)}{" "}
                                   <span className="text-gray-400 font-medium">
                                     / {item.unitLabel || "Unit"}
@@ -2427,16 +2502,17 @@ export const AshramDetailPage: React.FC = () => {
                         })}
                     </div>
                   )}
-                </div>
+                </PanelStep>
 
+                <PanelStep number={3} title="Offers, coupon & rewards">
                 {(offersLoading || availableOffers.length > 0) && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2">
-                      <label className="text-[10px] font-black tracking-wider text-[#F28C28] flex items-center gap-1.5">
+                      <label className="text-xs font-black tracking-wider text-[#F28C28] flex items-center gap-1.5">
                         <Sparkles size={12} /> Available Offers
                       </label>
                       {!offersLoading && (
-                        <span className="text-[9px] font-bold text-gray-400">
+                        <span className="text-[11px] font-bold text-gray-400">
                           {availableOffers.length} offer{availableOffers.length === 1 ? "" : "s"}
                         </span>
                       )}
@@ -2483,21 +2559,21 @@ export const AshramDetailPage: React.FC = () => {
                                   <div className="min-w-0 space-y-1">
                                     <div className="flex flex-wrap items-center gap-1.5">
                                       {isLastMin && (
-                                        <span className="rounded-full bg-gradient-to-r from-rose-600 to-amber-500 px-2 py-0.5 text-[8px] font-black text-white uppercase shadow-xs">
+                                        <span className="rounded-full bg-gradient-to-r from-rose-600 to-amber-500 px-2 py-0.5 text-xs font-black text-white uppercase shadow-xs">
                                           ⚡ Last Minute Deal
                                         </span>
                                       )}
                                       <span className="text-[11px] font-black text-[#0B192C] dark:text-white">
                                         {offer.offerTitle || offer.shortTitle || "Stay Offer"}
                                       </span>
-                                      <span className="rounded-full bg-[#E58C28] px-2 py-0.5 text-[9px] font-black text-white">
+                                      <span className="rounded-full bg-[#E58C28] px-2 py-0.5 text-[11px] font-black text-white">
                                         {discountLabel}
                                       </span>
                                     </div>
-                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2">
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
                                       {offer.description || "Apply this offer to your stay."}
                                     </p>
-                                    <div className="flex items-center gap-2 flex-wrap text-[9px] font-bold text-slate-500 dark:text-slate-400">
+                                    <div className="flex items-center gap-2 flex-wrap text-[11px] font-bold text-slate-500 dark:text-slate-400">
                                       <span className="text-[#F28C28] dark:text-amber-400">
                                         Applied on: {targetRoomName}
                                       </span>
@@ -2512,7 +2588,7 @@ export const AshramDetailPage: React.FC = () => {
                                     type="button"
                                     disabled={isApplied}
                                     onClick={() => handleApplyAvailableOffer(offer)}
-                                    className={`shrink-0 rounded-xl px-3 py-2 text-[10px] font-black transition-colors ${
+                                    className={`shrink-0 rounded-xl px-3 py-2 text-xs font-black transition-colors ${
                                       isApplied
                                         ? "cursor-default bg-emerald-500 text-white"
                                         : "cursor-pointer bg-[#F28C28] text-white hover:bg-[#B45309]"
@@ -2542,7 +2618,7 @@ export const AshramDetailPage: React.FC = () => {
                           🎉
                         </span>
                         <div>
-                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-black tracking-wider block">
+                          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-black tracking-wider block">
                             Offer Applied Successfully
                           </span>
                           <h4 className="text-xs font-black text-[#0B192C] dark:text-white">
@@ -2551,7 +2627,7 @@ export const AshramDetailPage: React.FC = () => {
                           </h4>
                         </div>
                       </div>
-                      <span className="px-2.5 py-1 bg-emerald-500 text-white rounded-full text-[10px] font-black shadow-sm">
+                      <span className="px-2.5 py-1 bg-emerald-500 text-white rounded-full text-xs font-black shadow-sm">
                         {appliedOfferData.promoCode}
                       </span>
                     </div>
@@ -2569,14 +2645,14 @@ export const AshramDetailPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={handleChangeCoupon}
-                        className="flex-1 py-1.5 px-3 bg-[#F28C28] hover:bg-[#B45309] text-white text-[10px] font-black rounded-xl flex items-center justify-center gap-1 transition-all cursor-pointer shadow-sm"
+                        className="flex-1 py-1.5 px-3 bg-[#F28C28] hover:bg-[#B45309] text-white text-xs font-black rounded-xl flex items-center justify-center gap-1 transition-all cursor-pointer shadow-sm"
                       >
                         <Edit3 size={12} /> Change Coupon
                       </button>
                       <button
                         type="button"
                         onClick={handleRemoveCoupon}
-                        className="flex-1 py-1.5 px-3 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50 text-[10px] font-black rounded-xl flex items-center justify-center gap-1 transition-all cursor-pointer"
+                        className="flex-1 py-1.5 px-3 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50 text-xs font-black rounded-xl flex items-center justify-center gap-1 transition-all cursor-pointer"
                       >
                         <Trash2 size={12} /> Remove Coupon
                       </button>
@@ -2599,7 +2675,7 @@ export const AshramDetailPage: React.FC = () => {
                 )}
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-400">
+                  <label className="text-xs font-bold text-gray-400">
                     Promo / Coupon Code
                   </label>
                   <div className="flex gap-2">
@@ -2620,7 +2696,7 @@ export const AshramDetailPage: React.FC = () => {
                   </div>
                   {couponMsg && (
                     <p
-                      className={`text-[10px] font-bold ${appliedDiscount > 0 ? "text-emerald-600" : "text-rose-500"}`}
+                      className={`text-xs font-bold ${appliedDiscount > 0 ? "text-emerald-600" : "text-rose-500"}`}
                     >
                       {couponMsg}
                     </p>
@@ -2634,10 +2710,12 @@ export const AshramDetailPage: React.FC = () => {
                       <span className="font-extrabold text-[#0B192C] dark:text-white block">
                         Tirvona Loyalty Rewards
                       </span>
-                      <span className="text-[10px] text-gray-500">
+                      <span className="text-xs text-gray-500">
                         {useLoyalty
                           ? `Applied 100 points (-${formatCurrency(100)})`
-                          : `Earn ${Math.round(subtotalCalc * 0.05)} reward points after stay`}
+                          : subtotalCalc > 0
+                            ? `Earn ${Math.round(subtotalCalc * 0.05)} reward points after stay`
+                            : "Select a room to see the points you can earn"}
                       </span>
                     </div>
                   </div>
@@ -2650,7 +2728,7 @@ export const AshramDetailPage: React.FC = () => {
                 </div>
 
                 {appliedOfferData && (
-                  <div className="p-3 bg-gray-50 dark:bg-slate-900/60 rounded-2xl border border-gray-150 dark:border-slate-800 text-[10px] space-y-1 text-gray-500">
+                  <div className="p-3 bg-gray-50 dark:bg-slate-900/60 rounded-2xl border border-gray-150 dark:border-slate-800 text-xs space-y-1 text-gray-500">
                     {Number.isFinite(
                       Number(appliedOfferData.remainingRedemptions),
                     ) && (
@@ -2667,9 +2745,11 @@ export const AshramDetailPage: React.FC = () => {
                     )}
                   </div>
                 )}
+                </PanelStep>
 
+                <PanelStep number={4} title="Special requests">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-400">
+                  <label className="text-xs font-bold text-gray-400">
                     Special Requests / Notes
                   </label>
                   <textarea
@@ -2691,86 +2771,90 @@ export const AshramDetailPage: React.FC = () => {
                     className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-base sm:text-xs font-medium focus:outline-none resize-none"
                   />
                 </div>
+                </PanelStep>
 
-                <div className="p-4 bg-gray-50 dark:bg-slate-900/90 border border-gray-200 dark:border-slate-800 rounded-[24px] space-y-2.5 text-xs font-semibold shadow-inner">
-                  <div className="flex justify-between text-gray-600 dark:text-gray-300">
-                    <span>
-                      Original Stay Cost ({daysCount} night
-                      {daysCount > 1 ? "s" : ""}):
-                    </span>
-                    <span>{formatCurrency(stayCostCalc)}</span>
-                  </div>
+                <PanelStep number={5} title="Price details & payment">
+                {Object.keys(selectedRooms).length === 0 ? (
+                  <p className="rounded-[22px] border border-dashed border-gray-300 dark:border-slate-700 p-4 text-sm text-gray-500 dark:text-gray-400">
+                    Select a room to see the price for your dates.
+                  </p>
+                ) : (
+                <div className="rounded-[22px] border border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/80 p-4 space-y-2.5">
+                  <PriceRow
+                    label={`Original stay cost (${daysCount} night${daysCount > 1 ? "s" : ""})`}
+                    amount={formatCurrency(stayCostCalc)}
+                  />
 
                   {roomSavingsShownCalc > 0 && (
-                    <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-extrabold">
-                      <span className="flex items-center gap-1">
-                        <Tag size={12} />
-                        Special Rate Discount:
-                      </span>
-                      <span>-{formatCurrency(roomSavingsShownCalc)}</span>
-                    </div>
+                    <PriceRow
+                      tone="saving"
+                      label={
+                        <span className="flex items-center gap-1">
+                          <Tag size={12} /> Special rate discount
+                        </span>
+                      }
+                      amount={`-${formatCurrency(roomSavingsShownCalc)}`}
+                    />
                   )}
 
                   {extraGuestShownCalc > 0 && (
-                    <div className="flex justify-between text-gray-600 dark:text-gray-300">
-                      <span>Extra Guest Charges:</span>
-                      <span>{formatCurrency(extraGuestShownCalc)}</span>
-                    </div>
+                    <PriceRow label="Extra guest charges" amount={formatCurrency(extraGuestShownCalc)} />
                   )}
 
                   {servicesShownCalc > 0 && (
-                    <div className="flex justify-between text-gray-600 dark:text-gray-300">
-                      <span>Add-on Services:</span>
-                      <span>{formatCurrency(servicesShownCalc)}</span>
-                    </div>
+                    <PriceRow label="Add-on services" amount={formatCurrency(servicesShownCalc)} />
                   )}
 
                   {platformFeeShownCalc > 0 && (
-                    <div className="flex justify-between text-[#F28C28] font-extrabold text-[11px]">
-                      <span>
-                        {platformSettings.label || "Tirvona Platform Fee"}:
-                      </span>
-                      <span>
-                        {formatCurrency(platformFeeShownCalc)}
-                        {platformSettings.type === "percentage" && (
-                          <span className="text-[10px] text-gray-400 font-normal ml-1">
-                            ({platformSettings.value}%)
-                          </span>
-                        )}
-                      </span>
-                    </div>
+                    <PriceRow
+                      tone="fee"
+                      label={platformSettings.label || "Tirvona Platform Fee"}
+                      amount={
+                        <>
+                          {formatCurrency(platformFeeShownCalc)}
+                          {platformSettings.type === "percentage" && (
+                            <span className="text-[11px] text-gray-400 font-normal ml-1">
+                              ({platformSettings.value}%)
+                            </span>
+                          )}
+                        </>
+                      }
+                    />
                   )}
 
                   {gstShownCalc > 0 && (
-                    <div className="flex justify-between text-gray-500 text-[11px]">
-                      <span>
-                        GST ({gstRateShownCalc}% on platform fee):
-                      </span>
-                      <span>{formatCurrency(gstShownCalc)}</span>
-                    </div>
+                    <PriceRow
+                      tone="muted"
+                      label={`GST (${gstRateShownCalc}% on platform fee)`}
+                      amount={formatCurrency(gstShownCalc)}
+                    />
                   )}
 
                   {discountCalc > 0 && (
-                    <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-extrabold">
-                      <span>Coupon Discount ({couponCode}):</span>
-                      <span>-{formatCurrency(discountCalc)}</span>
-                    </div>
+                    <PriceRow
+                      tone="saving"
+                      label={`Coupon discount (${couponCode})`}
+                      amount={`-${formatCurrency(discountCalc)}`}
+                    />
                   )}
 
                   {useLoyalty && (
-                    <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-extrabold">
-                      <span>Loyalty Discount:</span>
-                      <span>-{formatCurrency(100)}</span>
-                    </div>
+                    <PriceRow tone="saving" label="Loyalty discount" amount={`-${formatCurrency(100)}`} />
                   )}
 
-                  <div className="pt-2 border-t border-gray-200 dark:border-slate-800 flex justify-between text-base font-black text-[#0B192C] dark:text-white">
-                    <span>Final Payable Amount:</span>
-                    <span className="text-[#F28C28] dark:text-amber-400">
+                  <div className="pt-3 mt-1 border-t border-dashed border-gray-300 dark:border-slate-700 flex items-end justify-between gap-3">
+                    <span className="text-sm font-black text-[#0B192C] dark:text-white">Final payable amount</span>
+                    <span className="text-2xl font-black text-[#F28C28] dark:text-amber-400 tabular-nums" aria-live="polite">
                       {formatCurrency(finalPayableCalc)}
                     </span>
                   </div>
+                  {quoting && (
+                    <p className="text-xs font-semibold text-gray-500" role="status">
+                      Updating price…
+                    </p>
+                  )}
                 </div>
+                )}
 
                 {totalSavingsCalc > 0 && (
                   <motion.div
@@ -2782,34 +2866,37 @@ export const AshramDetailPage: React.FC = () => {
                       <span className="text-lg">💰</span>
                       <div>
                         <span>Total Savings {formatCurrency(totalSavingsCalc)}</span>
-                        <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                        <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
                           You saved {formatCurrency(totalSavingsCalc)} on this booking stay.
                         </p>
                       </div>
                     </div>
-                    <div className="w-11 h-11 rounded-full bg-emerald-500 text-white flex flex-col items-center justify-center font-black text-[9px] shadow-md shrink-0">
+                    <div className="min-w-[3.5rem] h-14 px-2 rounded-full bg-emerald-500 text-white flex flex-col items-center justify-center font-black text-[11px] shadow-md shrink-0">
                       <span>SAVED</span>
-                      <span className="text-[10px]">{formatCurrency(totalSavingsCalc)}</span>
+                      <span className="text-xs">{formatCurrency(totalSavingsCalc)}</span>
                     </div>
                   </motion.div>
                 )}
 
-                <div className="grid grid-cols-2 gap-2 text-[10px] font-bold text-gray-500 dark:text-gray-400 pt-1">
-                  <span className="flex items-center gap-1">
-                    <ShieldCheck size={12} className="text-emerald-500" /> Tirvona
-                    Verified
+                <div className="grid grid-cols-2 gap-2 text-xs font-bold text-gray-600 dark:text-gray-300">
+                  <span className="flex items-center gap-1.5">
+                    <ShieldCheck size={13} className="text-emerald-500 shrink-0" /> Tirvona Verified
                   </span>
-                  <span className="flex items-center gap-1">
-                    <Lock size={12} className="text-blue-500" /> Secure Payment
+                  <span className="flex items-center gap-1.5">
+                    <Lock size={13} className="text-blue-500 shrink-0" /> Secure Payment
                   </span>
-                  <span className="flex items-center gap-1">
-                    <CheckCircle size={12} className="text-teal-500" /> Free
-                    Cancellation
+                  <span className="flex items-center gap-1.5">
+                    <Sparkles size={13} className="text-purple-500 shrink-0" /> Instant Confirm
                   </span>
-                  <span className="flex items-center gap-1">
-                    <Sparkles size={12} className="text-purple-500" /> Instant
-                    Confirm
-                  </span>
+                  {String(ashram.policies?.cancellationPolicy ?? "").trim() && (
+                    <button
+                      type="button"
+                      onClick={() => scrollToSection("property-rules")}
+                      className="flex items-center gap-1.5 text-left hover:text-[#F28C28] cursor-pointer"
+                    >
+                      <CheckCircle size={13} className="text-teal-500 shrink-0" /> Cancellation policy
+                    </button>
+                  )}
                 </div>
 
                 {checkAshramBookingAvailable(ashram) && (
@@ -2841,6 +2928,7 @@ export const AshramDetailPage: React.FC = () => {
                         : "Book & Pay"}
                   {checkAshramBookingAvailable(ashram) && !paying && <ArrowRight size={14} />}
                 </button>
+                </PanelStep>
               </form>
             ) : (
               <div className="space-y-5 animate-in fade-in duration-200 text-left">
@@ -2957,9 +3045,9 @@ export const AshramDetailPage: React.FC = () => {
             </div>
           )}
 
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm space-y-4">
+          <div id="stay-location" className="scroll-mt-24 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 sm:p-6 rounded-[28px] shadow-sm space-y-4">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              <h4 className="inline-flex items-center gap-2 text-xs font-extrabold text-[#0B192C] dark:text-white">
+              <h4 className="inline-flex items-center gap-2 text-base font-extrabold text-[#0B192C] dark:text-white">
                 <Map className="text-[#F28C28]" size={16} /> Location
               </h4>
               {ashramLatLng && (
@@ -2999,10 +3087,11 @@ export const AshramDetailPage: React.FC = () => {
                 </p>
               </>
             ) : (
-              <p className="text-[10px] text-gray-400 font-medium text-center py-6">
+              <p className="text-xs text-gray-400 font-medium text-center py-6">
                 No map location has been set for this stay yet.
               </p>
             )}
+            <NearbyPlaces value={ashram.nearbyAttractions} />
           </div>
         </div>
       </div>
@@ -3032,14 +3121,14 @@ export const AshramDetailPage: React.FC = () => {
                   <img
                     src={
                       rel.images?.[0] ||
-                      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E"
+                      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 240 160' preserveAspectRatio='xMidYMid slice'%3E%3Crect width='240' height='160' fill='%23f1f5f9'/%3E%3Cg transform='translate(108 68)' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/g%3E%3C/svg%3E"
                     }
                     alt={rel.name}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       e.currentTarget.onerror = null;
                       e.currentTarget.src =
-                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
+                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 240 160' preserveAspectRatio='xMidYMid slice'%3E%3Crect width='240' height='160' fill='%23f1f5f9'/%3E%3Cg transform='translate(108 68)' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/g%3E%3C/svg%3E";
                     }} loading="lazy" decoding="async" />
                   <span className="absolute bottom-3 right-3 bg-white/95 text-secondary px-2 py-0.5 rounded shadow text-[9px] font-extrabold flex items-center gap-0.5">
                     <Star className="text-[#D4AF37] fill-[#D4AF37]" size={10} />{" "}
@@ -3070,15 +3159,37 @@ export const AshramDetailPage: React.FC = () => {
 
       {/* Mobile Sticky Booking Bar */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#0B192C]/95 backdrop-blur-md border-t border-gray-200 dark:border-slate-800 px-4 py-2.5 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-lg flex items-center justify-between gap-3">
-        <div>
-          <span className="text-[10px] text-gray-400 font-bold block uppercase tracking-wider">
-            From
-          </span>
-          <span className="text-sm font-black text-[#F28C28] dark:text-amber-400">
-            {formatCurrency(firstSelectedRoom?.basePrice || (ashram as any)?.lowestNightPrice || 150)}
-            <span className="text-[10px] text-gray-500 font-normal"> / night</span>
-          </span>
-        </div>
+        {Object.keys(selectedRooms).length > 0 ? (
+          <div aria-live="polite">
+            <span className="text-[11px] text-gray-500 font-bold block uppercase tracking-wider">
+              {Object.values(selectedRooms).reduce((a, b) => a + b, 0)} room
+              {Object.values(selectedRooms).reduce((a, b) => a + b, 0) === 1 ? "" : "s"} · Total
+            </span>
+            <span className="text-base font-black text-[#F28C28] dark:text-amber-400 tabular-nums">
+              {quoting ? "Updating…" : formatCurrency(finalPayableCalc)}
+            </span>
+          </div>
+        ) : (
+          <div>
+            <span className="text-[11px] text-gray-500 font-bold block uppercase tracking-wider">
+              From
+            </span>
+            {(() => {
+              const roomRates = rooms.map((rm) => Number(rm.basePrice)).filter((n) => n > 0);
+              const fromRate =
+                Number((ashram as any)?.lowestNightPrice) ||
+                (roomRates.length ? Math.min(...roomRates) : 0);
+              return fromRate > 0 ? (
+                <span className="text-base font-black text-[#F28C28] dark:text-amber-400">
+                  {formatCurrency(fromRate)}
+                  <span className="text-[11px] text-gray-500 font-normal"> / night</span>
+                </span>
+              ) : (
+                <span className="text-sm font-extrabold text-gray-600 dark:text-gray-300">Check room rates</span>
+              );
+            })()}
+          </div>
+        )}
         <button
           type="button"
           onClick={() => {

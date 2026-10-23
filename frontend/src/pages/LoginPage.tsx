@@ -336,26 +336,6 @@ export const LoginPage: React.FC = () => {
               </div>
             ))}
           </div>
-
-          <div className="bg-gradient-to-r from-white/5 to-white/10 backdrop-blur-md border border-white/10 p-4 rounded-2xl flex items-center justify-around shadow-xl">
-            {[
-              { n: "1,200+", l: "Verified Stays" },
-              { n: "50+", l: "Sacred Cities" },
-              { n: "25k+", l: "Happy Pilgrims" },
-            ].map((s, i) => (
-              <React.Fragment key={s.l}>
-                {i > 0 && <div className="h-8 w-px bg-white/15" />}
-                <div className="text-center">
-                  <p className="text-xl sm:text-2xl font-black bg-gradient-to-r from-white via-amber-100 to-amber-300 bg-clip-text text-transparent">
-                    {s.n}
-                  </p>
-                  <p className="text-[10px] text-slate-300 font-bold mt-0.5 tracking-wide">
-                    {s.l}
-                  </p>
-                </div>
-              </React.Fragment>
-            ))}
-          </div>
         </div>
 
         <div className="w-full max-w-[400px] mx-auto lg:ml-auto lg:mr-0 space-y-3">

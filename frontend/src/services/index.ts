@@ -412,58 +412,69 @@ export const housekeepingService = {
 const UPLOAD_IMAGE_LIMIT_BYTES = 10 * 1024 * 1024;
 const UPLOAD_MAX_BYTES = 100 * 1024 * 1024;
 
-async function optimizeImageForUpload(file: File): Promise<File> {
-  const isCompressible =
-    (file.type === "image/jpeg" ||
-      file.type === "image/png" ||
-      file.type === "image/webp" ||
-      /\.(jpe?g|png|webp)$/i.test(file.name)) &&
-    file.size > 1.5 * 1024 * 1024;
+/**
+ * Photos above this size are shrunk in the browser before upload. The API host's nginx
+ * rejects request bodies of about 1 MB or more with a bare 413 (no CORS headers, so the
+ * browser reports it as a network error), so a typical phone or camera photo has to be
+ * reduced to get through. Stays under 1 MB including the form overhead.
+ */
+const UPLOAD_TARGET_BYTES = 900 * 1024;
 
-  if (!isCompressible || typeof window === "undefined" || !window.createImageBitmap) {
+/** Each step shrinks the longest side and the JPEG quality until the photo fits. */
+const SHRINK_STEPS: Array<{ maxDim: number; quality: number }> = [
+  { maxDim: 2560, quality: 0.88 },
+  { maxDim: 2048, quality: 0.82 },
+  { maxDim: 1600, quality: 0.75 },
+  { maxDim: 1280, quality: 0.7 },
+  { maxDim: 1024, quality: 0.6 },
+];
+
+/**
+ * Returns a JPEG/PNG/WebP photo reduced to fit the upload budget, or the original file when
+ * it already fits, is not a shrinkable photo (GIF, SVG, PDF ...), or cannot be decoded.
+ */
+export async function optimizeImageForUpload(file: File): Promise<File> {
+  const isCompressible =
+    file.type === "image/jpeg" ||
+    file.type === "image/png" ||
+    file.type === "image/webp" ||
+    /\.(jpe?g|png|webp)$/i.test(file.name);
+
+  if (
+    !isCompressible ||
+    file.size <= UPLOAD_TARGET_BYTES ||
+    typeof window === "undefined" ||
+    !window.createImageBitmap
+  ) {
     return file;
   }
 
   try {
     const bitmap = await createImageBitmap(file);
-    const maxDim = 2560;
-    let { width, height } = bitmap;
-    if (width > maxDim || height > maxDim) {
-      if (width > height) {
-        height = Math.round((height * maxDim) / width);
-        width = maxDim;
-      } else {
-        width = Math.round((width * maxDim) / height);
-        height = maxDim;
-      }
+    let best: Blob | null = null;
+    for (const { maxDim, quality } of SHRINK_STEPS) {
+      const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const ctx = canvas.getContext("2d");
+      if (!ctx) break;
+      // JPEG has no transparency: paint white first so transparent areas do not turn black.
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      const blob: Blob | null = await new Promise((resolve) =>
+        canvas.toBlob(resolve, "image/jpeg", quality),
+      );
+      if (!blob) break;
+      best = blob;
+      if (blob.size <= UPLOAD_TARGET_BYTES) break;
     }
-
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      bitmap.close();
-      return file;
-    }
-    ctx.drawImage(bitmap, 0, 0, width, height);
     bitmap.close();
 
-    const outputType =
-      file.type === "image/png" && file.size < 4 * 1024 * 1024
-        ? "image/png"
-        : "image/jpeg";
-    const blob: Blob | null = await new Promise((resolve) =>
-      canvas.toBlob(resolve, outputType, 0.88),
-    );
-
-    if (blob && blob.size < file.size) {
-      const newName = file.name.replace(
-        /\.[^.]+$/,
-        outputType === "image/jpeg" ? ".jpg" : ".png",
-      );
-      return new File([blob], newName, {
-        type: outputType,
+    if (best && best.size < file.size) {
+      return new File([best], file.name.replace(/\.[^.]+$/, "") + ".jpg", {
+        type: "image/jpeg",
         lastModified: Date.now(),
       });
     }

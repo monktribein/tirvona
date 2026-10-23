@@ -128,6 +128,11 @@ const ALL_PERMISSIONS = [
   "Can Access Finance",
   "Can Manage Marketplace",
   "Can Manage Local Hub",
+  // HR Management. Each is checked by the HR API; none of them includes Super Admin rights.
+  "hr.employees.manage",
+  "hr.tasks.manage",
+  "hr.attendance.manage",
+  "hr.reports.view",
 ];
 
 export const UserManagementPage: React.FC = () => {

@@ -50,6 +50,8 @@ import {
   SlidersHorizontal,
   Code,
   UtensilsCrossed,
+  Briefcase,
+  CheckSquare,
 } from "lucide-react";
 import {
   checkAshramBookingAvailable,
@@ -57,6 +59,8 @@ import {
 } from "../../../utils/ashramAvailabilityHelper";
 import { ashramService } from "../../../services";
 import { SectionSummaryStrip } from "../components/SectionSummary";
+import { hrService, type HrAccessInfo } from "../../../services/hr.service";
+import { hrNavGroups } from "../../hr/hrNav";
 
 interface NavGroup {
   groupName: string;
@@ -65,6 +69,7 @@ interface NavGroup {
 }
 
 const SIDEBAR_SEQUENCE = [
+  "my work",
   "user & access",
   "institution",
   "ashram",
@@ -87,6 +92,7 @@ const SIDEBAR_SEQUENCE = [
   "homepage",
   "featured",
   "pilgrimage",
+  "hr management",
   "staff",
   "volunteer",
   "lead",
@@ -122,6 +128,8 @@ const MATERIAL_ICON_BY_SECTION: Array<[string, string]> = [
   ["homepage", "image"],
   ["featured", "auto_awesome"],
   ["pilgrimage", "explore"],
+  ["my work", "task_alt"],
+  ["hr management", "badge"],
   ["staff", "groups"],
   ["volunteer", "volunteer_activism"],
   ["lead", "assignment_ind"],
@@ -340,6 +348,20 @@ export const DashboardLayout: React.FC = () => {
   const [availabilityModalOpen, setAvailabilityModalOpen] = useState(false);
   const [requestFeedbackMsg, setRequestFeedbackMsg] = useState("");
   const [pendingSuperAdminRequests, setPendingSuperAdminRequests] = useState<AvailabilityRequest[]>([]);
+  // HR sidebar entries depend on HR permissions and the user's employee profile, not on role.
+  const [hrAccess, setHrAccess] = useState<HrAccessInfo | null>(null);
+  React.useEffect(() => {
+    setHrAccess(null);
+    if (!user?.id) return;
+    let live = true;
+    hrService
+      .access()
+      .then((access) => live && setHrAccess(access))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [user?.id]);
 
   // Load owner's stays if stay owner / admin / reception
   const isStayOwnerOrAdmin = [
@@ -1414,9 +1436,14 @@ export const DashboardLayout: React.FC = () => {
   };
 
   const roleNavData = getRoleNavData();
+  const hrGroups: NavGroup[] = hrNavGroups(user?.role, hrAccess).map((group) => ({
+    groupName: group.groupName,
+    icon: group.kind === "hr" ? <Briefcase size={15} /> : <CheckSquare size={15} />,
+    links: group.links,
+  }));
   const navData = {
     ...roleNavData,
-    groups: orderSidebarGroups(roleNavData.groups),
+    groups: orderSidebarGroups([...roleNavData.groups, ...hrGroups]),
   };
 
   const searchableLinks: SearchableLink[] = [

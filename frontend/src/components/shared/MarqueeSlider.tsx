@@ -12,7 +12,7 @@ export interface MarqueeSliderProps<T> {
 
 /**
  * Horizontal card row. When the cards fit inside the available width they are
- * shown as-is, left aligned, without animation. Only when they overflow does
+ * shown as-is, centred under their section heading, without animation. Only when they overflow does
  * the row start rotating (and become draggable) in an endless loop.
  */
 export function MarqueeSlider<T>({
@@ -271,7 +271,7 @@ export function MarqueeSlider<T>({
   return (
     <div
       ref={containerRef}
-      className={`overflow-hidden w-full relative select-none touch-pan-y py-4 -my-2 ${looping ? (isGrabbing ? "cursor-grabbing" : "cursor-grab") : ""} ${className}`}
+      className={`overflow-hidden w-full relative select-none touch-pan-y py-4 -my-2 ${looping ? (isGrabbing ? "cursor-grabbing" : "cursor-grab") : "flex justify-center"} ${className}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onPointerDown={handlePointerDown}
