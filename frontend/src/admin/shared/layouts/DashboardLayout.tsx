@@ -878,6 +878,7 @@ export const DashboardLayout: React.FC = () => {
           label: "Total Rooms",
           path: "/admin/system-settings/total-rooms",
         },
+        { label: "Assistant Management", path: "/admin/assistant" },
       ],
     },
     {

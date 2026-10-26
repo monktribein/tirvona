@@ -24,6 +24,7 @@ import AuthReturnRestorer from "./components/AuthReturnRestorer";
 import { trackPageView } from "./lib/analytics";
 import { CanonicalUrlTracker } from "./lib/useCanonicalUrl";
 
+const TirvonaAssistant = lazy(() => import("./components/assistant/TirvonaAssistant"));
 const HomePage = lazy(() => import("./pages/HomePage"));
 const BannerDetailPage = lazy(() => import("./pages/BannerDetailPage"));
 const SearchPage = lazy(() => import("./pages/SearchPage"));
@@ -197,6 +198,7 @@ const AdminOffersPage = lazy(
 const EnterpriseModulePage = lazy(
   () => import("./admin/shared/components/EnterpriseModulePage"),
 );
+const AssistantManagementPage = lazy(() => import("./pages/admin/AssistantManagementPage"));
 const AdminPlatformSettingsPage = lazy(
   () => import("./pages/admin/AdminPlatformSettingsPage"),
 );
@@ -1321,6 +1323,7 @@ const AppContent: React.FC = () => {
               path="/admin/system-settings/total-rooms"
               element={<TotalRoomsSettingsPage />}
             />
+            <Route path="/admin/assistant" element={<AssistantManagementPage />} />
             <Route
               path="/admin/system-settings"
               element={<Navigate to="/admin/system-settings/total-rooms" replace />}
@@ -1695,6 +1698,9 @@ const AppContent: React.FC = () => {
 
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
+      </Suspense>
+      <Suspense fallback={null}>
+        <TirvonaAssistant />
       </Suspense>
     </BrowserRouter>
   );
