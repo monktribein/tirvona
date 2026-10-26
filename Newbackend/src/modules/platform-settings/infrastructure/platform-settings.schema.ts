@@ -38,6 +38,9 @@ export const PlatformSettingsSchema = new Schema(
       blockedRooms: { type: Number, default: null },
       heldRooms: { type: Number, default: null },
     },
+    // Assistant menu overrides (row key "assistant"). Not in the generated table layout on purpose:
+    // the driver keeps it in the overflow column, so no migration is needed. See AssistantConfigService.
+    assistantConfig: { type: Schema.Types.Mixed },
     updatedBy: { type: Schema.Types.ObjectId, ref: "User" },
   },
   {
