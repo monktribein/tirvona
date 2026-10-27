@@ -1,6 +1,6 @@
 import { Paginated } from "../../components/shared/Pagination";
 import React, { useEffect, useState, useMemo } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Utensils,
   MapPin,
@@ -15,8 +15,6 @@ import {
   Minus,
   X,
   AlertCircle,
-  QrCode,
-  CheckCircle2,
   Bed,
   ArrowRight,
   Flame,
@@ -52,7 +50,7 @@ export const FoodMarketplacePage: React.FC = () => {
 
   // Data states
   const [zones, setZones] = useState<FoodZone[]>([]);
-  const [outlets, setOutlets] = useState<FoodOutlet[]>([]);
+  const [_outlets, setOutlets] = useState<FoodOutlet[]>([]);
   const [meals, setMeals] = useState<FoodMeal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -116,7 +114,7 @@ export const FoodMarketplacePage: React.FC = () => {
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
-  const [customerEmail, setCustomerEmail] = useState("");
+  const [customerEmail, _setCustomerEmail] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [deliveryInstructions, setDeliveryInstructions] = useState("");
   const [activeQuote, setActiveQuote] = useState<FoodQuote | null>(null);
@@ -661,16 +659,24 @@ export const FoodMarketplacePage: React.FC = () => {
                             setGalleryIndex(0);
                           }}
                         >
-                          <img
-                            src={primaryImage}
-                            alt={meal.label}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            loading="lazy"
-                            onError={(e) => {
-                              (e.currentTarget as HTMLImageElement).src =
-                                "https://placehold.co/400x300?text=Satvik+Meal";
-                            }}
-                          />
+                          {primaryImage ? (
+                            <img
+                              src={primaryImage}
+                              alt={meal.label}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              loading="lazy"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src =
+                                  "https://placehold.co/400x300?text=Satvik+Meal";
+                              }}
+                            />
+                          ) : (
+                            // No photo uploaded for this meal yet: a calm placeholder instead of a broken image.
+                            <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-[#FBF7F0] to-[#F4ECDF] text-[#C19A52] dark:from-slate-800 dark:to-slate-900" aria-hidden="true">
+                              <Utensils size={30} />
+                              <span className="text-[11px] font-semibold tracking-wide">{meal.label}</span>
+                            </div>
+                          )}
                           <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
                             <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-slate-900/80 backdrop-blur-md text-amber-300 border border-amber-400/30">
                               {isThali

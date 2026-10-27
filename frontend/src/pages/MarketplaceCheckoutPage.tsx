@@ -391,7 +391,7 @@ export const MarketplaceCheckoutPage: React.FC = () => {
                     <label
                       key={address._id}
                       className={`flex items-start gap-3.5 p-4 rounded-2xl border cursor-pointer transition-all duration-200 ${selectedAddressId === address._id
-                        ? "border-2 border-[#F28C28] bg-blue-50/50 dark:bg-blue-950/20 shadow-xs ring-2 ring-[#F28C28]/10"
+                        ? "border-2 border-[#F28C28] bg-[#FFF7EC] dark:bg-[#F28C28]/10 shadow-xs ring-2 ring-[#F28C28]/10"
                         : "border-gray-200 dark:border-slate-800 hover:border-[#F28C28]/50 bg-gray-50/30 dark:bg-slate-900/30"
                         }`}
                     >

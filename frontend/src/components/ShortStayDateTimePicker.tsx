@@ -8,7 +8,6 @@ import {
   Sparkles,
   Sun,
   Moon,
-  Check,
 } from "lucide-react";
 import { getTodayYMD } from "../contexts/BookingSearchContext";
 import { useLanguage } from "../contexts/LanguageContext";

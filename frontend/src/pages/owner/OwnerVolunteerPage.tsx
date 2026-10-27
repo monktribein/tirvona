@@ -14,7 +14,6 @@ import {
   MapPin,
   Utensils,
   Home as HomeIcon,
-  Sparkles,
 } from "lucide-react";
 import {
   volunteerService,

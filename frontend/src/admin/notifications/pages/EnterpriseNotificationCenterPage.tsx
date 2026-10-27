@@ -10,7 +10,6 @@ import {
   Search,
   Download,
   Trash2,
-  Sparkles,
   Radio,
   RefreshCw,
   Printer,
@@ -226,7 +225,7 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
 
-  const handleSeed = async () => {
+  const _handleSeed = async () => {
     try {
       await enterpriseNotificationService.seedTelemetry();
       addNotification(

@@ -71,6 +71,8 @@ export const EventCard: React.FC<{ event: EventFestival }> = ({ event }) => {
           </div>
 
           <div className="min-h-[26px] flex items-center">
+            {/* Only when there is a time or a multi-day span to show; otherwise the pill read as an empty "—". */}
+            {(event.startTime || (event.dayCount ?? 0) > 1) && (
             <p className="text-[10px] font-bold text-[#F28C28] dark:text-amber-300 bg-blue-50/70 dark:bg-slate-800 rounded-full px-2.5 py-1 inline-flex items-center gap-1 max-w-full">
               <Clock size={10} className="shrink-0 stroke-[2.5]" />
               <span className="truncate">
@@ -80,6 +82,7 @@ export const EventCard: React.FC<{ event: EventFestival }> = ({ event }) => {
                   : ""}
               </span>
             </p>
+            )}
           </div>
 
           <div className="min-h-[26px] flex items-center">

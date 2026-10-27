@@ -2,7 +2,7 @@ import { Paginated } from "../../components/shared/Pagination";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../lib/api";
-import { Search, MapPin, Building2, Compass, ArrowRight, Crosshair, X, Sparkles } from "lucide-react";
+import { Search, MapPin, Building2, ArrowRight, Crosshair, Sparkles } from "lucide-react";
 
 export default function TempleSearchPage() {
   const navigate = useNavigate();
@@ -344,7 +344,7 @@ export default function TempleSearchPage() {
   );
 }
 
-function SparklesIcon(props: any) {
+function _SparklesIcon(props: any) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />

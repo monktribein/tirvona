@@ -21,7 +21,6 @@ import {
 import {
   AlertTriangle,
   Calendar,
-  CheckCircle2,
   ClipboardList,
   Clock,
   ExternalLink,

@@ -12,7 +12,6 @@ import {
   Upload,
   ShieldCheck,
   Trash2,
-  User,
   Users,
 } from "lucide-react";
 import { bookingService, selfBookingService } from "../../services";
@@ -21,7 +20,7 @@ import { getErrorMessage } from "../../lib/api";
 import { useNotifications } from "../../contexts/NotificationContext";
 import { EnterprisePageHeader } from "../../admin/shared/components/EnterprisePageHeader";
 
-const BOOKING_TYPES = [
+const _BOOKING_TYPES = [
   {
     id: "self",
     label: "Self Booking",
@@ -90,7 +89,7 @@ export const SelfBookingPage: React.FC = () => {
   const [rooms, setRooms] = useState<any[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [selectedRooms, setSelectedRooms] = useState<Record<string, number>>({});
+  const [selectedRooms, _setSelectedRooms] = useState<Record<string, number>>({});
   const [confirmation, setConfirmation] = useState<any | null>(null);
   const [qrSvg, setQrSvg] = useState("");
   const [quote, setQuote] = useState<any | null>(null);
@@ -629,7 +628,7 @@ export const SelfBookingPage: React.FC = () => {
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {rooms.map((room) => {
-                const soldOut = room.availableCount <= 0;
+                const _soldOut = room.availableCount <= 0;
                 const selectedUnits = form.rooms?.[room.roomId] || 0;
                 const canSelect = Number(form.roomsBookedCount) < 10;
                 

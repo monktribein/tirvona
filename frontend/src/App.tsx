@@ -37,12 +37,12 @@ const RegisterPage = lazy(() => import("./pages/RegisterPage"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
 const DeleteAccountPage = lazy(() => import("./pages/DeleteAccountPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
-const CareersPage = lazy(() => import("./pages/CareersPage"));
+const _CareersPage = lazy(() => import("./pages/CareersPage"));
 const PartnerPage = lazy(() => import("./pages/PartnerPage"));
 const PressPage = lazy(() => import("./pages/PressPage"));
 const HelpCenterPage = lazy(() => import("./pages/HelpCenterPage"));
 const ContactPage = lazy(() => import("./pages/ContactPage"));
-const StaysNearPremMandirVrindavanPage = lazy(
+const _StaysNearPremMandirVrindavanPage = lazy(
   () => import("./pages/StaysNearPremMandirVrindavanPage"),
 );
 const VrindavanStaysPage = lazy(

@@ -6,8 +6,6 @@ import { toast } from "../lib/toast";
 import { formatCurrency } from "../utils/format";
 import {
   Search,
-  Phone,
-  ShieldCheck,
   ArrowRight,
   BookOpen,
   Users,
@@ -133,7 +131,7 @@ export const SacredDirectoryModulePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const [cmsBanner, setCmsBanner] = useState<string>("");
+  const [_cmsBanner, setCmsBanner] = useState<string>("");
 
   useEffect(() => {
     const fetchCmsBanner = async () => {

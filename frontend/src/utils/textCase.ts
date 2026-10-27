@@ -35,7 +35,7 @@ export const toSentenceCase = (value: unknown): string => {
   const text = String(value ?? "").trim();
   if (!text || isLinkLike(text)) return text;
   return text.replace(
-    /(^|[.!?][\s\n]+|\n+)(["'“‘(\[]*)(\p{L})/gu,
+    /(^|[.!?][\s\n]+|\n+)(["'“‘([]*)(\p{L})/gu,
     (_match, boundary: string, punctuation: string, letter: string) =>
       `${boundary}${punctuation}${letter.toLocaleUpperCase("en-IN")}`,
   );

@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  ArrowLeft,
   MapPin,
   BedDouble,
   KeyRound,
-  Mail,
   ShieldCheck,
   Download,
   XCircle,
@@ -13,7 +11,6 @@ import {
   AlertCircle,
   Loader2,
   Utensils,
-  HelpCircle,
 } from "lucide-react";
 import { EnterpriseStatusBadge } from "../../admin/shared";
 import { bookingService } from "../../services";
@@ -133,7 +130,7 @@ export const BookingDetailPage: React.FC = () => {
     id?: string;
   }>();
   const bookingKey = bookingReference || id;
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
   const { addNotification, confirmAction } = useNotifications();
 
   const [booking, setBooking] = useState<BookingDetailsData | null>(null);
@@ -362,7 +359,7 @@ export const BookingDetailPage: React.FC = () => {
         ? (formatSlotTime(booking.dayStayDetails?.slotEndTime) || formatSlotTime(booking.checkOutDate) || "07:30 AM")
         : "11:00 AM";
 
-      const canvasGrace = booking.dayStayDetails?.graceMinutes || 15;
+      const _canvasGrace = booking.dayStayDetails?.graceMinutes || 15;
 
       const drawDetailRow = (l1: string, v1: string, l2: string, v2: string, y: number) => {
         ctx.textAlign = "left";
@@ -643,6 +640,41 @@ export const BookingDetailPage: React.FC = () => {
             <AlertCircle size={16} className="shrink-0" />
             <span>{cancelError}</span>
           </div>
+        )}
+
+        {stayConfirmed && booking.status !== "checked_out" && (
+          // The "you're booked" moment: the essentials a pilgrim needs on arrival, at a glance.
+          <section
+            aria-label="Booking confirmed"
+            className="relative overflow-hidden rounded-[28px] bg-[#1a120b] text-white p-6 sm:p-8"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-[#F28C28]/25 via-transparent to-[#C19A52]/20" aria-hidden="true" />
+            <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-2">
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#e9c98a]">
+                  {booking.status === "checked_in" ? "You are checked in" : "Your stay is confirmed"}
+                </p>
+                <h2 className="tvp-display !text-white text-2xl sm:text-3xl font-semibold leading-tight">
+                  {ashram?.name || "Your stay"}
+                </h2>
+                <p className="text-sm text-white/80">
+                  {formatDateIN(booking.checkInDate)}, {checkInTimeText}
+                  {" → "}
+                  {formatDateIN(booking.checkOutDate)}, {checkOutTimeText}
+                  {booking.guestsCount ? ` · ${booking.guestsCount} guest${booking.guestsCount === 1 ? "" : "s"}` : ""}
+                </p>
+              </div>
+              {booking.checkInCode && (
+                <div className="rounded-2xl border border-white/25 bg-white/10 px-5 py-4 text-center backdrop-blur-sm">
+                  <p className="flex items-center justify-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/75">
+                    <KeyRound size={13} /> Check-in code
+                  </p>
+                  <p className="mt-1 font-mono text-3xl font-bold tracking-[0.3em] text-[#f5b45f]">{booking.checkInCode}</p>
+                  <p className="mt-1 text-[11px] text-white/70">Show this code at reception</p>
+                </div>
+              )}
+            </div>
+          </section>
         )}
 
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-md flex flex-col md:flex-row gap-6 items-start">

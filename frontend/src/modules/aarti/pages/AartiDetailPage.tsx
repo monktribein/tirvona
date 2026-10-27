@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { getErrorMessage } from "../../../lib/api";
 import { useAuth } from "../../../contexts/AuthContext";
-import { toast } from "../../../lib/toast";
 import { aartiDiscoveryService } from "../services/aarti.service";
 import type { AartiPassType, AartiQuote, AartiSession } from "../types/aarti.types";
 import {
@@ -36,7 +35,7 @@ const FALLBACK_IMAGE =
 
 export const AartiDetailPage: React.FC = () => {
   // /aarti/:city/:ashramSlug and /pooja/:city/:ashramSlug, or legacy /aarti/:id.
-  const { id = "", city = "", ashramSlug = "" } = useParams();
+  const { id = "", city: _city = "", ashramSlug = "" } = useParams();
   const rawKey = (ashramSlug || id || "").trim();
   const aartiKey =
     rawKey &&

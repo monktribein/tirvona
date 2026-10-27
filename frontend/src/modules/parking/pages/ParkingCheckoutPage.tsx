@@ -214,7 +214,7 @@ export const ParkingCheckoutPage: React.FC = () => {
           </h1>
           <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
             {locationName && (
-              <span className="font-bold">{locationName} · </span>
+              <span className="font-bold">{locationName}{quote?.slotTypeName ? " · " : ""}</span>
             )}
             {quote?.slotTypeName}
           </p>

@@ -11,12 +11,9 @@ import {
   Edit3,
   Bed,
   ExternalLink,
-  CheckCircle2,
   Users,
   Sparkles,
-  Sun,
   X,
-  Check,
   Plus,
   Image as ImageIcon,
 } from "lucide-react";

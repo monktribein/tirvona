@@ -1,21 +1,16 @@
 import { Paginated } from "../../components/shared/Pagination";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  AlertCircle,
   ArrowRight,
   Bed,
   Building2,
   Check,
-  CheckCircle2,
   Edit3,
-  Filter,
-  Layers,
   Loader2,
   Percent,
   RefreshCw,
   Search,
   SlidersHorizontal,
-  Sparkles,
   Tag,
   ToggleLeft,
   ToggleRight,
@@ -74,7 +69,7 @@ export const RateManagementPage: React.FC = () => {
   const [selectedRoomIds, setSelectedRoomIds] = useState<Set<string>>(new Set());
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [bulkDiscountPercent, setBulkDiscountPercent] = useState<string>("10");
-  const [bulkIsDiscountActive, setBulkIsDiscountActive] = useState<boolean>(true);
+  const [bulkIsDiscountActive, _setBulkIsDiscountActive] = useState<boolean>(true);
   const [savingBulk, setSavingBulk] = useState(false);
 
   // Toggling specific room

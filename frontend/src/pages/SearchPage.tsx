@@ -19,7 +19,6 @@ import {
 import { useLanguage } from "../contexts/LanguageContext";
 import { hiUi } from "../i18n/resources";
 import { useNearbyAshramDiscovery } from "../hooks/useNearbyAshramDiscovery";
-import { toTitleCase } from "../utils/textCase";
 import {
   Filter,
   MapPin,
@@ -1107,19 +1106,25 @@ export const SearchPage: React.FC = () => {
                         )}
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300 sm:grid-cols-4">
-                        <span className="flex items-center gap-1.5 rounded-xl bg-slate-50 px-2.5 py-2 dark:bg-slate-900">
-                          <BedDouble size={13} className="text-[#F28C28]" />
-                          {ashram.discovery?.rooms?.totalInventory ?? 0} rooms
-                        </span>
-                        <span className="flex items-center gap-1.5 rounded-xl bg-slate-50 px-2.5 py-2 dark:bg-slate-900">
-                          <Car size={13} className="text-[#F28C28]" />
+                      <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        {Number(ashram.discovery?.rooms?.totalInventory) > 0 && (
+                          <span className="flex items-center gap-1.5 rounded-xl bg-[#FBF7F0] px-2.5 py-2 dark:bg-slate-900">
+                            <BedDouble size={13} className="text-[#F28C28]" />
+                            {ashram.discovery.rooms.totalInventory} rooms
+                          </span>
+                        )}
+                        <span
+                          className={`flex items-center gap-1.5 rounded-xl px-2.5 py-2 ${ashram.discovery?.parking?.available ? "bg-[#FBF7F0] dark:bg-slate-900" : "bg-transparent text-slate-400 dark:text-slate-500"}`}
+                        >
+                          <Car size={13} className={ashram.discovery?.parking?.available ? "text-[#F28C28]" : "text-slate-300 dark:text-slate-600"} />
                           {ashram.discovery?.parking?.available
                             ? "Parking"
                             : "No parking listed"}
                         </span>
-                        <span className="flex items-center gap-1.5 rounded-xl bg-slate-50 px-2.5 py-2 dark:bg-slate-900">
-                          <UtensilsCrossed size={13} className="text-[#F28C28]" />
+                        <span
+                          className={`flex items-center gap-1.5 rounded-xl px-2.5 py-2 ${ashram.discovery?.food?.available ? "bg-[#FBF7F0] dark:bg-slate-900" : "bg-transparent text-slate-400 dark:text-slate-500"}`}
+                        >
+                          <UtensilsCrossed size={13} className={ashram.discovery?.food?.available ? "text-[#F28C28]" : "text-slate-300 dark:text-slate-600"} />
                           {ashram.discovery?.food?.available
                             ? ashram.discovery.food.type || "Food available"
                             : "No food listed"}

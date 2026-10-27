@@ -1,6 +1,5 @@
 import { Paginated } from "../../components/shared/Pagination";
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import { useNotifications } from "../../contexts/NotificationContext";
 import { bookingService } from "../../services";
 import { getErrorMessage } from "../../lib/api";

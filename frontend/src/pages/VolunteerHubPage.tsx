@@ -6,7 +6,6 @@ import {
   Briefcase,
   MapPin,
   Building2,
-  ShieldCheck,
   Search,
   Users,
   Award,
@@ -17,9 +16,6 @@ import {
   Send,
   Calendar,
   ArrowLeft,
-  ChevronRight,
-  ArrowRight,
-  CheckCircle2,
   Lock,
 } from "lucide-react";
 import {
@@ -39,13 +35,11 @@ import {
 } from "../admin/shared";
 import { useAuth } from "../contexts/AuthContext";
 import {
-  clearGuestPendingIntent,
-  getGuestPendingIntent,
   setGuestPendingIntent,
 } from "../utils/guestGate";
 import { useProfileAutoFill } from "../hooks/useProfileAutoFill";
 
-const CATEGORY_ICONS: Record<string, React.ReactNode> = {
+const _CATEGORY_ICONS: Record<string, React.ReactNode> = {
   volunteer: <Heart className="w-6 h-6 text-[#F28C28]" />,
   internship: <Briefcase className="w-6 h-6 text-indigo-500 dark:text-indigo-400" />,
   kitchen_seva: <Utensils className="w-6 h-6 text-amber-500 dark:text-amber-400" />,
@@ -76,7 +70,7 @@ export const VolunteerHubPage: React.FC = () => {
 
   // All jobs loaded on mount to compute category opening counts & cities list
   const [allJobs, setAllJobs] = useState<VolunteerJobItem[]>([]);
-  const [initialLoading, setInitialLoading] = useState(true);
+  const [_initialLoading, setInitialLoading] = useState(true);
 
   // Active filter state: selectedType is empty string "" by default (Category Choice Step)
   const [selectedType, setSelectedType] = useState<string>(
@@ -108,7 +102,7 @@ export const VolunteerHubPage: React.FC = () => {
   const [city, setCity] = useState("");
   const [education, setEducation] = useState("Graduate");
   const [skills, setSkills] = useState("");
-  const [languages, setLanguages] = useState("Hindi, English");
+  const [languages, _setLanguages] = useState("Hindi, English");
   const [availability, setAvailability] = useState("Immediate (Next 7 Days)");
   const [motivation, setMotivation] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);

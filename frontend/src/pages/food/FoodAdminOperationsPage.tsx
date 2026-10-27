@@ -1,29 +1,17 @@
 import { Paginated } from "../../components/shared/Pagination";
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  ShieldAlert,
-  CheckCircle2,
-  AlertCircle,
-  RefreshCw,
-  TrendingUp,
-  DollarSign,
-  FileText,
-  Clock,
-  ArrowRight,
-} from "lucide-react";
 import { foodService } from "../../services/food.service";
-import type { FoodOrder } from "../../services/food.service";
 
 export const FoodAdminOperationsPage: React.FC = () => {
   const [exceptions, setExceptions] = useState<any>(null);
   const [settlements, setSettlements] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"exceptions" | "settlements">("exceptions");
 
   // Commission override modal
-  const [selectedOutletId, setSelectedOutletId] = useState("");
-  const [newCommissionBps, setNewCommissionBps] = useState(1250);
+  const [selectedOutletId, _setSelectedOutletId] = useState("");
+  const [newCommissionBps, _setNewCommissionBps] = useState(1250);
   const [overrideReason, setOverrideReason] = useState("");
   const [payoutRef, setPayoutRef] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
@@ -109,7 +97,7 @@ export const FoodAdminOperationsPage: React.FC = () => {
       );
     });
 
-  const handleUpdateCommission = async (e: React.FormEvent) => {
+  const _handleUpdateCommission = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedOutletId || !overrideReason.trim()) return;
     setActionLoading(true);

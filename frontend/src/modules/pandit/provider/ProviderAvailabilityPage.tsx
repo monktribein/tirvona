@@ -11,7 +11,7 @@
  */
 
 import React, { useCallback, useEffect, useState } from "react";
-import { Calendar, CalendarDays, Clock, Compass, Plus, Save, Trash2 } from "lucide-react";
+import { Calendar, Compass, Plus, Save, Trash2 } from "lucide-react";
 import { providerSelfService } from "../services/provider.service";
 import type { AvailabilityRules, WeeklyRule, CalendarBlock, CreateCalendarBlockInput, ThirtyDayCalendarData } from "../types/provider.types";
 import { getErrorMessage } from "../../../lib/api";
@@ -143,7 +143,7 @@ export const ProviderAvailabilityPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [scheduleError, setScheduleError] = useState<string | null>(null);
+  const [_scheduleError, setScheduleError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [thirtyDays, setThirtyDays] = useState<ThirtyDayCalendarData | null>(null);
 

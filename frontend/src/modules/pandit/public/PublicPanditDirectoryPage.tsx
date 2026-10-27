@@ -5,8 +5,6 @@ import {
   BookOpen,
   CalendarDays,
   Check,
-  CheckCircle2,
-  Clock,
   Filter,
   Flame,
   MapPin,

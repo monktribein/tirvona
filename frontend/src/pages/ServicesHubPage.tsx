@@ -14,11 +14,8 @@ import {
   Search,
   MapPin,
   Phone,
-  ShieldCheck,
   Star,
   Sparkles,
-  Filter,
-  Clock,
 } from "lucide-react";
 import {
   serviceEcosystemService,

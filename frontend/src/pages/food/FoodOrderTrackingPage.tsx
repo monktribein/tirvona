@@ -3,13 +3,10 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   Utensils,
   Clock,
-  CheckCircle2,
   AlertCircle,
   Phone,
   MapPin,
   ChevronLeft,
-  ArrowRight,
-  ShieldCheck,
   RefreshCw,
   XCircle,
   Bed,
@@ -20,7 +17,7 @@ import type { FoodOrder } from "../../services/food.service";
 
 export const FoodOrderTrackingPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
 
   const [order, setOrder] = useState<FoodOrder | null>(null);
   const [loading, setLoading] = useState(true);

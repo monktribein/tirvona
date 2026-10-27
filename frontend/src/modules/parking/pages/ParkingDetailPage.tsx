@@ -69,7 +69,7 @@ export const ParkingDetailPage: React.FC = () => {
   // Either /parking/:city/:ashramSlug or the older /parking/:slug.
   const {
     slug: locationSlug,
-    city,
+    city: _city,
     ashramSlug,
   } = useParams<{ slug?: string; city?: string; ashramSlug?: string }>();
   const slug = ashramSlug || locationSlug;
@@ -344,7 +344,7 @@ export const ParkingDetailPage: React.FC = () => {
 
       <div className="space-y-3 -mt-4">
         <div
-          className="relative w-full aspect-video rounded-[24px] overflow-hidden shadow-sm cursor-zoom-in group bg-gray-100 dark:bg-slate-900"
+          className="relative w-full aspect-video lg:aspect-[21/8] rounded-[24px] overflow-hidden shadow-sm cursor-zoom-in group bg-gray-100 dark:bg-slate-900"
           onClick={() => galleryImages.length > 0 && setLightboxOpen(true)}
           onTouchStart={(e) => {
             touchStartX.current = e.touches[0].clientX;
@@ -854,7 +854,7 @@ export const ParkingDetailPage: React.FC = () => {
                       selected.pricing.durationAmount,
                     ],
                     [
-                      `GST (${selected.pricing.taxPercent}%)`,
+                      selected.pricing.taxPercent != null ? `GST (${selected.pricing.taxPercent}%)` : "GST",
                       selected.pricing.taxAmount,
                     ],
                   ].map(([label, value]) => (

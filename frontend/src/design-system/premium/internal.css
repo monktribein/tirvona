@@ -1,0 +1,76 @@
+/*
+ * Premium theme for Tirvona's internal storefront pages (stays, food, pandit, marketplace, parking,
+ * seva, temples, events, profile...). PublicLayout adds `tvp tvp-internal` to its root on every route
+ * except the homepage, and every rule here is scoped to `.tvp-internal`, so the approved homepage is
+ * never affected.
+ *
+ * It refines the shared storefront patterns pages already use instead of rewriting each page:
+ * the Kalam page title + sparkle divider, the global orange border override, and the grey canvas.
+ */
+
+/* Warm ivory canvas instead of grey. Two classes outrank the root's bg utility. */
+.tv-storefront.tvp-internal {
+  background-color: var(--tvp-ivory);
+}
+
+/* Pages that paint their own full-width white/grey wrapper sit on the ivory canvas instead.
+   Only the page root (a direct child of <main>) is touched, never cards inside it. */
+.tvp-internal main > :is(.bg-white, [class*="bg-slate-50"], [class*="bg-gray-50"]) {
+  background-color: var(--tvp-ivory) !important;
+}
+
+/* Borders: index.css turns every grey/slate border into translucent orange. Inside internal pages the
+   same borders become the fine gold line of the premium identity. */
+.tvp-internal :is(
+    [class*="border-gray-"],
+    [class*="border-slate-"],
+    [class*="border-zinc-"],
+    [class*="border-neutral-"],
+    [class*="border-white/"]
+  ) {
+  border-color: var(--tvp-line) !important;
+}
+
+/* Page titles: the storefront's centred Kalam title becomes the premium display face in dark ink. */
+.tvp-internal main .font-\[\'Kalam\'\] {
+  font-family: "Playfair Display", Georgia, "Times New Roman", serif !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em;
+}
+
+/* Only the standard orange titles move to ink; titles set on photos (white, amber) keep their colour. */
+.tvp-internal main .font-\[\'Kalam\'\]:is(.text-\[\#E58C28\], .text-\[\#F28C28\]) {
+  color: var(--tvp-ink) !important;
+}
+
+/* The two thin rules either side of the title's sparkle become gold, the sparkle too. */
+.tvp-internal main .h-\[1\.5px\].bg-\[\#E58C28\] {
+  background: linear-gradient(90deg, transparent, var(--tvp-gold)) !important;
+}
+
+.tvp-internal main .h-\[1\.5px\].bg-\[\#E58C28\] ~ .h-\[1\.5px\].bg-\[\#E58C28\] {
+  background: linear-gradient(90deg, var(--tvp-gold), transparent) !important;
+}
+
+.tvp-internal main .h-\[1\.5px\].bg-\[\#E58C28\] ~ .fill-\[\#E58C28\] {
+  color: var(--tvp-gold) !important;
+}
+
+/* Detail-page headings (stay, temple, event, product names) use the display face as well. */
+.tvp-internal main h1 {
+  font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+
+/* Older screens use light-blue tints for selected and info panels; inside internal pages they take the
+   warm palette instead. Light mode only, so dark-mode contrast is untouched. */
+html:not(.dark) .tvp-internal main [class*="bg-blue-50"] {
+  background-color: #fff7ec !important;
+}
+
+.tvp-internal main [class*="border-blue-100"],
+.tvp-internal main [class*="border-blue-200"] {
+  border-color: var(--tvp-line) !important;
+}
