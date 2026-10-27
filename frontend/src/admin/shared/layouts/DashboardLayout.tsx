@@ -43,7 +43,6 @@ import {
   Sparkles,
   DollarSign,
   Ban,
-  CheckCircle2,
   Clock,
   Send,
   BookOpen,
@@ -345,7 +344,7 @@ export const DashboardLayout: React.FC = () => {
   // Stay Owner Availability Control State
   const [ownerAshrams, setOwnerAshrams] = useState<any[]>([]);
   const [selectedOwnerAshram, setSelectedOwnerAshram] = useState<any>(null);
-  const [availabilityModalOpen, setAvailabilityModalOpen] = useState(false);
+  const [_availabilityModalOpen, _setAvailabilityModalOpen] = useState(false);
   const [requestFeedbackMsg, setRequestFeedbackMsg] = useState("");
   const [pendingSuperAdminRequests, setPendingSuperAdminRequests] = useState<AvailabilityRequest[]>([]);
   // HR sidebar entries depend on HR permissions and the user's employee profile, not on role.

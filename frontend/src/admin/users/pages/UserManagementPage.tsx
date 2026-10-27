@@ -5,23 +5,18 @@ import {
   Search,
   RefreshCw,
   CheckCircle,
-  Clock,
   UserCheck,
   UserX,
   X,
   Eye,
-  Calendar,
-  Mail,
   FileText,
   UserPlus,
   Key,
   Shield,
   Trash2,
   RotateCcw,
-  Check,
   Sparkles,
   ArrowRight,
-  ShieldCheck,
   Tag,
   Building2,
 } from "lucide-react";
@@ -208,15 +203,15 @@ export const UserManagementPage: React.FC = () => {
     gender: "Male",
   });
 
-  const [reason, setReason] = useState("Terms Violation");
-  const [suspensionType, setSuspensionType] = useState<
+  const [reason, _setReason] = useState("Terms Violation");
+  const [suspensionType, _setSuspensionType] = useState<
     "temporary" | "permanent"
   >("temporary");
-  const [durationDays, setDurationDays] = useState("7");
-  const [customEndDate, setCustomEndDate] = useState("");
-  const [visibleToUser, setVisibleToUser] = useState(true);
-  const [visibleMessage, setVisibleMessage] = useState("");
-  const [internalNotes, setInternalNotes] = useState("");
+  const [durationDays, _setDurationDays] = useState("7");
+  const [customEndDate, _setCustomEndDate] = useState("");
+  const [visibleToUser, _setVisibleToUser] = useState(true);
+  const [visibleMessage, _setVisibleMessage] = useState("");
+  const [internalNotes, _setInternalNotes] = useState("");
 
   const canModerate = currentUser?.role === "super_admin";
 
@@ -396,7 +391,7 @@ export const UserManagementPage: React.FC = () => {
     }
   };
 
-  const handleSuspendSubmit = async (e: React.FormEvent) => {
+  const _handleSuspendSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!suspendTarget || !canModerate) return;
 

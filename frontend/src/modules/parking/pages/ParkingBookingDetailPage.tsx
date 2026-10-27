@@ -42,7 +42,7 @@ export const ParkingBookingDetailPage: React.FC = () => {
   }>();
   const id = bookingReference || legacyId;
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
 
   const justBooked = searchParams.get("justBooked") === "1";
 

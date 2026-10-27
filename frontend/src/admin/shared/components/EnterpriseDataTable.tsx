@@ -4,8 +4,6 @@ import {
   Trash2,
   CheckCircle,
   XCircle,
-  Download,
-  Printer,
   Edit,
   Eye,
   ChevronLeft,
@@ -257,7 +255,7 @@ export interface EnterpriseDataTableProps {
 
 export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
   title,
-  subtitle,
+  subtitle: _subtitle,
   columns,
   data,
   onSave,
@@ -273,7 +271,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
   onBulkActivate,
   isLoading = false,
   loading = false,
-  hideAddButton = false,
+  hideAddButton: _hideAddButton = false,
   formFields,
   showImageManager = true,
   detailVariant = "cards",
@@ -389,7 +387,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
     await runBulkAction(onBulkDelete);
   };
 
-  const handleExportCSV = () => {
+  const _handleExportCSV = () => {
     if (filteredData.length === 0) return;
     const keys = orderedColumns.map((c) => c.key);
     const headers = orderedColumns.map((c) => c.label).join(",");
@@ -412,7 +410,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
     document.body.removeChild(link);
   };
 
-  const handlePrint = () => {
+  const _handlePrint = () => {
     window.print();
   };
 
@@ -425,7 +423,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
     setFormData({});
   };
 
-  const openCreateModal = () => {
+  const _openCreateModal = () => {
     const initial: Record<string, any> = {};
     orderedColumns.forEach((c) => {
       initial[c.key] = "";

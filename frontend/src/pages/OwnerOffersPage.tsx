@@ -6,19 +6,12 @@ import {
   Tag,
   Plus,
   Search,
-  Calendar,
-  Copy,
   Edit3,
   Trash2,
   Copy as DuplicateIcon,
-  CheckCircle2,
-  TrendingUp,
-  Building,
   ArrowRight,
   ArrowLeft,
   X,
-  Award,
-  Clock,
   Zap,
 } from "lucide-react";
 import { useNotifications } from "../contexts/NotificationContext";
@@ -41,7 +34,7 @@ export const OwnerOffersPage: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All");
-  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("All");
+  const [selectedCategoryFilter, _setSelectedCategoryFilter] = useState("All");
 
   const [showWizard, setShowWizard] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);

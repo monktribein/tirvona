@@ -115,7 +115,7 @@ export const AdminOffersPage: React.FC = () => {
 
   const [destinations, setDestinations] = useState<any[]>([]);
   const [destinationAshrams, setDestinationAshrams] = useState<any[]>([]);
-  const [loadingAshrams, setLoadingAshrams] = useState(false);
+  const [_loadingAshrams, setLoadingAshrams] = useState(false);
 
   const [myAshrams, setMyAshrams] = useState<any[]>([]);
   const [availableRooms, setAvailableRooms] = useState<any[]>([]);

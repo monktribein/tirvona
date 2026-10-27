@@ -17,7 +17,6 @@ import {
   Flame,
   Calendar,
   Info,
-  Navigation,
   Globe,
   Building2,
   BookOpen,
@@ -264,7 +263,7 @@ export default function AddEditTemplePage() {
     }));
   };
 
-  const validate = (publish: boolean): string | null => {
+  const validate = (_publish: boolean): string | null => {
     if (!formData.name.trim()) return "Temple name is required";
     return null;
   };

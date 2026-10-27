@@ -15,7 +15,6 @@ import { toTitleCase } from "../utils/textCase";
 import { ashramUrl } from "../lib/urls";
 import {
   isAshramInDestination,
-  resolveApprovedDestination,
 } from "../utils/destinationNormalizer";
 
 export interface DestinationInventory {

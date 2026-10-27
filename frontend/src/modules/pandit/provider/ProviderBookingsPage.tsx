@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { AlertCircle, CalendarDays, CheckCircle2, Clock, Copy, ExternalLink, Lock, MapPin, MessageSquare, Phone, RefreshCw, User, Video } from "lucide-react";
+import { AlertCircle, CalendarDays, CheckCircle2, Clock, Lock, MapPin, MessageSquare, Phone, RefreshCw, User, Video } from "lucide-react";
 import { ConsultationChatModal } from "../components/ConsultationChatModal";
 import { PujaProcessButton } from "../components/PujaProcessGuide";
 import { YouTubePlayer } from "../components/YouTubeLive";
@@ -14,7 +14,6 @@ import {
   ErrorNotice,
   Field,
   Modal,
-  Notice,
   PageContainer,
   PageHeader,
   Pagination,

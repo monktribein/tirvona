@@ -4,8 +4,6 @@ import {
   Key,
   Webhook,
   Copy,
-  Eye,
-  EyeOff,
   Plus,
   Trash2,
   RefreshCw,
@@ -32,7 +30,7 @@ export const DeveloperApiPage: React.FC = () => {
   const [apiKeys, setApiKeys] = useState<ApiKeyItem[]>([]);
   const [webhooks, setWebhooks] = useState<WebhookItem[]>([]);
   const [deliveries, setDeliveries] = useState<WebhookDeliveryLog[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
 
   // Status alerts & action states
   const [actionError, setActionError] = useState<string | null>(null);
@@ -41,7 +39,7 @@ export const DeveloperApiPage: React.FC = () => {
   const [testingWebhookId, setTestingWebhookId] = useState<string | null>(null);
 
   // Modals & Secrets
-  const [revealedSecrets, setRevealedSecrets] = useState<Record<string, boolean>>({});
+  const [_revealedSecrets, _setRevealedSecrets] = useState<Record<string, boolean>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // New Partner Modal

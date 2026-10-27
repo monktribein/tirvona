@@ -1,7 +1,6 @@
 import { Paginated } from "../../../components/shared/Pagination";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import { analyticsService } from "../../../services";
 import { useAuth } from "../../../contexts/AuthContext";
 import { formatCurrency, formatIndianNumber, getFormattingLocale } from "../../../utils/format";
@@ -632,7 +631,7 @@ export const AdminDashboard: React.FC = () => {
   // The overview intentionally does not load or render operational row lists.
   const [searchTerm, setSearchTerm] = useState("");
   const bookings: any[] = [];
-  const activities: any[] = [];
+  const _activities: any[] = [];
   const filteredBookings: any[] = [];
 
   const [overview, setOverview] = useState<Overview | null>(null);

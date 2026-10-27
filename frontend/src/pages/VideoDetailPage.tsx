@@ -9,7 +9,6 @@ import {
   Eye,
   Heart,
   Share2,
-  ArrowLeft,
   MessageSquare,
   CheckCircle2,
   Video,

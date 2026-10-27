@@ -13,7 +13,6 @@ import {
   Flame,
   ShieldCheck,
   Mail,
-  Phone,
   Lock,
   User as UserIcon,
   Building2,

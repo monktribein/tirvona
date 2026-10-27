@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { X, ArrowRight, Sparkles, Tag, Copy, Check } from "lucide-react";
+import { X, ArrowRight, Sparkles, Copy, Check } from "lucide-react";
 import api from "../../lib/api";
 
 interface OfferItem {

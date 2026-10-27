@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import {
-  Sparkles,
   Info,
   Image as ImageIcon,
   DollarSign,
@@ -9,7 +8,6 @@ import {
   ShieldCheck,
   Globe,
   Save,
-  MapPin,
   Compass,
 } from "lucide-react";
 import ImageGalleryManager from "./ImageGalleryManager";

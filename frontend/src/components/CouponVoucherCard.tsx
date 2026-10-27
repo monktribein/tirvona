@@ -157,7 +157,7 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
     }
   };
 
-  const handleCardClick = (e: React.MouseEvent) => {
+  const handleCardClick = (_e: React.MouseEvent) => {
     if (isExpired) return;
     if (onBookNow) {
       onBookNow(offer);

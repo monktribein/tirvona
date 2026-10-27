@@ -26,7 +26,7 @@ export const FoodVendorDashboardPage: React.FC = () => {
   const [outlets, setOutlets] = useState<any[]>([]);
   const [settlements, setSettlements] = useState<any[]>([]);
   const [wallet, setWallet] = useState<FoodWallet | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<
     "pending" | "kitchen" | "completed" | "menu" | "settlement"

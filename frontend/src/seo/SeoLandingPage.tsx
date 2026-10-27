@@ -16,8 +16,6 @@ import {
   Sparkles,
   ArrowRight,
   CheckCircle2,
-  PhoneCall,
-  BedDouble,
   SlidersHorizontal,
 } from "lucide-react";
 import { useCanonicalUrl } from "../lib/useCanonicalUrl";

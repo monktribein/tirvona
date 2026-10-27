@@ -4,7 +4,6 @@ import {
   ExternalLink,
   Sliders,
   CheckCircle2,
-  Sparkles,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { roomService } from "../../services";

@@ -1,7 +1,6 @@
 import { Paginated } from "../components/shared/Pagination";
 import React, { useState, useEffect, useCallback } from "react";
 import { ashramUrl } from "../lib/urls";
-import api from "../lib/api";
 import { useNavigate, Link } from "react-router-dom";
 import {
   MapPin,
@@ -20,10 +19,9 @@ import {
   BookOpen,
   Info,
   Clock,
-  Ban,
 } from "lucide-react";
 import { useNotifications } from "../contexts/NotificationContext";
-import { ashramService, dayStayService } from "../services";
+import { ashramService } from "../services";
 import { getErrorMessage } from "../lib/api";
 import { FileUploader } from "../components/FileUploader";
 import DayStayManagerModal from "../admin/ashrams/components/DayStayManagerModal";

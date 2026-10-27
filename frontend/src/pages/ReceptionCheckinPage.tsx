@@ -16,19 +16,13 @@ import {
   IndianRupee,
   BedDouble,
   Users,
-  ShieldCheck,
   X,
   CreditCard,
   Building,
   Sparkles,
   Phone,
-  Mail,
-  MapPin,
-  FileText,
-  Filter,
   Check,
   ArrowRight,
-  TrendingUp,
   ChevronRight,
   AlertCircle,
   Copy,
@@ -36,14 +30,12 @@ import {
   Plus,
   Bell,
   Send,
-  MessageSquare,
-  Trash2
+  Trash2,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import {
   bookingService,
   ashramService,
-  roomService,
   selfBookingService,
 } from '../services';
 
@@ -70,7 +62,7 @@ export interface ReceptionCheckinPageProps {
 
 export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ initialTab }) => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Tab state derived from URL or initialTab prop
