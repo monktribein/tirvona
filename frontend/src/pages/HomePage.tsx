@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { ashramUrl } from "../lib/urls";
 import { checkAshramBookingAvailable } from "../utils/ashramAvailabilityHelper";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../lib/api";
 import { ashramService, reviewService } from "../services";
 import { storeApi, toStoreProduct, type StoreProduct } from "../services/marketplace.service";
 import { visitorArticleService } from "../services/visitorArticleService";
+import { volunteerService } from "../services/volunteer.service";
 import { formatCurrency } from "../utils/format";
-import { toTitleCase } from "../utils/textCase";
 import {
   APPROVED_SACRED_DESTINATIONS,
   isAshramInDestination,
@@ -22,16 +22,20 @@ import {
   getTodayYMD,
 } from "../contexts/BookingSearchContext";
 import { useLanguage } from "../contexts/LanguageContext";
-import { useAutoScroll } from "../hooks/useAutoScroll";
 import HomeAartiSections from "../modules/aarti/components/HomeAartiSections";
 import { MarqueeSlider } from "../components/shared/MarqueeSlider";
 import { trackViewHome, trackSearchStay } from "../lib/analytics";
 import {
+  ExploreLink,
+  SectionHeader,
+  ServiceCard,
+  ServiceChip,
+  TIRVONA_SERVICES,
+  type TirvonaService,
+} from "../design-system/premium";
+import {
   Search,
-  MapPin,
-  CircleParking,
   Calendar,
-  ShieldCheck,
   Star,
   CheckCircle,
   Compass,
@@ -39,25 +43,24 @@ import {
   Sparkles,
   BookOpen,
   Play,
-  ChevronLeft,
-  Heart,
-  LayoutGrid,
-  Activity,
-  Utensils,
   Bed,
-  ChevronDown,
-  Tag,
-  HeartHandshake,
   Flame,
-  User,
+  HandHeart,
+  LayoutGrid,
+  ShoppingBag,
+  Video,
+  Ticket,
+  Route,
+  Store,
+  Tag,
 } from "lucide-react";
 
 export const HomePage: React.FC = () => {
-  const { language, t } = useLanguage();
+  const { language: _language, t } = useLanguage();
   const navigate = useNavigate();
   const { searchState, updateBookingSearch, totalGuests } = useBookingSearch();
   const [destination, setDestination] = useState("");
-  const [stayType, setStayType] = useState("");
+  const [stayType, _setStayType] = useState("");
   const initialDates = normalizeBookingDates(
     searchState.checkIn,
     searchState.checkOut,
@@ -71,6 +74,8 @@ export const HomePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [homePosts, setHomePosts] = useState<any[]>([]);
   const [marketplaceProducts, setMarketplaceProducts] = useState<StoreProduct[]>([]);
+  const [volunteerJobs, setVolunteerJobs] = useState<any[]>([]);
+  const [volunteerJobsLoaded, setVolunteerJobsLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState<
     "top_rated" | "most_booked" | "recent" | "govt_recom"
   >("top_rated");
@@ -78,16 +83,15 @@ export const HomePage: React.FC = () => {
     "destinations" | "stay" | "day-stay" | "experiences"
   >("stay");
   const [dayStayTime, setDayStayTime] = useState<string>("10:00");
-  const [activeService, setActiveService] = useState<number>(0);
-  const [offerSlideIndex, setOfferSlideIndex] = useState<number>(0);
+  const [_offerSlideIndex, _setOfferSlideIndex] = useState<number>(0);
 
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const autocompleteRef = useRef<HTMLDivElement>(null);
-  const [activityOpen, setActivityOpen] = useState(false);
+  const [_activityOpen, setActivityOpen] = useState(false);
   const activityRef = useRef<HTMLDivElement>(null);
 
-  const activityOptions = [
+  const _activityOptions = [
     { value: "", label: "Trip Type" },
     { value: "ashram", label: "Stay" },
     { value: "dharamshala", label: "Dharamshala" },
@@ -95,20 +99,16 @@ export const HomePage: React.FC = () => {
   ];
 
   const carouselRef = useRef<HTMLDivElement>(null);
-  const prashadRef = useRef<HTMLDivElement>(null);
-  const featuredRef = useRef<HTMLDivElement>(null);
-  const feedbackRef = useRef<HTMLDivElement>(null);
-  const offersRef = useRef<HTMLDivElement>(null);
-  const blogRef = useRef<HTMLDivElement>(null);
-  const servicesRef = useRef<HTMLDivElement>(null);
-  const serviceStripRef = useRef<HTMLDivElement>(null);
-  const setServiceStrip = useAutoScroll<HTMLDivElement>({
-    forwardTo: serviceStripRef,
-  });
+  const _prashadRef = useRef<HTMLDivElement>(null);
+  const _featuredRef = useRef<HTMLDivElement>(null);
+  const _feedbackRef = useRef<HTMLDivElement>(null);
+  const _offersRef = useRef<HTMLDivElement>(null);
+  const _blogRef = useRef<HTMLDivElement>(null);
+  const _servicesRef = useRef<HTMLDivElement>(null);
 
   const [publishedCms, setPublishedCms] = useState<any>({});
   const [publishedFeatured, setPublishedFeatured] = useState<any>({});
-  const [destinationsData, setDestinationsData] = useState<any[]>([]);
+  const [_destinationsData, setDestinationsData] = useState<any[]>([]);
 
   useEffect(() => {
     trackViewHome();
@@ -207,6 +207,7 @@ export const HomePage: React.FC = () => {
     fetchStays();
     fetchOffers();
     fetchMarketplaceProducts();
+    fetchVolunteerJobs();
     fetchHomePosts();
 
     const handleMarketplaceSync = () => {
@@ -228,6 +229,19 @@ export const HomePage: React.FC = () => {
       }
     } catch (err) {
       console.error("Fetch marketplace products error:", err);
+    }
+  };
+
+  const fetchVolunteerJobs = async () => {
+    try {
+      const res = await volunteerService.getJobs({ limit: 3 });
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        setVolunteerJobs(res.data.data.slice(0, 3));
+      }
+    } catch (err) {
+      console.warn("Volunteer roles load:", err);
+    } finally {
+      setVolunteerJobsLoaded(true);
     }
   };
 
@@ -370,52 +384,56 @@ export const HomePage: React.FC = () => {
     setSuggestions(Array.from(matches).slice(0, 6));
     setShowSuggestions(true);
   };
-  const serviceHighlights = [
+  // Admin-published CMS banners still drive their service cards (image, description, button text).
+  const serviceCms: Partial<Record<TirvonaService["id"], any>> = {
+    temples: publishedCms.temples_banner,
+    parking: publishedCms.parking_banner,
+    marketplace: publishedCms.marketplace_banner,
+  };
+
+  // Ready-made combinations for "Plan your pilgrimage". Each step links to the existing service page.
+  const pilgrimageJourneys = [
     {
-      title: publishedCms.temples_banner?.title || "Temples",
-      href: "/temples",
-      cta: publishedCms.temples_banner?.ctaText || "Explore Temples",
-      description:
-        publishedCms.temples_banner?.description ||
-        publishedCms.temples_banner?.subtitle ||
-        "Explore sacred temples, plan your trip and discover spiritual experiences.",
-      img: publishedCms.temples_banner?.bannerImage || publishedCms.destinations_banner?.bannerImage || "",
-      alt: "Sacred Temples",
-      overlay: "bg-gradient-to-t from-black/90 via-black/55 to-black/35",
-      eyebrowClass: "text-[#E58C28]",
-      descriptionClass: "text-gray-200",
-      ctaClass: "bg-[#F28C28] text-white hover:bg-[#D97706]",
+      eyebrow: "Darshan & stay",
+      title: "A peaceful stay near the temple",
+      description: "Choose the temples you want to visit, stay close by, and have sattvik meals brought to you.",
+      steps: [
+        { label: "Choose your temples", hint: "Timings, aartis and festivals", to: "/temples" },
+        { label: "Book a stay nearby", hint: "Ashrams, dharamshalas, homestays", to: "/search" },
+        { label: "Order sattvik meals", hint: "Pickup or delivered to your stay", to: "/food" },
+      ],
     },
     {
-      title: publishedCms.parking_banner?.title || "Parking",
-      href: "/parking",
-      cta: publishedCms.parking_banner?.ctaText || "Explore Parking",
-      description:
-        publishedCms.parking_banner?.description ||
-        publishedCms.parking_banner?.subtitle ||
-        "Reserve hassle-free vehicle parking slots near stays, temples, and yatra circuits.",
-      img: publishedCms.parking_banner?.bannerImage || "",
-      alt: "Sacred Parking Facilities",
-      overlay: "bg-gradient-to-t from-black/90 via-black/55 to-black/35",
-      eyebrowClass: "text-[#E58C28]",
-      descriptionClass: "text-gray-200",
-      ctaClass: "bg-[#F28C28] text-white hover:bg-[#D97706]",
+      eyebrow: "Day yatra by road",
+      title: "Drive in, rest, and join the aarti",
+      description: "Reserve parking before you leave, freshen up for a few hours, and book your place at aarti.",
+      steps: [
+        { label: "Reserve parking", hint: "A confirmed slot near the temple", to: "/parking" },
+        { label: "Day rest & freshen-up", hint: "Short stays by the hour", to: "/search?tab=day-stay" },
+        { label: "Book the aarti", hint: "Reserve your place in advance", to: "/aarti" },
+      ],
     },
     {
-      title: publishedCms.marketplace_banner?.title || "Marketplace",
-      href: "/marketplace",
-      cta: publishedCms.marketplace_banner?.ctaText || "Visit Marketplace",
-      description:
-        publishedCms.marketplace_banner?.description ||
-        publishedCms.marketplace_banner?.subtitle ||
-        "Shop spiritual products, puja items, books, handicrafts and more.",
-      img: publishedCms.marketplace_banner?.bannerImage || "",
-      alt: "Spiritual Marketplace",
-      overlay: "bg-gradient-to-t from-black/90 via-black/55 to-black/35",
-      eyebrowClass: "text-[#E58C28]",
-      descriptionClass: "text-gray-200",
-      ctaClass: "bg-[#F28C28] text-white hover:bg-[#D97706]",
+      eyebrow: "Puja & rituals",
+      title: "A puja done properly, anywhere",
+      description: "Book a verified pandit, get the samagri delivered, or join a puja streamed live.",
+      steps: [
+        { label: "Book a pandit", hint: "In person or live online", to: "/pandits" },
+        { label: "Get puja samagri", hint: "From verified sellers", to: "/marketplace" },
+        { label: "Join a live pooja", hint: "Watch from wherever you are", to: "/live-pooja" },
+      ],
     },
+  ];
+
+  // Experiences beyond the seven core services, all existing pages.
+  const moreExperiences = [
+    { to: "/aarti", label: "Aarti Booking", hint: "Reserve your place at aarti", icon: Flame },
+    { to: "/live-pooja", label: "Live Pooja", hint: "Join pujas streamed live", icon: Video },
+    { to: "/events", label: "Events & Festivals", hint: "Festivals and spiritual gatherings", icon: Ticket },
+    { to: "/pilgrimage-circuits", label: "Pilgrimage Circuits", hint: "Plan a multi-temple yatra", icon: Route },
+    { to: "/search?tab=day-stay", label: "Day Rest & Freshen-Up", hint: "Short stays by the hour", icon: Sparkles },
+    { to: "/shops", label: "Shops & Services", hint: "Local shops near holy places", icon: Store },
+    { to: "/offers", label: "Offers", hint: "Current deals across Tirvona", icon: Tag },
   ];
 
   const selectSuggestion = (sug: string) => {
@@ -435,7 +453,7 @@ export const HomePage: React.FC = () => {
       list = list.filter((a) => (a.rating?.average || 0) >= 4.6);
 
     // ONLY prioritize ashrams that have active LAST MINUTE DEALS
-    const isLastMin = (o: any) =>
+    const _isLastMin = (o: any) =>
       Boolean(o?.isLastMinuteDeal) ||
       o?.offerType === "LAST MINUTE DEAL" ||
       o?.offerType === "Last Minute Deal" ||
@@ -462,7 +480,7 @@ export const HomePage: React.FC = () => {
     return list.slice(0, 10);
   };
 
-  const scrollCarousel = (direction: "left" | "right") => {
+  const _scrollCarousel = (direction: "left" | "right") => {
     if (carouselRef.current) {
       carouselRef.current.scrollBy({
         left: direction === "left" ? -300 : 300,
@@ -504,7 +522,7 @@ export const HomePage: React.FC = () => {
     });
   }, [ashrams]);
 
-  const customerFeedbacks = feedbacks.map((r, i) => ({
+  const customerFeedbacks = feedbacks.map((r, _i) => ({
     name: r.ashramId?.name || "Stay",
     location: r.ashramId?.address
       ? [r.ashramId.address.city, r.ashramId.address.state]
@@ -520,96 +538,6 @@ export const HomePage: React.FC = () => {
     img: r.ashramId?.images?.[0] || "",
   }));
 
-  const serviceIcons = [
-    {
-      id: "day-stay",
-      label: "Day Rest & Freshen-Up",
-      icon: Sparkles,
-      category: "day-stay",
-      target: "/search?tab=day-stay",
-      isHighlight: false,
-    },
-    {
-      id: "circuits",
-      label: "Pilgrimage",
-      icon: MapPin,
-      category: "circuits",
-      target: "/pilgrimage-circuits",
-      isHighlight: false,
-    },
-    {
-      id: "events",
-      label: "Events & Festivals",
-      icon: Sparkles,
-      category: "events",
-      target: "/events",
-      isHighlight: false,
-    },
-    {
-      id: "food",
-      label: "Food & Dining",
-      icon: Utensils,
-      category: "food",
-      target: "/food",
-      isHighlight: false,
-    },
-    {
-      id: "marketplace",
-      label: "Marketplace",
-      icon: Activity,
-      category: "marketplace",
-      target: "/marketplace",
-      isHighlight: false,
-    },
-    {
-      id: "parking",
-      label: "Parking",
-      icon: CircleParking,
-      category: "parking",
-      target: "/parking",
-      isHighlight: false,
-    },
-    {
-      id: "shops",
-      label: "Shops & Services",
-      icon: LayoutGrid,
-      category: "shops",
-      target: "/shops",
-      isHighlight: false,
-    },
-    {
-      id: "pooja",
-      label: "Live Pooja",
-      icon: Flame,
-      category: "pooja",
-      target: "/live-pooja",
-      isHighlight: false,
-    },
-    {
-      id: "aarti",
-      label: "Arati Booking",
-      icon: Heart,
-      category: "aarti",
-      target: "/aarti",
-      isHighlight: false,
-    },
-    {
-      id: "volunteer",
-      label: "Volunteer & Jobs",
-      icon: HeartHandshake,
-      category: "volunteer",
-      target: "/volunteer",
-      isHighlight: false,
-    },
-    {
-      id: "pandit",
-      label: "Pandit & Jyotish",
-      icon: User,
-      category: "pandit",
-      target: "/pandits",
-      isHighlight: false,
-    },
-  ];
 
   const publishedHero = publishedCms.hero_banner || {};
   const activeHeroBg = publishedHero.bannerImage || "";
@@ -619,9 +547,6 @@ export const HomePage: React.FC = () => {
     "Connecting Sacred Destinations, Empowering Communities.";
   const [headingLead, ...headingRest] = String(activeHeading).split(/,\s*/);
   const headingTail = headingRest.join(", ");
-  const activeSubtitle =
-    publishedHero.subtitle ||
-    "Plan your pilgrimage, book stays, explore holy places, shop spiritual products and contribute to a greater cause.";
   const activeCtaText = publishedHero.ctaText || "Explore Sacred Stays";
   const activeAnnouncement =
     publishedCms.announcement?.announcement ||
@@ -629,40 +554,52 @@ export const HomePage: React.FC = () => {
     "";
 
   return (
-    <div className="home-page pb-16 lg:pb-24 overflow-x-hidden">
-      <section className="relative pt-24 sm:pt-36 lg:pt-40 pb-36 sm:pb-52 lg:pb-60 min-h-[520px] sm:min-h-[640px] lg:min-h-[720px] flex items-center overflow-hidden rounded-b-[36px] sm:rounded-b-[48px] shadow-xl bg-gradient-to-br from-[#0B192C] via-[#0D233E] to-[#0B192C]">
-        <div className="absolute inset-0 z-0">
-          {activeHeroBg ? (
-            <img
-              src={activeHeroBg}
-              alt="Tirvona Hero Banner"
-              className="w-full h-full object-cover object-center"
-              loading="eager"
-            />
-          ) : null}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0B192C]/85 via-[#0B192C]/40 to-black/15 dark:from-[#070F1B]/95 dark:via-[#070F1B]/60 dark:to-transparent" />
-        </div>
+    <div className="home-page tvp tvp-page pb-16 lg:pb-24 overflow-x-hidden">
+      <section
+        aria-labelledby="home-hero-title"
+        className="relative isolate overflow-hidden rounded-b-[36px] sm:rounded-b-[48px] bg-[#1a120b] pt-28 sm:pt-36 lg:pt-40 pb-36 sm:pb-44 lg:pb-44 min-h-[600px] sm:min-h-[660px] lg:min-h-0 flex items-center"
+      >
+        <img
+          src={activeHeroBg || "/images/home/hero-vrindavan-ghats.jpg"}
+          alt=""
+          aria-hidden
+          className="absolute inset-0 -z-10 h-full w-full object-cover object-center"
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
+        />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#140c05]/90 via-[#140c05]/60 to-[#140c05]/20" />
+        <div className="absolute inset-x-0 bottom-0 -z-10 h-2/3 bg-gradient-to-t from-[#140c05]/85 to-transparent" />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full flex justify-center">
-          <div className="w-full min-w-0 max-w-4xl lg:max-w-5xl mx-auto space-y-6 text-center flex flex-col items-center">
-            <motion.h1
-              initial={{ opacity: 0, y: 15 }}
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl text-center sm:text-left mx-auto sm:mx-0">
+            <motion.p
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="text-2xl sm:text-4xl md:text-5xl lg:text-[54px] xl:text-[62px] font-bold text-white drop-shadow-md leading-[1.25]"
-              style={{
-                fontFamily: "'Kalam', cursive, sans-serif",
-                letterSpacing: "0.01em",
-              }}
+              transition={{ duration: 0.5 }}
+              className="tvp-eyebrow !text-[#e9c98a]"
             >
-              <span className="block">
-                {headingLead}
-                {headingTail ? "," : ""}
-              </span>
-              {headingTail && (
-                <span className="block text-[#E58C28] mt-1 sm:mt-1.5 font-bold">
-                  {headingTail}
-                </span>
+              Your complete pilgrimage, in one place
+            </motion.p>
+
+            <motion.h1
+              id="home-hero-title"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.05 }}
+              className="tvp-display mt-4 text-[2.15rem] leading-[1.12] sm:text-5xl lg:text-[3.6rem] font-semibold !text-white"
+            >
+              {publishedHero.heading || publishedHero.title ? (
+                <>
+                  {headingLead}
+                  {headingTail ? "," : ""}
+                  {headingTail && <span className="block text-[#f5b45f]">{headingTail}</span>}
+                </>
+              ) : (
+                <>
+                  Stay, pray, eat and give seva
+                  <span className="block text-[#f5b45f]">on one sacred journey.</span>
+                </>
               )}
             </motion.h1>
 
@@ -670,14 +607,10 @@ export const HomePage: React.FC = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
-              className="text-[#E2E8F0] dark:text-[#6B6B6B] text-xs sm:text-base leading-relaxed max-w-2xl mx-auto text-center drop-shadow-xs px-2"
-              style={{
-                fontFamily:
-                  "Satoshi, 'General Sans', Manrope, Inter, sans-serif",
-                fontWeight: 500,
-              }}
+              className="mt-5 max-w-2xl text-sm sm:text-lg leading-relaxed text-white/85 mx-auto sm:mx-0"
             >
-              {activeSubtitle}
+              {publishedHero.subtitle ||
+                "Temples, sacred stays, sattvik food, parking, verified pandits, a spiritual marketplace and seva, brought together by Tirvona so you can focus on the darshan."}
             </motion.p>
 
             {activeAnnouncement && (
@@ -685,33 +618,44 @@ export const HomePage: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.25, duration: 0.5 }}
-                className="mx-auto inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#E58C28]/20 border border-[#E58C28]/40 backdrop-blur-xs"
+                className="tvp-glass mt-5 inline-flex items-center gap-2 rounded-full px-4 py-1.5"
               >
-                <Sparkles size={13} className="text-[#E58C28] shrink-0" />
-                <span className="text-xs font-bold text-white">
-                  {activeAnnouncement}
-                </span>
+                <Sparkles size={13} className="text-[#f5b45f] shrink-0" />
+                <span className="text-xs font-bold text-white">{activeAnnouncement}</span>
               </motion.div>
             )}
 
-            {activeCtaText && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.5 }}
-                className="flex justify-center pt-1"
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="mt-7 flex flex-wrap items-center justify-center sm:justify-start gap-3"
+            >
+              <button
+                type="button"
+                onClick={() => navigate(publishedHero.targetUrl || "/search")}
+                className="tvp-btn tvp-btn-primary"
               >
-                <button
-                  type="button"
-                  onClick={() => navigate(publishedHero.targetUrl || "/search")}
-                  className="inline-flex items-center gap-2 px-7 py-3 rounded-full bg-[#F28C28] hover:bg-[#B45309] text-white text-sm font-extrabold shadow-lg transition-all cursor-pointer"
-                >
-                  {activeCtaText}
-                  <ArrowRight size={16} />
-                </button>
-              </motion.div>
-            )}
+                {activeCtaText}
+                <ArrowRight size={16} />
+              </button>
+              <a href="#tirvona-services" className="tvp-btn tvp-btn-glass">
+                Explore all services
+              </a>
+            </motion.div>
           </div>
+
+          <motion.nav
+            aria-label="Tirvona services"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.5 }}
+            className="no-mobile-stack mt-8 sm:mt-12 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 sm:gap-3"
+          >
+            {TIRVONA_SERVICES.map((service) => (
+              <ServiceChip key={service.id} service={service} />
+            ))}
+          </motion.nav>
         </div>
       </section>
 
@@ -868,146 +812,105 @@ export const HomePage: React.FC = () => {
           </form>
         </div>
 
-        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800/80 rounded-[24px] mt-4 sm:mt-5 p-2 sm:p-2.5 shadow-lg shadow-[#0B192C]/5 overflow-hidden">
-          <div
-            ref={setServiceStrip}
-            className="flex flex-nowrap items-center justify-between gap-1 sm:gap-1.5 overflow-x-auto scrollbar-none py-0.5 w-full"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
-          >
-            {serviceIcons.map((item, i) => {
-              const IconComponent = item.icon;
-              const isHighlight = item.isHighlight;
-              return (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => {
-                    setActiveService(i);
-                    if (item.target.startsWith("#")) {
-                      const el = document.querySelector(item.target);
-                      if (el) el.scrollIntoView({ behavior: "smooth" });
-                    } else {
-                      navigate(`${item.target}?category=${item.category}`);
-                    }
-                  }}
-                  className="flex-1 min-w-[64px] sm:min-w-[88px] lg:min-w-0 flex flex-col items-center justify-center gap-1.5 py-2 sm:py-3 px-1 text-center rounded-2xl transition-all cursor-pointer group shrink-0 lg:shrink hover:bg-blue-50/60 dark:hover:bg-slate-800/60"
-                >
-                  <div
-                    className={`p-2 sm:p-2.5 rounded-full transition-all ${
-                      isHighlight
-                        ? "bg-[#F28C28] text-white shadow-md ring-2 ring-[#E58C28] ring-offset-1 ring-offset-white dark:ring-offset-[#0B192C]"
-                        : "bg-blue-50 dark:bg-blue-900/30 text-[#F28C28] dark:text-amber-400 group-hover:bg-[#F28C28] group-hover:text-white"
-                    }`}
-                  >
-                    <IconComponent size={16} className="stroke-[2.5]" />
-                  </div>
-                  <span
-                    className={`text-[9px] font-black whitespace-pre-line text-center leading-tight transition-colors ${
-                      isHighlight
-                        ? "text-[#F28C28] dark:text-amber-400 font-extrabold"
-                        : "text-[#0B192C] dark:text-gray-200 group-hover:text-[#F28C28]"
-                    }`}
-                  >
-                    {item.label}
-                  </span>
-                </button>
-              );
-            })}
+      </section>
+
+      <section
+        id="tirvona-services"
+        aria-labelledby="tirvona-services-title"
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-14 lg:mb-24 mt-4 lg:mt-2 scroll-mt-28 space-y-10"
+      >
+        <SectionHeader
+          id="tirvona-services-title"
+          eyebrow="Everything your yatra needs"
+          title="Every part of your yatra, in one place"
+          subtitle="From the temple you came to see to the room you rest in and the prasad you take home, Tirvona plans and books it all."
+        />
+
+        <div className="no-mobile-stack grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-6">
+          {TIRVONA_SERVICES.map((service) => {
+            const cms = serviceCms[service.id];
+            return (
+              <ServiceCard
+                key={service.id}
+                service={service}
+                image={cms?.bannerImage}
+                description={cms?.description || cms?.subtitle}
+                cta={cms?.ctaText}
+                featured={service.id === "temples"}
+              />
+            );
+          })}
+        </div>
+
+        <div className="space-y-4">
+          <p className="tvp-eyebrow text-center">More on Tirvona</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {moreExperiences.map((item) => (
+              <ExploreLink key={item.to} to={item.to} label={item.label} hint={item.hint} icon={item.icon} />
+            ))}
           </div>
         </div>
       </section>
 
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-10 lg:mb-20 mt-6 lg:mt-0">
-        <div className="text-center space-y-2 max-w-3xl mx-auto py-2">
-          <p className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
-            Explore Tirvona
-          </p>
-          <div className="flex items-center justify-center gap-2.5 my-1.5">
-            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
-            <Sparkles
-              size={14}
-              className="text-[#E58C28] fill-[#E58C28] shrink-0"
-            />
-            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
+      <section aria-labelledby="plan-pilgrimage-title" className="tvp-band mb-14 lg:mb-24 py-14 lg:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+          <SectionHeader
+            id="plan-pilgrimage-title"
+            eyebrow="Plan your pilgrimage"
+            title="Bring the pieces of your yatra together"
+            subtitle="Pick the kind of trip you are making. Each step opens the Tirvona service that handles it."
+            action={
+              <Link to="/destinations/planner" className="tvp-btn tvp-btn-primary mt-1">
+                Open the itinerary planner <ArrowRight size={14} />
+              </Link>
+            }
+          />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-7">
+            {pilgrimageJourneys.map((journey) => (
+              <article key={journey.title} className="tvp-card tv-soft-surface rounded-3xl p-6 sm:p-7 flex flex-col">
+                <p className="tvp-eyebrow">{journey.eyebrow}</p>
+                <h3 className="tvp-display mt-2 text-xl font-semibold">{journey.title}</h3>
+                <p className="tvp-body mt-2 text-sm leading-relaxed">{journey.description}</p>
+                <ol className="mt-5 space-y-2.5">
+                  {journey.steps.map((step, index) => (
+                    <li key={step.to}>
+                      <Link
+                        to={step.to}
+                        className="group flex items-center gap-3 rounded-2xl px-3 py-2.5 -mx-3 transition-colors hover:bg-[#F28C28]/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C19A52]"
+                      >
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#C19A52]/60 text-[11px] font-bold tvp-ink">
+                          {index + 1}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="tvp-ink block text-sm font-bold">{step.label}</span>
+                          <span className="tvp-muted block text-xs">{step.hint}</span>
+                        </span>
+                        <ArrowRight size={14} className="shrink-0 text-[#C19A52] transition-transform group-hover:translate-x-0.5" />
+                      </Link>
+                    </li>
+                  ))}
+                </ol>
+              </article>
+            ))}
           </div>
-          <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            Find verified stays and authentic spiritual experiences with Tirvona.
-          </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 w-full pt-2 pb-6">
-          {serviceHighlights.map((card, idx) => (
-            <div
-              key={`${card.title}-${idx}`}
-              className="w-full relative rounded-3xl overflow-hidden shadow-lg group cursor-pointer bg-[#0B192C]"
-              style={{ height: "clamp(200px, 50vw, 260px)" }}
-              onClick={() => navigate(card.href)}
+      </section>
+
+      <section id="destinations" className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20">
+        <SectionHeader
+          eyebrow="Temples & destinations"
+          title="Sacred Destinations"
+          subtitle={publishedCms.destinations_banner?.subtitle || publishedCms.destinations_banner?.description || "Discover sacred holy destinations across India with verified stays, dharamshalas, secure parking, and divine temples."}
+          action={
+            <button
+              type="button"
+              onClick={() => navigate("/search")}
+              className="tvp-btn tvp-btn-primary mt-1"
             >
-              {card.img ? (
-                <img
-                  src={card.img}
-                  alt={card.alt}
-                  className="absolute inset-0 w-full h-full object-cover"
-                  loading="lazy"
-                />
-              ) : null}
-              <div className={`absolute inset-0 ${card.overlay}`} />
-              <div className="relative z-10 p-5 sm:p-6 h-full flex flex-col justify-between items-center text-center">
-                <div className="space-y-2 max-w-[90%] mx-auto flex flex-col items-center">
-                  <p
-                    className={`text-[10px] font-extrabold tracking-widest text-center ${card.eyebrowClass}`}
-                  >
-                    Tirvona
-                  </p>
-                  <h3 className="font-extrabold text-lg sm:text-xl text-white flex items-center justify-center gap-1.5 leading-tight text-center">
-                    {card.title} <ArrowRight size={15} />
-                  </h3>
-                  <p
-                    className={`text-xs leading-relaxed text-center ${card.descriptionClass}`}
-                  >
-                    {card.description}
-                  </p>
-                </div>
-                <button
-                  className={`self-center mx-auto px-6 py-2.5 min-h-[40px] font-extrabold text-xs rounded-full transition-all cursor-pointer shadow-md border border-white/20 ${card.ctaClass}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(card.href);
-                  }}
-                >
-                  {card.cta}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20">
-        <div className="text-center space-y-2 max-w-3xl mx-auto py-2">
-          <p className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
-            Sacred Destinations
-          </p>
-          <div className="flex items-center justify-center gap-2.5 my-1.5">
-            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
-            <Sparkles
-              size={14}
-              className="text-[#E58C28] fill-[#E58C28] shrink-0"
-            />
-            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
-          </div>
-          <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            {publishedCms.destinations_banner?.subtitle ||
-              publishedCms.destinations_banner?.description ||
-              "Discover sacred holy destinations across India with verified stays, dharamshalas, secure parking, and divine temples."}
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate("/search")}
-            className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#B45309] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
-          >
-            Explore All Destinations <ArrowRight size={14} />
-          </button>
-        </div>
+              Explore All Destinations <ArrowRight size={14} />
+            </button>
+          }
+        />
 
         <div className="pt-2 pb-6">
           <MarqueeSlider
@@ -1067,7 +970,9 @@ export const HomePage: React.FC = () => {
       </section>
 
       <div className="flex flex-col">
-      <HomeAartiSections />
+      <div className="order-2">
+        <HomeAartiSections />
+      </div>
 
       <section
         onClick={() => publishedFeatured._id && navigate(`/featured-banner/${publishedFeatured._id}`)}
@@ -1161,35 +1066,26 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {marketplaceProducts.length > 0 && (
       <section
         id="marketplace"
-        className="order-2 w-full max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20"
+        className="order-3 w-full max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20"
       >
-        <div className="text-center space-y-2 max-w-3xl mx-auto py-2">
-          <p className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
-            Tirvona Marketplace
-          </p>
-          <div className="flex items-center justify-center gap-2.5 my-1.5">
-            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
-            <Sparkles
-              size={14}
-              className="text-[#E58C28] fill-[#E58C28] shrink-0"
-            />
-            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
-          </div>
-          <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            Puja essentials and sacred goods from verified Tirvona sellers.
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate("/marketplace")}
-            className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#B45309] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
-          >
-            Explore the marketplace <ArrowRight size={14} />
-          </button>
-        </div>
+        <SectionHeader
+          eyebrow="Spiritual marketplace"
+          title="Tirvona Marketplace"
+          subtitle={"Puja essentials and sacred goods from verified Tirvona sellers."}
+          action={
+            <button
+              type="button"
+              onClick={() => navigate("/marketplace")}
+              className="tvp-btn tvp-btn-primary mt-1"
+            >
+              Explore the marketplace <ArrowRight size={14} />
+            </button>
+          }
+        />
 
+        {marketplaceProducts.length > 0 ? (
         <div className="pt-2 pb-6">
           <MarqueeSlider
             items={marketplaceProducts}
@@ -1272,34 +1168,108 @@ export const HomePage: React.FC = () => {
             }}
           />
         </div>
+        ) : null}
+        <div className="no-mobile-stack grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <ExploreLink to="/marketplace" label="Shop all products" hint="Puja samagri, books and more" icon={ShoppingBag} />
+          <ExploreLink to="/marketplace/categories" label="Browse categories" hint="Find exactly what you need" icon={LayoutGrid} />
+          <ExploreLink to="/vendor/onboarding" label="Sell on Tirvona" hint="Open your verified store" icon={Store} />
+        </div>
       </section>
-      )}
+
+      <section
+        id="seva"
+        aria-labelledby="seva-title"
+        className="order-4 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-14 lg:mb-24"
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-6 lg:gap-10 items-stretch">
+          <div className="relative min-h-[300px] overflow-hidden rounded-3xl bg-[#1a120b]">
+            <img
+              src="/images/home/service-volunteer.jpg"
+              alt="An ashram on the ghats in Rishikesh"
+              loading="lazy"
+              decoding="async"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#140c05]/90 via-[#140c05]/60 to-[#140c05]/25" />
+            <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
+              <p className="tvp-eyebrow !text-[#e9c98a]">Volunteer &amp; seva</p>
+              <h2 id="seva-title" className="tvp-display mt-2 text-3xl sm:text-4xl font-semibold !text-white">
+                Give seva where you pray
+              </h2>
+              <p className="mt-3 max-w-md text-sm leading-relaxed text-white/85">
+                Ashrams and temples list volunteer and seva roles on Tirvona, from kitchen seva to Ganga aarti and events,
+                some with stay and meals included.
+              </p>
+              <Link to="/volunteer" className="tvp-btn tvp-btn-primary mt-5">
+                See all seva roles <ArrowRight size={14} />
+              </Link>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <p className="tvp-eyebrow">Open roles now</p>
+            {volunteerJobs.length > 0 ? (
+              <ul className="space-y-3">
+                {volunteerJobs.map((job) => (
+                  <li key={job._id}>
+                    <Link
+                      to={`/volunteer/${job._id}`}
+                      className="tvp-card group flex items-start gap-4 rounded-2xl p-4 sm:p-5 transition-colors hover:border-[#C19A52] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C19A52]"
+                    >
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#3F7D58] text-white" aria-hidden>
+                        <HandHeart size={18} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="tvp-ink block text-base font-bold leading-snug">{job.title}</span>
+                        <span className="tvp-muted mt-0.5 block text-xs">
+                          {[job.ashramName, [job.city, job.state].filter(Boolean).join(", ")].filter(Boolean).join(" · ")}
+                        </span>
+                        <span className="mt-2 flex flex-wrap gap-1.5">
+                          {[job.duration, job.accommodation ? "Stay included" : "", job.food ? "Meals included" : ""]
+                            .filter(Boolean)
+                            .map((tag) => (
+                              <span key={tag} className="rounded-full border border-[#C19A52]/35 px-2 py-0.5 text-[11px] font-semibold tvp-muted">
+                                {tag}
+                              </span>
+                            ))}
+                        </span>
+                      </span>
+                      <ArrowRight size={16} className="mt-1 shrink-0 text-[#C19A52] transition-transform group-hover:translate-x-0.5" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="tvp-card flex flex-1 flex-col items-start justify-center rounded-2xl p-6">
+                <p className="tvp-ink text-base font-bold">
+                  {volunteerJobsLoaded ? "New seva roles are added by ashrams and temples regularly." : "Loading seva roles…"}
+                </p>
+                <p className="tvp-muted mt-1 text-sm">Browse every open role, filter by city, and apply in a few steps.</p>
+                <Link to="/volunteer" className="tvp-link mt-4 text-sm">
+                  Browse volunteer roles <ArrowRight size={14} />
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
 
       <section className="order-1 w-full max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20">
-        <div className="text-center space-y-2 max-w-4xl mx-auto py-2">
-          <p className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
-            Stay Near Sacred Places
-          </p>
-          <div className="flex items-center justify-center gap-2.5 my-1.5">
-            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
-            <Sparkles
-              size={14}
-              className="text-[#E58C28] fill-[#E58C28] shrink-0"
-            />
-            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
-          </div>
-          <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            Tirvona Verified stays and dharamshalas providing peaceful
-            rooms, satvik food, and morning prayers.
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate("/search")}
-            className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#B45309] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
-          >
-            Explore All Stays <ArrowRight size={14} />
-          </button>
-        </div>
+        <SectionHeader
+          eyebrow="Sacred stays"
+          title="Stay Near Sacred Places"
+          subtitle={"Tirvona Verified stays and dharamshalas providing peaceful rooms, satvik food, and morning prayers."}
+          action={
+            <button
+              type="button"
+              onClick={() => navigate("/search")}
+              className="tvp-btn tvp-btn-primary mt-1"
+            >
+              Explore All Stays <ArrowRight size={14} />
+            </button>
+          }
+        />
         <div
           className="border-b border-gray-100 dark:border-slate-800 overflow-x-auto scrollbar-none"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
@@ -1519,35 +1489,25 @@ export const HomePage: React.FC = () => {
       </div>
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20">
-        <div className="text-center space-y-2 max-w-3xl mx-auto py-2">
-          <p className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
-            Journey Through Spirituality
-          </p>
-          <div className="flex items-center justify-center gap-2.5 my-1.5">
-            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
-            <Sparkles
-              size={14}
-              className="text-[#E58C28] fill-[#E58C28] shrink-0"
-            />
-            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
-          </div>
-          <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            Documentaries, pilgrimage guides, temple histories, and inspiring
-            yatra stories from devotees.
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate("/blog")}
-            className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#B45309] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
-          >
-            Explore Knowledge Hub <ArrowRight size={14} />
-          </button>
-        </div>
+        <SectionHeader
+          eyebrow="Stories & guides"
+          title="Journey Through Spirituality"
+          subtitle={"Documentaries, pilgrimage guides, temple histories, and inspiring yatra stories from devotees."}
+          action={
+            <button
+              type="button"
+              onClick={() => navigate("/blog")}
+              className="tvp-btn tvp-btn-primary mt-1"
+            >
+              Explore Knowledge Hub <ArrowRight size={14} />
+            </button>
+          }
+        />
         <div className="pt-2 pb-6">
           <MarqueeSlider
             items={homePosts}
             speed={30}
-            renderItem={(item: any, idx: number) => {
+            renderItem={(item: any, _idx: number) => {
               const isVideo = item.contentType === "video";
               const targetUrl = isVideo
                 ? `/video/${item.slug}`
@@ -1635,29 +1595,17 @@ export const HomePage: React.FC = () => {
 
       {customerFeedbacks.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-12 lg:mb-20 space-y-8">
-          <div className="text-center space-y-2 max-w-3xl mx-auto py-2">
-            <p className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
-              Sacred Experiences
-            </p>
-            <div className="flex items-center justify-center gap-2.5 my-1.5">
-              <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
-              <Sparkles
-                size={14}
-                className="text-[#E58C28] fill-[#E58C28] shrink-0"
-              />
-              <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
-            </div>
-            <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-              Real reviews and experiences shared by pilgrims who booked their
-              stays through Tirvona.
-            </p>
-          </div>
+          <SectionHeader
+            eyebrow="From fellow pilgrims"
+            title="Sacred Experiences"
+            subtitle={"Real reviews and experiences shared by pilgrims who booked their stays through Tirvona."}
+          />
 
           <div className="pt-2 pb-6">
             <MarqueeSlider
               items={customerFeedbacks}
               speed={30}
-              renderItem={(fb: any, idx: number) => (
+              renderItem={(fb: any, _idx: number) => (
                 <div
                   className="flex-shrink-0 relative group cursor-pointer"
                   style={{ width: "clamp(200px, 48vw, 220px)" }}

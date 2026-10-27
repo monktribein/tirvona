@@ -20,8 +20,6 @@ import {
   MessageSquare,
   Radio,
   Share2,
-  ShieldCheck,
-  Sparkles,
   Users,
 } from "lucide-react";
 import { providerPublicService, pujaBookingService, consultationService } from "../services/provider.service";
@@ -145,7 +143,7 @@ export const PublicProviderDetailPage: React.FC = () => {
   const [provider, setProvider] = useState<PublicProvider | null>(null);
   const [offerings, setOfferings] = useState<OfferingView[]>([]);
   const [thirtyDayCalendar, setThirtyDayCalendar] = useState<ThirtyDayCalendarData | null>(null);
-  const [calendarLoading, setCalendarLoading] = useState(false);
+  const [_calendarLoading, _setCalendarLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -554,7 +552,7 @@ export const PublicProviderDetailPage: React.FC = () => {
   const verified = provider.verificationLevel && provider.verificationLevel !== "UNVERIFIED";
   /** Side-panel points, each true for this pandit (nothing is claimed that the data does not show). */
   const feePercent = offerings.find((o) => o.platformFee && o.platformFee.amountMinor > 0)?.platformFee?.percent;
-  const highlights = [
+  const _highlights = [
     verified ? `${VERIFICATION_LEVEL_LABELS[provider.verificationLevel]} by Tirvona` : null,
     (provider.stats?.completedBookings ?? 0) > 0 ? `${provider.stats!.completedBookings} puja${provider.stats!.completedBookings === 1 ? "" : "s"} completed on Tirvona` : null,
     feePercent ? `Upfront price: pandit's fee + ${feePercent}% platform fee, nothing hidden` : "Upfront price shown before you pay",
@@ -1269,7 +1267,7 @@ export const PublicProviderDetailPage: React.FC = () => {
                     <>
                       {row("Professional fee", professional)}
                       {travel > 0 && row("Travel charge", travel)}
-                      {platform > 0 && row(`Tirvona platform fee (${selectedOffering.platformFee!.percent}%)`, platform)}
+                      {platform > 0 && row(selectedOffering.platformFee?.percent != null ? `Tirvona platform fee (${selectedOffering.platformFee.percent}%)` : "Tirvona platform fee", platform)}
                       <div className="flex justify-between gap-4 border-t border-gray-200 pt-1.5 dark:border-slate-700">
                         <strong className="text-[#0B192C] dark:text-white">Total Ceremony Value</strong>
                         <strong className="text-[#0B192C] dark:text-white">{formatMinor(total, currency)}</strong>

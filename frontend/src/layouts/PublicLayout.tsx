@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import logo from "../assets/logo.png";
 import { getLogoHomePath } from "../utils/roleRedirect";
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -18,6 +17,7 @@ import { useCurrency } from "../contexts/CurrencyContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import { getFormattingLocale } from "../utils/format";
 import { realEmail } from "../utils/email";
+import { TIRVONA_SERVICES, isServiceActive } from "../design-system/premium";
 import {
   LogOut,
   Menu,
@@ -26,16 +26,14 @@ import {
   Moon,
   Globe,
   ChevronUp,
+  ChevronDown,
   ChevronRight,
   LayoutDashboard,
   ArrowRight,
   Mail,
   User,
   Heart,
-  Tag,
-  Settings,
   Calendar,
-  Sparkles,
   PhoneCall,
   Package,
   Utensils,
@@ -87,12 +85,12 @@ const FooterAccordion: React.FC<{
 
 export const PublicLayout: React.FC = () => {
   const { user, logout } = useAuth();
-  const { unreadCount, notifications, markAllAsRead, removeNotification } =
+  const { unreadCount: _unreadCount, notifications: _notifications, markAllAsRead: _markAllAsRead, removeNotification: _removeNotification } =
     useNotifications();
   const navigate = useNavigate();
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
+  const [_showNotifications, setShowNotifications] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [navbarVisible, setNavbarVisible] = useState(true);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -186,6 +184,27 @@ export const PublicLayout: React.FC = () => {
     setShowLangDropdown(false);
   };
 
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!moreOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target as Node)) {
+        setMoreOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMoreOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [moreOpen]);
+
   const authReturnUrl = `${location.pathname}${location.search}${location.hash}`;
   const rememberCurrentPage = () =>
     setGuestPendingIntent({ type: "generic", returnUrl: authReturnUrl });
@@ -193,6 +212,7 @@ export const PublicLayout: React.FC = () => {
   useEffect(() => {
     setDrawerOpen(false);
     setShowNotifications(false);
+    setMoreOpen(false);
   }, [location.pathname]);
 
   useEffect(() => {
@@ -358,7 +378,7 @@ export const PublicLayout: React.FC = () => {
     ].includes(user.role);
   };
 
-  const getRoleBadgeLabel = () => {
+  const _getRoleBadgeLabel = () => {
     if (!user) return "";
     if (user.role === "super_admin") return "Super Admin";
     if (user.role === "govt_admin") return "Govt Admin";
@@ -372,22 +392,33 @@ export const PublicLayout: React.FC = () => {
     return "Pilgrim";
   };
 
-  const navLinks: { label: string; to: string; isHighlighted?: boolean }[] = [
-    { label: "Destinations", to: "/search" },
-    { label: "Pandits & Pujas", to: "/pandits" },
-    { label: "Parking", to: "/parking" },
-    { label: "Marketplace", to: "/marketplace" },
+  // The seven core services lead the navigation; every other public section stays one click away under "More".
+  const navLinks: { label: string; to: string; isActive: boolean; isHighlighted?: boolean }[] =
+    TIRVONA_SERVICES.map((service) => ({
+      label: service.navLabel,
+      to: service.to,
+      isActive: isServiceActive(service, location.pathname),
+    }));
+  const moreLinks: { label: string; to: string }[] = [
     { label: "Aarti Booking", to: "/aarti" },
     { label: "Live Pooja", to: "/live-pooja" },
+    { label: "Events & Festivals", to: "/events" },
+    { label: "Pilgrimage Circuits", to: "/pilgrimage-circuits" },
     { label: "Offers", to: "/offers" },
   ];
+  const moreActive = moreLinks.some(
+    (link) => location.pathname === link.to || location.pathname.startsWith(`${link.to}/`),
+  );
 
   const hasOverlayHero =
     ["/", "/public", "/about"].includes(location.pathname) ||
     location.pathname.startsWith("/featured-banner/");
+  // Internal pages get the premium internal theme (design-system/premium/internal.css). The homepage
+  // ("/" and "/public") keeps exactly its own styling: it never receives these classes.
+  const isHomeRoute = location.pathname === "/" || location.pathname === "/public";
 
   return (
-    <div className="tv-storefront min-h-screen min-h-[100dvh] flex flex-col bg-gray-50/70 dark:bg-[#070F1B] text-foreground transition-colors duration-300">
+    <div className={`tv-storefront min-h-screen min-h-[100dvh] flex flex-col bg-gray-50/70 dark:bg-[#070F1B] text-foreground transition-colors duration-300${isHomeRoute ? "" : " tvp tvp-internal"}`}>
       <header
         className={`sticky top-0 z-50 pt-[calc(0.5rem+env(safe-area-inset-top))] pb-3 ${hasOverlayHero ? "-mb-20 lg:-mb-24" : "mb-0"} pointer-events-none transform-gpu transition-all duration-300 ease-out will-change-transform ${navbarVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"}`}
         aria-hidden={!navbarVisible}
@@ -404,9 +435,7 @@ export const PublicLayout: React.FC = () => {
 
             <nav className="hidden lg:flex items-center justify-center gap-0.5 xl:gap-1.5 text-xs font-medium text-[#1E293B] dark:text-gray-200">
               {navLinks.map((link) => {
-                const isActive =
-                  location.pathname === link.to ||
-                  (link.to !== "/" && location.pathname.startsWith(link.to));
+                const isActive = link.isActive;
                 const isSpecial = link.isHighlighted;
                 return (
                   <Link
@@ -423,6 +452,39 @@ export const PublicLayout: React.FC = () => {
                   </Link>
                 );
               })}
+              <div className="relative" ref={moreMenuRef}>
+                <button
+                  type="button"
+                  aria-haspopup="menu"
+                  aria-expanded={moreOpen}
+                  onClick={() => setMoreOpen((open) => !open)}
+                  className={`px-3 xl:px-3.5 py-1.5 rounded-full font-bold transition-all whitespace-nowrap text-xs xl:text-[13px] tracking-tight inline-flex items-center gap-1 cursor-pointer ${moreActive || moreOpen
+                    ? "text-[#F28C28] dark:text-[#E58C28] bg-blue-50/90 dark:bg-slate-800 font-extrabold"
+                    : "text-slate-700 dark:text-slate-200 hover:text-[#F28C28] dark:hover:text-[#E58C28] hover:bg-slate-100/90 dark:hover:bg-slate-800/70"
+                    }`}
+                >
+                  {t("More")}
+                  <ChevronDown size={13} className={`transition-transform duration-200 ${moreOpen ? "rotate-180" : ""}`} />
+                </button>
+                {moreOpen && (
+                  <div
+                    role="menu"
+                    className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-xl shadow-xl z-50 py-1 overflow-hidden"
+                  >
+                    {moreLinks.map((link) => (
+                      <Link
+                        key={link.to}
+                        to={link.to}
+                        role="menuitem"
+                        onClick={() => setMoreOpen(false)}
+                        className="block px-4 py-2.5 text-xs font-bold text-gray-700 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-[#F28C28]"
+                      >
+                        {t(link.label)}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             </nav>
 
             <div className="lg:hidden flex-1 pl-3 text-xs font-semibold text-gray-500">
@@ -886,13 +948,19 @@ export const PublicLayout: React.FC = () => {
           )}
 
           <nav className="space-y-1">
-            {navLinks.map((link) => {
-              const isActive =
-                location.pathname === link.to ||
-                (link.to !== "/" && location.pathname.startsWith(link.to));
+            {[...navLinks, ...moreLinks.map((link) => ({
+              ...link,
+              isActive: location.pathname === link.to || location.pathname.startsWith(`${link.to}/`),
+            }))].map((link, index) => {
+              const isActive = link.isActive;
               return (
+                <React.Fragment key={link.to}>
+                {index === navLinks.length && (
+                  <p className="px-3.5 pt-4 pb-1 text-[10px] font-extrabold uppercase tracking-widest text-gray-400">
+                    {t("More on Tirvona")}
+                  </p>
+                )}
                 <Link
-                  key={link.label}
                   to={link.to}
                   onClick={() => setDrawerOpen(false)}
                   className={`flex items-center justify-between py-3 px-3.5 rounded-xl text-sm font-bold transition-colors ${isActive
@@ -900,7 +968,7 @@ export const PublicLayout: React.FC = () => {
                     : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-900"
                     }`}
                 >
-                  <span>{link.label}</span>
+                  <span>{t(link.label)}</span>
                   <ChevronRight
                     size={14}
                     className={
@@ -910,6 +978,7 @@ export const PublicLayout: React.FC = () => {
                     }
                   />
                 </Link>
+                </React.Fragment>
               );
             })}
 
@@ -1268,45 +1337,23 @@ export const PublicLayout: React.FC = () => {
 
               <div className="space-y-3">
                 <h4 className="text-xs sm:text-sm font-black text-white tracking-wider border-l-2 border-[#F28C28] pl-2.5">
-                  Popular Services
+                  Our Services
                 </h4>
                 <ul className="text-xs space-y-2.5 text-slate-300 font-medium pt-1">
-                  <li>
-                    <Link
-                      to="/search"
-                      className="hover:text-amber-400 transition-colors flex items-center gap-1"
-                    >
-                      <ArrowRight
-                        size={10}
-                        className="text-slate-500 shrink-0"
-                      />{" "}
-                      Reservations
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/restaurants"
-                      className="hover:text-amber-400 transition-colors flex items-center gap-1"
-                    >
-                      <ArrowRight
-                        size={10}
-                        className="text-slate-500 shrink-0"
-                      />{" "}
-                      Mahaprasad
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/parking"
-                      className="hover:text-amber-400 transition-colors flex items-center gap-1"
-                    >
-                      <ArrowRight
-                        size={10}
-                        className="text-slate-500 shrink-0"
-                      />{" "}
-                      Parking
-                    </Link>
-                  </li>
+                  {TIRVONA_SERVICES.map((service) => (
+                    <li key={service.id}>
+                      <Link
+                        to={service.to}
+                        className="hover:text-amber-400 transition-colors flex items-center gap-1"
+                      >
+                        <ArrowRight
+                          size={10}
+                          className="text-slate-500 shrink-0"
+                        />{" "}
+                        {service.name}
+                      </Link>
+                    </li>
+                  ))}
                   <li>
                     <Link
                       to="/contact"

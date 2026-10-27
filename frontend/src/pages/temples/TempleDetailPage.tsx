@@ -1,8 +1,17 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import api from "../../lib/api";
-import { 
-  Building2, MapPin, Clock, Info, Navigation, BookOpen, Flame, Calendar, ArrowLeft, Image as ImageIcon, Map 
+import {
+  Building2,
+  MapPin,
+  Clock,
+  Info,
+  Navigation,
+  BookOpen,
+  Flame,
+  Calendar,
+  ArrowLeft,
+  Map,
 } from "lucide-react";
 import TirvonaMap from "../../components/TirvonaMap";
 import { checkAshramBookingAvailable } from "../../utils/ashramAvailabilityHelper";
@@ -266,7 +275,14 @@ export default function TempleDetailPage() {
       {previewId && <div className="bg-amber-100 px-4 py-2 text-center text-sm font-semibold text-amber-900">Preview mode: this temple is not visible to the public until published.</div>}
       <nav className="mx-auto flex max-w-7xl items-center gap-2 px-4 pt-5 text-sm text-gray-500 sm:px-6" aria-label="Breadcrumb"><Link to="/" className="hover:text-[#E58C28]">Home</Link><span>/</span><Link to="/temples" className="hover:text-[#E58C28]">Temples</Link><span>/</span><span className="truncate text-gray-900">{temple.name}</span></nav>
       {/* Hero Section */}
-      <div className="relative pt-6 sm:pt-12 pb-8 sm:pb-16 bg-gradient-to-br from-[#0B192C] via-[#0D233E] to-[#0B192C] rounded-b-2xl sm:rounded-b-3xl shadow-lg">
+      <div className="relative overflow-hidden pt-6 sm:pt-12 pb-8 sm:pb-16 bg-gradient-to-br from-[#0B192C] via-[#0D233E] to-[#0B192C] rounded-b-2xl sm:rounded-b-3xl shadow-lg">
+        {temple.media?.coverImage && (
+          // The temple's own cover photo behind the title, darkened so the text stays readable.
+          <>
+            <img src={temple.media.coverImage} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0B192C]/90 via-[#0B192C]/70 to-[#0B192C]/40" aria-hidden="true" />
+          </>
+        )}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 relative">
           <button 
             onClick={() => navigate(-1)}

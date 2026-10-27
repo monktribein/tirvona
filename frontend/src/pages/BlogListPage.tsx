@@ -210,10 +210,10 @@ export const BlogListPage: React.FC = () => {
                               { day: "numeric", month: "short", year: "numeric" },
                             )}
                           </span>
-                          <span className="flex items-center gap-1">
+                          {Number(item.views) > 0 && (<span className="flex items-center gap-1">
                             <Eye size={12} className="text-[#F28C28]" />{" "}
                             {item.views} Views
-                          </span>
+                          </span>)}
                         </div>
 
                         <h3 className="font-black text-lg text-[#0B192C] dark:text-white leading-tight group-hover:text-[#F28C28] transition-colors line-clamp-2 h-12 flex items-start">

@@ -56,10 +56,7 @@ import {
   ShieldCheck,
   MapPin,
   Star,
-  Calendar as CalendarIcon,
-  ParkingCircle,
   Lock,
-  Heart,
   ChevronRight,
   ChevronLeft,
   ArrowRight,
@@ -68,7 +65,6 @@ import {
   Phone,
   Mail,
   Globe,
-  Bed,
   BedDouble,
   CheckCircle,
   Award,
@@ -92,7 +88,6 @@ import {
   volunteerService,
   type VolunteerJobItem,
 } from "../services/volunteer.service";
-import { useProfileAutoFill } from "../hooks/useProfileAutoFill";
 import {
   ExpandableText,
   FacilitiesGrid,
@@ -565,12 +560,12 @@ export const AshramDetailPage: React.FC = () => {
     setSpecialRequests("");
   };
 
-  const handleAdultsChange = (val: number) => {
+  const _handleAdultsChange = (val: number) => {
     const a = Math.max(1, val);
     setAdults(a);
   };
 
-  const handleChildrenChange = (val: number) => {
+  const _handleChildrenChange = (val: number) => {
     const c = Math.max(0, val);
     setChildren(c);
   };
@@ -1281,7 +1276,7 @@ export const AshramDetailPage: React.FC = () => {
     }
   };
 
-  const handleConfirmPayment = async () => {
+  const _handleConfirmPayment = async () => {
     if (!bookingSuccess) return;
     setBookingError("");
     setPaying(true);
@@ -1364,6 +1359,10 @@ export const AshramDetailPage: React.FC = () => {
   }
 
   const galleryImages = ashram?.images || [];
+  // Desktop mosaic: up to four photos beside the main one.
+  const mosaicTiles: string[] = galleryImages.slice(1, 5);
+  // Shown in the booking panel header; the same base rate each room card lists.
+  const lowestRoomRate = Math.min(...rooms.map((r: any) => Number(r.basePrice)).filter((n: number) => n > 0), Infinity);
   const SCHEMA_DEFAULT_LNG_LAT = [77.209, 28.613];
   const ashramLatLng: [number, number] | null = (() => {
     const pair = ashram?.address?.coordinates?.coordinates;
@@ -1403,7 +1402,7 @@ export const AshramDetailPage: React.FC = () => {
             )}
           </div>
 
-          <h2 className="text-2xl sm:text-3xl md:text-5xl font-extrabold text-[#0B192C] dark:text-white leading-tight">
+          <h2 className="tvp-display text-2xl sm:text-3xl md:text-5xl font-bold text-[#0B192C] dark:text-white leading-tight">
             {ashram.name}
           </h2>
 
@@ -1543,8 +1542,11 @@ export const AshramDetailPage: React.FC = () => {
       </div>
 
       <div className="space-y-3 -mt-4">
+        {/* Desktop: one large photo with up to four tiles beside it, so the stay is seen at a glance
+            without the photo taking the whole screen. Smaller screens keep the swipeable carousel. */}
+        <div className={`grid gap-3 ${mosaicTiles.length > 0 ? "lg:grid-cols-[2fr_1fr]" : ""}`}>
         <div
-          className={`relative w-full rounded-[24px] overflow-hidden shadow-sm group bg-gray-100 dark:bg-slate-900 ${galleryImages.length > 0 ? "aspect-video cursor-zoom-in" : "aspect-[21/5] min-h-[160px]"}`}
+          className={`relative w-full rounded-[24px] overflow-hidden shadow-sm group bg-gray-100 dark:bg-slate-900 ${galleryImages.length > 0 ? `aspect-video cursor-zoom-in ${mosaicTiles.length > 0 ? "lg:aspect-auto lg:h-[460px]" : ""}` : "aspect-[21/5] min-h-[160px]"}`}
           onClick={() => galleryImages.length > 0 && setLightboxOpen(true)}
           onTouchStart={(e) => {
             touchStartX.current = e.touches[0].clientX;
@@ -1592,9 +1594,50 @@ export const AshramDetailPage: React.FC = () => {
           </div>
         </div>
 
+        {mosaicTiles.length > 0 && (
+          <div
+            className={`hidden lg:grid gap-3 h-[460px] ${mosaicTiles.length >= 3 ? "grid-cols-2 grid-rows-2" : mosaicTiles.length === 2 ? "grid-rows-2" : ""}`}
+          >
+            {mosaicTiles.map((img: string, i: number) => {
+              const idx = i + 1;
+              const remaining = galleryImages.length - (mosaicTiles.length + 1);
+              const isLast = i === mosaicTiles.length - 1;
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setActiveImageIndex(idx);
+                    setLightboxOpen(true);
+                  }}
+                  aria-label={`Open photo ${idx + 1} of ${galleryImages.length}`}
+                  className={`relative overflow-hidden rounded-[20px] bg-gray-100 dark:bg-slate-900 group cursor-zoom-in ${mosaicTiles.length === 3 && i === 0 ? "col-span-2" : ""}`}
+                >
+                  <img
+                    src={img}
+                    alt={`Stay photo ${idx + 1}`}
+                    loading="lazy"
+                    decoding="async"
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    onError={(e) => {
+                      e.currentTarget.style.visibility = "hidden";
+                    }}
+                  />
+                  {isLast && remaining > 0 && (
+                    <span className="absolute inset-0 flex items-center justify-center gap-1.5 bg-black/45 text-white text-sm font-bold">
+                      <Maximize2 size={14} /> +{remaining} photos
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+        </div>
+
         {galleryImages.length > 1 && (
           <div
-            className="flex gap-3 overflow-x-auto pb-1 scrollbar-none snap-x"
+            className={`flex gap-3 overflow-x-auto pb-1 scrollbar-none snap-x ${mosaicTiles.length > 0 ? "lg:hidden" : ""}`}
             style={{ scrollbarWidth: "none" }}
           >
             {galleryImages.map((img: string, idx: number) => (
@@ -2290,13 +2333,24 @@ export const AshramDetailPage: React.FC = () => {
           {(!shortStayOpen || showOvernightBooking === true) && (
           <div id="booking-engine" className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-4 sm:p-6 shadow-sm space-y-6 relative overflow-visible z-40">
             <div className="absolute top-0 inset-x-0 h-1 bg-[#F28C28]" />
-            <div className="space-y-0.5">
-              <h3 className="font-extrabold text-lg text-[#0B192C] dark:text-white">
-                Overnight Stay Booking
-              </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Choose your dates and rooms, then review the price before you pay.
-              </p>
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-0.5">
+                <h3 className="tvp-display font-semibold text-xl text-[#0B192C] dark:text-white">
+                  Overnight Stay Booking
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Choose your dates and rooms, then review the price before you pay.
+                </p>
+              </div>
+              {Number.isFinite(lowestRoomRate) && lowestRoomRate > 0 && (
+                <div className="shrink-0 text-right">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Rooms from</p>
+                  <p className="text-lg font-black text-[#0B192C] dark:text-white tabular-nums leading-tight">
+                    {formatCurrency(lowestRoomRate)}
+                  </p>
+                  <p className="text-[10px] text-gray-400">per night</p>
+                </div>
+              )}
             </div>
 
             {restoredNotice && (

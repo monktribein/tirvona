@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { ashramUrl } from "../lib/urls";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
-  Briefcase,
   MapPin,
   Building2,
   CheckCircle2,
@@ -358,6 +357,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
             </div>
 
             <div className="bg-gray-50 dark:bg-slate-900/90 border border-gray-200 dark:border-slate-800 rounded-2xl p-5 shrink-0 flex flex-col items-center justify-center space-y-3 text-center md:w-64">
+              {job.stipend ? (
               <div className="text-center">
                 <span className="text-[10px] font-extrabold text-gray-400 block">
                   Stipend & Honorarium
@@ -366,6 +366,10 @@ export const VolunteerJobDetailPage: React.FC = () => {
                   {job.stipend}
                 </span>
               </div>
+              ) : (
+                // Seva roles often carry no stipend: say so plainly instead of an empty label.
+                <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Seva role · no stipend</span>
+              )}
 
               <button
                 type="button"
