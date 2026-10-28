@@ -76,7 +76,7 @@ export const ServiceCard: React.FC<{
     aria-label={`${service.name}: ${cta || service.cta}`}
     className={`tvp-card group flex h-full flex-col overflow-hidden rounded-3xl ${featured ? "sm:col-span-2" : ""} transition-transform duration-300 hover:-translate-y-1 focus-visible:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C19A52]`}
   >
-    <div className={`relative overflow-hidden ${featured ? "aspect-[16/10] sm:aspect-[16/5]" : "aspect-[16/10]"} bg-[#f4ecdf] dark:bg-[#0b1626]`}>
+    <div className={`relative overflow-hidden ${featured ? "aspect-[16/9] sm:aspect-[16/5]" : "aspect-[16/9]"} bg-[#f4ecdf] dark:bg-[#0b1626]`}>
       <img
         src={image || service.image}
         alt={service.imageAlt}
@@ -87,20 +87,20 @@ export const ServiceCard: React.FC<{
       <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
       <span className="absolute bottom-3 right-4 max-w-[60%] text-right text-[11px] font-semibold tracking-wide text-white/95">{service.tagline}</span>
     </div>
-    <div className="relative flex flex-1 flex-col px-5 pb-5 pt-7 sm:px-6">
+    <div className="relative flex flex-1 flex-col px-5 pb-4 pt-6 sm:px-6">
       <span className="absolute -top-5 left-5 sm:left-6">
         <ServiceIcon service={service} />
       </span>
       <h3 className="tvp-display text-xl font-semibold">{service.name}</h3>
-      <p className="tvp-body mt-2 text-sm leading-relaxed">{description || service.description}</p>
-      <ul className="mt-4 flex flex-wrap gap-2" aria-label={`${service.name} highlights`}>
+      <p className="tvp-body mt-2 line-clamp-3 min-h-[4.1rem] text-sm leading-relaxed">{description || service.description}</p>
+      <ul className="mt-3 flex h-7 flex-wrap gap-2 overflow-hidden" aria-label={`${service.name} highlights`}>
         {service.highlights.map((h) => (
-          <li key={h} className="rounded-full border border-[#C19A52]/35 px-2.5 py-1 text-[11px] font-semibold tvp-muted">
+          <li key={h} className="whitespace-nowrap rounded-full border border-[#C19A52]/35 px-2.5 py-1 text-[11px] font-semibold tvp-muted">
             {h}
           </li>
         ))}
       </ul>
-      <span className="tvp-link mt-auto pt-5 text-sm">
+      <span className="tvp-link mt-auto pt-4 text-sm">
         {cta || service.cta} <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
       </span>
     </div>

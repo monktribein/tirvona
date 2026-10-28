@@ -5,8 +5,7 @@
  * Warm ivory surfaces, refined saffron, a thin gold line, dark readable ink. The homepage is the
  * first page built on it; other pages can adopt it section by section without a rewrite.
  *
- * Shadows deliberately come from the storefront's soft-surface rule in index.css (it styles any
- * rounded, overflow-hidden card inside `.tv-storefront main`), so depth stays consistent site-wide.
+ * Cards are flat: index.css removes box-shadows site-wide.
  */
 .tvp {
   --tvp-ivory: #fbf7f0;
@@ -40,13 +39,13 @@
 }
 
 .tvp-band {
-  background: linear-gradient(180deg, var(--tvp-ivory) 0%, var(--tvp-ivory-deep) 100%);
+  background: var(--tvp-ivory);
 }
 
 /* Doubled selector: page-level heading rules (e.g. .home-page h2) must not override the display face. */
 .tvp .tvp-display,
 .tvp-display {
-  font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+  font-family: "Inter", system-ui, sans-serif;
   letter-spacing: -0.01em;
   color: var(--tvp-ink);
 }

@@ -434,6 +434,7 @@ export const HomePage: React.FC = () => {
     { to: "/search?tab=day-stay", label: "Day Rest & Freshen-Up", hint: "Short stays by the hour", icon: Sparkles },
     { to: "/shops", label: "Shops & Services", hint: "Local shops near holy places", icon: Store },
     { to: "/offers", label: "Offers", hint: "Current deals across Tirvona", icon: Tag },
+    { to: "/travel-guides", label: "Travel Guides", hint: "Tips for planning your yatra", icon: BookOpen },
   ];
 
   const selectSuggestion = (sug: string) => {
@@ -573,15 +574,6 @@ export const HomePage: React.FC = () => {
 
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl text-center sm:text-left mx-auto sm:mx-0">
-            <motion.p
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="tvp-eyebrow !text-[#e9c98a]"
-            >
-              Your complete pilgrimage, in one place
-            </motion.p>
-
             <motion.h1
               id="home-hero-title"
               initial={{ opacity: 0, y: 14 }}
@@ -659,7 +651,7 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 -mt-14 sm:-mt-20 lg:-mt-24 z-30 relative mb-12 sm:mb-16 lg:mb-20">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 -mt-14 sm:-mt-20 lg:-mt-24 z-30 relative mb-8">
         <div className="flex justify-center mb-4 sm:mb-5">
           <div
             className="inline-flex max-w-full overflow-x-auto scrollbar-none items-center gap-1.5 p-1.5 rounded-full bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 shadow-lg shadow-[#0B192C]/10"
@@ -817,7 +809,7 @@ export const HomePage: React.FC = () => {
       <section
         id="tirvona-services"
         aria-labelledby="tirvona-services-title"
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-14 lg:mb-24 mt-4 lg:mt-2 scroll-mt-28 space-y-10"
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8 mt-4 lg:mt-2 scroll-mt-28 space-y-10"
       >
         <SectionHeader
           id="tirvona-services-title"
@@ -852,7 +844,7 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      <section aria-labelledby="plan-pilgrimage-title" className="tvp-band mb-14 lg:mb-24 py-14 lg:py-20">
+      <section aria-labelledby="plan-pilgrimage-title" className="tvp-band mb-8 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
           <SectionHeader
             id="plan-pilgrimage-title"
@@ -896,7 +888,7 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      <section id="destinations" className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20">
+      <section id="destinations" className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-8">
         <SectionHeader
           eyebrow="Temples & destinations"
           title="Sacred Destinations"
@@ -976,7 +968,7 @@ export const HomePage: React.FC = () => {
 
       <section
         onClick={() => publishedFeatured._id && navigate(`/featured-banner/${publishedFeatured._id}`)}
-        className={`order-5 relative w-full aspect-[16/9] sm:aspect-[16/8] lg:aspect-[1920/720] min-h-[340px] sm:min-h-[440px] lg:min-h-[560px] flex items-center justify-center overflow-hidden rounded-none shadow-2xl mb-14 lg:mb-24 ${publishedFeatured._id ? "cursor-pointer" : ""}`}
+        className={`order-5 relative w-full aspect-[16/9] sm:aspect-[16/8] lg:aspect-[1920/720] min-h-[340px] sm:min-h-[440px] lg:min-h-[560px] flex items-center justify-center overflow-hidden rounded-none shadow-2xl mb-8 ${publishedFeatured._id ? "cursor-pointer" : ""}`}
       >
         {publishedFeatured.bannerImage || publishedFeatured.imageUrl || publishedFeatured.image ? (
           <img
@@ -1068,7 +1060,7 @@ export const HomePage: React.FC = () => {
 
       <section
         id="marketplace"
-        className="order-3 w-full max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20"
+        className="order-3 w-full max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-8"
       >
         <SectionHeader
           eyebrow="Spiritual marketplace"
@@ -1179,7 +1171,7 @@ export const HomePage: React.FC = () => {
       <section
         id="seva"
         aria-labelledby="seva-title"
-        className="order-4 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-14 lg:mb-24"
+        className="order-4 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8"
       >
         <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-6 lg:gap-10 items-stretch">
           <div className="relative min-h-[300px] overflow-hidden rounded-3xl bg-[#1a120b]">
@@ -1216,7 +1208,7 @@ export const HomePage: React.FC = () => {
                       to={`/volunteer/${job._id}`}
                       className="tvp-card group flex items-start gap-4 rounded-2xl p-4 sm:p-5 transition-colors hover:border-[#C19A52] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C19A52]"
                     >
-                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#3F7D58] text-white" aria-hidden>
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#F28C28]/10 text-[#F28C28]" aria-hidden>
                         <HandHeart size={18} />
                       </span>
                       <span className="min-w-0 flex-1">
@@ -1255,7 +1247,7 @@ export const HomePage: React.FC = () => {
       </section>
 
 
-      <section className="order-1 w-full max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20">
+      <section className="order-1 w-full max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-8">
         <SectionHeader
           eyebrow="Sacred stays"
           title="Stay Near Sacred Places"
@@ -1488,7 +1480,7 @@ export const HomePage: React.FC = () => {
       </section>
       </div>
 
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-8">
         <SectionHeader
           eyebrow="Stories & guides"
           title="Journey Through Spirituality"
@@ -1594,7 +1586,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {customerFeedbacks.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-12 lg:mb-20 space-y-8">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-8 space-y-8">
           <SectionHeader
             eyebrow="From fellow pilgrims"
             title="Sacred Experiences"
