@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Radio, Sparkles, Video } from "lucide-react";
+import { ArrowRight, Radio, Video } from "lucide-react";
+import { SectionHeader } from "../../../design-system/premium";
 import {
   aartiDiscoveryService,
   livePoojaService,
@@ -10,31 +11,24 @@ import AartiCard from "./AartiCard";
 
 type WallStream = AartiStream & { isLiveNow: boolean; state: string };
 
+// Same heading as the rest of the homepage sections.
 const SectionHeading: React.FC<{
+  eyebrow: string;
   title: string;
   subtitle: string;
   ctaLabel: string;
   ctaTo: string;
-}> = ({ title, subtitle, ctaLabel, ctaTo }) => (
-  <div className="text-center space-y-2 max-w-3xl mx-auto py-2">
-    <p className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
-      {title}
-    </p>
-    <div className="flex items-center justify-center gap-2.5 my-1.5">
-      <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
-      <Sparkles size={14} className="text-[#E58C28] fill-[#E58C28] shrink-0" />
-      <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
-    </div>
-    <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-      {subtitle}
-    </p>
-    <Link
-      to={ctaTo}
-      className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#B45309] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
-    >
-      {ctaLabel} <ArrowRight size={14} />
-    </Link>
-  </div>
+}> = ({ eyebrow, title, subtitle, ctaLabel, ctaTo }) => (
+  <SectionHeader
+    eyebrow={eyebrow}
+    title={title}
+    subtitle={subtitle}
+    action={
+      <Link to={ctaTo} className="tvp-btn tvp-btn-primary mt-1">
+        {ctaLabel} <ArrowRight size={14} />
+      </Link>
+    }
+  />
 );
 
 /**
@@ -79,9 +73,10 @@ export const HomeAartiSections: React.FC = () => {
       {sessions.length ? (
         <section
           id="aarti-booking"
-          className="order-4 w-full max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20"
+          className="order-4 w-full max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-8"
         >
           <SectionHeading
+            eyebrow="Aarti booking"
             title="Aarti Booking"
             subtitle="Reserve a verified pass for Ganga Aarti, Bhasma Aarti, Mangala Aarti and more — issued by the stay, scanned at the gate."
             ctaLabel="Browse All Aartis"
@@ -105,9 +100,10 @@ export const HomeAartiSections: React.FC = () => {
       {streams.length ? (
         <section
           id="live-pooja"
-          className="order-3 w-full max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20"
+          className="order-3 w-full max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-8"
         >
           <SectionHeading
+            eyebrow="Watch live"
             title="Live Pooja"
             subtitle="Watch the aarti as it happens, streamed by the stays themselves and verified by Tirvona."
             ctaLabel="Watch Live Pooja"

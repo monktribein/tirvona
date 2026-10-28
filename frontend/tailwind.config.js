@@ -50,7 +50,7 @@ export default {
         ring: "var(--ring)",
       },
       fontFamily: {
-        sans: ["Plus Jakarta Sans", "Inter", "system-ui", "-apple-system", "sans-serif"],
+        sans: ["Inter", "system-ui", "-apple-system", "sans-serif"],
       },
       borderRadius: {
         xl: "1.5rem",

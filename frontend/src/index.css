@@ -388,60 +388,6 @@ body,
   box-shadow: none !important;
 }
 
-/* Storefront soft depth.
-   The flat reset above is right for dashboards, but public pages read better
-   with a light shadow on their cards and panels. Scoped to the storefront
-   layout's <main>, so dashboards and the navbar stay flat.
-   A "surface" is a rounded box that clips its content (image/stay/event/product
-   cards, whether a div, link or button) or a white bordered panel. Search and
-   filter fields count too. Only the outermost surface gets the shadow: anything
-   inside another surface is skipped, so nothing ends up with a shadow inside a
-   shadow. */
-.tv-storefront main :is(
-    :is([class*="rounded-2xl"], [class*="rounded-3xl"], [class*="rounded-[2"], [class*="rounded-[3"])[class*="overflow-hidden"],
-    :is([class*="rounded-xl"], [class*="rounded-2xl"], [class*="rounded-3xl"], [class*="rounded-[2"], [class*="rounded-[3"])[class*="bg-white"][class*="border"],
-    :is(input, select, textarea):is([class*="rounded-full"], [class*="rounded-xl"], [class*="rounded-2xl"])[class*="border"]
-  ):not(
-    :is(
-      :is([class*="rounded-2xl"], [class*="rounded-3xl"], [class*="rounded-[2"], [class*="rounded-[3"])[class*="overflow-hidden"],
-      :is([class*="rounded-xl"], [class*="rounded-2xl"], [class*="rounded-3xl"], [class*="rounded-[2"], [class*="rounded-[3"])[class*="bg-white"][class*="border"]
-    ) *
-  ):not([class*="absolute"], [class*="fixed"], [class*="animate-pulse"], [class*="rounded-full"][class*="overflow-hidden"]:not(input, select, textarea)) {
-  box-shadow: var(
-    --tv-soft-shadow,
-    0 6px 18px rgba(11, 25, 44, 0.08),
-    0 1px 3px rgba(11, 25, 44, 0.06)
-  ) !important;
-  transition:
-    box-shadow 0.25s ease,
-    transform 0.25s ease;
-}
-
-/* Hover only deepens the shadow; it never adds one to an element the rule
-   above skipped, because that rule alone reads this variable. */
-/* Opt-in for a panel the automatic rule above cannot recognise (e.g. a pill form). */
-.tv-storefront main .tv-soft-surface {
-  box-shadow:
-    0 6px 18px rgba(11, 25, 44, 0.08),
-    0 1px 3px rgba(11, 25, 44, 0.06) !important;
-}
-
-.tv-storefront main :is(a, button, div)[class*="overflow-hidden"][class*="rounded-"]:hover {
-  --tv-soft-shadow:
-    0 12px 28px rgba(11, 25, 44, 0.13),
-    0 2px 6px rgba(11, 25, 44, 0.08);
-}
-
-.dark .tv-storefront main :is(
-    :is([class*="rounded-2xl"], [class*="rounded-3xl"], [class*="rounded-[2"], [class*="rounded-[3"])[class*="overflow-hidden"],
-    :is([class*="rounded-xl"], [class*="rounded-2xl"], [class*="rounded-3xl"], [class*="rounded-[2"], [class*="rounded-[3"])[class*="bg-white"][class*="border"],
-    :is(input, select, textarea):is([class*="rounded-full"], [class*="rounded-xl"], [class*="rounded-2xl"])[class*="border"]
-  ):not(:is([class*="rounded-2xl"], [class*="rounded-3xl"], [class*="rounded-[2"], [class*="rounded-[3"])[class*="overflow-hidden"] *):not([class*="absolute"], [class*="fixed"], [class*="animate-pulse"]) {
-  --tv-soft-shadow:
-    0 6px 18px rgba(0, 0, 0, 0.35),
-    0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
 [class*="border-gray-"],
 [class*="border-slate-"],
 [class*="border-zinc-"],
@@ -649,3 +595,10 @@ label {
   }
 }
 
+
+/* One typeface across the whole site. Wins over the older per-section font
+   rules (Playfair headings, Kalam titles, Roboto/Plus Jakarta body); icons and
+   code keep their own fonts. Devanagari falls back to the system Hindi font. */
+*:not([class*="material-symbols"]):not(code, pre, kbd, samp, .font-mono) {
+  font-family: "Inter", "Nirmala UI", "Noto Sans Devanagari", system-ui, -apple-system, "Segoe UI", sans-serif !important;
+}
