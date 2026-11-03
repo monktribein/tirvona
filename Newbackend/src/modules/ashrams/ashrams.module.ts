@@ -20,6 +20,7 @@ import { BookingSchema } from "../bookings/infrastructure/persistence/booking.sc
 import { UserSchema } from "../users/infrastructure/persistence/user.schema";
 import { ParkingModule } from "../parking/parking.module";
 import { AuditModule } from "../audit/audit.module";
+import { HrLocationModule } from "../hr/hr-location.module";
 import { AshramSlugService } from "./application/ashram-slug.service";
 import { OfflineInventoryService } from "./application/offline-inventory.service";
 import { RoomSummaryService } from "./application/room-summary.service";
@@ -30,6 +31,7 @@ import { OfflineInventoryController } from "./presentation/offline-inventory.con
   imports: [
     ParkingModule,
     AuditModule,
+    HrLocationModule,
     OrmModule.forFeature([
       { name: "Ashram", schema: AshramSchema },
       { name: "Room", schema: RoomSchema },

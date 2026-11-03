@@ -6,6 +6,7 @@ import { UsersModule } from "../users/users.module";
 import { AuthService } from "./application/auth.service";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import { JwtStrategy } from "./infrastructure/jwt.strategy";
+import { HrLocationModule } from "../hr/hr-location.module";
 import { AuthController } from "./presentation/auth.controller";
 import { OrmModule } from "../../database/orm-nest";
 import { AuthChallengeSchema } from "./infrastructure/auth-challenge.schema";
@@ -15,6 +16,7 @@ import { WhatsAppModule } from "../../integrations/whatsapp/whatsapp.module";
 @Module({
   imports: [
     UsersModule,
+    HrLocationModule,
     ParkingModule,
     WhatsAppModule,
     PassportModule.register({ defaultStrategy: "jwt" }),

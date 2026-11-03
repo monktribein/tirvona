@@ -18,6 +18,7 @@ import type {
   UserQueryDto,
 } from "../presentation/user.dto";
 import { ASHRAM_OWNER_ROLE } from "../../../common/auth/ashram-access";
+import { generateTemporaryPassword } from "../../../common/auth/temporary-password";
 import {
   canonicalPhone,
   phoneCandidates,
@@ -488,10 +489,14 @@ export class UsersService {
   ): Promise<string> {
     const row = await this.users.findById(id).select("+passwordHash");
     if (!row) throw new NotFoundException("User not found");
-    const generated =
-      password || `Tirvona#${Math.floor(1000 + Math.random() * 9000)}`;
+    const chosen = String(password ?? "").trim();
+    if (chosen && chosen.length < 8)
+      throw new BadRequestException("A password needs at least 8 characters.");
+    const generated = chosen || generateTemporaryPassword();
     row.passwordHash = await bcrypt.hash(generated, 12);
     row.tokenVersion = Number(row.tokenVersion ?? 0) + 1;
+    // The admin knows this password, so the owner sets their own at the next sign-in.
+    row.mustChangePassword = true;
     await row.save();
     await this.audit(actor, "USER_PASSWORD_RESET", { targetUserId: id });
     return generated;

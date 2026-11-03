@@ -21,6 +21,8 @@ export class VerificationController {
     "government_admin",
     "national_admin",
     "super_admin",
+    "hr",
+    "executive",
   )
   async pending(@CurrentUser() user: AuthenticatedUser) {
     const data = await this.service.pending(user);
@@ -35,6 +37,8 @@ export class VerificationController {
     "government_admin",
     "national_admin",
     "super_admin",
+    "hr",
+    "executive",
   )
   async schedule(
     @CurrentUser() user: AuthenticatedUser,
@@ -55,6 +59,8 @@ export class VerificationController {
     "government_admin",
     "national_admin",
     "super_admin",
+    "hr",
+    "executive",
   )
   async status(
     @CurrentUser() user: AuthenticatedUser,

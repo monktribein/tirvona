@@ -1,3 +1,5 @@
+import { withLocation, type LocationScope } from "../../../common/auth/location-scope";
+import { LEAD_LOCATION_FIELDS } from "../domain/lead-collection.constants";
 import {
   BadRequestException,
   ForbiddenException,
@@ -240,6 +242,7 @@ export class LeadsService {
   async list(
     query: LeadQueryDto,
     scope?: AgentLeadScope,
+    location: LocationScope = null,
   ): Promise<LeadListResult> {
     const filter = this.buildFilter(query);
     if (scope) {
@@ -298,12 +301,12 @@ export class LeadsService {
     const limit = query.limit ?? 20;
     const [items, total] = await Promise.all([
       this.leads
-        .find(filter)
+        .find(withLocation(filter, location, LEAD_LOCATION_FIELDS))
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
         .lean<LeadRecord[]>(),
-      this.leads.countDocuments(filter),
+      this.leads.countDocuments(withLocation(filter, location, LEAD_LOCATION_FIELDS)),
     ]);
     return { items, total, page, limit };
   }
@@ -470,7 +473,7 @@ export class LeadsService {
     return { id };
   }
 
-  async stats(scope?: AgentLeadScope): Promise<LeadStats> {
+  async stats(scope?: AgentLeadScope, location: LocationScope = null): Promise<LeadStats> {
     const match: Record<string, unknown> = {};
     if (scope) {
       const agentObjId = Types.ObjectId.isValid(scope.capturedBy)
@@ -496,7 +499,7 @@ export class LeadsService {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
     const [row] = await this.leads.aggregate<LeadStats>([
-      { $match: match },
+      { $match: withLocation(match, location, LEAD_LOCATION_FIELDS) },
       {
         $group: {
           _id: null,

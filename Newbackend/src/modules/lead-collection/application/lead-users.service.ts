@@ -1,3 +1,6 @@
+import { withLocation, type LocationScope } from "../../../common/auth/location-scope";
+import { generateTemporaryPassword } from "../../../common/auth/temporary-password";
+import { AGENT_LOCATION_FIELDS } from "../domain/lead-collection.constants";
 import {
   BadRequestException,
   ConflictException,
@@ -179,7 +182,7 @@ export class LeadUsersService {
     return new Types.ObjectId(id);
   }
 
-  async list(query: LeadUserQueryDto): Promise<{
+  async list(query: LeadUserQueryDto, location: LocationScope = null): Promise<{
     items: LeadUserListRow[];
     total: number;
     page: number;
@@ -204,12 +207,12 @@ export class LeadUsersService {
     const limit = query.limit ?? 20;
     const [items, total] = await Promise.all([
       this.leadUsers
-        .find(filter)
+        .find(withLocation(filter, location, AGENT_LOCATION_FIELDS))
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
         .lean<LeadUserRecord[]>(),
-      this.leadUsers.countDocuments(filter),
+      this.leadUsers.countDocuments(withLocation(filter, location, AGENT_LOCATION_FIELDS)),
     ]);
 
     const byAgent = await this.countLeadsForAgents(items.map((item) => item._id));
@@ -371,17 +374,19 @@ export class LeadUsersService {
   async resetPassword(
     id: string,
     dto: ResetLeadUserPasswordDto,
-  ): Promise<{ id: string }> {
+  ): Promise<{ id: string; temporaryPassword?: string }> {
+    // No password given: a strong one is generated and returned once, for the admin to read out.
+    const temporaryPassword = dto.password ? undefined : generateTemporaryPassword();
     const row = await this.leadUsers.findByIdAndUpdate(
       this.objectId(id),
       {
-        $set: { passwordHash: await hash(dto.password, this.config.bcryptRounds) },
+        $set: { passwordHash: await hash(dto.password ?? temporaryPassword!, this.config.bcryptRounds) },
         $inc: { tokenVersion: 1 },
       },
       { new: true },
     );
     if (!row) throw new NotFoundException("Lead user not found");
-    return { id: row._id.toString() };
+    return { id: row._id.toString(), ...(temporaryPassword ? { temporaryPassword } : {}) };
   }
 
   async remove(id: string): Promise<{ id: string; leadsRetained: number }> {

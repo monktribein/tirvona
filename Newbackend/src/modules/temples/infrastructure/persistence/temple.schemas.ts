@@ -78,6 +78,10 @@ export const TempleSchema = new Schema(
       youtubeUrl: String,
       liveStreamUrl: String,
       officialWebsite: String,
+      // Social media profiles of the temple.
+      instagramUrl: String,
+      facebookUrl: String,
+      twitterUrl: String,
     },
 
     // 5. Timings
@@ -126,6 +130,9 @@ export const TempleSchema = new Schema(
       importantInstructions: String,
       emergencyContact: String,
       templeContactNumber: String,
+      // The temple's pujari, for devotees who want to arrange a puja.
+      priestName: String,
+      priestPhone: String,
     },
 
     // 9. Darshan Information
@@ -196,7 +203,8 @@ export const TempleAartiSchema = new Schema(
     templeId: id("Temple", true),
     name: { type: String, required: true },
     startTime: { type: String, required: true }, // Format HH:mm
-    endTime: { type: String, required: true },
+    // Optional: many temples publish only when an aarti starts.
+    endTime: { type: String },
     days: [String], // Array of days, empty implies daily
     description: String,
     specialNotes: String,

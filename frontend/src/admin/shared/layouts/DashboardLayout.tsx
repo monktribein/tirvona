@@ -51,6 +51,7 @@ import {
   UtensilsCrossed,
   Briefcase,
   CheckSquare,
+  MapPin,
 } from "lucide-react";
 import {
   checkAshramBookingAvailable,
@@ -211,6 +212,10 @@ const getFormattedRole = (role?: string): string => {
       return "Manager";
     case "housekeeping":
       return "Housekeeping";
+    case "hr":
+      return "HR";
+    case "executive":
+      return "Executive";
     default:
       return role
         .split("_")
@@ -513,6 +518,14 @@ export const DashboardLayout: React.FC = () => {
       icon: <Users size={15} />,
       links: [
         { label: "All User Accounts", path: "/admin/users" },
+      ],
+    },
+    {
+      groupName: "Executive Management",
+      icon: <MapPin size={15} />,
+      links: [
+        { label: "Executive Accounts", path: "/admin/executive/accounts" },
+        { label: "Offices & Cities", path: "/admin/hr/settings" },
       ],
     },
     {
@@ -1127,6 +1140,46 @@ export const DashboardLayout: React.FC = () => {
           icon: <LayoutDashboard size={16} className="text-[#F28C28]" />,
         },
         groups: superAdminGroups,
+      };
+    }
+    if (user?.role === "hr" || user?.role === "executive") {
+      // The same Lead, Food, Temple and Pandit consoles as Super Admin, and the stay owner
+      // panel for the stays of the area; the API limits every one of them to the area of
+      // this login's office.
+      const areaSections = ["Lead Collection Management", "Food & Dining", "Temple Management", "Pandit & Acharya"];
+      const ownerGroup = (name: string) => ownerGroups.find((group) => group.groupName === name);
+      const roomGroup = ownerGroup("Room management");
+      const bookingGroup = ownerGroup("Bookings & finance");
+      const areaStayGroups: NavGroup[] = [
+        {
+          groupName: "Stay Management",
+          icon: <Building size={15} />,
+          links: [
+            { label: "Stays Dashboard", path: `${ownerBase}/dashboard` },
+            { label: "Manage Stays", path: `${ownerBase}/ashrams` },
+            { label: "Add New Stay", path: `${ownerBase}/ashrams/add` },
+            { label: "Stay Approvals", path: "/admin/verifications" },
+            { label: "Add-On Services", path: `${ownerBase}/add-ons` },
+            { label: "Offers & Deals", path: `${ownerBase}/offers` },
+          ],
+        },
+        ...(roomGroup ? [roomGroup] : []),
+        ...(bookingGroup
+          ? [{
+              ...bookingGroup,
+              groupName: "Stay Bookings",
+              // Payments and payouts belong to each stay's owner account.
+              links: bookingGroup.links.filter((link) => !link.path.endsWith("/payments") && !link.path.endsWith("/payouts")),
+            }]
+          : []),
+      ];
+      return {
+        topLink: {
+          label: "My Area Dashboard",
+          path: user.role === "executive" ? "/admin/executive/area" : "/admin/hr/area",
+          icon: <LayoutDashboard size={16} className="text-[#F28C28]" />,
+        },
+        groups: [...superAdminGroups.filter((group) => areaSections.includes(group.groupName)), ...areaStayGroups],
       };
     }
     if (

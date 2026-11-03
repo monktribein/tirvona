@@ -389,8 +389,12 @@ export const userService = {
   ) => api.patch(`/users/${id}/role`, data),
   updatePermissions: (id: string, permissions: string[]) =>
     api.patch(`/users/${id}/permissions`, { permissions }),
+  /** Empty password: the server generates a strong temporary one and returns it once (tempPassword). */
   resetPassword: (id: string, password?: string) =>
-    api.post(`/users/${id}/reset-password`, { password }),
+    api.post(`/users/${id}/reset-password`, password ? { password } : {}),
+  /** Emails the account owner a password reset link (Super Admin). */
+  sendResetLink: (id: string) =>
+    api.post<{ data: { email: string }; message: string }>(`/auth/admin/users/${id}/reset-link`),
   softDelete: (id: string) => api.delete(`/users/${id}/soft-delete`),
   bulkSoftDelete: (ids: string[]) =>
     api.delete("/users/bulk/soft-delete", { data: { ids } }),

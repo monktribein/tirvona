@@ -3215,12 +3215,16 @@ export const EnterpriseModulePage: React.FC<{
         onResetOwnerPassword={
           activeModule === "ashrams"
             ? async (ownerId, password) => {
-                await userService.resetPassword(ownerId, password);
-                addNotification(
-                  "Owner Password Changed",
-                  "The owner password was changed securely and existing sessions were invalidated.",
-                  "success",
-                );
+                const res = await userService.resetPassword(ownerId, password);
+                return res.data?.tempPassword;
+              }
+            : undefined
+        }
+        onSendOwnerResetLink={
+          activeModule === "ashrams"
+            ? async (ownerId) => {
+                const res = await userService.sendResetLink(ownerId);
+                return res.data?.data?.email ?? "the owner's email";
               }
             : undefined
         }

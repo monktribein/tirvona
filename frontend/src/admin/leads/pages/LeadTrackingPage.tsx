@@ -64,11 +64,21 @@ export const LeadTrackingPage: React.FC = () => {
   const loadShared = useCallback(async () => {
     setLoadingAgents(true);
     try {
-      const [usersRes, liveRes] = await Promise.all([
-        leadCollectionService.listUsers({ limit: 500 }),
+      // The API caps a page at 100, so walk the pages to get every agent.
+      const loadAllUsers = async () => {
+        const all: any[] = [];
+        for (let page = 1; ; page++) {
+          const res = await leadCollectionService.listUsers({ limit: 100, page });
+          const items = res?.data?.data?.items ?? [];
+          const total = res?.data?.data?.total ?? 0;
+          all.push(...items);
+          if (items.length < 100 || all.length >= total) return all;
+        }
+      };
+      const [rows, liveRes] = await Promise.all([
+        loadAllUsers(),
         leadCollectionService.getLiveTracking(),
       ]);
-      const rows = usersRes?.data?.data?.items ?? [];
       setAgents(rows);
       setLive(liveRes?.data?.data ?? []);
       setAgentId((current) => current || (rows[0]?._id ?? ""));

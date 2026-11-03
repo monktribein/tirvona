@@ -23,6 +23,12 @@ export const USER_ROLES = [
   "marketplace_manager",
   "service_manager",
   "finance_manager",
+  // Location-scoped operations login: Leads, Food, Temples and Pandits for the city of
+  // the HR office it is assigned to (see common/auth/location-scope.ts).
+  "hr",
+  // Same office-area access as `hr` (Leads, Food, Temples, Pandits and Stays), managed
+  // from Executive Management.
+  "executive",
   "support",
   "inspector",
   // Pandit/provider module: a login for providers created by an admin, and the reviewer
@@ -85,6 +91,8 @@ export class User {
   @Prop({ default: false, index: true }) isDeleted: boolean;
   @Prop({ default: true, index: true }) isVerified: boolean;
   @Prop({ default: 0 }) tokenVersion: number;
+  /** Set when an admin reset the password: the owner chooses their own at the next sign-in. */
+  @Prop() mustChangePassword?: boolean;
   @Prop({ default: "local", enum: ["local", "google"] }) authProvider: string;
   @Prop({ sparse: true, index: true }) googleId?: string;
   @Prop({ default: "" }) avatarUrl: string;

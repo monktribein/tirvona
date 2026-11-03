@@ -107,11 +107,12 @@ describe("providers API surface", () => {
   });
 
   it("keeps verification decisions to reviewers and the integrity report to super_admin", () => {
+    // `hr` reviews and opens the pandits of its own office area only (ProviderLocationService).
     const find = (m: string, p: string) => routes.find((r) => r.method === m && r.path === p)!;
-    expect(find("POST", "/api/v2/verification-cases/:caseId:decide").roles).toEqual(["verification_reviewer", "super_admin"]);
-    expect(find("POST", "/api/v2/verification-cases/:caseId:claim").roles).toEqual(["verification_reviewer", "super_admin"]);
+    expect(find("POST", "/api/v2/verification-cases/:caseId:decide").roles).toEqual(["verification_reviewer", "super_admin", "hr", "executive"]);
+    expect(find("POST", "/api/v2/verification-cases/:caseId:claim").roles).toEqual(["verification_reviewer", "super_admin", "hr", "executive"]);
     expect(find("GET", "/api/v2/admin/providers/integrity").roles).toEqual(["super_admin"]);
-    expect(find("GET", "/api/v2/admin/providers/:providerId").roles).toEqual(["verification_reviewer", "super_admin"]);
+    expect(find("GET", "/api/v2/admin/providers/:providerId").roles).toEqual(["verification_reviewer", "super_admin", "hr", "executive"]);
     // The booking list/detail for an owner has no role gate: it is ownership, decided in the service.
     expect(find("POST", "/api/v2/bookings/:bookingId/transitions").roles).toBeUndefined();
   });

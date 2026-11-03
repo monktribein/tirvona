@@ -366,6 +366,8 @@ const HrStructurePage = lazy(() => import("./admin/hr/HrStructurePage"));
 const HrReportsPage = lazy(() => import("./admin/hr/HrReportsPage"));
 const HrSettingsPage = lazy(() => import("./admin/hr/HrSettingsPage"));
 const HrMyWorkPage = lazy(() => import("./admin/hr/HrMyWorkPage"));
+const HrAccountsPage = lazy(() => import("./admin/hr/HrAccountsPage"));
+const HrAreaDashboardPage = lazy(() => import("./admin/hr/HrAreaDashboardPage"));
 const RestaurantWalletPage = lazy(() => import("./modules/food/RestaurantWalletPage"));
 const RestaurantProfilePage = namedPage(
   () => import("./modules/food/RestaurantPages"),
@@ -463,6 +465,9 @@ const OwnerVolunteerPage = lazy(
 );
 
 const ProfileMainPage = lazy(() => import("./pages/profile/ProfileMainPage"));
+const SetPasswordPage = lazy(() => import("./pages/profile/SetPasswordPage"));
+/** Where a user signed in with an admin-issued temporary password chooses their own. */
+const SET_PASSWORD_PATH = "/profile/set-password";
 
 import {
   getRoleDefaultDashboard,
@@ -511,6 +516,11 @@ const ProtectedRoute: React.FC<{
         replace
       />
     );
+  }
+
+  // A temporary password an admin gave out is replaced before anything else.
+  if (user.mustChangePassword && location.pathname !== SET_PASSWORD_PATH) {
+    return <Navigate to={SET_PASSWORD_PATH} replace />;
   }
 
   if (allowedRoles && !hasRoleAccess(user.role, allowedRoles)) {
@@ -828,6 +838,7 @@ const AppContent: React.FC = () => {
               element={<MarketplaceCheckoutPage />}
             />
             <Route path="/profile" element={<ProfileMainPage />} />
+            <Route path={SET_PASSWORD_PATH} element={<SetPasswordPage />} />
             <Route path="/wallet" element={<WalletRedirect />} />
             <Route path="/profile/wallet" element={<ProfileMainPage />} />
             <Route path="/profile/bookings" element={<ProfileMainPage />} />
@@ -903,7 +914,7 @@ const AppContent: React.FC = () => {
 
           <Route
             element={
-              <ProtectedRoute allowedRoles={["ashram_owner", "ashram_admin", "owner", "stay_admin", "manager"]}>
+              <ProtectedRoute allowedRoles={["ashram_owner", "ashram_admin", "owner", "stay_admin", "manager", "hr", "executive"]}>
                 <DashboardLayout />
               </ProtectedRoute>
             }
@@ -951,7 +962,7 @@ const AppContent: React.FC = () => {
 
           <Route
             element={
-              <ProtectedRoute allowedRoles={["ashram_owner", "ashram_admin", "owner", "stay_admin", "manager", "staff"]}>
+              <ProtectedRoute allowedRoles={["ashram_owner", "ashram_admin", "owner", "stay_admin", "manager", "staff", "hr", "executive"]}>
                 <DashboardLayout />
               </ProtectedRoute>
             }
@@ -971,6 +982,14 @@ const AppContent: React.FC = () => {
             }
           >
             <Route path="/temple-owner/dashboard" element={<TempleOwnerDashboard />} />
+          </Route>
+          <Route
+            element={
+              <ProtectedRoute allowedRoles={["temple_owner", "super_admin", "hr", "executive"]}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route path="/admin/temples/:id/edit" element={<AddEditTemplePage />} />
           </Route>
 
@@ -978,7 +997,7 @@ const AppContent: React.FC = () => {
 
           <Route
             element={
-              <ProtectedRoute allowedRoles={["ashram_owner", "ashram_admin", "owner", "stay_admin"]}>
+              <ProtectedRoute allowedRoles={["ashram_owner", "ashram_admin", "owner", "stay_admin", "hr", "executive"]}>
                 <DashboardLayout />
               </ProtectedRoute>
             }
@@ -1114,7 +1133,7 @@ const AppContent: React.FC = () => {
           <Route
             element={
               <ProtectedRoute
-                allowedRoles={["ashram_owner", "ashram_admin", "owner", "stay_admin", "manager", "offer_manager"]}
+                allowedRoles={["ashram_owner", "ashram_admin", "owner", "stay_admin", "manager", "offer_manager", "hr", "executive"]}
               >
                 <DashboardLayout />
               </ProtectedRoute>
@@ -1155,6 +1174,53 @@ const AppContent: React.FC = () => {
             <Route path="/admin/hr/reports" element={<HrReportsPage />} />
             <Route path="/admin/hr/settings" element={<HrSettingsPage />} />
             <Route path="/admin/hr/my-work" element={<HrMyWorkPage />} />
+            <Route path="/admin/hr/accounts" element={<HrAccountsPage />} />
+            <Route path="/admin/hr/area" element={<HrAreaDashboardPage />} />
+            <Route path="/admin/executive/accounts" element={<HrAccountsPage role="executive" />} />
+            <Route path="/admin/executive/area" element={<HrAreaDashboardPage />} />
+          </Route>
+
+          {/* Leads, Temples, Pandits and Food: Super Admin, and HR / Executive logins for the area of
+            their office only (the API filters every list and refuses records from other cities). */}
+          <Route
+            element={
+              <ProtectedRoute allowedRoles={["super_admin", "hr", "executive"]}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route
+              path="/admin/lead-collection/leads"
+              element={<LeadCollectionPage />}
+            />
+            <Route
+              path="/admin/lead-collection/tracking"
+              element={<LeadTrackingPage />}
+            />
+            <Route
+              path="/admin/lead-collection/agents"
+              element={<LeadAgentsPage />}
+            />
+            <Route
+              path="/admin/lead-collection/agents/:agentId/shifts/:attendanceId"
+              element={<LeadShiftRoutePage />}
+            />
+            <Route path="/admin/temples" element={<TempleManagementPage />} />
+            <Route path="/admin/temples/new" element={<AddEditTemplePage />} />
+            <Route path="/admin/pandits/overview" element={<AdminPanditOverviewPage />} />
+            <Route path="/admin/pandits" element={<AdminProvidersPage />} />
+            <Route path="/admin/providers" element={<Navigate to="/admin/pandits" replace />} />
+            <Route path="/admin/pandits/offerings" element={<AdminPanditOfferingsPage />} />
+            <Route path="/admin/pandits/rituals" element={<AdminRitualCataloguePage />} />
+            <Route path="/admin/pandits/bookings" element={<AdminPanditBookingsPage />} />
+            <Route path="/admin/pandits/consultations" element={<AdminPanditConsultationsPage />} />
+            <Route
+              path="/admin/food"
+              element={<FoodAdminOperationsPage />}
+            />
+            <Route path="/admin/food/vendors" element={<AdminFoodVendorsPage />} />
+            <Route path="/admin/food/vendors/:vendorId" element={<AdminFoodVendorDetailPage />} />
+            <Route path="/admin/food/wallets" element={<AdminFoodWalletsPage />} />
           </Route>
 
           {/* Support Management console. Which tickets each role sees is enforced by the backend. */}
@@ -1216,6 +1282,26 @@ const AppContent: React.FC = () => {
             }
           >
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          </Route>
+          <Route
+            element={
+              <ProtectedRoute
+                allowedRoles={[
+                  "inspector",
+                  "district_officer",
+                  "state_admin",
+                  "govt_admin",
+                  "government_admin",
+                  "national_admin",
+                  "super_admin",
+                  "hr",
+                  "executive",
+                ]}
+              >
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route
               path="/admin/verifications"
               element={<VerificationQueuePage />}
@@ -1224,7 +1310,7 @@ const AppContent: React.FC = () => {
           {/* Provider verification review: reviewers and Super Admin only (the server enforces this too). */}
           <Route
             element={
-              <ProtectedRoute allowedRoles={["verification_reviewer", "super_admin"]}>
+              <ProtectedRoute allowedRoles={["verification_reviewer", "super_admin", "hr", "executive"]}>
                 <DashboardLayout />
               </ProtectedRoute>
             }
@@ -1268,31 +1354,6 @@ const AppContent: React.FC = () => {
               element={<OfflineInventoryPage />}
             />
             <Route path="/admin/payouts" element={<PayoutManagementPage />} />
-            <Route
-              path="/admin/lead-collection/leads"
-              element={<LeadCollectionPage />}
-            />
-            <Route
-              path="/admin/lead-collection/tracking"
-              element={<LeadTrackingPage />}
-            />
-            <Route
-              path="/admin/lead-collection/agents"
-              element={<LeadAgentsPage />}
-            />
-            <Route
-              path="/admin/lead-collection/agents/:agentId/shifts/:attendanceId"
-              element={<LeadShiftRoutePage />}
-            />
-            <Route path="/admin/temples" element={<TempleManagementPage />} />
-            <Route path="/admin/temples/new" element={<AddEditTemplePage />} />
-            <Route path="/admin/pandits/overview" element={<AdminPanditOverviewPage />} />
-            <Route path="/admin/pandits" element={<AdminProvidersPage />} />
-            <Route path="/admin/providers" element={<Navigate to="/admin/pandits" replace />} />
-            <Route path="/admin/pandits/offerings" element={<AdminPanditOfferingsPage />} />
-            <Route path="/admin/pandits/rituals" element={<AdminRitualCataloguePage />} />
-            <Route path="/admin/pandits/bookings" element={<AdminPanditBookingsPage />} />
-            <Route path="/admin/pandits/consultations" element={<AdminPanditConsultationsPage />} />
             {/* Smart Contact QR. `/analytics` is declared before the `:id`
               route so the literal segment is not swallowed as a profile id. */}
             <Route
@@ -1336,13 +1397,6 @@ const AppContent: React.FC = () => {
               path="/admin/developer-api"
               element={<DeveloperApiPage />}
             />
-            <Route
-              path="/admin/food"
-              element={<FoodAdminOperationsPage />}
-            />
-            <Route path="/admin/food/vendors" element={<AdminFoodVendorsPage />} />
-            <Route path="/admin/food/vendors/:vendorId" element={<AdminFoodVendorDetailPage />} />
-            <Route path="/admin/food/wallets" element={<AdminFoodWalletsPage />} />
             <Route
               path="/admin/parking/control"
               element={<ParkingControlCenterPage />}
@@ -1470,7 +1524,7 @@ const AppContent: React.FC = () => {
           {/* Pandit wallet payouts: the same roles the backend's withdrawal queue allows. */}
           <Route
             element={
-              <ProtectedRoute allowedRoles={["super_admin", "finance_manager", "service_manager"]}>
+              <ProtectedRoute allowedRoles={["super_admin", "finance_manager", "service_manager", "hr", "executive"]}>
                 <DashboardLayout />
               </ProtectedRoute>
             }

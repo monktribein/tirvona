@@ -7,6 +7,7 @@ import {
 import { InjectModel } from "../../../database/orm-nest";
 import type { Model } from "../../../database/orm";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
+import { isLocationScopedUser } from "../../../common/auth/location-scope";
 import type { VerificationStatusDto } from "../presentation/verification.dto";
 
 const normalizeLegacyAddress = (
@@ -73,6 +74,7 @@ export class VerificationService {
         );
       return { "address.state": user.state };
     }
+    if (isLocationScopedUser(user)) return { _id: { $in: user.scopedAshramIds ?? [] } };
     return {};
   }
   async pending(user: AuthenticatedUser): Promise<any[]> {
@@ -139,6 +141,8 @@ export class VerificationService {
       throw new ForbiddenException(
         "Not authorized for this state jurisdiction",
       );
+    if (isLocationScopedUser(user) && !(user.scopedAshramIds ?? []).map(String).includes(String(ashram._id)))
+      throw new NotFoundException("Ashram not found");
     return ashram;
   }
   async schedule(

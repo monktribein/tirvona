@@ -1,3 +1,4 @@
+import { onlyProviders } from "./provider-location.service";
 import { Injectable, Logger, type OnModuleInit } from "@nestjs/common";
 import { InjectModel } from "../../../database/orm-nest";
 import { Cron, CronExpression } from "@nestjs/schedule";
@@ -500,14 +501,15 @@ export class ProviderWalletService implements OnModuleInit {
   }
 
   // ======================================================= admin / finance
-  async adminListWithdrawals(query: AdminWithdrawalQueryDto) {
+  async adminListWithdrawals(query: AdminWithdrawalQueryDto, only: string[] | null = null) {
     const { page, limit, skip } = pageParams(query);
     const filter: Record<string, unknown> = {};
     if (query.status) filter.status = query.status;
     if (query.providerId) filter.providerId = toObjectId(query.providerId, "providerId");
+    const scoped = onlyProviders(filter, only);
     const [rows, total] = await Promise.all([
-      this.withdrawals.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
-      this.withdrawals.countDocuments(filter),
+      this.withdrawals.find(scoped).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      this.withdrawals.countDocuments(scoped),
     ]);
     const profileIds = [...new Set(rows.map((row: any) => String(row.providerId)))];
     const profileRows: any[] = profileIds.length
@@ -528,13 +530,14 @@ export class ProviderWalletService implements OnModuleInit {
     );
   }
 
-  async adminOverview() {
+  /** `only`: totals for these pandits only (an HR login's area); null = all. */
+  async adminOverview(only: string[] | null = null) {
     const [wallets, openCount] = await Promise.all([
       this.wallets
-        .find({})
+        .find(onlyProviders({}, only))
         .select("pendingMinor availableMinor withdrawingMinor recoveryDueMinor lifetimeWithdrawnMinor lifetimePlatformFeeMinor")
         .lean(),
-      this.withdrawals.countDocuments({ status: { $in: OPEN_WITHDRAWAL_STATUSES } }),
+      this.withdrawals.countDocuments(onlyProviders({ status: { $in: OPEN_WITHDRAWAL_STATUSES } }, only)),
     ]);
     const sum = (key: string) => wallets.reduce((acc: number, w: any) => acc + Math.max(0, Number(w[key] ?? 0)), 0);
     return {

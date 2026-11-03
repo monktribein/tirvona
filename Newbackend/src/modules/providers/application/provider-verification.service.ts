@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, Optional } from "@nestjs/common";
 import { InjectModel } from "../../../database/orm-nest";
 import type { Model } from "../../../database/orm";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
@@ -26,10 +26,14 @@ import type {
 } from "../presentation/dto/verification.dto";
 import { ProviderAuditService } from "./provider-audit.service";
 import { ProviderProfileService } from "./provider-profile.service";
+import { ProviderLocationService, onlyProviders } from "./provider-location.service";
 import { ProviderProjectionService } from "./provider-projection.service";
 import { idStr, paged, sameId, toObjectId } from "./provider.helpers";
 
-const REVIEWER_ROLES = ["verification_reviewer", "super_admin"];
+// An `hr` login reviews the pandits of its office's area (see ProviderLocationService).
+const REVIEWER_ROLES = ["verification_reviewer", "super_admin", "hr", "executive"];
+/** Roles that may take over another reviewer's case and give the Trusted badge. */
+const SENIOR_REVIEWER_ROLES = ["super_admin", "hr", "executive"];
 export const isVerificationReviewer = (user: Pick<AuthenticatedUser, "role">): boolean =>
   REVIEWER_ROLES.includes(user.role);
 
@@ -76,6 +80,7 @@ export class ProviderVerificationService {
     private readonly projection: ProviderProjectionService,
     private readonly audit: ProviderAuditService,
     private readonly notifier: InAppNotificationService,
+    @Optional() private readonly location?: ProviderLocationService,
   ) {}
 
   // ----------------------------------------------------------------- open
@@ -87,6 +92,7 @@ export class ProviderVerificationService {
     if (reviewer && dto.providerId) {
       provider = await this.profileModel.findOne({ _id: toObjectId(dto.providerId), deletedAt: null });
       if (!provider) throw providerError.notFound("PROVIDER_NOT_FOUND", "Provider not found");
+      await this.location?.assertProvider(user, provider._id);
     } else {
       provider = await this.profiles.requireOwn(user);
       // The id in the body is advisory only; it can never select someone else's profile.
@@ -316,6 +322,7 @@ export class ProviderVerificationService {
     if (!verificationCase)
       throw providerError.notFound("VERIFICATION_CASE_NOT_FOUND", "Verification case not found");
     this.assertNoConflictOfInterest(user, verificationCase);
+    await this.location?.assertProvider(user, verificationCase.providerId);
     const now = new Date();
     const updated = await this.cases.findOneAndUpdate(
       { _id: verificationCase._id, status: "OPEN", submittedAt: { $ne: null } },
@@ -352,19 +359,20 @@ export class ProviderVerificationService {
     if (!verificationCase)
       throw providerError.notFound("VERIFICATION_CASE_NOT_FOUND", "Verification case not found");
     this.assertNoConflictOfInterest(user, verificationCase);
+    await this.location?.assertProvider(user, verificationCase.providerId);
     if (verificationCase.status !== "IN_REVIEW")
       throw providerError.conflict(
         "VERIFICATION_NOT_IN_REVIEW",
         "Only a case that is in review can be decided",
       );
     // The reviewer who took the case decides it; only super_admin may take over.
-    if (!sameId(verificationCase.reviewerUserId, user.id) && user.role !== "super_admin")
+    if (!sameId(verificationCase.reviewerUserId, user.id) && !SENIOR_REVIEWER_ROLES.includes(user.role))
       throw providerError.forbidden(
         "VERIFICATION_NOT_ASSIGNED",
         "This case is assigned to another reviewer",
       );
     // Maker-checker for the most sensitive badge.
-    if (verificationCase.verificationType === "TRUST_REVIEW" && user.role !== "super_admin")
+    if (verificationCase.verificationType === "TRUST_REVIEW" && !SENIOR_REVIEWER_ROLES.includes(user.role))
       throw providerError.forbidden(
         "MAKER_CHECKER_REQUIRED",
         "Tirvona Trusted decisions need a second, senior approver",
@@ -491,6 +499,7 @@ export class ProviderVerificationService {
         ];
       }
       if (query.assignedToMe) filter.reviewerUserId = toObjectId(user.id);
+      if (this.location) filter = onlyProviders(filter, await this.location.providerIdsFor(user));
       sort = { openedAt: 1 };
     } else {
       const provider = await this.profiles.requireOwn(user);
@@ -621,6 +630,8 @@ export class ProviderVerificationService {
       (sameId(verificationCase.providerUserId, user.id) || isVerificationReviewer(user));
     if (!allowed)
       throw providerError.notFound("VERIFICATION_CASE_NOT_FOUND", "Verification case not found");
+    if (!sameId(verificationCase.providerUserId, user.id))
+      await this.location?.assertProvider(user, verificationCase.providerId);
     return verificationCase;
   }
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ashramService } from "../services";
+import { useAuth } from "../contexts/AuthContext";
 import { formatCurrency } from "../utils/format";
 import { FileUploader } from "../components/FileUploader";
 import TirvonaMap from "../components/TirvonaMap";
@@ -65,6 +66,8 @@ interface FormData {
   ashramType: string;
   establishedYear: string;
   languages: string;
+  /** HR / Executive only: the email of the owner's own Tirvona account. */
+  ownerEmail: string;
 
   trustName: string;
   trustRegNo: string;
@@ -256,6 +259,7 @@ const defaultFormData: FormData = {
   ashramType: "",
   establishedYear: "",
   languages: "",
+  ownerEmail: "",
   trustName: "",
   trustRegNo: "",
   panNo: "",
@@ -421,6 +425,14 @@ const AddAshramWizardPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const editId = searchParams.get("edit");
   const STEPS = editId ? CONFIG_STEPS : BASIC_STEPS;
+  const { user } = useAuth();
+  // An HR / Executive login adds a stay for an owner who has signed up on Tirvona
+  // ("Individual Stay Owner"); the stay is saved under that owner's account.
+  const forOwnerAccount = !editId && ["hr", "executive"].includes(String(user?.role ?? ""));
+  const ownerEmailProblem = () =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.ownerEmail.trim())
+      ? ""
+      : "Enter the email the stay owner signed up with";
 
   const [step, setStep] = useState(0); // 0-indexed
   const [maxStep, setMaxStep] = useState(editId ? 99 : 0);
@@ -564,6 +576,7 @@ const AddAshramWizardPage: React.FC = () => {
     if (stepValue === 0) {
       if (!formData.name.trim()) e.name = "Stay name is required";
       if (!formData.ashramType) e.ashramType = "Please select stay type";
+      if (forOwnerAccount && ownerEmailProblem()) e.ownerEmail = ownerEmailProblem();
     }
     if (stepValue === 1) {
       if (!formData.trustName.trim()) e.trustName = "Trust name is required";
@@ -605,6 +618,7 @@ const AddAshramWizardPage: React.FC = () => {
     const e: Record<string, string> = {};
     if (!formData.name.trim()) e.name = "Stay name is required";
     if (!formData.ashramType) e.ashramType = "Please select stay type";
+    if (forOwnerAccount && ownerEmailProblem()) e.ownerEmail = ownerEmailProblem();
     if (!formData.trustName.trim()) e.trustName = "Trust name is required";
     if (!formData.street.trim()) e.street = "Street address is required";
     if (!formData.city.trim()) e.city = "City is required";
@@ -625,7 +639,7 @@ const AddAshramWizardPage: React.FC = () => {
       setErrors(e);
       const findStepIndex = (val: number) =>
         STEPS.findIndex((s) => s.value === val);
-      if (e.name || e.ashramType) {
+      if (e.name || e.ashramType || e.ownerEmail) {
         const idx = findStepIndex(0);
         if (idx !== -1) setStep(idx);
       } else if (e.trustName) {
@@ -651,6 +665,7 @@ const AddAshramWizardPage: React.FC = () => {
     }
 
     const payload = {
+      ...(forOwnerAccount ? { ownerEmail: formData.ownerEmail.trim().toLowerCase() } : {}),
       name: formData.name,
       tagline: formData.tagline,
       ashramType: formData.ashramType,
@@ -953,6 +968,21 @@ const AddAshramWizardPage: React.FC = () => {
                 />
               </Field>
             </div>
+            {forOwnerAccount && (
+              <Field
+                label="Stay owner's account email"
+                required
+                hint="The owner first creates their account on the signup page as “Individual Stay Owner”. The stay is saved under that account."
+              >
+                <Input
+                  type="email"
+                  placeholder="owner@example.com"
+                  value={formData.ownerEmail}
+                  onChange={(e) => set("ownerEmail", e.target.value)}
+                />
+                <ErrMsg field="ownerEmail" />
+              </Field>
+            )}
           </div>
         );
 

@@ -10,6 +10,11 @@ import { randomUUID } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { InjectModel } from "../../../database/orm-nest";
 import type { Model } from "../../../database/orm";
+import { assertWritableInLocation, isLocationScopedUser } from "../../../common/auth/location-scope";
+import { HrLocationService } from "../../hr/application/hr-location.service";
+
+/** Accounts an HR / Executive login may put a new stay under: the owner's own sign-up. */
+const STAY_OWNER_ACCOUNT_ROLES = ["customer", "owner", "ashram_owner"];
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { canManageAllAshrams } from "../../../common/auth/ashram-access";
 import { canonicalPhone, phoneCandidates } from "../../../common/phone/phone.util";
@@ -204,7 +209,37 @@ export class AshramsService {
     private readonly slugs: AshramSlugService,
     @Optional() @InjectModel("RoomRate") readonly roomRates?: Model<any>,
     @Optional() @InjectModel("User") readonly userModel?: Model<any>,
+    @Optional() private readonly hrLocation?: HrLocationService,
   ) { }
+
+  /**
+   * The owner of a stay an HR / Executive login adds: the account the owner made on the
+   * signup page, found by its email. The login never creates an account, never sets a
+   * password and cannot put a stay under a staff or admin account; a customer account
+   * just becomes a stay owner.
+   */
+  private async ownerForAreaCreator(ownerEmail?: string, ownerPassword?: string): Promise<string> {
+    if (String(ownerPassword ?? "").trim())
+      throw new BadRequestException("HR and Executive accounts cannot set a password for the stay owner.");
+    const email = String(ownerEmail ?? "").trim().toLowerCase();
+    if (!email) throw new BadRequestException("Enter the email the stay owner signed up with.");
+    const owner = this.userModel
+      ? await this.userModel.findOne({ email, isDeleted: { $ne: true } }).select("role status")
+      : null;
+    if (!owner)
+      throw new BadRequestException(
+        "No Tirvona account uses this email. Ask the owner to sign up first as “Individual Stay Owner”, then try again.",
+      );
+    if (!STAY_OWNER_ACCOUNT_ROLES.includes(owner.role))
+      throw new ConflictException("This email belongs to a staff or admin account. Use the stay owner's own account.");
+    if (owner.status !== "active")
+      throw new ConflictException("The stay owner's account is not active yet.");
+    if (owner.role === "customer") {
+      owner.role = "ashram_owner";
+      await owner.save();
+    }
+    return owner._id.toString();
+  }
 
   private async parkingEligibleAshrams(
     user: AuthenticatedUser,
@@ -993,6 +1028,12 @@ export class AshramsService {
     } = dto;
     payload.address = normalizeAshramAddress(payload.address, payload as any);
     assertCompleteAddress(payload.address);
+    const areaCreator = isLocationScopedUser(user);
+    if (areaCreator) {
+      // An HR / Executive login adds stays in its own office area only.
+      const scope = this.hrLocation ? await this.hrLocation.scopeFor(user) : { city: "", officeName: "", terms: [] };
+      assertWritableInLocation(scope, payload.address?.city, payload.address?.district, payload.address?.street);
+    }
     const legalIdentifiers = [
       ["trust.trustRegNo", payload.trust?.trustRegNo],
       ["trust.panNo", payload.trust?.panNo],
@@ -1011,7 +1052,9 @@ export class AshramsService {
 
     let targetOwnerId = user.id;
 
-    if (ownerEmail && String(ownerEmail).trim() && this.userModel) {
+    if (areaCreator) {
+      targetOwnerId = await this.ownerForAreaCreator(ownerEmail, ownerPassword);
+    } else if (ownerEmail && String(ownerEmail).trim() && this.userModel) {
       const email = String(ownerEmail).trim().toLowerCase();
       const ownerUser = await this.userModel.findOne({ email }).select("+passwordHash");
 

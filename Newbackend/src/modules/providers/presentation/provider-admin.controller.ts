@@ -31,6 +31,7 @@ import {
 import { AdminProviderQueryDto } from "./dto/verification.dto";
 import { ObjectIdPipe } from "./object-id.pipe";
 import { ProviderApi } from "./provider-api.decorator";
+import { ProviderLocationService } from "../application/provider-location.service";
 
 /** Content roles: `content_manager` authors and reviews (with maker-checker); `super_admin` can do everything. */
 const CONTENT = ["content_manager", "super_admin"] as const;
@@ -42,6 +43,7 @@ const CONTENT = ["content_manager", "super_admin"] as const;
 export class AdminRitualsController {
   constructor(private readonly catalogue: RitualCatalogService) {}
 
+  @Roles(...CONTENT, "hr", "executive")
   @Get()
   list(@Query() query: AdminRitualQueryDto) {
     return this.catalogue.list(query);
@@ -64,6 +66,7 @@ export class AdminRitualsController {
     return this.catalogue.setProcess(user, ritualId, dto);
   }
 
+  @Roles(...CONTENT, "hr", "executive")
   @Get(":ritualId")
   one(@Param("ritualId", ObjectIdPipe) ritualId: string) {
     return this.catalogue.get(ritualId);
@@ -157,24 +160,26 @@ export class AdminProvidersController {
   constructor(
     private readonly profiles: ProviderProfileService,
     private readonly integrity: ProviderIntegrityService,
+    private readonly location: ProviderLocationService,
   ) {}
 
-  @Roles("service_manager", "super_admin")
+  @Roles("service_manager", "super_admin", "hr", "executive")
   @Get("overview")
-  overview(@CurrentUser() user: AuthenticatedUser) {
-    return this.profiles.overview(user);
+  async overview(@CurrentUser() user: AuthenticatedUser) {
+    return this.profiles.overview(user, await this.location.providerIdsFor(user));
   }
 
-  @Roles("verification_reviewer", "service_manager", "super_admin")
+  @Roles("verification_reviewer", "service_manager", "super_admin", "hr", "executive")
   @Get()
-  list(@Query() query: AdminProviderQueryDto) {
-    return this.profiles.listAdmin(query);
+  async list(@CurrentUser() user: AuthenticatedUser, @Query() query: AdminProviderQueryDto) {
+    return this.profiles.listAdmin(query, await this.location.providerIdsFor(user));
   }
 
-  @Roles("super_admin")
+  @Roles("super_admin", "hr", "executive")
   @Post()
   @Idempotent("provider.admin.create")
-  create(@CurrentUser() user: AuthenticatedUser, @Body() dto: AdminCreateProviderDto) {
+  async create(@CurrentUser() user: AuthenticatedUser, @Body() dto: AdminCreateProviderDto) {
+    await this.location.assertPlacesWritable(user, dto);
     return this.profiles.createAdmin(user, dto);
   }
 
@@ -185,91 +190,106 @@ export class AdminProvidersController {
     return this.integrity.check().then((report) => ({ success: true, data: report }));
   }
 
-  @Roles("verification_reviewer", "super_admin")
+  @Roles("verification_reviewer", "super_admin", "hr", "executive")
   @Get(":providerId")
-  one(@CurrentUser() user: AuthenticatedUser, @Param("providerId", ObjectIdPipe) providerId: string) {
+  async one(@CurrentUser() user: AuthenticatedUser, @Param("providerId", ObjectIdPipe) providerId: string) {
+    await this.location.assertProvider(user, providerId);
     return this.profiles.getAdmin(user, providerId);
   }
 
-  @Roles("service_manager", "super_admin")
+  @Roles("service_manager", "super_admin", "hr", "executive")
   @Patch(":providerId")
   @Idempotent("provider.admin.update")
-  update(
+  async update(
     @CurrentUser() user: AuthenticatedUser,
     @Param("providerId", ObjectIdPipe) providerId: string,
     @Body() dto: AdminUpdateProviderDto,
   ) {
+    await this.location.assertProvider(user, providerId);
+    if (dto.homeCity !== undefined) await this.location.assertPlacesWritable(user, dto);
     return this.profiles.updateAdmin(user, providerId, dto);
   }
 
-  @Roles("service_manager", "super_admin")
+  @Roles("service_manager", "super_admin", "hr", "executive")
   @Post(":providerId\\:suspend")
   @Idempotent("provider.suspend")
-  suspend(
+  async suspend(
     @CurrentUser() user: AuthenticatedUser,
     @Param("providerId", ObjectIdPipe) providerId: string,
     @Body() dto: ProviderAdminActionDto,
   ) {
+    await this.location.assertProvider(user, providerId);
     return this.profiles.suspend(user, providerId, dto);
   }
 
-  @Roles("service_manager", "super_admin")
+  @Roles("service_manager", "super_admin", "hr", "executive")
   @Post(":providerId\\:reinstate")
   @Idempotent("provider.reinstate")
-  reinstate(
+  async reinstate(
     @CurrentUser() user: AuthenticatedUser,
     @Param("providerId", ObjectIdPipe) providerId: string,
     @Body() dto: ProviderAdminActionDto,
   ) {
+    await this.location.assertProvider(user, providerId);
     return this.profiles.reinstate(user, providerId, dto);
   }
 }
 
 /** Operations queue across all providers. Row data carries no contact or address; open a booking for those. */
 @ProviderApi()
-@Roles("service_manager", "super_admin")
+@Roles("service_manager", "super_admin", "hr", "executive")
 @Controller({ path: "admin/provider-bookings", version: "2" })
 export class AdminProviderBookingsController {
-  constructor(private readonly bookings: ProviderBookingService) {}
+  constructor(
+    private readonly bookings: ProviderBookingService,
+    private readonly location: ProviderLocationService,
+  ) {}
 
   @Get()
-  list(@Query() query: BookingListQueryDto) {
-    return this.bookings.listAll(query);
+  async list(@CurrentUser() user: AuthenticatedUser, @Query() query: BookingListQueryDto) {
+    return this.bookings.listAll(query, await this.location.providerIdsFor(user));
   }
 }
 
 /** Super Admin & ops management for provider puja offerings. */
 @ProviderApi()
-@Roles("service_manager", "super_admin")
+@Roles("service_manager", "super_admin", "hr", "executive")
 @Controller({ path: "admin/offerings", version: "2" })
 export class AdminOfferingsController {
-  constructor(private readonly offerings: ProviderOfferingService) {}
+  constructor(
+    private readonly offerings: ProviderOfferingService,
+    private readonly location: ProviderLocationService,
+  ) {}
 
   @Get()
-  list(@Query() query: AdminOfferingQueryDto) {
-    return this.offerings.listAdmin(query);
+  async list(@CurrentUser() user: AuthenticatedUser, @Query() query: AdminOfferingQueryDto) {
+    return this.offerings.listAdmin(query, await this.location.providerIdsFor(user));
   }
 
   @Patch(":offeringId/status")
   @Idempotent("offering.admin.status")
-  setStatus(
+  async setStatus(
     @CurrentUser() user: AuthenticatedUser,
     @Param("offeringId", ObjectIdPipe) offeringId: string,
     @Body() body: AdminOfferingStatusDto,
   ) {
+    await this.location.assertOffering(user, offeringId);
     return this.offerings.setStatusAdmin(user, offeringId, body.status);
   }
 }
 
 /** Super Admin & ops management for provider consultations. */
 @ProviderApi()
-@Roles("service_manager", "super_admin")
+@Roles("service_manager", "super_admin", "hr", "executive")
 @Controller({ path: "admin/consultations", version: "2" })
 export class AdminConsultationsController {
-  constructor(private readonly consultations: ProviderConsultationService) {}
+  constructor(
+    private readonly consultations: ProviderConsultationService,
+    private readonly location: ProviderLocationService,
+  ) {}
 
   @Get()
-  list(@Query() query: ConsultationListQueryDto) {
-    return this.consultations.listAdmin(query);
+  async list(@CurrentUser() user: AuthenticatedUser, @Query() query: ConsultationListQueryDto) {
+    return this.consultations.listAdmin(query, await this.location.providerIdsFor(user));
   }
 }

@@ -266,8 +266,13 @@ export class FoodWalletService {
   }
 
   /** Every restaurant's balance, biggest amount owed first: who Tirvona has to pay. */
-  async overview() {
-    const vendors: any[] = await this.vendorModel.find({}).sort({ businessName: 1 }).limit(500).lean();
+  /** `onlyVendorIds`: restricts the overview (an HR login's area); null = every restaurant. */
+  async overview(onlyVendorIds: string[] | null = null) {
+    const vendors: any[] = await this.vendorModel
+      .find(onlyVendorIds ? { _id: { $in: onlyVendorIds } } : {})
+      .sort({ businessName: 1 })
+      .limit(500)
+      .lean();
     const data = await this.load(vendors.map((v) => v._id));
     const rows = vendors
       .map((vendor) => ({ ...this.build(vendor, data, false).summary, status: vendor.status as string }))

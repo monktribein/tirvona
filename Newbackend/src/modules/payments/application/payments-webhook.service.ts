@@ -64,8 +64,13 @@ export class PaymentsWebhookService {
     try {
       event = await this.events.create({ provider: "razorpay", eventId, eventType });
     } catch (error: any) {
-      if (error?.code === 11000) return; // duplicate delivery, already handled
-      throw error;
+      if (error?.code !== 11000) throw error;
+      // Duplicate delivery. A previous attempt that failed must be retried
+      // (each module confirms idempotently); anything else is already handled.
+      event = await this.events.findOne({ provider: "razorpay", eventId });
+      if (!event || event.status !== "failed") return;
+      event.status = "received";
+      event.processingError = undefined;
     }
 
     try {

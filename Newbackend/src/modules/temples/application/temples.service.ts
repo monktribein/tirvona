@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException, Logger } from "@nestjs/common";
+import { Injectable, NotFoundException, BadRequestException, ConflictException, Logger, Optional } from "@nestjs/common";
 import { InjectModel } from "../../../database/orm-nest";
 import { Model } from "../../../database/orm";
 import { CreateTempleDto, UpdateTempleDto, CreateAartiDto, CreateFestivalDto } from "../presentation/dtos/temple.dto";
@@ -9,6 +9,19 @@ import {
   resolveTempleScope,
   templeScopeFilter,
 } from "../../../common/auth/temple-scope";
+import {
+  assertInLocation,
+  assertWritableInLocation,
+  isLocationScopedUser,
+  withLocation,
+  type LocationScope,
+} from "../../../common/auth/location-scope";
+import { HrLocationService } from "../../hr/application/hr-location.service";
+
+/** Temple address fields an HR login's office area is matched against. */
+const TEMPLE_LOCATION_FIELDS = ["address.city", "address.area", "address.district", "address.street", "address.landmark"];
+const templeAddressTexts = (address: any) =>
+  [address?.city, address?.area, address?.district, address?.street, address?.landmark];
 
 const slugify = (value: string): string =>
   value
@@ -40,10 +53,23 @@ export class TemplesService {
     @InjectModel("TempleFestival") private readonly festivals: Model<any>,
     @InjectModel("Ashram") private readonly ashrams: Model<any>,
     @InjectModel(PARKING_MODEL.Location) private readonly parkingLocations: Model<any>,
-    @InjectModel("LocalServiceItem") private readonly localServices: Model<any>
+    @InjectModel("LocalServiceItem") private readonly localServices: Model<any>,
+    @Optional() private readonly hrLocation?: HrLocationService,
   ) {}
 
+  /** The caller's office area when it is an `hr` login, else null (not location-restricted). */
+  private async hrScope(user: any): Promise<LocationScope> {
+    if (!isLocationScopedUser(user)) return null;
+    return this.hrLocation ? this.hrLocation.scopeFor(user) : { city: "", officeName: "", terms: [] };
+  }
+
+  /** An HR login manages temples like a Super Admin, within its office area. */
+  private canManageTempleFlags(user: any): boolean {
+    return canManageAllTemples(user) || isLocationScopedUser(user);
+  }
+
   async create(dto: CreateTempleDto, user: any) {
+    if (isLocationScopedUser(user)) assertWritableInLocation(await this.hrScope(user), ...templeAddressTexts(dto.address));
     this.checkLocation(dto.address?.coordinates);
     const baseSlug = slugify(dto.slug || `${dto.name || 'unnamed-temple'}-${dto.address?.city || 'unknown'}`);
     let slug = baseSlug;
@@ -75,7 +101,9 @@ export class TemplesService {
   async update(id: string, dto: UpdateTempleDto, user: any) {
     const existing = await this.temples.findOne({ _id: id, deletedAt: null }).lean();
     await this.assertTempleScope(user, existing);
-    if (!canManageAllTemples(user)) {
+    if (dto.address && isLocationScopedUser(user))
+      assertWritableInLocation(await this.hrScope(user), ...templeAddressTexts(dto.address));
+    if (!this.canManageTempleFlags(user)) {
       delete (dto as any).status;
       delete (dto as any).isVerified;
       delete (dto as any).isFeatured;
@@ -134,7 +162,10 @@ export class TemplesService {
       filter.status = { $in: ["published", "active"] };
     }
 
-    if (user && !canManageAllTemples(user)) {
+    let scoped: any = filter;
+    if (user && isLocationScopedUser(user)) {
+      scoped = withLocation(filter, await this.hrScope(user), TEMPLE_LOCATION_FIELDS);
+    } else if (user && !canManageAllTemples(user)) {
       const scope = await resolveTempleScope(user, this.temples);
       Object.assign(filter, templeScopeFilter(scope, "_id"));
     }
@@ -144,8 +175,8 @@ export class TemplesService {
     const skip = (page - 1) * limit;
 
     const [data, total] = await Promise.all([
-      this.temples.find(filter).sort({ [query.sort === "name" ? "name" : "createdAt"]: query.order === "asc" ? 1 : -1 }).skip(skip).limit(limit).lean(),
-      this.temples.countDocuments(filter)
+      this.temples.find(scoped).sort({ [query.sort === "name" ? "name" : "createdAt"]: query.order === "asc" ? 1 : -1 }).skip(skip).limit(limit).lean(),
+      this.temples.countDocuments(scoped)
     ]);
 
     return {
@@ -159,6 +190,11 @@ export class TemplesService {
 
   async findMine(user: any) {
     if (canManageAllTemples(user)) return this.temples.find({ deletedAt: null }).sort({ createdAt: -1 }).lean();
+    if (isLocationScopedUser(user))
+      return this.temples
+        .find(withLocation({ deletedAt: null }, await this.hrScope(user), TEMPLE_LOCATION_FIELDS))
+        .sort({ createdAt: -1 })
+        .lean();
     const scope = await resolveTempleScope(user, this.temples);
     const filter: any = { deletedAt: null, ...templeScopeFilter(scope, "_id") };
     return this.temples.find(filter).sort({ createdAt: -1 }).lean();
@@ -236,12 +272,16 @@ export class TemplesService {
 
   private async assertTempleScope(user: any, temple: any): Promise<void> {
     if (!temple) throw new NotFoundException("Temple not found");
+    if (isLocationScopedUser(user)) {
+      assertInLocation(await this.hrScope(user), "Temple", ...templeAddressTexts(temple.address));
+      return;
+    }
     const scope = await resolveTempleScope(user, this.temples);
     assertTempleInScope(scope, temple._id);
   }
 
   private async requireTemple(id: string, user?: any) {
-    const temple = await this.temples.findOne({ _id: id, deletedAt: null }).select("_id ownerId").lean();
+    const temple = await this.temples.findOne({ _id: id, deletedAt: null }).select("_id ownerId address").lean();
     if (!temple) throw new NotFoundException("Temple not found");
     if (user) await this.assertTempleScope(user, temple);
     return temple;

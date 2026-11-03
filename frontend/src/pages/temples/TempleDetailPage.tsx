@@ -445,7 +445,7 @@ export default function TempleDetailPage() {
                         </div>
                       )}
                       <h3 className="font-bold text-gray-900 mb-1">{aarti.name}</h3>
-                      <p className="text-indigo-600 font-bold mb-2">{aarti.startTime} - {aarti.endTime}</p>
+                      <p className="text-indigo-600 font-bold mb-2">{aarti.startTime}{aarti.endTime ? ` - ${aarti.endTime}` : ""}</p>
                       {aarti.description && <p className="text-sm text-gray-500">{aarti.description}</p>}
                       {status === "LIVE NOW" && aarti.liveStreamUrl && <a href={aarti.liveStreamUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex text-sm font-bold text-[#E58C28]">Watch Live Aarti</a>}
                     </div>

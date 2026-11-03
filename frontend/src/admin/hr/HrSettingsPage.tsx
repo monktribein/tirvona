@@ -196,7 +196,7 @@ const OfficeForm: React.FC<{ office: HrOffice | null; onClose: () => void; onSav
         <textarea className={`${inputClass} min-h-[56px]`} value={form.address} onChange={(e) => set("address", e.target.value)} maxLength={300} />
       </Field>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Field label="City"><input className={inputClass} value={form.city} onChange={(e) => set("city", e.target.value)} maxLength={80} /></Field>
+        <Field label="City" hint="HR accounts at this office see only this city's records."><input className={inputClass} value={form.city} onChange={(e) => set("city", e.target.value)} maxLength={80} /></Field>
         <Field label="Phone"><input className={inputClass} value={form.phone} onChange={(e) => set("phone", e.target.value)} maxLength={20} /></Field>
         <Field label="Email"><input className={inputClass} value={form.email} onChange={(e) => set("email", e.target.value)} maxLength={120} /></Field>
       </div>

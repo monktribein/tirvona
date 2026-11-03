@@ -213,8 +213,9 @@ export const leadCollectionService = {
   createUser: (data: unknown) => api.post(`${BASE}/users`, data),
   updateUser: (id: string, data: unknown) =>
     api.put(`${BASE}/users/${id}`, data),
-  resetUserPassword: (id: string, password: string) =>
-    api.post(`${BASE}/users/${id}/reset-password`, { password }),
+  /** Leave the password out to have the server generate a temporary one (returned once). */
+  resetUserPassword: (id: string, password?: string) =>
+    api.post<{ data: { id: string; temporaryPassword?: string } }>(`${BASE}/users/${id}/reset-password`, password ? { password } : {}),
   deleteUser: (id: string) => api.delete(`${BASE}/users/${id}`),
 
   getAttendanceSummary: () =>

@@ -43,6 +43,9 @@ const SELF_BOOKING_ROLES = [
   "ashram_owner",
   "owner",
   "manager",
+  // For the stays of their office area (their assigned stays).
+  "hr",
+  "executive",
   "reception",
   "ashram_admin",
   "stay_admin",

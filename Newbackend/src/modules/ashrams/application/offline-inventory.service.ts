@@ -29,7 +29,8 @@ import type {
   UpdateOfflineRoomDto,
 } from "../presentation/dtos/offline-inventory.dto";
 
-const MANAGING_ROLES = ["ashram_owner", "owner", "manager"];
+// `hr` / `executive`: for the stays of their office area (their assigned stays).
+const MANAGING_ROLES = ["ashram_owner", "owner", "manager", "hr", "executive"];
 
 const eachNight = (start: Date, end: Date): Date[] => {
   const dates: Date[] = [];

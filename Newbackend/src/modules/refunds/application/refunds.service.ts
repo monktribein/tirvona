@@ -35,7 +35,8 @@ interface AuditActor {
 const PLATFORM_ROLES = ["super_admin", "national_admin"];
 const FINANCE_ROLES = ["finance_manager"];
 const SUPPORT_ROLES = ["support"];
-const ASHRAM_ROLES = ["ashram_owner", "owner", "manager"];
+// `hr` / `executive`: refunds of the stays in their office area (their assigned stays).
+const ASHRAM_ROLES = ["ashram_owner", "owner", "manager", "hr", "executive"];
 
 @Injectable()
 export class RefundsService {
