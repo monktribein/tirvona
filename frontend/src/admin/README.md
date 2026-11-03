@@ -1,33 +1,42 @@
-# Frontend Admin Modular Architecture (`frontend/src/admin/`)
+# Admin and staff dashboards (`frontend/src/admin/`)
 
-This directory contains the modular architecture for the Tirvona Admin Panel frontend.
+Screens used inside the dashboard layout (Super Admin, HR / Executive, owners, managers and
+other staff roles). Public storefront pages live in `../pages/` and `../modules/`.
 
-## Folder Structure
+## Folders
 
-Each feature module is isolated within its own folder:
+| Folder | Screens |
+|---|---|
+| `shared/` | `DashboardLayout` (sidebar + header for every role), the shared `Enterprise*` table/page components, `PasswordHelpPanel`, helpers |
+| `dashboard/` | Super Admin overview dashboard |
+| `users/` | User accounts, roles, password help |
+| `ashrams/` | Stays: listings, verification queue, inspections |
+| `approvals/` | Central approval centre |
+| `temples/` | Temple list and the add/edit temple form |
+| `aarti/` | Aarti approvals and control centre |
+| `events/` | Event approvals and control centre |
+| `pilgrimage/` | Pilgrimage circuits and itinerary planner |
+| `parking/` | Parking administration |
+| `food/` | Food vendors and kitchen wallets |
+| `marketplace/` | Marketplace administration |
+| `offers/` | Offers and deals |
+| `content/` | Visitor articles |
+| `reviews/` | Review moderation |
+| `leads/` | Lead collection: leads, live tracking, field agents |
+| `hr/` | HR: employees, offices, attendance, tasks, reports, HR & Executive accounts, area dashboard |
+| `smart-contact/` | Smart Contact QR identity cards |
+| `support/` | Support tickets |
+| `notifications/` | Notification dispatch |
+| `refunds/`, `payouts/`, `wallets/` | Refunds, RazorpayX payouts, wallets |
+| `reports/` | Audit logs |
+| `developer-api/` | Partner API keys and integration guide |
 
-- `shared/`: Reusable layouts (`DashboardLayout`), navigation sidebars, common tables, dialogs, charts, hooks, and helpers.
-- `dashboard/`: Admin Console & Overview dashboard.
-- `users/`: User accounts management and permissions control.
-- `owners/`: Ashram trust owners and partner portal integrations.
-- `ashrams/`: Ashram listings, verification queue, and physical audit workflows.
-- `rooms/`: Room inventory, rate calendar, and room allocations.
-- `bookings/`: Bookings management, reception counter check-ins, and housekeeping.
-- `offers/`: Promotional offers and coupons management.
-- `blogs/`: Spiritual media and knowledge hub content management.
-- `planner/`: Yatra itinerary planner settings and circuits management.
-- `local/`: Local pilgrim services hub and ecosystem management.
-- `marketplace/`: Sacred merchandise marketplace and category management.
-- `banner/`: Homepage & promo banners management.
-- `events/`: Festival and cultural event schedules management.
-- `reports/`: System audit logs and security reporting.
-- `analytics/`: Financial, operational, and district onboarding analytics.
-- `notifications/`: Platform push & system notification dispatch.
-- `settings/`: Platform parameters and governance settings.
+Pandit (provider) admin screens are kept with the rest of the pandit feature in
+`../modules/pandit/admin/`.
 
 ## Conventions
 
-- Each module exports its public API via its `index.ts` file.
-- Pages live in `<module>/pages/`.
-- Components specific to a feature live in `<module>/components/`.
-- Business logic, custom hooks, and API calls are scoped within each module directory.
+- Pages live in `<folder>/pages/` (small folders keep the page file at the top level).
+- Components used by one feature live in `<folder>/components/`; anything shared goes in `shared/`.
+- Routes and role gates for every screen are declared in `../App.tsx`; sidebar links in
+  `shared/layouts/DashboardLayout.tsx`.

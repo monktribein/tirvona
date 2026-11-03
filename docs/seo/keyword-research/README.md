@@ -1,17 +1,19 @@
-# Tirvona SEO Architecture & Documentation
+# SEO keyword research and landing-page copy
 
-This folder is the central repository for Tirvona's SEO assets, keyword mappings, content copy, and technical documentation.
+The SEO team's source files and the copy extracted from them. The six Vrindavan landing pages in
+`frontend/src/seo/` were written from these. (The technical SEO setup is described one level up, in
+[`../README.md`](../README.md).)
 
 ## Directory Structure
 
 ```
-seo/
-├── README.md               # This architecture and workflow guide
+docs/seo/keyword-research/
+├── README.md               # This guide
 ├── sources/                # Authoritative source files from the SEO team
 │   ├── Tirvona_SEO_Professional_Curated_Keyword_Mapping_Final (1).xlsx
 │   ├── Tirvona_SEO_Keyword_to_Page_Mapping.xlsx
 │   └── Tirvona_6_Groups_SEO_Landing_Page_Copy (2).docx
-└── docs/                   # Parsed and extracted content files
+└── extracted/              # Parsed and extracted content files
     ├── docx_copy.txt       # Extracted approved copy for all 6 landing page groups
     ├── curated_mapping_final.tsv # Tab-delimited keyword mapping & search volume
     └── keyword_to_page.tsv # Tab-delimited mapping of keywords to URLs & sections

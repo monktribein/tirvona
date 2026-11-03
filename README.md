@@ -7,9 +7,23 @@
 
 ## 📂 Project Structure
 
-The project is structured as a monorepo containing two main modules:
-*   **`/Newbackend`**: NestJS REST API and Socket.IO server backed by Supabase (PostgreSQL).
-*   **`/frontend`**: React 19 SPA styled with TailwindCSS v4 and Framer Motion for smooth micro-animations.
+Each app has its own `package.json`; there is no workspace at the root. Folder names are kept as
+they are because the production deploy (VPS paths, pm2, the server's `.env`) depends on them.
+
+| Folder | What it is | Deployed |
+|---|---|---|
+| [`Newbackend/`](Newbackend/README.md) | The only backend: NestJS API (port 5000, prefix `/api`) and Socket.IO, on Supabase Postgres | VPS (api.tirvona.com) |
+| [`frontend/`](frontend/README.md) | Main React web app: public website and every dashboard (Super Admin, HR / Executive, owners, staff) | VPS (www.tirvona.com) |
+| [`SmarID/`](SmarID/README.md) | Smart Contact page (public QR identity card), built into `frontend` as `/smart-contact.html` | With `frontend` |
+| [`leadTirvona/`](leadTirvona/README.md) | "Ashram Lead" app for field agents; backend: the `lead-collection` module | Not by this repo's workflows |
+| `shared/` | CSS/TS shared by the UIs: tables, forms, status badges, typography, responsive rules, dashboard navbar | With `frontend` |
+| `deploy/nginx/` | nginx config installed on the VPS by every deploy | With every deploy |
+| `.github/workflows/` | `ci.yml` (checks on every push and PR), `deploy.yml` (deploys `main` to the VPS) | — |
+| [`docs/`](docs/README.md) | Design notes, audits and runbooks: day-stay, database cleanup, SEO, WhatsApp | — |
+
+Inside the backend, each business area is one folder in `Newbackend/src/modules/` (ashrams,
+bookings, temples, food, providers = pandits, hr, lead-collection, seo, …). Database migrations are
+in `Newbackend/database/migrations/`.
 
 ---
 
