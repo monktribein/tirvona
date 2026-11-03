@@ -31,6 +31,9 @@ export default defineConfig(() => {
       },
     },
     build: {
+      // The production deploy builds into a fresh directory and swaps it in, so
+      // the live site keeps serving the previous build until the new one is complete.
+      outDir: process.env.TIRVONA_DIST_DIR || "dist",
       sourcemap: false,
       reportCompressedSize: true,
       rollupOptions: {

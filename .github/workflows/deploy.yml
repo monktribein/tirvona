@@ -1,28 +1,41 @@
 name: Deploy Tirvona
 
+# Production deploys only what CI has passed: this runs when "Tirvona CI" finishes for a push to
+# main, and only if every CI job succeeded. A red CI run never reaches the VPS.
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: ["Tirvona CI"]
+    types: [completed]
+    branches: [main]
+
+# One deploy at a time; a deploy that is running is never cancelled halfway.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
 
 jobs:
   deploy:
     name: Deploy Production
     runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
 
     steps:
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.2.2
+        env:
+          # The exact commit CI tested.
+          DEPLOY_SHA: ${{ github.event.workflow_run.head_sha }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
+          envs: DEPLOY_SHA
           script: |
             set -e
 
             echo "================================"
-            echo "Starting Tirvona deployment"
+            echo "Starting Tirvona deployment of ${DEPLOY_SHA}"
             echo "================================"
 
             cd /var/www/tirvona
@@ -39,8 +52,15 @@ jobs:
 
             echo "=== Updating repository ==="
             git fetch origin
+            # CI runs can finish out of order. Deploy only while this commit is still the tip of
+            # main, so an older run can never replace a newer release; the newer commit's own CI
+            # run deploys it.
+            if [ -z "$DEPLOY_SHA" ] || [ "$(git rev-parse origin/main)" != "$DEPLOY_SHA" ]; then
+              echo "main has moved past ${DEPLOY_SHA:-<none>}; skipping. The newest commit deploys after its CI passes."
+              exit 0
+            fi
             git checkout main
-            git reset --hard origin/main
+            git reset --hard "$DEPLOY_SHA"
 
             echo "=== Backend ==="
             cd /var/www/tirvona/Newbackend
@@ -68,14 +88,12 @@ jobs:
             # The API refuses to start against a schema that does not match its
             # models, so new tables/columns must exist before it restarts.
             # Migrations are additive only (never alter or drop), so the API
-            # still running keeps working against the new schema. Any failure
+            # still running keeps working against the new schema, and the previous
+            # build can still start after them if it has to be restored. Any failure
             # stops the deploy here, before the running API is replaced.
             echo "=== Database migrations ==="
             npm run db:migrate
             npm run db:verify
-
-            rm -rf "$API_BUILD_ROOT/api"
-            mv "$API_BUILD_ROOT/api-next" "$API_BUILD_ROOT/api"
 
             echo "=== Frontend ==="
             cd /var/www/tirvona/frontend
@@ -86,21 +104,77 @@ jobs:
               fi
             fi
             npm ci
-            # Vite empties dist before writing; root-owned files would fail it.
-            if [ -d "dist" ] && ! rm -rf dist 2>/dev/null; then
-              echo "Notice: frontend dist contains protected files. Moving aside..."
-              mv dist dist_old_$(date +%s)
+            # nginx serves dist/. Build into dist-next (vite.config.ts and
+            # build-smart-contact.mjs read TIRVONA_DIST_DIR) and swap it in only
+            # once complete, so the site never serves a half-built or empty dist,
+            # and a failed build leaves the live site untouched. dist-prev keeps
+            # the previous release for a quick manual rollback.
+            if [ -d "dist-next" ] && ! rm -rf dist-next 2>/dev/null; then
+              mv dist-next dist-next_old_$(date +%s)
             fi
-            npm run build
+            TIRVONA_DIST_DIR=dist-next npm run build
+            if [ -d "dist-prev" ] && ! rm -rf dist-prev 2>/dev/null; then
+              echo "Notice: frontend dist-prev contains protected files. Moving aside..."
+              mv dist-prev dist_old_$(date +%s)
+            fi
+            if [ -d "dist" ]; then mv dist dist-prev; fi
+            mv dist-next dist
             if sudo -n true 2>/dev/null; then
               sudo chmod -R go+rX /var/www/tirvona/frontend/dist 2>/dev/null || true
             fi
 
             echo "=== Restarting API ==="
-            pm2 delete tirvona-api || true
-            pm2 start "$HOME/tirvona-build/api/main.js" --name tirvona-api --cwd /var/www/tirvona/Newbackend --update-env
-            sleep 5
-            pm2 logs tirvona-api --lines 80 --nostream
+            # Keep the running build as api-prev, so it can be restored if the new one
+            # does not come up.
+            rm -rf "$API_BUILD_ROOT/api-prev"
+            if [ -d "$API_BUILD_ROOT/api" ]; then mv "$API_BUILD_ROOT/api" "$API_BUILD_ROOT/api-prev"; fi
+            mv "$API_BUILD_ROOT/api-next" "$API_BUILD_ROOT/api"
+
+            start_api() {
+              pm2 delete tirvona-api || true
+              pm2 start "$API_BUILD_ROOT/api/main.js" --name tirvona-api --cwd /var/www/tirvona/Newbackend --update-env
+            }
+            # Liveness of the process itself (local, no nginx, no Redis dependency).
+            api_alive() {
+              for i in $(seq 1 12); do
+                if curl -fsS http://127.0.0.1:5000/api/health/live >/dev/null; then return 0; fi
+                echo "API not up yet. Attempt $i/12. Waiting 5 seconds..."
+                sleep 5
+              done
+              return 1
+            }
+
+            start_api
+            if api_alive; then
+              echo "=== New API is up ==="
+              pm2 logs tirvona-api --lines 80 --nostream
+            else
+              echo "=== New API did not start; restoring the previous build ==="
+              pm2 logs tirvona-api --lines 120 --nostream || true
+              if [ -d "$API_BUILD_ROOT/api-prev" ]; then
+                rm -rf "$API_BUILD_ROOT/api-failed"
+                mv "$API_BUILD_ROOT/api" "$API_BUILD_ROOT/api-failed"
+                mv "$API_BUILD_ROOT/api-prev" "$API_BUILD_ROOT/api"
+                start_api
+                if api_alive; then
+                  echo "=== Previous API restored and running. The failed build is in $API_BUILD_ROOT/api-failed ==="
+                else
+                  echo "=== The previous API did not start either: manual action needed ==="
+                fi
+              fi
+              exit 1
+            fi
+
+            NGINX_SNIPPETS="tirvona-web.conf tirvona-redirect-nonwww.conf tirvona-api.conf"
+            restore_nginx() {
+              for f in $NGINX_SNIPPETS; do
+                if [ -f "/etc/nginx/snippets/$f.bak-deploy" ]; then
+                  sudo cp -p "/etc/nginx/snippets/$f.bak-deploy" "/etc/nginx/snippets/$f"
+                else
+                  sudo rm -f "/etc/nginx/snippets/$f"
+                fi
+              done
+            }
 
             echo "=== Installing Nginx routing ==="
             if sudo -n true 2>/dev/null; then
@@ -108,23 +182,24 @@ jobs:
               # host. Vercel and Render expressed that routing in their own
               # config; nginx reads neither, so moving to this VPS silently sent
               # every scanned QR to the SPA and rendered the homepage. The rules
-              # now ship with the repo and are installed on each deploy.
-              sudo install -D -m 0644 \
-                /var/www/tirvona/deploy/nginx/tirvona-web.conf \
-                /etc/nginx/snippets/tirvona-web.conf
-
-              # Canonical non-WWW to WWW 301 permanent redirect configuration snippet
-              sudo install -D -m 0644 \
-                /var/www/tirvona/deploy/nginx/tirvona-redirect-nonwww.conf \
-                /etc/nginx/snippets/tirvona-redirect-nonwww.conf
-
-              # Raises the request-body cap on api.tirvona.com. nginx defaults to
-              # 1 MB, while the API accepts 10 MB images and 100 MB video, so
-              # every upload over 1 MB was rejected with a 413 before reaching
-              # Node — which is why uploads worked locally and failed here.
-              sudo install -D -m 0644 \
-                /var/www/tirvona/deploy/nginx/tirvona-api.conf \
-                /etc/nginx/snippets/tirvona-api.conf
+              # now ship with the repo and are installed on each deploy:
+              #   tirvona-web.conf             www.tirvona.com routing + server-rendered SEO
+              #   tirvona-redirect-nonwww.conf canonical non-WWW to WWW 301 redirect
+              #   tirvona-api.conf             raises the request-body cap on api.tirvona.com.
+              #     nginx defaults to 1 MB, while the API accepts 10 MB images and 100 MB
+              #     video, so every upload over 1 MB was rejected with a 413 before reaching
+              #     Node — which is why uploads worked locally and failed here.
+              # The installed copies are backed up first, so a config that fails
+              # `nginx -t` is rolled back instead of being left on disk for the next
+              # reload or reboot to trip over.
+              for f in $NGINX_SNIPPETS; do
+                if [ -f "/etc/nginx/snippets/$f" ]; then
+                  sudo cp -p "/etc/nginx/snippets/$f" "/etc/nginx/snippets/$f.bak-deploy"
+                else
+                  sudo rm -f "/etc/nginx/snippets/$f.bak-deploy"
+                fi
+                sudo install -D -m 0644 "/var/www/tirvona/deploy/nginx/$f" "/etc/nginx/snippets/$f"
+              done
 
               # The snippet only takes effect once the server block includes it.
               # That include is a one-time manual edit — this deploy cannot make
@@ -167,10 +242,24 @@ jobs:
               fi
 
               echo "=== Validating Nginx ==="
-              sudo nginx -t
+              if ! sudo nginx -t; then
+                echo "=== nginx -t failed: restoring the previous snippets (nginx keeps serving the old config) ==="
+                restore_nginx
+                sudo nginx -t || true
+                exit 1
+              fi
 
               echo "=== Reloading Nginx ==="
               sudo systemctl reload nginx
+
+              # nginx -t checks syntax, not routing. If the site itself stops answering
+              # after the reload, put the previous routing back.
+              if ! curl -fsS -o /dev/null --retry 3 --retry-delay 2 https://www.tirvona.com/; then
+                echo "=== www.tirvona.com does not answer after the reload: restoring the previous snippets ==="
+                restore_nginx
+                sudo nginx -t && sudo systemctl reload nginx
+                exit 1
+              fi
             else
               echo "INFO: Passwordless sudo is not configured for $(whoami). Skipping sudo Nginx operations."
               echo "Note: If Nginx configs were modified, run 'sudo nginx -t && sudo systemctl reload nginx' directly on the VPS."
@@ -178,7 +267,7 @@ jobs:
 
             echo "=== Health Check ==="
 
-            for i in {1..12}; do
+            for i in $(seq 1 12); do
               if curl -fsS https://api.tirvona.com/api/health; then
                 echo ""
                 echo "=== API is healthy ==="
@@ -193,6 +282,23 @@ jobs:
               echo "Health check failed. Attempt $i/12. Waiting 5 seconds..."
               sleep 5
             done
+
+            echo "=== Server-rendered SEO Check ==="
+
+            # The renderer puts the page's own H1 into the HTML; the static shell has
+            # none. The site works either way (nginx falls back to the shell), so this
+            # only warns.
+            if curl -fsS https://www.tirvona.com/temples | grep -q "<h1"; then
+              echo "=== Pages are server-rendered for search engines ==="
+            else
+              echo ""
+              echo "############################################################"
+              echo "# WARNING: www.tirvona.com is serving the static shell, not"
+              echo "# server-rendered pages. Check the API logs for /api/seo/render"
+              echo "# and that tirvona-web.conf is included (warnings above)."
+              echo "############################################################"
+              echo ""
+            fi
 
             echo "=== Smart Contact Routing Check ==="
 

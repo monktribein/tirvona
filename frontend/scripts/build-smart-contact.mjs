@@ -6,7 +6,8 @@ import { fileURLToPath } from "node:url";
 const here = dirname(fileURLToPath(import.meta.url));
 const frontendRoot = resolve(here, "..");
 const smarIdRoot = resolve(frontendRoot, "..", "SmarID");
-const distRoot = resolve(frontendRoot, "dist");
+// Same output directory as vite.config.ts (the deploy builds into a fresh one).
+const distRoot = resolve(frontendRoot, process.env.TIRVONA_DIST_DIR || "dist");
 const pageTarget = resolve(distRoot, "smart-contact.html");
 const assetTarget = resolve(distRoot, "sc-assets");
 
