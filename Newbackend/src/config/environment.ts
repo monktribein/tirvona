@@ -346,6 +346,12 @@ export function validateEnvironment(
           `${name} is required in production — payments cannot run in demo mode with real customers`,
         );
     }
+    // Not fatal (a live deploy without it must still boot), but without it
+    // every Razorpay webhook is rejected and paid orders are not reconciled.
+    if (!String(input.RAZORPAY_WEBHOOK_SECRET ?? "").trim())
+      process.stderr.write(
+        "WARNING: RAZORPAY_WEBHOOK_SECRET is not set; Razorpay webhooks will be rejected\n",
+      );
     if (!input.SUPABASE_DB_URL)
       throw new Error("SUPABASE_DB_URL is required in production");
     if (!input.REDIS_URL)

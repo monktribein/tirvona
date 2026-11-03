@@ -238,6 +238,7 @@ export class FoodPaymentService {
     provider: string,
     payload: any,
     signature?: string,
+    rawBody?: Buffer,
   ) {
     this.logger.log(`Received ${provider} payment webhook: ${JSON.stringify(payload?.event || payload?.type || "direct")}`);
 
@@ -255,7 +256,7 @@ export class FoodPaymentService {
     const strict = Boolean(webhookSecret) || this.isProduction();
     if (strict) {
       const expected = webhookSecret
-        ? createHmac("sha256", webhookSecret).update(JSON.stringify(payload)).digest("hex")
+        ? createHmac("sha256", webhookSecret).update(rawBody ?? JSON.stringify(payload)).digest("hex")
         : "";
       if (!webhookSecret || !signature || !safeEqual(expected, signature)) {
         this.logger.warn("Unsigned or mismatched food webhook rejected");
