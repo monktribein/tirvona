@@ -91,7 +91,8 @@ export class PermissionsDto {
   @IsArray() permissions: string[];
 }
 export class AdminResetPasswordDto {
-  @IsOptional() @IsString() @MinLength(6) password?: string;
+  /** Empty: the server generates a strong temporary password. At least 8 characters otherwise (checked by the service). */
+  @IsOptional() @IsString() password?: string;
 }
 export class PermanentDeleteDto {
   @IsString() adminPassword: string;

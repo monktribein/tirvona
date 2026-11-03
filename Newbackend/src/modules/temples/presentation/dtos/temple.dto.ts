@@ -1,6 +1,6 @@
 import { PartialType } from "@nestjs/swagger";
 import { IsString, IsOptional, IsBoolean, IsArray, IsNumber, ValidateNested, IsDateString, IsEnum, Min, Max, ArrayMinSize, ArrayMaxSize, Matches, MinLength } from "class-validator";
-import { Type } from "class-transformer";
+import { Transform, Type } from "class-transformer";
 
 export class AddressDto {
   @IsOptional() @IsString() street?: string;
@@ -40,6 +40,9 @@ export class TempleMediaDto {
   @IsOptional() @IsString() youtubeUrl?: string;
   @IsOptional() @IsString() liveStreamUrl?: string;
   @IsOptional() @IsString() officialWebsite?: string;
+  @IsOptional() @IsString() instagramUrl?: string;
+  @IsOptional() @IsString() facebookUrl?: string;
+  @IsOptional() @IsString() twitterUrl?: string;
 }
 
 export class TimeSlotDto {
@@ -87,6 +90,8 @@ export class VisitorInfoDto {
   @IsOptional() @IsString() importantInstructions?: string;
   @IsOptional() @IsString() emergencyContact?: string;
   @IsOptional() @IsString() templeContactNumber?: string;
+  @IsOptional() @IsString() priestName?: string;
+  @IsOptional() @IsString() priestPhone?: string;
 }
 
 export class DarshanInfoDto {
@@ -126,7 +131,12 @@ export class TempleSeoDto {
 
 export class CreateTempleDto {
   @IsOptional() @IsString() @MinLength(2) name?: string;
-  @IsOptional() @IsString() @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/) slug?: string;
+  // An empty slug means "make one from the name": it must not block saving.
+  @IsOptional()
+  @Transform(({ value }) => (typeof value === "string" && value.trim() === "" ? undefined : value))
+  @IsString()
+  @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+  slug?: string;
   @IsOptional() @IsString() templeShortName?: string;
   @IsOptional() @IsString() shortDescription?: string;
   @IsOptional() @IsString() description?: string;
@@ -200,7 +210,10 @@ export class UpdateTempleDto extends PartialType(CreateTempleDto) {}
 export class CreateAartiDto {
   @IsString() name: string;
   @Matches(/^([01]\d|2[0-3]):[0-5]\d$/) startTime: string;
-  @Matches(/^([01]\d|2[0-3]):[0-5]\d$/) endTime: string;
+  @IsOptional()
+  @Transform(({ value }) => (value === "" ? undefined : value))
+  @Matches(/^([01]\d|2[0-3]):[0-5]\d$/)
+  endTime?: string;
   @IsOptional() @IsArray() @IsString({ each: true }) days?: string[];
   @IsOptional() @IsString() description?: string;
   @IsOptional() @IsString() specialNotes?: string;

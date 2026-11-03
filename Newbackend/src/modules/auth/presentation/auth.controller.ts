@@ -117,6 +117,19 @@ export class AuthController {
       data: await this.auth.verifyPhoneOtp(dto.phone, dto.otp),
     };
   }
+  /** Super Admin: email a password reset link to someone who forgot their password. */
+  @Post("admin/users/:id/reset-link")
+  @ApiBearerAuth()
+  @Roles("super_admin")
+  async sendResetLink(@Param("id") id: string) {
+    const { email } = await this.auth.sendResetLinkTo(id);
+    return {
+      success: true,
+      message: `A password reset link was sent to ${email}.`,
+      data: { email },
+    };
+  }
+
   @Public()
   @Post("forgot-password")
   @DefaultSensitiveThrottle("email")

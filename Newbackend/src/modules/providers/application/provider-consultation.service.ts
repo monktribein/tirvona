@@ -1,3 +1,4 @@
+import { onlyProviders } from "./provider-location.service";
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectModel } from "../../../database/orm-nest";
 import { Types, type Model } from "../../../database/orm";
@@ -352,13 +353,14 @@ export class ProviderConsultationService {
     return paged((rows as any[]).map((row) => ({ ...this.row(row, "EXPERT"), unreadCount: unread.get(String(row._id)) ?? 0 })), total, page, limit);
   }
 
-  async listAdmin(query: ConsultationListQueryDto) {
+  async listAdmin(query: ConsultationListQueryDto, only: string[] | null = null) {
     const { page, limit, skip } = pageParams(query);
     const filter: Record<string, unknown> = {};
     if (query.status) filter.status = query.status;
+    const scoped = onlyProviders(filter, only, "expertProviderId");
     const [rows, total] = await Promise.all([
-      this.consultations.find(filter).sort({ scheduledStartAt: -1 }).skip(skip).limit(limit).lean(),
-      this.consultations.countDocuments(filter),
+      this.consultations.find(scoped).sort({ scheduledStartAt: -1 }).skip(skip).limit(limit).lean(),
+      this.consultations.countDocuments(scoped),
     ]);
     return paged(
       (rows as any[]).map((row) => ({

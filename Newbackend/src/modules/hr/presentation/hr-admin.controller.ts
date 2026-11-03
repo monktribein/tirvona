@@ -4,12 +4,14 @@ import type { AuthenticatedUser } from "../../../common/decorators/current-user.
 import { Permissions } from "../../../common/decorators/permissions.decorator";
 import { HR_PERMISSIONS } from "../domain/hr.constants";
 import { HrAccessService } from "../application/hr-access.service";
+import { HrAccountsService } from "../application/hr-accounts.service";
 import { HrAttendanceService } from "../application/hr-attendance.service";
 import { HrEmployeesService } from "../application/hr-employees.service";
 import { HrOrganisationService } from "../application/hr-organisation.service";
 import { HrReportsService } from "../application/hr-reports.service";
 import {
   HrAccountLookupDto,
+  HrAssignOfficeDto,
   HrDashboardQueryDto,
   HrDepartmentDto,
   HrDepartmentUpdateDto,
@@ -39,6 +41,7 @@ export class HrAdminController {
     private readonly employees: HrEmployeesService,
     private readonly reports: HrReportsService,
     private readonly attendance: HrAttendanceService,
+    private readonly hrAccounts: HrAccountsService,
   ) {}
 
   @Get("dashboard")
@@ -158,6 +161,50 @@ export class HrAdminController {
   @Get("account-lookup")
   async accountLookup(@CurrentUser() user: AuthenticatedUser, @Query() query: HrAccountLookupDto) {
     return { success: true, data: await this.employees.accountLookup(await this.access.resolve(user), query) };
+  }
+
+  // ---- HR accounts (logins with the hr role) and their office
+
+  @Permissions(HR_PERMISSIONS.employees)
+  @Get("hr-accounts")
+  async hrAccountsList(@CurrentUser() user: AuthenticatedUser) {
+    return { success: true, data: await this.hrAccounts.list(await this.access.resolve(user)) };
+  }
+
+  @Permissions(HR_PERMISSIONS.employees)
+  @Post("hr-accounts/:userId/office")
+  async assignHrOffice(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("userId") userId: string,
+    @Body() dto: HrAssignOfficeDto,
+  ) {
+    return {
+      success: true,
+      message: "Office assigned",
+      data: await this.hrAccounts.assignOffice(await this.access.resolve(user), userId, dto.officeId),
+    };
+  }
+
+  // ---- Executive accounts (logins with the executive role) and their office
+
+  @Permissions(HR_PERMISSIONS.employees)
+  @Get("executive-accounts")
+  async executiveAccountsList(@CurrentUser() user: AuthenticatedUser) {
+    return { success: true, data: await this.hrAccounts.list(await this.access.resolve(user), "executive") };
+  }
+
+  @Permissions(HR_PERMISSIONS.employees)
+  @Post("executive-accounts/:userId/office")
+  async assignExecutiveOffice(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("userId") userId: string,
+    @Body() dto: HrAssignOfficeDto,
+  ) {
+    return {
+      success: true,
+      message: "Office assigned",
+      data: await this.hrAccounts.assignOffice(await this.access.resolve(user), userId, dto.officeId, "executive"),
+    };
   }
 
   // ---- reports

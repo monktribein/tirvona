@@ -21,6 +21,8 @@ import { ProviderOfferingService } from "./application/provider-offering.service
 import { ProviderProfileService } from "./application/provider-profile.service";
 import { ProviderProjectionService } from "./application/provider-projection.service";
 import { ProviderVerificationService } from "./application/provider-verification.service";
+import { ProviderLocationService } from "./application/provider-location.service";
+import { HrLocationModule } from "../hr/hr-location.module";
 import { ProviderWalletService } from "./application/provider-wallet.service";
 import { ProviderZoomService } from "./application/provider-zoom.service";
 import { RitualCatalogService } from "./application/ritual-catalog.service";
@@ -64,6 +66,7 @@ import { VerificationCasesController } from "./presentation/verification.control
   imports: [
     AuditModule,
     NotificationsModule,
+    HrLocationModule,
     WhatsAppModule,
     WalletModule,
     OrmModule.forFeature(PROVIDER_MODELS),
@@ -100,6 +103,7 @@ import { VerificationCasesController } from "./presentation/verification.control
     ProviderOfferingService,
     ProviderAvailabilityService,
     ProviderVerificationService,
+    ProviderLocationService,
     ProviderDiscoveryService,
     ProviderBookingService,
     ProviderBookingPaymentService,

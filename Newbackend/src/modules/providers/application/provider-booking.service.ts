@@ -1,3 +1,4 @@
+import { onlyProviders } from "./provider-location.service";
 import { forwardRef, Inject, Injectable, Logger, Optional } from "@nestjs/common";
 import { InjectModel } from "../../../database/orm-nest";
 import { Types, type ClientSession, type Model } from "../../../database/orm";
@@ -1148,7 +1149,7 @@ export class ProviderBookingService {
   }
 
   /** Cross-provider operations queue for ops/service managers. */
-  async listAll(query: BookingListQueryDto) {
+  async listAll(query: BookingListQueryDto, only: string[] | null = null) {
     const { page, limit, skip } = pageParams(query);
     const filter: Record<string, unknown> = {};
     if (query.status) filter.status = query.status;
@@ -1157,9 +1158,10 @@ export class ProviderBookingService {
     if (query.from) range.$gte = new Date(`${query.from}T00:00:00.000Z`);
     if (query.to) range.$lt = new Date(`${addDays(query.to, 1)}T00:00:00.000Z`);
     if (Object.keys(range).length) filter.scheduledStartAt = range;
+    const scoped = onlyProviders(filter, only);
     const [rows, total] = await Promise.all([
-      this.bookings.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
-      this.bookings.countDocuments(filter),
+      this.bookings.find(scoped).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      this.bookings.countDocuments(scoped),
     ]);
     return paged(
       (rows as any[]).map((row) => this.opsSummary(row)),

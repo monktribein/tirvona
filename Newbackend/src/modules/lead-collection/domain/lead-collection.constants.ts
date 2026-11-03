@@ -39,6 +39,10 @@ export const LEAD_INTERESTS = [
 
 export const LEAD_MEETING_MODES = ["Call", "In-person"] as const;
 
+/** Address fields an HR login's office area is matched against (see common/auth/location-scope). */
+export const LEAD_LOCATION_FIELDS = ["location.address", "location.city", "location.district"];
+export const AGENT_LOCATION_FIELDS = ["district", "region"];
+
 export const DEFAULT_LEAD_REGIONS = [
   { state: "Uttar Pradesh", district: "Mathura" },
   { state: "Uttar Pradesh", district: "Vrindavan" },

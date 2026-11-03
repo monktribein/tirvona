@@ -366,8 +366,10 @@ export class FoodPartnerService {
   }
 
   // ---------------------------------------------------------------- admin
-  async listVendors(query: FoodVendorListQueryDto) {
+  /** `onlyVendorIds`: restricts the list (an HR login's area); null = every restaurant. */
+  async listVendors(query: FoodVendorListQueryDto, onlyVendorIds: string[] | null = null) {
     const filter: Record<string, unknown> = {};
+    if (onlyVendorIds) filter._id = { $in: onlyVendorIds };
     if (query.status && query.status !== "all") filter.status = query.status;
     const term = query.search?.trim();
     if (term) {

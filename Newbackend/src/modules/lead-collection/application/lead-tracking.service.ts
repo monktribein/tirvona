@@ -1,3 +1,4 @@
+import { withLocation, type LocationScope } from "../../../common/auth/location-scope";
 import {
   ForbiddenException,
   Injectable,
@@ -684,6 +685,7 @@ export class LeadTrackingService {
   async liveBoard(
     scope: { state?: string; district?: string },
     sinceMinutes = 12 * 60,
+    location: LocationScope = null,
   ): Promise<
     {
       agentId: string;
@@ -701,7 +703,7 @@ export class LeadTrackingService {
     if (scope.state) match.state = scope.state;
 
     const rows = await this.pings.aggregate([
-      { $match: match },
+      { $match: withLocation(match, location, ["district"]) },
       { $sort: { recordedAt: -1 } },
       {
         $group: {

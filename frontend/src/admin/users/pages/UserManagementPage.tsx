@@ -21,6 +21,9 @@ import {
   Building2,
 } from "lucide-react";
 import { userService } from "../../../services";
+import { PasswordHelpPanel } from "../../shared/components/PasswordHelpPanel";
+/** Walk-in guests get a stand-in address on a reserved domain; nothing can be sent to it. */
+const isPlaceholderEmail = (email?: string) => /\.(local|invalid)$/i.test(String(email ?? "").trim());
 import { getErrorMessage } from "../../../lib/api";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useNotifications } from "../../../contexts/NotificationContext";
@@ -103,6 +106,8 @@ const ALL_ROLES = [
   { id: "local_manager", label: "Local Hub Manager" },
   { id: "marketplace_manager", label: "Marketplace Manager" },
   { id: "finance_manager", label: "Finance Manager" },
+  { id: "hr", label: "HR (Office Location Access)" },
+  { id: "executive", label: "Executive (Office Location Access)" },
   { id: "support", label: "Support Executive" },
   { id: "inspector", label: "Field Inspector" },
   { id: "staff", label: "General Staff" },
@@ -188,7 +193,6 @@ export const UserManagementPage: React.FC = () => {
   const [resetPassTarget, setResetPassTarget] = useState<ManagedUser | null>(
     null,
   );
-  const [newTempPassword, setNewTempPassword] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<ManagedUser | null>(null);
   const [deleteType, setDeleteType] = useState<"soft" | "permanent">("soft");
   const [adminPassword, setAdminPassword] = useState("");
@@ -538,32 +542,6 @@ export const UserManagementPage: React.FC = () => {
       addNotification(
         "Action Failed",
         getErrorMessage(err, "Could not update permissions."),
-        "error",
-      );
-    }
-  };
-
-  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!resetPassTarget || !canModerate) return;
-    try {
-      const res = await userService.resetPassword(
-        resetPassTarget._id,
-        newTempPassword,
-      );
-      if (res.data?.success) {
-        addNotification(
-          "Password Reset",
-          `New temp password: ${res.data.tempPassword}`,
-          "success",
-        );
-        setResetPassTarget(null);
-        setNewTempPassword("");
-      }
-    } catch (err) {
-      addNotification(
-        "Action Failed",
-        getErrorMessage(err, "Could not reset password."),
         "error",
       );
     }
@@ -1763,83 +1741,49 @@ export const UserManagementPage: React.FC = () => {
 
       {resetPassTarget && (
         <div className="tv-drawer-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form
-            onSubmit={handleResetPasswordSubmit}
-            className="tv-drawer-panel bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 text-left shadow-2xl animate-in zoom-in-95 duration-150"
-          >
+          <div className="tv-drawer-panel bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 text-left shadow-2xl animate-in zoom-in-95 duration-150">
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white flex items-center gap-2">
-                <Key size={18} className="text-purple-600" /> Reset User
-                Password
+                <Key size={18} className="text-purple-600" /> Password Help
               </h3>
               <button
                 type="button"
-                onClick={() => {
-                  setResetPassTarget(null);
-                  setNewTempPassword("");
-                }}
+                onClick={() => setResetPassTarget(null)}
                 className="text-gray-400 hover:text-gray-600 cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
-
-            <div className="space-y-3 text-xs">
-              <div className="p-3 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900/50 rounded-xl space-y-1">
-                <span className="font-bold text-purple-900 dark:text-purple-200">
-                  Target Account: {resetPassTarget.name} (
-                  {resetPassTarget.email})
-                </span>
-                <p className="text-[11px] text-gray-500">
-                  Set a new custom password or leave blank to automatically
-                  generate a secure system password.
-                </p>
-              </div>
-
-              <div className="space-y-1">
-                <label className="font-bold text-gray-700 dark:text-gray-300">
-                  New Password (Custom or Auto)
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter new password (or leave blank for auto)"
-                  value={newTempPassword}
-                  onChange={(e) => setNewTempPassword(e.target.value)}
-                  className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-mono text-xs focus:outline-none focus:border-purple-600"
-                />
-              </div>
-
-              <div className="p-2.5 bg-gray-50 dark:bg-slate-900 rounded-xl text-[11px] flex items-center justify-between border border-gray-200 dark:border-slate-800">
-                <span className="text-gray-500 font-medium">
-                  Assigned Password:
-                </span>
-                <span className="font-mono font-bold text-emerald-600">
-                  {newTempPassword
-                    ? newTempPassword
-                    : "Auto-Generated Password"}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-3 border-t border-gray-100 dark:border-slate-800">
+            <p className="text-xs font-bold text-purple-900 dark:text-purple-200">
+              {resetPassTarget.name} ({resetPassTarget.email})
+            </p>
+            <PasswordHelpPanel
+              accountName={resetPassTarget.name}
+              accountEmail={isPlaceholderEmail(resetPassTarget.email) ? null : resetPassTarget.email}
+              onReset={async (custom) => {
+                const res = await userService.resetPassword(resetPassTarget._id, custom);
+                return res.data?.tempPassword;
+              }}
+              onSendLink={
+                isPlaceholderEmail(resetPassTarget.email)
+                  ? undefined
+                  : async () => {
+                      const res = await userService.sendResetLink(resetPassTarget._id);
+                      return res.data?.data?.email ?? resetPassTarget.email;
+                    }
+              }
+              linkUnavailableReason="This account has no email address, so no link can be sent."
+            />
+            <div className="flex justify-end pt-3 border-t border-gray-100 dark:border-slate-800">
               <button
                 type="button"
-                onClick={() => {
-                  setResetPassTarget(null);
-                  setNewTempPassword("");
-                }}
-                className="flex-1 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 rounded-full font-bold text-xs cursor-pointer"
+                onClick={() => setResetPassTarget(null)}
+                className="px-6 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 rounded-full font-bold text-xs cursor-pointer"
               >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-full font-extrabold text-xs shadow-md cursor-pointer"
-              >
-                Reset Password
+                Done
               </button>
             </div>
-          </form>
+          </div>
         </div>
       )}
 

@@ -24,6 +24,8 @@ import { HrTasksService } from "./application/hr-tasks.service";
 import { HrAttendanceService } from "./application/hr-attendance.service";
 import { HrReportsService } from "./application/hr-reports.service";
 import { HrReminderService } from "./application/hr-reminder.service";
+import { HrAccountsService } from "./application/hr-accounts.service";
+import { HrLocationModule } from "./hr-location.module";
 import { HrAdminController } from "./presentation/hr-admin.controller";
 import { HrTasksController } from "./presentation/hr-tasks.controller";
 import { HrAttendanceController } from "./presentation/hr-attendance.controller";
@@ -33,6 +35,7 @@ import { HrSelfController } from "./presentation/hr-self.controller";
 @Module({
   imports: [
     NotificationsModule,
+    HrLocationModule,
     OrmModule.forFeature([
       { name: "HrOffice", schema: HrOfficeSchema },
       { name: "HrDepartment", schema: HrDepartmentSchema },
@@ -59,6 +62,7 @@ import { HrSelfController } from "./presentation/hr-self.controller";
     HrAttendanceService,
     HrReportsService,
     HrReminderService,
+    HrAccountsService,
   ],
 })
 export class HrModule {}

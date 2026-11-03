@@ -5,6 +5,7 @@ import {
 } from "../../../common/decorators/current-user.decorator";
 import { Roles } from "../../../common/decorators/roles.decorator";
 import { ProviderWalletService } from "../application/provider-wallet.service";
+import { ProviderLocationService } from "../application/provider-location.service";
 import { WALLET_FINANCE_ROLES } from "../domain/provider-wallet.constants";
 import { Idempotent } from "../infrastructure/idempotency.interceptor";
 import {
@@ -69,50 +70,57 @@ export class ProviderWalletController {
 
 /** Finance queue for pandit withdrawals. */
 @ProviderApi()
-@Roles(...WALLET_FINANCE_ROLES)
+@Roles(...WALLET_FINANCE_ROLES, "hr", "executive")
 @Controller({ path: "admin/provider-wallets", version: "2" })
 export class AdminProviderWalletController {
-  constructor(private readonly wallet: ProviderWalletService) {}
+  constructor(
+    private readonly wallet: ProviderWalletService,
+    private readonly location: ProviderLocationService,
+  ) {}
 
   @Get("overview")
-  overview() {
-    return this.wallet.adminOverview();
+  async overview(@CurrentUser() user: AuthenticatedUser) {
+    return this.wallet.adminOverview(await this.location.providerIdsFor(user));
   }
 
   @Get("withdrawals")
-  withdrawals(@Query() query: AdminWithdrawalQueryDto) {
-    return this.wallet.adminListWithdrawals(query);
+  async withdrawals(@CurrentUser() user: AuthenticatedUser, @Query() query: AdminWithdrawalQueryDto) {
+    return this.wallet.adminListWithdrawals(query, await this.location.providerIdsFor(user));
   }
 
   @Post("withdrawals/:id/destination")
   @Idempotent("provider.wallet.admin.destination", { sensitive: true })
-  destination(@CurrentUser() user: AuthenticatedUser, @Param("id", ObjectIdPipe) id: string) {
+  async destination(@CurrentUser() user: AuthenticatedUser, @Param("id", ObjectIdPipe) id: string) {
+    await this.location.assertWithdrawal(user, id);
     return this.wallet.adminRevealDestination(user, id);
   }
 
   @Post("withdrawals/:id\\:processing")
   @Idempotent("provider.wallet.admin.processing")
-  processing(@CurrentUser() user: AuthenticatedUser, @Param("id", ObjectIdPipe) id: string) {
+  async processing(@CurrentUser() user: AuthenticatedUser, @Param("id", ObjectIdPipe) id: string) {
+    await this.location.assertWithdrawal(user, id);
     return this.wallet.adminMarkProcessing(user, id);
   }
 
   @Post("withdrawals/:id\\:mark-paid")
   @Idempotent("provider.wallet.admin.paid")
-  markPaid(
+  async markPaid(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id", ObjectIdPipe) id: string,
     @Body() dto: MarkWithdrawalPaidDto,
   ) {
+    await this.location.assertWithdrawal(user, id);
     return this.wallet.adminMarkPaid(user, id, dto);
   }
 
   @Post("withdrawals/:id\\:reject")
   @Idempotent("provider.wallet.admin.reject")
-  reject(
+  async reject(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id", ObjectIdPipe) id: string,
     @Body() dto: RejectWithdrawalDto,
   ) {
+    await this.location.assertWithdrawal(user, id);
     return this.wallet.adminReject(user, id, dto);
   }
 }

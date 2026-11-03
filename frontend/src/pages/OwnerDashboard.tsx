@@ -656,9 +656,12 @@ export const OwnerDashboard: React.FC = () => {
   ];
 
   const canManage = ["ashram_owner", "ashram_admin", "owner", "stay_admin"].includes(String(user?.role || ""));
-  const canOperate = canManage || user?.role === "manager";
+  // HR and Executive logins run the stays of their office area like an owner, without the
+  // owner's payouts and parking.
+  const canRunStays = canManage || ["hr", "executive"].includes(String(user?.role || ""));
+  const canOperate = canRunStays || user?.role === "manager";
   const quickActions = [
-    ...(canManage ? [
+    ...(canRunStays ? [
       { label: "Create booking", detail: "Counter or online reservation", icon: <Plus size={17} />, path: `${basePath}/self-booking` },
       { label: "Manage bookings", detail: "Open booking and payment center", icon: <CalendarCheck size={17} />, path: `${basePath}/bookings` },
     ] : []),
@@ -667,8 +670,10 @@ export const OwnerDashboard: React.FC = () => {
       { label: "Rooms & inventory", detail: "Categories, rooms and availability", icon: <BedDouble size={17} />, path: `${basePath}/rooms` },
       { label: "Inventory calendar", detail: "Update sellable room inventory", icon: <CalendarDays size={17} />, path: `${basePath}/calendar` },
     ] : []),
-    ...(canManage ? [
+    ...(canRunStays ? [
       { label: "Offers", detail: "Manage coupons and promotions", icon: <Tag size={17} />, path: `${basePath}/offers` },
+    ] : []),
+    ...(canManage ? [
       { label: "Payouts", detail: "Bank account and payout requests", icon: <WalletCards size={17} />, path: `${basePath}/payouts` },
       { label: "Parking", detail: "Facilities and parking operations", icon: <CircleParking size={17} />, path: `${basePath}/parking` },
     ] : []),

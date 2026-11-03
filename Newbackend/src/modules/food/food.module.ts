@@ -1,4 +1,6 @@
 import { Module } from "@nestjs/common";
+import { HrLocationModule } from "../hr/hr-location.module";
+import { FoodLocationService } from "./application/food-location.service";
 import { ConfigModule } from "@nestjs/config";
 import { payoutConfig } from "../payouts/config/payout.config";
 import { BankAccountCrypto } from "../payouts/infrastructure/bank-account.crypto";
@@ -48,6 +50,7 @@ import { FoodWebhookController } from "./presentation/food-webhook.controller";
   imports: [
     ConfigModule.forFeature(payoutConfig),
     NotificationsModule,
+    HrLocationModule,
     OrmModule.forFeature([
       { name: "FoodVendor", schema: FoodVendorSchema },
       { name: "FoodOutlet", schema: FoodOutletSchema },
@@ -82,6 +85,7 @@ import { FoodWebhookController } from "./presentation/food-webhook.controller";
     FoodWebhookController,
   ],
   providers: [
+    FoodLocationService,
     BankAccountCrypto,
     RazorpayXPayoutProvider,
     FoodCatalogService,

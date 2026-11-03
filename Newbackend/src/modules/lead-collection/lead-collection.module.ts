@@ -18,12 +18,14 @@ import { LeadSupervisorGuard } from "./presentation/guards/lead-supervisor.guard
 import { LeadRateLimitIdentityMiddleware } from "./presentation/lead-rate-limit-identity.middleware";
 import { UploadsModule } from "../uploads/uploads.module";
 import { AshramsModule } from "../ashrams/ashrams.module";
+import { HrLocationModule } from "../hr/hr-location.module";
 import { LeadAttendanceService } from "./application/lead-attendance.service";
 import { LeadTrackingService } from "./application/lead-tracking.service";
 
 @Module({
   imports: [
     LeadDatabaseModule,
+    HrLocationModule,
     UploadsModule,
     AshramsModule,
     JwtModule.registerAsync({

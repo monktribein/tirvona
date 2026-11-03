@@ -23,6 +23,7 @@ import { formatInline, humanizeKey, URL_LIKE } from "../utils/recordFormat";
 import { useLanguage } from "../../../contexts/LanguageContext";
 import { getFormattingLocale } from "../../../utils/format";
 import api, { getErrorMessage } from "../../../lib/api";
+import { PasswordHelpPanel } from "./PasswordHelpPanel";
 import { optimizeImageForUpload } from "../../../services";
 import { useNotifications } from "../../../contexts/NotificationContext";
 import { statusAndActionLast } from "../../../../../shared/table-columns";
@@ -237,7 +238,10 @@ export interface EnterpriseDataTableProps {
   onBulkActivate?: (ids: string[]) => void | Promise<void>;
   onToggleStatus?: (item: any) => void;
   onTogglePause?: (item: any) => void | Promise<void>;
-  onResetOwnerPassword?: (ownerId: string, password: string) => Promise<void>;
+  /** Resets the owner's password (to `password` when given) and resolves with the password to tell them. */
+  onResetOwnerPassword?: (ownerId: string, password?: string) => Promise<string>;
+  /** Emails the owner a password reset link; resolves with the address it went to. */
+  onSendOwnerResetLink?: (ownerId: string) => Promise<string>;
   formFields?: Array<{
     name: string;
     label: string;
@@ -264,6 +268,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
   onToggleStatus,
   onTogglePause,
   onResetOwnerPassword,
+  onSendOwnerResetLink,
   onBulkDelete,
   onBulkApprove,
   onBulkReject,
@@ -295,10 +300,6 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [showPasswordChange, setShowPasswordChange] = useState(false);
-  const [newOwnerPassword, setNewOwnerPassword] = useState("");
-  const [confirmOwnerPassword, setConfirmOwnerPassword] = useState("");
-  const [passwordChangeError, setPasswordChangeError] = useState("");
-  const [passwordChanging, setPasswordChanging] = useState(false);
 
   const [formData, setFormData] = useState<Record<string, any>>({});
   const orderedColumns = useMemo(() => statusAndActionLast(columns), [columns]);
@@ -472,41 +473,12 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
     setIsDetailEditing(false);
     setConfirmingDelete(false);
     setShowPasswordChange(false);
-    setNewOwnerPassword("");
-    setConfirmOwnerPassword("");
-    setPasswordChangeError("");
     setFormData(prepareFormData(item));
   };
 
   const detailOwnerId = String(
     detailItem?.ownerId?._id ?? detailItem?.ownerId ?? "",
   );
-
-  const handleOwnerPasswordChange = async () => {
-    if (!onResetOwnerPassword || !detailOwnerId) return;
-    if (newOwnerPassword.length < 6) {
-      setPasswordChangeError("Password must contain at least 6 characters.");
-      return;
-    }
-    if (newOwnerPassword !== confirmOwnerPassword) {
-      setPasswordChangeError("The password confirmation does not match.");
-      return;
-    }
-    setPasswordChanging(true);
-    setPasswordChangeError("");
-    try {
-      await onResetOwnerPassword(detailOwnerId, newOwnerPassword);
-      setShowPasswordChange(false);
-      setNewOwnerPassword("");
-      setConfirmOwnerPassword("");
-    } catch (error) {
-      setPasswordChangeError(
-        getErrorMessage(error, "The owner password could not be changed."),
-      );
-    } finally {
-      setPasswordChanging(false);
-    }
-  };
 
   const beginDetailEdit = () => {
     if (!detailItem) return;
@@ -1167,56 +1139,13 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
               ) : (
                 <>
                   {showPasswordChange && onResetOwnerPassword && detailOwnerId && (
-                    <div className="w-full rounded-2xl border border-purple-200 bg-purple-50/70 p-4 dark:border-purple-900/60 dark:bg-purple-950/20">
-                      <div className="mb-3 flex items-center gap-2 text-xs font-black text-purple-700 dark:text-purple-300">
-                        <KeyRound size={15} /> Change stay owner password
-                      </div>
-                      <p className="mb-3 text-[10px] text-gray-500 dark:text-gray-400">
-                        Account: {detailItem.ownerId?.email || "Owner account"}. The existing password is encrypted and cannot be displayed.
-                      </p>
-                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                        <input
-                          type="password"
-                          value={newOwnerPassword}
-                          onChange={(event) => setNewOwnerPassword(event.target.value)}
-                          placeholder="New password"
-                          autoComplete="new-password"
-                          className="rounded-xl border border-purple-200 bg-white px-3 py-2.5 text-xs outline-none focus:border-purple-500 dark:border-purple-900 dark:bg-slate-950"
-                        />
-                        <input
-                          type="password"
-                          value={confirmOwnerPassword}
-                          onChange={(event) => setConfirmOwnerPassword(event.target.value)}
-                          placeholder="Confirm new password"
-                          autoComplete="new-password"
-                          className="rounded-xl border border-purple-200 bg-white px-3 py-2.5 text-xs outline-none focus:border-purple-500 dark:border-purple-900 dark:bg-slate-950"
-                        />
-                      </div>
-                      {passwordChangeError && (
-                        <p className="mt-2 text-[10px] font-bold text-rose-600">{passwordChangeError}</p>
-                      )}
-                      <div className="mt-3 flex justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowPasswordChange(false);
-                            setNewOwnerPassword("");
-                            setConfirmOwnerPassword("");
-                            setPasswordChangeError("");
-                          }}
-                          className="rounded-full bg-white px-4 py-2 text-[10px] font-bold text-gray-600 dark:bg-slate-900 dark:text-gray-300"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="button"
-                          disabled={passwordChanging}
-                          onClick={() => void handleOwnerPasswordChange()}
-                          className="rounded-full bg-purple-600 px-4 py-2 text-[10px] font-black text-white disabled:opacity-50"
-                        >
-                          {passwordChanging ? "Changing..." : "Confirm Password Change"}
-                        </button>
-                      </div>
+                    <div className="w-full">
+                      <PasswordHelpPanel
+                        accountName={detailItem.ownerId?.name || "The owner"}
+                        accountEmail={detailItem.ownerId?.email || null}
+                        onReset={(custom) => onResetOwnerPassword(detailOwnerId, custom)}
+                        onSendLink={onSendOwnerResetLink ? () => onSendOwnerResetLink(detailOwnerId) : undefined}
+                      />
                     </div>
                   )}
                   {onToggleStatus && (
@@ -1255,13 +1184,10 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                   {onResetOwnerPassword && detailOwnerId && (
                     <button
                       type="button"
-                      onClick={() => {
-                        setShowPasswordChange((current) => !current);
-                        setPasswordChangeError("");
-                      }}
+                      onClick={() => setShowPasswordChange((current) => !current)}
                       className="px-5 py-2.5 rounded-full bg-purple-50 text-purple-700 text-xs font-extrabold cursor-pointer inline-flex items-center gap-1.5"
                     >
-                      <KeyRound size={14} /> Change Owner Password
+                      <KeyRound size={14} /> Owner Password Help
                     </button>
                   )}
                   {onDelete && (

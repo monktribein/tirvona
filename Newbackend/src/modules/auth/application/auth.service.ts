@@ -195,6 +195,8 @@ export class AuthService {
       role: user.role,
       status: user.status,
       isVerified: user.isVerified,
+      // An admin reset the password: the app asks for a new one before anything else.
+      mustChangePassword: user.mustChangePassword === true,
       permissions: user.permissions ?? [],
       employerAshramId,
       scopedAshramIds: (user.scopedAshramIds ?? []).map(String),
@@ -261,6 +263,7 @@ export class AuthService {
       );
     user.passwordHash = await bcrypt.hash(newPassword, 12);
     user.tokenVersion = Number(user.tokenVersion ?? 0) + 1;
+    user.mustChangePassword = undefined;
     await user.save();
     return user;
   }
@@ -569,10 +572,7 @@ export class AuthService {
     const user = await this.users.findByEmail(email);
     if (!user)
       throw new NotFoundException("This email is not registered. Please sign up first.");
-    const token = randomBytes(32).toString("hex");
-    user.resetTokenHash = this.digest(token);
-    user.resetTokenExpiresAt = new Date(Date.now() + 30 * 60_000);
-    await user.save();
+    const token = await this.issueResetToken(user);
     const resendApiKey = this.config.get<string>("resendApiKey");
     if (!resendApiKey) {
       process.stderr.write(
@@ -580,6 +580,37 @@ export class AuthService {
       );
       return;
     }
+    await this.mailResetLink(user, token, resendApiKey);
+  }
+
+  /**
+   * Super Admin: emails a password reset link to an account's owner, for someone
+   * who forgot their password. Refuses (rather than pretending) when the account has
+   * no real email or this server cannot send email.
+   */
+  async sendResetLinkTo(userId: string): Promise<{ email: string }> {
+    const user = await this.userModel.findOne({ _id: userId, isDeleted: { $ne: true } });
+    if (!user) throw new NotFoundException("User not found");
+    const email = realEmail(user.email);
+    if (!email)
+      throw new BadRequestException("This account has no email address to send a link to. Use a temporary password instead.");
+    const resendApiKey = this.config.get<string>("resendApiKey");
+    if (!resendApiKey)
+      throw new ServiceUnavailableException("Email sending is not set up on this server, so no link was sent. Use a temporary password instead.");
+    const token = await this.issueResetToken(user);
+    await this.mailResetLink(user, token, resendApiKey);
+    return { email };
+  }
+
+  private async issueResetToken(user: any): Promise<string> {
+    const token = randomBytes(32).toString("hex");
+    user.resetTokenHash = this.digest(token);
+    user.resetTokenExpiresAt = new Date(Date.now() + 30 * 60_000);
+    await user.save();
+    return token;
+  }
+
+  private async mailResetLink(user: any, token: string, resendApiKey: string): Promise<void> {
     const resetUrl = `${this.siteOrigin()}/reset-password?token=${encodeURIComponent(token)}`;
     await new Resend(resendApiKey).emails.send({
       from: this.config.getOrThrow<string>("resendFromEmail"),
@@ -603,6 +634,7 @@ export class AuthService {
     user.passwordHash = await bcrypt.hash(password, 12);
     user.resetTokenHash = undefined;
     user.resetTokenExpiresAt = undefined;
+    user.mustChangePassword = undefined;
     user.tokenVersion = Number(user.tokenVersion ?? 0) + 1;
     await user.save();
     return user;

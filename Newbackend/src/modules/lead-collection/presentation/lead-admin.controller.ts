@@ -17,6 +17,13 @@ import {
 } from "../../../common/decorators/current-user.decorator";
 import { Roles } from "../../../common/decorators/roles.decorator";
 import {
+  assertInLocation,
+  assertWritableInLocation,
+  locationMatches,
+  type LocationScope,
+} from "../../../common/auth/location-scope";
+import { HrLocationService } from "../../hr/application/hr-location.service";
+import {
   LeadUsersService,
   type LeadAdminActor,
 } from "../application/lead-users.service";
@@ -39,7 +46,11 @@ import {
 
 @ApiTags("Lead Collection")
 @ApiBearerAuth()
-@Roles("super_admin")
+/**
+ * Lead Collection administration. Super Admin sees everything; an `hr` login
+ * sees and manages only the leads, field agents and regions of its office's area.
+ */
+@Roles("super_admin", "hr", "executive")
 @SkipThrottle({ default: true, ipAbuse: true })
 @Controller("lead-collection/admin")
 export class LeadAdminController {
@@ -48,29 +59,60 @@ export class LeadAdminController {
     private readonly leadUsers: LeadUsersService,
     private readonly attendanceService: LeadAttendanceService,
     private readonly tracking: LeadTrackingService,
+    private readonly location: HrLocationService,
   ) {}
+
+  private scope(user: AuthenticatedUser): Promise<LocationScope> {
+    return this.location.scopeFor(user);
+  }
+
+  /** A lead the caller may act on (404 when it is outside an HR login's area). */
+  private async scopedLead(user: AuthenticatedUser, id: string) {
+    const lead: any = await this.leads.findOne(id);
+    assertInLocation(
+      await this.scope(user),
+      "Lead",
+      lead.location?.address,
+      lead.location?.city,
+      lead.location?.district,
+    );
+    return lead;
+  }
+
+  /** A field agent the caller may act on (404 when outside an HR login's area). */
+  private async scopedAgent(user: AuthenticatedUser, id: string) {
+    const agent: any = await this.leadUsers.findOne(id);
+    assertInLocation(await this.scope(user), "Field agent", agent.district, agent.region);
+    return agent;
+  }
 
   private actor(user: AuthenticatedUser): LeadAdminActor {
     return { id: user.id, name: user.name };
   }
 
   @Get("leads")
-  async listLeads(@Query() query: LeadQueryDto) {
-    return { success: true, data: await this.leads.list(query) };
+  async listLeads(@CurrentUser() user: AuthenticatedUser, @Query() query: LeadQueryDto) {
+    return { success: true, data: await this.leads.list(query, undefined, await this.scope(user)) };
   }
 
   @Get("leads/stats")
-  async leadStats() {
-    return { success: true, data: await this.leads.stats() };
+  async leadStats(@CurrentUser() user: AuthenticatedUser) {
+    return { success: true, data: await this.leads.stats(undefined, await this.scope(user)) };
   }
 
   @Get("leads/:id")
-  async oneLead(@Param("id") id: string) {
-    return { success: true, data: await this.leads.findOne(id) };
+  async oneLead(@CurrentUser() user: AuthenticatedUser, @Param("id") id: string) {
+    return { success: true, data: await this.scopedLead(user, id) };
   }
 
   @Post("leads")
-  async createLead(@Body() dto: SaveLeadDto) {
+  async createLead(@CurrentUser() user: AuthenticatedUser, @Body() dto: SaveLeadDto) {
+    assertWritableInLocation(
+      await this.scope(user),
+      dto.location?.address,
+      dto.location?.city,
+      dto.location?.district,
+    );
     return {
       success: true,
       message: "Lead created",
@@ -79,7 +121,19 @@ export class LeadAdminController {
   }
 
   @Put("leads/:id")
-  async updateLead(@Param("id") id: string, @Body() dto: SaveLeadDto) {
+  async updateLead(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("id") id: string,
+    @Body() dto: SaveLeadDto,
+  ) {
+    await this.scopedLead(user, id);
+    if (dto.location)
+      assertWritableInLocation(
+        await this.scope(user),
+        dto.location.address,
+        dto.location.city,
+        dto.location.district,
+      );
     return {
       success: true,
       message: "Lead updated",
@@ -97,7 +151,9 @@ export class LeadAdminController {
     return {
       success: true,
       message: "Lead approved",
-      data: await this.leads.decide(id, "approved", dto, this.actor(user)),
+      data: await this.scopedLead(user, id).then(() =>
+        this.leads.decide(id, "approved", dto, this.actor(user)),
+      ),
     };
   }
 
@@ -111,7 +167,9 @@ export class LeadAdminController {
     return {
       success: true,
       message: "Lead rejected",
-      data: await this.leads.decide(id, "rejected", dto, this.actor(user)),
+      data: await this.scopedLead(user, id).then(() =>
+        this.leads.decide(id, "rejected", dto, this.actor(user)),
+      ),
     };
   }
 
@@ -125,7 +183,9 @@ export class LeadAdminController {
     return {
       success: true,
       message: "Lead marked as converted",
-      data: await this.leads.decide(id, "converted", dto, this.actor(user)),
+      data: await this.scopedLead(user, id).then(() =>
+        this.leads.decide(id, "converted", dto, this.actor(user)),
+      ),
     };
   }
 
@@ -139,12 +199,15 @@ export class LeadAdminController {
     return {
       success: true,
       message: "Lead reopened for review",
-      data: await this.leads.decide(id, "pending", dto, this.actor(user)),
+      data: await this.scopedLead(user, id).then(() =>
+        this.leads.decide(id, "pending", dto, this.actor(user)),
+      ),
     };
   }
 
   @Delete("leads/:id")
-  async removeLead(@Param("id") id: string) {
+  async removeLead(@CurrentUser() user: AuthenticatedUser, @Param("id") id: string) {
+    await this.scopedLead(user, id);
     return {
       success: true,
       message: "Lead deleted",
@@ -153,8 +216,10 @@ export class LeadAdminController {
   }
 
   @Get("regions")
-  async listRegions() {
-    return { success: true, data: await this.leadUsers.listRegions() };
+  async listRegions(@CurrentUser() user: AuthenticatedUser) {
+    const scope = await this.scope(user);
+    const regions = await this.leadUsers.listRegions();
+    return { success: true, data: regions.filter((r) => locationMatches(scope, r.district)) };
   }
 
   @Post("regions")
@@ -162,6 +227,7 @@ export class LeadAdminController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateLeadRegionDto,
   ) {
+    assertWritableInLocation(await this.scope(user), dto.district);
     return {
       success: true,
       message: "Lead region added",
@@ -171,9 +237,11 @@ export class LeadAdminController {
 
   @Delete("regions")
   async removeRegion(
+    @CurrentUser() user: AuthenticatedUser,
     @Query("state") state: string,
     @Query("district") district: string,
   ) {
+    assertWritableInLocation(await this.scope(user), district);
     return {
       success: true,
       message: "Lead region removed",
@@ -182,13 +250,13 @@ export class LeadAdminController {
   }
 
   @Get("users")
-  async listUsers(@Query() query: LeadUserQueryDto) {
-    return { success: true, data: await this.leadUsers.list(query) };
+  async listUsers(@CurrentUser() user: AuthenticatedUser, @Query() query: LeadUserQueryDto) {
+    return { success: true, data: await this.leadUsers.list(query, await this.scope(user)) };
   }
 
   @Get("users/:id")
-  async oneUser(@Param("id") id: string) {
-    return { success: true, data: await this.leadUsers.findOne(id) };
+  async oneUser(@CurrentUser() user: AuthenticatedUser, @Param("id") id: string) {
+    return { success: true, data: await this.scopedAgent(user, id) };
   }
 
   @Post("users")
@@ -196,6 +264,7 @@ export class LeadAdminController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateLeadUserDto,
   ) {
+    assertWritableInLocation(await this.scope(user), dto.district);
     return {
       success: true,
       message: "Field agent account created",
@@ -204,7 +273,13 @@ export class LeadAdminController {
   }
 
   @Put("users/:id")
-  async updateUser(@Param("id") id: string, @Body() dto: UpdateLeadUserDto) {
+  async updateUser(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("id") id: string,
+    @Body() dto: UpdateLeadUserDto,
+  ) {
+    await this.scopedAgent(user, id);
+    if (dto.district !== undefined) assertWritableInLocation(await this.scope(user), dto.district);
     return {
       success: true,
       message: "Field agent updated",
@@ -215,9 +290,11 @@ export class LeadAdminController {
   @Post("users/:id/reset-password")
   @HttpCode(200)
   async resetUserPassword(
+    @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
     @Body() dto: ResetLeadUserPasswordDto,
   ) {
+    await this.scopedAgent(user, id);
     return {
       success: true,
       message: "Password reset. The agent's existing sessions were signed out.",
@@ -226,7 +303,8 @@ export class LeadAdminController {
   }
 
   @Delete("users/:id")
-  async removeUser(@Param("id") id: string) {
+  async removeUser(@CurrentUser() user: AuthenticatedUser, @Param("id") id: string) {
+    await this.scopedAgent(user, id);
     return {
       success: true,
       message: "Field agent deleted. Their captured leads were retained.",
@@ -235,18 +313,25 @@ export class LeadAdminController {
   }
 
   @Get("attendance/summary")
-  async attendanceSummary() {
-    return {
-      success: true,
-      data: await this.attendanceService.getAllAgentsAttendanceSummary(),
-    };
+  async attendanceSummary(@CurrentUser() user: AuthenticatedUser) {
+    const scope = await this.scope(user);
+    const data = await this.attendanceService.getAllAgentsAttendanceSummary();
+    if (scope === null) return { success: true, data };
+    // An HR login only sees the agents of its area.
+    const agents = await this.leadUsers.list({ page: 1, limit: 10_000 } as LeadUserQueryDto, scope);
+    const allowed = new Set(agents.items.map((a: any) => String(a._id ?? a.id)));
+    const keep = (map: Record<string, unknown>) =>
+      Object.fromEntries(Object.entries(map).filter(([agentId]) => allowed.has(agentId)));
+    return { success: true, data: { summaryMap: keep(data.summaryMap), todayMap: keep(data.todayMap) } };
   }
 
   @Get("attendance/agent/:id")
   async agentAttendance(
+    @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
     @Query() query: AttendanceQueryDto,
   ) {
+    await this.scopedAgent(user, id);
     const history = await this.attendanceService.getAgentAttendanceHistory(id, query);
     return {
       success: true,
@@ -257,10 +342,11 @@ export class LeadAdminController {
   /** The full route of one check-in → check-out shift, for the monitoring map. */
   @Get("agents/:agentId/shifts/:attendanceId/route")
   async shiftRoute(
+    @CurrentUser() user: AuthenticatedUser,
     @Param("agentId") agentId: string,
     @Param("attendanceId") attendanceId: string,
   ) {
-    const agent = await this.leadUsers.findOne(agentId);
+    const agent = await this.scopedAgent(user, agentId);
     return {
       success: true,
       data: {
@@ -283,10 +369,11 @@ export class LeadAdminController {
    */
   @Get("agents/:agentId/tracking")
   async agentTracking(
+    @CurrentUser() user: AuthenticatedUser,
     @Param("agentId") agentId: string,
     @Query() query: TrackingDayQueryDto,
   ) {
-    const agent = await this.leadUsers.findOne(agentId);
+    const agent = await this.scopedAgent(user, agentId);
 
     return {
       success: true,
@@ -306,16 +393,20 @@ export class LeadAdminController {
 
   @Get("agents/:agentId/tracking/history")
   async agentTrackingHistory(
+    @CurrentUser() user: AuthenticatedUser,
     @Param("agentId") agentId: string,
     @Query() query: TrackingHistoryQueryDto,
   ) {
-    await this.leadUsers.findOne(agentId);
+    await this.scopedAgent(user, agentId);
     return { success: true, data: await this.tracking.history(agentId, query) };
   }
 
   /** Latest known position of every tracked agent, across every district. */
   @Get("tracking/live")
-  async liveTracking() {
-    return { success: true, data: await this.tracking.liveBoard({}) };
+  async liveTracking(@CurrentUser() user: AuthenticatedUser) {
+    return {
+      success: true,
+      data: await this.tracking.liveBoard({}, undefined, await this.scope(user)),
+    };
   }
 }

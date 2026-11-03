@@ -138,6 +138,14 @@ export const getRoleDefaultDashboard = (
     case "finance_manager":
       return "/admin/manage/bookings/refunds";
 
+    // Leads, Food, Temples and Pandits for the area of the HR office the login is assigned to.
+    case "hr":
+      return "/admin/hr/area";
+
+    // Same office-area access as HR, managed from Executive Management.
+    case "executive":
+      return "/admin/executive/area";
+
     case "support":
     case "support_executive":
       return "/admin/support";

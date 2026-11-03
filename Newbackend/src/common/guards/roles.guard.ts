@@ -8,6 +8,7 @@ import {
   ASHRAM_OWNER_ROLE,
   canonicalAshramRole,
 } from "../auth/ashram-access";
+import { isLocationScopedUser } from "../auth/location-scope";
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -42,6 +43,10 @@ export class RolesGuard implements CanActivate {
       actual === ASHRAM_ADMIN_ROLE &&
       canonicalAllowed.includes(ASHRAM_OWNER_ROLE)
     )
+      return true;
+    // HR and Executive logins act as the owner of every stay in their office
+    // area (their scopedAshramIds), so stay-owner routes are open to them.
+    if (isLocationScopedUser(user) && canonicalAllowed.includes(ASHRAM_OWNER_ROLE))
       return true;
     return canonicalAllowed.includes(actual);
   }

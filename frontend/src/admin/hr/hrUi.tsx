@@ -130,12 +130,14 @@ export const HrPage: React.FC<{
   subtitle?: string;
   icon?: React.ReactNode;
   actions?: React.ReactNode;
+  /** The breadcrumb's parent; HR Management unless given. */
+  section?: { label: string; to: string };
   children: React.ReactNode;
-}> = ({ title, subtitle, icon, actions, children }) => (
+}> = ({ title, subtitle, icon, actions, section = { label: "HR Management", to: "/admin/hr" }, children }) => (
   <div className="space-y-5">
     <nav aria-label="Breadcrumb" className="text-[11px] font-bold text-gray-400">
-      <Link to="/admin/hr" className="hover:text-[#F28C28]">
-        HR Management
+      <Link to={section.to} className="hover:text-[#F28C28]">
+        {section.label}
       </Link>
       <span aria-hidden="true"> / </span>
       <span className="text-gray-600 dark:text-gray-300">{title}</span>

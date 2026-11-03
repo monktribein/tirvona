@@ -72,7 +72,7 @@ export class TemplesController {
 
   // Admin Routes
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("super_admin", "temple_owner")
+  @Roles("super_admin", "temple_owner", "hr", "executive")
   @Get("admin/all")
   async getAllTemplesAdmin(@Query() query: any, @CurrentUser() user: AuthenticatedUser) {
     const result = await this.templesService.findAll(query, user);
@@ -80,7 +80,7 @@ export class TemplesController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("super_admin", "temple_owner")
+  @Roles("super_admin", "temple_owner", "hr", "executive")
   @Get("admin/mine")
   async getMyTemples(@CurrentUser() user: AuthenticatedUser) {
     const data = await this.templesService.findMine(user);
@@ -88,7 +88,7 @@ export class TemplesController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("super_admin")
+  @Roles("super_admin", "hr", "executive")
   @Post("admin")
   async createTemple(@Body() dto: CreateTempleDto, @CurrentUser() user: AuthenticatedUser) {
     const temple = await this.templesService.create(dto, user);
@@ -96,7 +96,7 @@ export class TemplesController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("super_admin", "temple_owner")
+  @Roles("super_admin", "temple_owner", "hr", "executive")
   @Get("admin/:id")
   async getTempleByIdAdmin(@Param("id") id: string, @CurrentUser() user: AuthenticatedUser) {
     const temple = await this.templesService.findOneById(id, user);
@@ -104,7 +104,7 @@ export class TemplesController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("super_admin", "temple_owner")
+  @Roles("super_admin", "temple_owner", "hr", "executive")
   @Patch("admin/:id")
   async updateTemple(@Param("id") id: string, @Body() dto: UpdateTempleDto, @CurrentUser() user: AuthenticatedUser) {
     const temple = await this.templesService.update(id, dto, user);
@@ -112,7 +112,7 @@ export class TemplesController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("super_admin")
+  @Roles("super_admin", "hr", "executive")
   @Delete("admin/:id")
   async deleteTemple(@Param("id") id: string, @CurrentUser() user: AuthenticatedUser) {
     await this.templesService.delete(id, user);
@@ -120,21 +120,21 @@ export class TemplesController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("super_admin", "temple_owner")
+  @Roles("super_admin", "temple_owner", "hr", "executive")
   @Get("admin/:id/aartis")
   async getTempleAartisAdmin(@Param("id") id: string, @CurrentUser() user: AuthenticatedUser) {
     return { success: true, data: await this.templesService.getAartis(id, false, user) };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("super_admin", "temple_owner")
+  @Roles("super_admin", "temple_owner", "hr", "executive")
   @Get("admin/:id/festivals")
   async getTempleFestivalsAdmin(@Param("id") id: string, @CurrentUser() user: AuthenticatedUser) {
     return { success: true, data: await this.templesService.getFestivals(id, false, user) };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("super_admin", "temple_owner")
+  @Roles("super_admin", "temple_owner", "hr", "executive")
   @Post("admin/:id/aartis")
   async addAarti(@Param("id") id: string, @Body() dto: CreateAartiDto, @CurrentUser() user: AuthenticatedUser) {
     const aarti = await this.templesService.addAarti(id, dto, user);
@@ -142,14 +142,14 @@ export class TemplesController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("super_admin", "temple_owner")
+  @Roles("super_admin", "temple_owner", "hr", "executive")
   @Patch("admin/:id/aartis/:aartiId")
   async updateAarti(@Param("id") id: string, @Param("aartiId") aartiId: string, @Body() dto: Partial<CreateAartiDto>, @CurrentUser() user: AuthenticatedUser) {
     return { success: true, data: await this.templesService.updateAarti(id, aartiId, dto, user) };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("super_admin", "temple_owner")
+  @Roles("super_admin", "temple_owner", "hr", "executive")
   @Delete("admin/:id/aartis/:aartiId")
   async deleteAarti(@Param("id") id: string, @Param("aartiId") aartiId: string, @CurrentUser() user: AuthenticatedUser) {
     await this.templesService.deleteAarti(id, aartiId, user);
@@ -157,7 +157,7 @@ export class TemplesController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("super_admin", "temple_owner")
+  @Roles("super_admin", "temple_owner", "hr", "executive")
   @Post("admin/:id/festivals")
   async addFestival(@Param("id") id: string, @Body() dto: CreateFestivalDto, @CurrentUser() user: AuthenticatedUser) {
     const festival = await this.templesService.addFestival(id, dto, user);
@@ -165,14 +165,14 @@ export class TemplesController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("super_admin", "temple_owner")
+  @Roles("super_admin", "temple_owner", "hr", "executive")
   @Patch("admin/:id/festivals/:festivalId")
   async updateFestival(@Param("id") id: string, @Param("festivalId") festivalId: string, @Body() dto: Partial<CreateFestivalDto>, @CurrentUser() user: AuthenticatedUser) {
     return { success: true, data: await this.templesService.updateFestival(id, festivalId, dto, user) };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("super_admin", "national_admin", "temple_owner")
+  @Roles("super_admin", "national_admin", "temple_owner", "hr", "executive")
   @Delete("admin/:id/festivals/:festivalId")
   async deleteFestival(@Param("id") id: string, @Param("festivalId") festivalId: string, @CurrentUser() user: AuthenticatedUser) {
     await this.templesService.deleteFestival(id, festivalId, user);

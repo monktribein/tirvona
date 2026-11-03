@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { HrLocationModule } from "../hr/hr-location.module";
 import { OrmModule } from "../../database/orm-nest";
 import { Schema } from "../../database/orm";
 import { TemplesController } from "./presentation/temples.controller";
@@ -10,6 +11,7 @@ import { PARKING_MODEL } from "../parking/domain/parking.constants";
 
 @Module({
   imports: [
+    HrLocationModule,
     OrmModule.forFeature([
       { name: "Temple", schema: TempleSchema },
       { name: "TempleAarti", schema: TempleAartiSchema },

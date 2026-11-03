@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
 import { CurrentUser } from "../../../common/decorators/current-user.decorator";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { HrAccessService } from "../application/hr-access.service";
+import { HrLocationService } from "../application/hr-location.service";
 import { HrAttendanceService } from "../application/hr-attendance.service";
 import { HrTasksService } from "../application/hr-tasks.service";
 import {
@@ -21,7 +22,17 @@ export class HrSelfController {
     private readonly access: HrAccessService,
     private readonly tasks: HrTasksService,
     private readonly attendance: HrAttendanceService,
+    private readonly location: HrLocationService,
   ) {}
+
+  /**
+   * For an `hr` login: the office and places it can see. null for every other role
+   * (not location-restricted).
+   */
+  @Get("location")
+  async myLocation(@CurrentUser() user: AuthenticatedUser) {
+    return { success: true, data: await this.location.scopeFor(user) };
+  }
 
   /** What the HR screens and sidebar should offer this user. Safe for any signed-in user. */
   @Get("access")

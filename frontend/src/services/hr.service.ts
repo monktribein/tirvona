@@ -28,6 +28,29 @@ export interface HrOffice {
   departmentCount?: number;
 }
 
+/** A login with the `hr` or `executive` role and the office whose city decides what it can see. */
+export interface HrAccountRow {
+  userId: string;
+  name: string;
+  email: string;
+  phone: string;
+  accountStatus: string;
+  employee: { id: string; employeeCode: string; status: string } | null;
+  office: { id: string; name: string; city: string; active: boolean } | null;
+  /** Place names this login can see in Leads, Food, Temples and Pandits; empty = nothing yet. */
+  coverage: string[];
+  /** The same area as people say it, e.g. "Vrindavan & Mathura"; empty when it sees nothing. */
+  area: string;
+}
+
+/** The signed-in `hr` / `executive` login's area; null for every other role. */
+export interface HrLocation {
+  city: string;
+  officeName: string;
+  area: string;
+  terms: string[];
+}
+
 export interface HrDepartment {
   id: string;
   name: string;
@@ -319,6 +342,13 @@ export const hrService = {
   updateEmployee: (id: string, body: Partial<HrEmployeeInput>) => data<HrEmployeeProfile>(api.patch(`/hr/employees/${id}`, body)),
   setEmployeeStatus: (id: string, status: "active" | "inactive", reason?: string) =>
     data<HrEmployeeProfile>(api.patch(`/hr/employees/${id}/status`, { status, reason })),
+  hrAccounts: () => data<HrAccountRow[]>(api.get("/hr/hr-accounts")),
+  assignHrOffice: (userId: string, officeId: string) =>
+    data<HrAccountRow>(api.post(`/hr/hr-accounts/${userId}/office`, { officeId })),
+  executiveAccounts: () => data<HrAccountRow[]>(api.get("/hr/executive-accounts")),
+  assignExecutiveOffice: (userId: string, officeId: string) =>
+    data<HrAccountRow>(api.post(`/hr/executive-accounts/${userId}/office`, { officeId })),
+  myLocation: () => data<HrLocation | null>(api.get("/hr/me/location", { skipToast: true })),
   accountLookup: (params: { email?: string; phone?: string }) =>
     data<{ id: string; name: string; role: string; status: string; linkedEmployee: { id: string; employeeCode: string; fullName: string } | null } | null>(
       api.get("/hr/account-lookup", { params: clean(params) }),

@@ -165,6 +165,11 @@ export class HrEmployeeQueryDto extends PageQueryDto {
   @IsOptional() @IsIn(["asc", "desc"]) order?: "asc" | "desc";
 }
 
+/** The HR office an `hr` login works from; its city is all that login can see. */
+export class HrAssignOfficeDto {
+  @IsEntityId() officeId: string;
+}
+
 export class HrAccountLookupDto {
   @IsOptional() @blankToUndefined() @IsEmail() email?: string;
   @IsOptional() @blankToUndefined() @IsString() @MaxLength(20) phone?: string;

@@ -16,6 +16,8 @@ interface User {
   parkingRoles?: string[];
   employerAshramId?: string;
   scopedAshramIds?: string[];
+  /** An admin reset the password: the user must choose their own before going on. */
+  mustChangePassword?: boolean;
   employerAshram?: {
     _id: string;
     name: string;

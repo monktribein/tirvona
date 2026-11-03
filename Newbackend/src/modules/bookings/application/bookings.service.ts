@@ -217,7 +217,8 @@ export class BookingsService {
   ): Promise<void> {
     if (user.role === "support" || canManageAllAshrams(user))
       return;
-    if (!isAshramOwner(user) && !["manager", "reception"].includes(user.role))
+    // hr / executive manage the bookings of their office area's stays, like an owner.
+    if (!isAshramOwner(user) && !["manager", "reception", "hr", "executive"].includes(user.role))
       throw new ForbiddenException("You cannot manage ashram bookings.");
     const scope = await this.scopedAshrams(user);
     if (

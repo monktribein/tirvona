@@ -54,7 +54,8 @@ export class CreateLeadRegionDto {
 }
 
 export class ResetLeadUserPasswordDto {
-  @IsString() @MinLength(8) @MaxLength(128) password!: string;
+  /** Leave out to have the server generate a strong temporary password (returned once). */
+  @IsOptional() @IsString() @MinLength(8) @MaxLength(128) password?: string;
 }
 
 export class LeadUserQueryDto {

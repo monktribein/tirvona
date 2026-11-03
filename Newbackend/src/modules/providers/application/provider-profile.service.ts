@@ -1,3 +1,4 @@
+import { onlyProviders } from "./provider-location.service";
 import { parseYouTubeUrl } from "../domain/youtube";
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "../../../database/orm-nest";
@@ -323,7 +324,8 @@ export class ProviderProfileService {
   }
 
   // --------------------------------------------------------------- admin
-  async listAdmin(query: AdminProviderQueryDto) {
+  /** `only`: restricts to these pandits (an HR login's area); null = all. */
+  async listAdmin(query: AdminProviderQueryDto, only: string[] | null = null) {
     const { page, limit, skip } = pageParams(query);
     const filter: Record<string, unknown> = { deletedAt: null };
     if (query.status) filter.status = query.status;
@@ -332,9 +334,10 @@ export class ProviderProfileService {
       const pattern = { $regex: escapeRegex(query.q), $options: "i" };
       filter.$or = [{ displayName: pattern }, { homeCity: pattern }];
     }
+    const scoped = onlyProviders(filter, only, "_id");
     const [rows, total] = await Promise.all([
-      this.profiles.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
-      this.profiles.countDocuments(filter),
+      this.profiles.find(scoped).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      this.profiles.countDocuments(scoped),
     ]);
     return paged(
       rows.map((row: any) => ({
@@ -428,8 +431,11 @@ export class ProviderProfileService {
   }
 
   /** Dashboard counters, all computed from the database at request time. */
-  async overview(_actor: AuthenticatedUser) {
-    const live = { deletedAt: null };
+  /** `only`: counts only these pandits (an HR login's area); null = all. */
+  async overview(_actor: AuthenticatedUser, only: string[] | null = null) {
+    const live = onlyProviders({ deletedAt: null }, only, "_id");
+    const mine = onlyProviders({}, only);
+    const mineConsult = onlyProviders({}, only, "expertProviderId");
     const [
       totalProviders, activeProviders, inactiveProviders, suspendedProviders, onboardingProviders,
       totalOfferings, publishedOfferings,
@@ -443,22 +449,23 @@ export class ProviderProfileService {
       this.profiles.countDocuments({ ...live, status: "INACTIVE" }),
       this.profiles.countDocuments({ ...live, status: "SUSPENDED" }),
       this.profiles.countDocuments({ ...live, status: "ONBOARDING" }),
-      this.offerings.countDocuments({}),
-      this.offerings.countDocuments({ status: "ACTIVE" }),
-      this.verificationCases.countDocuments({ status: "OPEN", submittedAt: { $ne: null } }),
-      this.verificationCases.countDocuments({ status: "IN_REVIEW" }),
-      this.verificationCases.countDocuments({ status: "APPROVED" }),
-      this.verificationCases.countDocuments({ status: "REJECTED" }),
-      this.bookings.countDocuments({}),
+      this.offerings.countDocuments({ ...mine }),
+      this.offerings.countDocuments({ ...mine, status: "ACTIVE" }),
+      this.verificationCases.countDocuments({ ...mine, status: "OPEN", submittedAt: { $ne: null } }),
+      this.verificationCases.countDocuments({ ...mine, status: "IN_REVIEW" }),
+      this.verificationCases.countDocuments({ ...mine, status: "APPROVED" }),
+      this.verificationCases.countDocuments({ ...mine, status: "REJECTED" }),
+      this.bookings.countDocuments({ ...mine }),
       this.bookings.countDocuments({
+        ...mine,
         status: { $in: ["CONFIRMED", "PROVIDER_ACCEPTED", "PREPARATION_IN_PROGRESS", "READY_FOR_FULFILMENT", "IN_PROGRESS"] },
       }),
-      this.bookings.countDocuments({ status: "PAYMENT_PENDING" }),
-      this.bookings.countDocuments({ status: { $in: ["COMPLETED", "SETTLEMENT_PENDING", "CLOSED"] } }),
-      this.consultations.countDocuments({}),
-      this.consultations.countDocuments({ status: "REQUESTED" }),
-      this.bookings.find({}).sort({ createdAt: -1 }).limit(5).lean(),
-      this.verificationCases.find({}).sort({ openedAt: -1 }).limit(5).lean(),
+      this.bookings.countDocuments({ ...mine, status: "PAYMENT_PENDING" }),
+      this.bookings.countDocuments({ ...mine, status: { $in: ["COMPLETED", "SETTLEMENT_PENDING", "CLOSED"] } }),
+      this.consultations.countDocuments({ ...mineConsult }),
+      this.consultations.countDocuments({ ...mineConsult, status: "REQUESTED" }),
+      this.bookings.find({ ...mine }).sort({ createdAt: -1 }).limit(5).lean(),
+      this.verificationCases.find({ ...mine }).sort({ openedAt: -1 }).limit(5).lean(),
     ]);
     return {
       success: true,

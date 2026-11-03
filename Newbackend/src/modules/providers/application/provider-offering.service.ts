@@ -1,3 +1,4 @@
+import { onlyProviders } from "./provider-location.service";
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "../../../database/orm-nest";
 import type { Model } from "../../../database/orm";
@@ -252,14 +253,15 @@ export class ProviderOfferingService {
   }
 
   // ---------------------------------------------------------------- admin
-  async listAdmin(query: AdminOfferingQueryDto) {
+  async listAdmin(query: AdminOfferingQueryDto, only: string[] | null = null) {
     const { page, limit, skip } = pageParams(query);
     const filter: Record<string, unknown> = {};
     if (query.providerId) filter.providerId = toObjectId(query.providerId);
     if (query.status) filter.status = query.status;
+    const scoped = onlyProviders(filter, only);
     const [rows, total] = await Promise.all([
-      this.offerings.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
-      this.offerings.countDocuments(filter),
+      this.offerings.find(scoped).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      this.offerings.countDocuments(scoped),
     ]);
     const titles = await this.catalogue.titlesFor([...new Set((rows as any[]).map((r) => String(r.ritualVariantId)))]);
     const names = await this.profiles.displayNames((rows as any[]).map((r) => String(r.providerId)));

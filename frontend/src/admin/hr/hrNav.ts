@@ -28,6 +28,7 @@ export function hrNavGroups(role: string | undefined, access: HrAccessInfo | nul
   }
   if (can.tasks || access?.isManager) links.push({ label: can.tasks ? "Daily Tasks" : "My Team's Tasks", path: "/admin/hr/tasks" });
   if (can.attendance) links.push({ label: "Attendance", path: "/admin/hr/attendance" });
+  if (can.employees) links.push({ label: "HR Accounts", path: "/admin/hr/accounts" });
   if (staff) links.push({ label: "Departments & Roles", path: "/admin/hr/structure" });
   if (can.reports) links.push({ label: "Reports & Performance", path: "/admin/hr/reports" });
   if (staff) links.push({ label: "Settings", path: "/admin/hr/settings" });

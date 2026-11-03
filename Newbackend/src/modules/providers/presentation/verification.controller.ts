@@ -15,7 +15,7 @@ import {
 import { ObjectIdPipe } from "./object-id.pipe";
 import { ProviderApi } from "./provider-api.decorator";
 
-const REVIEWERS = ["verification_reviewer", "super_admin"] as const;
+const REVIEWERS = ["verification_reviewer", "super_admin", "hr", "executive"] as const;
 
 /**
  * Provider verification (SRS M07, Data Dictionary 7.22/7.23).

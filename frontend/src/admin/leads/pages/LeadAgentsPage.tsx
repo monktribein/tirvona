@@ -5,6 +5,7 @@ import {
   type LeadRegion,
   type LeadUser,
 } from "../../../services/leadCollection.service";
+import { PasswordHelpPanel } from "../../shared/components/PasswordHelpPanel";
 import {
   getAllStates,
   getDistricts,
@@ -138,7 +139,6 @@ export const LeadAgentsPage: React.FC = () => {
   const [editing, setEditing] = useState<LeadUser | null>(null);
   const [form, setForm] = useState<AgentForm>(BLANK);
   const [resetting, setResetting] = useState<LeadUser | null>(null);
-  const [newPassword, setNewPassword] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<LeadUser | null>(null);
 
   // Attendance Modal & Data State
@@ -376,22 +376,6 @@ export const LeadAgentsPage: React.FC = () => {
     }
   };
 
-  const resetPassword = async () => {
-    if (!resetting) return;
-    if (newPassword.length < 8)
-      return toast.error("Password must be at least 8 characters");
-    setSaving(true);
-    try {
-      await leadCollectionService.resetUserPassword(resetting._id, newPassword);
-      setResetting(null);
-      setNewPassword("");
-    } catch (err) {
-      toast.error(getErrorMessage(err, "Could not reset the password."));
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const remove = async () => {
     if (!confirmDelete) return;
     setSaving(true);
@@ -593,10 +577,7 @@ export const LeadAgentsPage: React.FC = () => {
                         <button
                           title="Reset password"
                           disabled={!agent.createdByAdminId}
-                          onClick={() => {
-                            setNewPassword("");
-                            setResetting(agent);
-                          }}
+                          onClick={() => setResetting(agent)}
                           className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                         >
                           <KeyRound size={15} />
@@ -875,35 +856,28 @@ export const LeadAgentsPage: React.FC = () => {
       <EnterpriseModal
         isOpen={Boolean(resetting)}
         onClose={() => setResetting(null)}
-        title="Reset password"
-        subtitle={`${resetting?.name ?? ""} will be signed out of the lead app.`}
+        title="Password help"
+        subtitle={`${resetting?.name ?? ""} is signed out of the lead app when the password is reset.`}
         icon={<KeyRound size={18} className="text-amber-600" />}
         footer={
           <div className="flex justify-end gap-2">
-            <EnterpriseButton
-              variant="outline"
-              onClick={() => setResetting(null)}
-            >
-              Cancel
-            </EnterpriseButton>
-            <EnterpriseButton
-              variant="warning"
-              loading={saving}
-              onClick={() => void resetPassword()}
-            >
-              Reset password
+            <EnterpriseButton variant="outline" onClick={() => setResetting(null)}>
+              Done
             </EnterpriseButton>
           </div>
         }
       >
-        <Field label="NEW PASSWORD" hint="Share this with the agent directly.">
-          <input
-            type="password"
-            className={inputClass}
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
+        {resetting && (
+          <PasswordHelpPanel
+            accountName={resetting.name}
+            forcesNewPassword={false}
+            onReset={async (custom) => {
+              const res = await leadCollectionService.resetUserPassword(resetting._id, custom);
+              return res.data?.data?.temporaryPassword ?? custom ?? "";
+            }}
+            linkUnavailableReason="The field app has no reset-link screen: field executives sign in with the password you give them."
           />
-        </Field>
+        )}
       </EnterpriseModal>
 
       <EnterpriseModal
