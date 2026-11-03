@@ -55,6 +55,7 @@ import { ProvidersModule } from "./modules/providers/providers.module";
 import { PartnersModule } from "./modules/partners/partners.module";
 import { FoodModule } from "./modules/food/food.module";
 import { HrModule } from "./modules/hr/hr.module";
+import { SeoModule } from "./modules/seo/seo.module";
 import {
   hybridRateLimitTracker,
   ipRateLimitTracker,
@@ -158,6 +159,7 @@ import {
     PartnersModule,
     FoodModule,
     HrModule,
+    SeoModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

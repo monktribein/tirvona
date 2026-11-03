@@ -224,6 +224,7 @@ const MarketplaceOrdersAdminPage = lazy(() => import("./admin/marketplace/pages/
 const MarketplacePayoutsAdminPage = lazy(() => import("./admin/marketplace/pages/MarketplacePayoutsAdminPage"));
 const MarketplaceReviewsAdminPage = lazy(() => import("./admin/marketplace/pages/MarketplaceReviewsAdminPage"));
 const StayReviewsAdminPage = lazy(() => import("./admin/reviews/pages/StayReviewsAdminPage"));
+const SeoPagesPage = lazy(() => import("./admin/seo/SeoPagesPage"));
 const MarketplaceSettingsAdminPage = lazy(() => import("./admin/marketplace/pages/MarketplaceSettingsAdminPage"));
 const MarketplaceStorePage = lazy(() => import("./pages/MarketplaceStorePage"));
 const VendorOnboardingPage = lazy(() => import("./modules/marketplace/vendor/VendorOnboardingPage"));
@@ -1605,6 +1606,17 @@ const AppContent: React.FC = () => {
             }
           >
             <Route path="/admin/reviews/stays" element={<StayReviewsAdminPage />} />
+          </Route>
+
+          {/* SEO publishing. Each step also needs its seo.pages.* permission (super_admin has all). */}
+          <Route
+            element={
+              <ProtectedRoute allowedRoles={["super_admin", "blog_manager"]}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/admin/seo/pages" element={<SeoPagesPage />} />
           </Route>
 
           <Route

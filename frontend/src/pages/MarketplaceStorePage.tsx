@@ -7,6 +7,8 @@ import {
 } from "../services/marketplace.service";
 import { useCart } from "../contexts/CartContext";
 import { formatCurrency } from "../utils/format";
+import { useCanonicalUrl } from "../lib/useCanonicalUrl";
+import { entitySeo } from "../seo/routePolicy";
 import {
   BadgeCheck,
   Loader2,
@@ -72,6 +74,15 @@ export const MarketplaceStorePage: React.FC = () => {
       cancelled = true;
     };
   }, [slug, loadProducts]);
+
+  const storeSeo = store ? entitySeo.marketplaceStore({ ...store, city: store.address?.city }) : null;
+  useCanonicalUrl({
+    canonicalPath: store ? `/marketplace/store/${store.slug || slug}` : null,
+    title: storeSeo?.title,
+    description: storeSeo?.description,
+    image: store?.logoUrl,
+    replaceUrl: false,
+  });
 
   if (state === "loading")
     return (

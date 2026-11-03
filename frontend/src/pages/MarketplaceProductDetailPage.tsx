@@ -4,6 +4,8 @@ import { storeApi, toStoreProduct } from "../services/marketplace.service";
 import { useCart } from "../contexts/CartContext";
 import { formatCurrency } from "../utils/format";
 import { humanizeLabel } from "../utils/labels";
+import { useCanonicalUrl } from "../lib/useCanonicalUrl";
+import { entitySeo } from "../seo/routePolicy";
 import {
   BadgeCheck,
   Minus,
@@ -110,6 +112,15 @@ export const MarketplaceProductDetailPage: React.FC = () => {
   useEffect(() => {
     load();
   }, [load]);
+
+  const productSeo = product ? entitySeo.product({ ...product, storeName: product.vendor?.name }) : null;
+  useCanonicalUrl({
+    canonicalPath: product?.slug ? `/marketplace/products/${product.slug}` : null,
+    title: productSeo?.title,
+    description: productSeo?.description,
+    image: product?.images?.[0],
+    replaceUrl: false,
+  });
 
   if (loading)
     return (

@@ -22,6 +22,8 @@ import {
   seasonLabel,
 } from "../utils/pilgrimageFormat";
 import CircuitDayTimeline from "../components/CircuitDayTimeline";
+import { useCanonicalUrl } from "../../../lib/useCanonicalUrl";
+import { entitySeo } from "../../../seo/routePolicy";
 
 const FALLBACK_IMAGE =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 240 160' preserveAspectRatio='xMidYMid slice'%3E%3Crect width='240' height='160' fill='%23f1f5f9'/%3E%3Cg transform='translate(108 68)' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/g%3E%3C/svg%3E";
@@ -68,6 +70,15 @@ export const CircuitDetailPage: React.FC = () => {
     void load();
   }, [load]);
 
+  const circuitSeo = circuit ? entitySeo.circuit(circuit) : null;
+  useCanonicalUrl({
+    canonicalPath: circuit ? `/circuits/${circuit.slug || slug}` : null,
+    title: circuitSeo?.title,
+    description: circuitSeo?.description,
+    image: circuit?.coverImage || circuit?.images?.[0],
+    replaceUrl: false,
+  });
+
   if (loading)
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16 space-y-6">
@@ -82,9 +93,9 @@ export const CircuitDetailPage: React.FC = () => {
       <div className="max-w-2xl mx-auto px-4 py-24 text-center">
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-12 shadow-sm space-y-3">
           <Compass size={36} className="text-gray-300 dark:text-slate-700 mx-auto" />
-          <h4 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+          <h1 className="font-extrabold text-base text-[#0B192C] dark:text-white">
             {error || "Circuit not found"}
-          </h4>
+          </h1>
           <button
             type="button"
             onClick={() => navigate("/pilgrimage-circuits")}
@@ -114,9 +125,9 @@ export const CircuitDetailPage: React.FC = () => {
           </span>
         </div>
 
-        <h2 className="text-3xl md:text-5xl font-extrabold text-[#0B192C] dark:text-white leading-tight">
+        <h1 className="text-3xl md:text-5xl font-extrabold text-[#0B192C] dark:text-white leading-tight">
           {circuit.name}
-        </h2>
+        </h1>
 
         {circuit.summary ? (
           <p className="max-w-2xl text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 leading-relaxed">
@@ -185,9 +196,9 @@ export const CircuitDetailPage: React.FC = () => {
         <div className="space-y-6 min-w-0">
           {circuit.description ? (
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 sm:p-6 shadow-sm space-y-3">
-              <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+              <h2 className="font-extrabold text-base text-[#0B192C] dark:text-white">
                 About this circuit
-              </h3>
+              </h2>
               <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium leading-relaxed whitespace-pre-line">
                 {circuit.description}
               </p>
@@ -210,10 +221,10 @@ export const CircuitDetailPage: React.FC = () => {
           ) : null}
 
           <section className="space-y-4">
-            <h3 className="font-extrabold text-base sm:text-lg text-[#0B192C] dark:text-white inline-flex items-center gap-2">
+            <h2 className="font-extrabold text-base sm:text-lg text-[#0B192C] dark:text-white inline-flex items-center gap-2">
               <Route size={18} className="text-[#E58C28] stroke-[2.5]" />
               The route, day by day
-            </h3>
+            </h2>
             {circuit.days?.length ? (
               <CircuitDayTimeline days={circuit.days} />
             ) : (
@@ -227,9 +238,9 @@ export const CircuitDetailPage: React.FC = () => {
 
           {circuit.travelTips ? (
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 sm:p-6 shadow-sm space-y-3">
-              <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+              <h2 className="font-extrabold text-base text-[#0B192C] dark:text-white">
                 Travel tips
-              </h3>
+              </h2>
               <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium leading-relaxed whitespace-pre-line">
                 {circuit.travelTips}
               </p>
@@ -238,9 +249,9 @@ export const CircuitDetailPage: React.FC = () => {
         </div>
 
         <aside className="lg:sticky lg:top-24 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 shadow-lg shadow-[#0B192C]/5 space-y-4">
-          <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+          <h2 className="font-extrabold text-base text-[#0B192C] dark:text-white">
             At a glance
-          </h3>
+          </h2>
 
           <div className="grid grid-cols-3 gap-2">
             <Stat

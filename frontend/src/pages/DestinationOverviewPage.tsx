@@ -28,6 +28,8 @@ import { checkAshramBookingAvailable } from "../utils/ashramAvailabilityHelper";
 import { TirvonaMapView, type MapMarker } from "../components/TirvonaMapView";
 import type { NearbyPlace } from "../data/destinationData";
 import { MarqueeSlider } from "../components/shared/MarqueeSlider";
+import { useCanonicalUrl } from "../lib/useCanonicalUrl";
+import { entitySeo } from "../seo/routePolicy";
 import "./DestinationOverviewPage.css";
 
 // ─── Animation presets ───────────────────────────────────────────────────────
@@ -166,9 +168,9 @@ const StayCard: React.FC<{ ashram: any }> = ({ ashram }) => {
       {/* Details — the same three the global ashram card shows: name, place,
           rating. The card itself is the link, so it carries no button. */}
       <div className="p-4 text-center flex flex-col items-center justify-center min-h-[72px]">
-        <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#F28C28] transition-colors">
+        <h2 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#F28C28] transition-colors">
           {ashram.name}
-        </h4>
+        </h2>
         <p className="text-[11px] text-gray-400 font-bold mt-1 text-center">
           {[city, state].filter(Boolean).join(", ")}
         </p>
@@ -230,9 +232,9 @@ const ParkingCard: React.FC<{ lot: any }> = ({ lot }) => {
       </div>
 
       <div className="p-4 text-center flex flex-col items-center justify-center min-h-[72px]">
-        <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#F28C28] transition-colors">
+        <h2 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#F28C28] transition-colors">
           {name}
-        </h4>
+        </h2>
         {city && (
           <p className="text-[11px] text-gray-400 font-bold mt-1 text-center">
             {city}
@@ -306,9 +308,9 @@ const PrasadCard: React.FC<{ product: any }> = ({ product }) => {
       </div>
 
       <div className="p-4 text-center flex flex-col items-center justify-center min-h-[72px]">
-        <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#F28C28] transition-colors">
+        <h2 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#F28C28] transition-colors">
           {product.name}
-        </h4>
+        </h2>
         {(product.vendor?.name || product.templeSource) && (
           <p className="text-[11px] text-gray-400 font-bold mt-1 text-center line-clamp-1">
             {product.vendor?.name || product.templeSource}
@@ -423,9 +425,9 @@ const AttractionCard: React.FC<{
       </div>
 
       <div className="p-4 text-center flex flex-col items-center justify-center min-h-[72px]">
-        <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#F28C28] transition-colors">
+        <h2 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#F28C28] transition-colors">
           {place.name}
-        </h4>
+        </h2>
         <p className="text-[11px] text-[#E58C28] font-bold mt-1 text-center">
           {place.category}
         </p>
@@ -463,9 +465,9 @@ const EmptyCategory: React.FC<{
 }> = ({ category, destinationName }) => (
   <div className="text-center py-12 px-6 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] space-y-3">
     <Sparkles size={28} className="mx-auto text-gray-300 dark:text-slate-700" />
-    <h4 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
+    <p className="tv-heading-face font-extrabold text-sm text-[#0B192C] dark:text-white">
       No {category} currently listed on Tirvona
-    </h4>
+    </p>
     <p className="text-xs text-gray-400 font-medium max-w-sm mx-auto">
       We are actively adding new verified {category.toLowerCase()} in{" "}
       {destinationName}. Discover other sacred experiences below.
@@ -499,6 +501,14 @@ const DestinationOverviewPage: React.FC = () => {
       navigate(redirectUrl, { replace: true });
     }
   }, [redirectUrl, navigate]);
+
+  const destinationSeo = resolvedSlug ? entitySeo.destination(resolvedSlug) : null;
+  useCanonicalUrl({
+    canonicalPath: resolvedSlug ? `/destination/${resolvedSlug.toLowerCase()}` : null,
+    title: destinationSeo?.title,
+    description: destinationSeo?.description,
+    replaceUrl: false,
+  });
 
   const [activeTab, setActiveTab] = useState<InventoryTab>("ashrams");
   const [stayFilter, setStayFilter] = useState<StayFilter>("all");
@@ -1018,9 +1028,9 @@ const DestinationOverviewPage: React.FC = () => {
               <div className="w-12 h-12 rounded-2xl bg-[rgba(242, 140, 40,0.08)] flex items-center justify-center">
                 <item.icon size={22} className="text-[#F28C28]" />
               </div>
-              <h4 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
+              <h2 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
                 {item.title}
-              </h4>
+              </h2>
               <p className="text-[10px] text-gray-400 font-bold">
                 {item.sub}
               </p>

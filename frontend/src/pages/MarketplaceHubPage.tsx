@@ -125,9 +125,9 @@ const ProductCard: React.FC<{
       </div>
 
       <div className="p-3 space-y-1 flex-1 flex flex-col">
-        <h3 className="text-sm font-bold text-[#0B192C] dark:text-white line-clamp-2 leading-snug">
+        <h2 className="text-sm font-bold text-[#0B192C] dark:text-white line-clamp-2 leading-snug">
           {product.name}
-        </h3>
+        </h2>
         {product.templeSource && (
           <p className="text-[11px] text-gray-500 truncate">
             {product.templeSource}
@@ -535,9 +535,9 @@ export const MarketplaceHubPage: React.FC = () => {
     <div className="min-h-screen pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
         <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
-          <p className="font-['Kalam'] text-3xl sm:text-5xl font-bold text-[#E58C28]">
+          <h1 className="font-['Kalam'] text-3xl sm:text-5xl font-bold text-[#E58C28]">
             Tirvona Marketplace
-          </p>
+          </h1>
           <div className="flex items-center justify-center gap-2.5 my-1.5">
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
             <Sparkles

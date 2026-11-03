@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useCanonicalUrl } from "../lib/useCanonicalUrl";
+import { blogPostPath, entitySeo } from "../seo/routePolicy";
 import api from "../lib/api";
 import { toast } from "../lib/toast";
 import { RichContent } from "../components/richText/RichContent";
@@ -20,6 +22,15 @@ export const VideoDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const [data, setData] = useState<any>(null);
+  // Same title, description and canonical as the server-rendered HTML (src/seo/routePolicy.ts).
+  const videoSeo = data?.post ? entitySeo.blog(data.post) : null;
+  useCanonicalUrl({
+    canonicalPath: data?.post?.slug ? blogPostPath(data.post) : null,
+    title: videoSeo?.title,
+    description: videoSeo?.description,
+    image: data?.post?.coverImage,
+    replaceUrl: false,
+  });
   const [loading, setLoading] = useState(true);
   const [likes, setLikes] = useState(0);
   const [hasLiked, setHasLiked] = useState(false);

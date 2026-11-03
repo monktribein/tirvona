@@ -48,9 +48,9 @@ export const SectionCard: React.FC<{
             {icon}
           </span>
         )}
-        <h3 id={id ? `${id}-title` : undefined} className="text-lg font-extrabold text-[#0B192C] dark:text-white leading-tight">
+        <h2 id={id ? `${id}-title` : undefined} className="text-lg font-extrabold text-[#0B192C] dark:text-white leading-tight">
           {title}
-        </h3>
+        </h2>
       </div>
       {aside}
     </header>
@@ -116,10 +116,10 @@ export const FacilitiesGrid: React.FC<{ items: string[] }> = ({ items }) => (
 
 const RuleGroup: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ title, icon, children }) => (
   <div className="rounded-2xl border border-gray-100 dark:border-slate-800 p-4 space-y-3">
-    <h4 className="flex items-center gap-2 text-sm font-extrabold text-[#0B192C] dark:text-white">
+    <h3 className="flex items-center gap-2 text-sm font-extrabold text-[#0B192C] dark:text-white">
       <span className="text-[#F28C28]">{icon}</span>
       {title}
-    </h4>
+    </h3>
     {children}
   </div>
 );
@@ -212,9 +212,9 @@ export const NearbyPlaces: React.FC<{ value: unknown }> = ({ value }) => {
   if (!places.length) return null;
   return (
     <div className="space-y-2 pt-3 border-t border-gray-100 dark:border-slate-800">
-      <h4 className="flex items-center gap-1.5 text-sm font-extrabold text-[#0B192C] dark:text-white">
+      <h3 className="flex items-center gap-1.5 text-sm font-extrabold text-[#0B192C] dark:text-white">
         <Landmark size={15} className="text-[#F28C28]" /> Nearby places
-      </h4>
+      </h3>
       <ul className="space-y-1.5">
         {places.map((place, index) => (
           <li key={`${place.name}_${index}`} className="flex items-start justify-between gap-3 text-sm">
@@ -295,10 +295,10 @@ export const PriceRow: React.FC<{
 /** Small uppercase heading that groups the steps of the booking panel. */
 export const PanelStep: React.FC<{ number: number; title: string; children: React.ReactNode }> = ({ number, title, children }) => (
   <section aria-label={title} className="space-y-3 pt-4 border-t border-gray-100 dark:border-slate-800 first:pt-0 first:border-t-0">
-    <h4 className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-400">
+    <h3 className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-400">
       <span className="w-5 h-5 rounded-full bg-[#F28C28] text-white flex items-center justify-center text-[10px] leading-none">{number}</span>
       {title}
-    </h4>
+    </h3>
     {children}
   </section>
 );

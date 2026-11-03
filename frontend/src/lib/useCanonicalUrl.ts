@@ -1,77 +1,32 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import {
+  DEFAULT_DESCRIPTION,
+  DEFAULT_TITLE,
+  SITE_ORIGIN,
+  STATIC_PAGES,
+  canonicalUrlFor,
+  classifyPath,
+  robotsFor,
+} from "../seo/routePolicy";
+import { activeSeoOverride, fetchSeoOverride, setActiveSeoOverride } from "./seoOverrides";
+import type { SeoPublicMeta } from "../services/seo.service";
 
-export const CANONICAL_ORIGIN = "https://www.tirvona.com";
-
-const TRACKING_PARAM_PREFIXES = ["utm_"];
-const TRACKING_EXACT_PARAMS = new Set([
-  "gclid",
-  "gbraid",
-  "wbraid",
-  "fbclid",
-  "msclkid",
-  "twclid",
-  "yclid",
-  "mc_eid",
-  "igshid",
-  "_ga",
-  "_gl",
-  "ref",
-  "source",
-  "campaign",
-]);
+export const CANONICAL_ORIGIN = SITE_ORIGIN;
 
 /**
  * Normalizes any route, pathname, or full URL to Tirvona's preferred
- * HTTPS canonical URL (https://www.tirvona.com/...) and strips tracking parameters
- * such as utm_source, utm_medium, gclid, fbclid, etc.
+ * HTTPS canonical URL (https://www.tirvona.com/...). Follows the shared route
+ * policy (src/seo/routePolicy.ts), which the server-rendered HTML uses too:
+ * aliases resolve to one URL and query strings (filters, utm_*, gclid, ...)
+ * are never part of a canonical.
  */
 export const cleanCanonicalUrl = (rawPathOrUrl: string): string => {
   if (!rawPathOrUrl) return `${CANONICAL_ORIGIN}/`;
 
   try {
     const url = new URL(rawPathOrUrl, CANONICAL_ORIGIN);
-    let pathname = url.pathname.replace(/\/+/g, "/");
-    if (pathname.length > 1 && pathname.endsWith("/")) {
-      pathname = pathname.slice(0, -1);
-    }
-
-    const params = new URLSearchParams(url.search);
-    const keysToDelete: string[] = [];
-    params.forEach((_, key) => {
-      const lower = key.toLowerCase();
-      if (
-        TRACKING_PARAM_PREFIXES.some((prefix) => lower.startsWith(prefix)) ||
-        TRACKING_EXACT_PARAMS.has(lower)
-      ) {
-        keysToDelete.push(key);
-      }
-    });
-    keysToDelete.forEach((key) => params.delete(key));
-
-    // For indexable destination, stay, content and SEO landing pages, canonical
-    // URLs are clean paths without query parameters.
-    const isStandardCleanPage =
-      pathname === "/" ||
-      pathname.startsWith("/ashrams") ||
-      pathname.startsWith("/stays") ||
-      pathname.startsWith("/Stays-near-prem-mandir-vrindavan") ||
-      pathname.startsWith("/temples") ||
-      pathname.startsWith("/about") ||
-      pathname.startsWith("/contact") ||
-      pathname.startsWith("/faq") ||
-      pathname.startsWith("/help") ||
-      pathname.startsWith("/terms") ||
-      pathname.startsWith("/privacy") ||
-      pathname.startsWith("/refund-policy") ||
-      pathname.startsWith("/cancellation-policy") ||
-      pathname.startsWith("/stay-policies") ||
-      pathname.startsWith("/govt-guidelines");
-
-    const searchStr =
-      isStandardCleanPage || params.size === 0 ? "" : `?${params.toString()}`;
-
-    return `${CANONICAL_ORIGIN}${pathname}${searchStr}`;
+    return canonicalUrlFor(url.pathname);
   } catch {
     return `${CANONICAL_ORIGIN}/`;
   }
@@ -116,19 +71,48 @@ export const setCanonicalMeta = (
   upsertMeta("property", "og:url", cleanHref);
   upsertMeta("name", "twitter:url", cleanHref);
 
-  if (options?.title) {
-    document.title = options.title;
-    upsertMeta("property", "og:title", options.title);
-    upsertMeta("name", "twitter:title", options.title);
+  // A published SEO record's title and description win over the page's own, as on the server.
+  const override = activeSeoOverride(new URL(cleanHref).pathname);
+  const title = override?.title || options?.title;
+  const description = override?.description || options?.description;
+  if (title) {
+    document.title = title;
+    upsertMeta("property", "og:title", title);
+    upsertMeta("name", "twitter:title", title);
   }
-  if (options?.description) {
-    upsertMeta("name", "description", options.description);
-    upsertMeta("property", "og:description", options.description);
-    upsertMeta("name", "twitter:description", options.description);
+  if (description) {
+    upsertMeta("name", "description", description);
+    upsertMeta("property", "og:description", description);
+    upsertMeta("name", "twitter:description", description);
   }
   if (options?.image) {
     upsertMeta("property", "og:image", options.image);
     upsertMeta("name", "twitter:image", options.image);
+  }
+};
+
+/** Writes a published SEO record's overrides into the head (title, description, robots, added JSON-LD). */
+export const applySeoOverride = (meta: SeoPublicMeta): void => {
+  if (meta.title) {
+    document.title = meta.title;
+    upsertMeta("property", "og:title", meta.title);
+    upsertMeta("name", "twitter:title", meta.title);
+  }
+  if (meta.description) {
+    upsertMeta("name", "description", meta.description);
+    upsertMeta("property", "og:description", meta.description);
+    upsertMeta("name", "twitter:description", meta.description);
+  }
+  upsertMeta("name", "robots", meta.robots);
+  document.querySelectorAll('script[data-seo-editorial="true"]').forEach((node) => node.remove());
+  if (meta.schema) {
+    // Marked like the server's copy, so the tracker removes it on the next navigation.
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.dataset.seoSsr = "true";
+    script.dataset.seoEditorial = "true";
+    script.textContent = JSON.stringify(meta.schema);
+    document.head.appendChild(script);
   }
 };
 
@@ -177,17 +161,72 @@ export const useCanonicalUrl = ({
  * Global component that runs on route changes to ensure EVERY page dynamically
  * receives a self-referencing canonical URL using the preferred HTTPS WWW origin
  * and stripping any tracking parameters (utm_*, gclid, fbclid, etc.).
+ *
+ * It also keeps the robots tag in line with the route policy (private pages
+ * noindex). On the first load the server already wrote the page's title,
+ * description and JSON-LD, so those are left alone; on later in-app
+ * navigation they are reset to the new route's static values (or the site
+ * defaults), and entity pages then set their own through useCanonicalUrl.
  */
 export const CanonicalUrlTracker: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const firstRender = useRef(true);
 
+  // Published SEO records (seo_pages) for public pages: applied once they arrive, and kept
+  // when the page then sets its own title (setCanonicalMeta reads the active override).
   useEffect(() => {
-    const raw = `${location.pathname}${location.search}`;
-    const clean = cleanCanonicalUrl(raw);
+    const canonicalPath = new URL(cleanCanonicalUrl(location.pathname)).pathname;
+    setActiveSeoOverride(canonicalPath, null);
+    const kind = classifyPath(location.pathname).kind;
+    if (kind !== "static" && kind !== "entity") return;
+    let current = true;
+    fetchSeoOverride(canonicalPath).then((result) => {
+      if (!current || !result) return;
+      if (result.kind === "retired") {
+        if (result.redirectTo) navigate(result.redirectTo, { replace: true });
+        else upsertMeta("name", "robots", "noindex,follow");
+        return;
+      }
+      setActiveSeoOverride(canonicalPath, result.meta);
+      applySeoOverride(result.meta);
+    });
+    return () => {
+      current = false;
+    };
+  }, [location.pathname, navigate]);
+
+  // Canonicals never carry the query string, so filter changes must not reset what the page set.
+  useEffect(() => {
+    const clean = cleanCanonicalUrl(location.pathname);
     upsertLink("canonical", clean);
     upsertMeta("property", "og:url", clean);
     upsertMeta("name", "twitter:url", clean);
-  }, [location.pathname, location.search]);
+    upsertMeta("name", "robots", robotsFor(location.pathname));
+
+    if (firstRender.current) {
+      firstRender.current = false;
+      // Pages that write their own JSON-LD replace the server's copy instead of duplicating it.
+      document
+        .querySelectorAll('script[data-seo-client-replaces="true"]')
+        .forEach((node) => node.remove());
+      return;
+    }
+
+    document.querySelectorAll('script[data-seo-ssr="true"]').forEach((node) => node.remove());
+    const match = classifyPath(location.pathname);
+    const staticPage = match.kind === "static" ? STATIC_PAGES[match.canonicalPath] : undefined;
+    const title =
+      staticPage?.title ??
+      (match.kind === "utility" || match.kind === "section" ? match.title : DEFAULT_TITLE);
+    document.title = title;
+    upsertMeta("property", "og:title", title);
+    upsertMeta("name", "twitter:title", title);
+    const description = staticPage?.description ?? DEFAULT_DESCRIPTION;
+    upsertMeta("name", "description", description);
+    upsertMeta("property", "og:description", description);
+    upsertMeta("name", "twitter:description", description);
+  }, [location.pathname]);
 
   return null;
 };

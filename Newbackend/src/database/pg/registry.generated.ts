@@ -28704,6 +28704,198 @@ export const REGISTRY: Registry = {
      "enforced": true
     }
    ]
+  },
+  {
+   "database": "test",
+   "collection": "seo_pages",
+   "schema": "public",
+   "table": "seo_pages",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "pageType",
+     "column": "page_type",
+     "kind": "string"
+    },
+    {
+     "field": "entityId",
+     "column": "entity_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "slug",
+     "column": "slug",
+     "kind": "string"
+    },
+    {
+     "field": "path",
+     "column": "path",
+     "kind": "string"
+    },
+    {
+     "field": "canonicalUrl",
+     "column": "canonical_url",
+     "kind": "string"
+    },
+    {
+     "field": "seoTitle",
+     "column": "seo_title",
+     "kind": "string"
+    },
+    {
+     "field": "metaDescription",
+     "column": "meta_description",
+     "kind": "string"
+    },
+    {
+     "field": "h1",
+     "column": "h1",
+     "kind": "string"
+    },
+    {
+     "field": "contentJson",
+     "column": "content_json",
+     "kind": "json"
+    },
+    {
+     "field": "schemaJson",
+     "column": "schema_json",
+     "kind": "json"
+    },
+    {
+     "field": "indexingStatus",
+     "column": "indexing_status",
+     "kind": "string"
+    },
+    {
+     "field": "publicationStatus",
+     "column": "publication_status",
+     "kind": "string"
+    },
+    {
+     "field": "redirectTo",
+     "column": "redirect_to",
+     "kind": "string"
+    },
+    {
+     "field": "publishedAt",
+     "column": "published_at",
+     "kind": "date"
+    },
+    {
+     "field": "verifiedAt",
+     "column": "verified_at",
+     "kind": "date"
+    },
+    {
+     "field": "verifiedBy",
+     "column": "verified_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "reviewedBy",
+     "column": "reviewed_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "approvedBy",
+     "column": "approved_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "retiredAt",
+     "column": "retired_at",
+     "kind": "date"
+    },
+    {
+     "field": "legacyWpId",
+     "column": "legacy_wp_id",
+     "kind": "string"
+    },
+    {
+     "field": "version",
+     "column": "version",
+     "kind": "number"
+    },
+    {
+     "field": "pending",
+     "column": "pending",
+     "kind": "json"
+    },
+    {
+     "field": "createdBy",
+     "column": "created_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "updatedBy",
+     "column": "updated_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "path_1",
+     "keys": {
+      "path": 1
+     },
+     "unique": true,
+     "enforced": true
+    },
+    {
+     "name": "pageType_1_entityId_1",
+     "keys": {
+      "pageType": 1,
+      "entityId": 1
+     },
+     "unique": true,
+     "partialFilterExpression": {
+      "entityId": {
+       "$exists": true
+      }
+     },
+     "enforced": true
+    },
+    {
+     "name": "legacyWpId_1",
+     "keys": {
+      "legacyWpId": 1
+     },
+     "unique": true,
+     "partialFilterExpression": {
+      "legacyWpId": {
+       "$exists": true
+      }
+     },
+     "enforced": true
+    },
+    {
+     "name": "publicationStatus_1_indexingStatus_1",
+     "keys": {
+      "publicationStatus": 1,
+      "indexingStatus": 1
+     },
+     "enforced": true
+    },
+    {
+     "name": "pageType_1_publicationStatus_1",
+     "keys": {
+      "pageType": 1,
+      "publicationStatus": 1
+     },
+     "enforced": true
+    }
+   ]
   }
  ]
 };

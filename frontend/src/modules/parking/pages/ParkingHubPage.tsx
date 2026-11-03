@@ -223,9 +223,9 @@ export const ParkingHubPage: React.FC = () => {
     <div className="pb-16 lg:pb-24 overflow-x-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
         <div className="text-center space-y-2 max-w-3xl mx-auto py-2">
-          <p className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
+          <h1 className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
             Sacred Parking Facilities
-          </p>
+          </h1>
           <div className="flex items-center justify-center gap-2.5 my-1.5">
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
             <Sparkles
@@ -352,9 +352,9 @@ export const ParkingHubPage: React.FC = () => {
                   size={36}
                   className="text-gray-300 dark:text-slate-700 mx-auto"
                 />
-                <h4 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+                <p className="tv-heading-face font-extrabold text-base text-[#0B192C] dark:text-white">
                   No parking found
-                </h4>
+                </p>
                 <p className="text-xs text-gray-400 font-medium max-w-md mx-auto leading-relaxed">
                   Try a different destination, widen your filters, or change
                   your entry and exit times.

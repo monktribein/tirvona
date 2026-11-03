@@ -10,6 +10,8 @@ import {
 } from "../services/marketplace.service";
 import { useCart } from "../contexts/CartContext";
 import { formatCurrency } from "../utils/format";
+import { useCanonicalUrl } from "../lib/useCanonicalUrl";
+import { entitySeo } from "../seo/routePolicy";
 
 const PAGE_SIZE = 24;
 const FALLBACK_IMAGE =
@@ -57,6 +59,14 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
       cancelled = true;
     };
   }, [slug, loadProducts]);
+
+  const categorySeo = category ? entitySeo.marketplaceCategory(category) : null;
+  useCanonicalUrl({
+    canonicalPath: category ? `/marketplace/category/${category.slug || slug}` : null,
+    title: categorySeo?.title,
+    description: categorySeo?.description,
+    replaceUrl: false,
+  });
 
   if (state === "loading")
     return (

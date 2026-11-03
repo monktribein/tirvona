@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ashramUrl } from "../lib/urls";
 import { useCanonicalUrl } from "../lib/useCanonicalUrl";
+import { entitySeo } from "../seo/routePolicy";
 import {
   useParams,
   useNavigate,
@@ -185,14 +186,15 @@ export const AshramDetailPage: React.FC = () => {
     canonicalPath: ashram
       ? `${ashramUrl(ashram)}${isBookingRoute ? "/book" : ""}`
       : fallbackSlugPath,
+    // Same formula as the server-rendered HTML (src/seo/routePolicy.ts).
     title: ashram
-      ? `${ashram.name} · Tirvona`
+      ? entitySeo.ashram(ashram).title
       : ashramSlug
       ? `${ashramSlug
           .replace(/-/g, " ")
           .replace(/\b\w/g, (l) => l.toUpperCase())} | Tirvona`
       : undefined,
-    description: ashram?.description?.slice(0, 160),
+    description: ashram ? entitySeo.ashram(ashram).description : undefined,
     image: ashram?.images?.[0] || ashram?.coverImage,
   });
 
@@ -1328,9 +1330,9 @@ export const AshramDetailPage: React.FC = () => {
         <div className="inline-block px-3 py-1 rounded-full bg-rose-600 text-white text-[11px] font-black uppercase tracking-wider shadow-sm">
           Not Available
         </div>
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0B192C] dark:text-white">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0B192C] dark:text-white">
           Stay Currently Unavailable
-        </h2>
+        </h1>
         <p className="text-xs sm:text-sm text-gray-500 max-w-md leading-relaxed">
           {detailError &&
           !detailError.includes("_id") &&
@@ -1402,9 +1404,9 @@ export const AshramDetailPage: React.FC = () => {
             )}
           </div>
 
-          <h2 className="tvp-display text-2xl sm:text-3xl md:text-5xl font-bold text-[#0B192C] dark:text-white leading-tight">
+          <h1 className="tvp-display text-2xl sm:text-3xl md:text-5xl font-bold text-[#0B192C] dark:text-white leading-tight">
             {ashram.name}
-          </h2>
+          </h1>
 
           {!checkAshramBookingAvailable(ashram) && (
             <div
@@ -1804,9 +1806,9 @@ export const AshramDetailPage: React.FC = () => {
 
             {ashram.history && (
               <div className="pt-4 border-t border-gray-100 dark:border-slate-800 space-y-2">
-                <h4 className="text-sm font-extrabold text-[#F28C28]">
+                <h2 className="text-sm font-extrabold text-[#F28C28]">
                   Historical Significance
-                </h4>
+                </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed italic bg-gray-50/60 dark:bg-slate-900/40 p-4 rounded-2xl border border-dashed border-gray-200 dark:border-slate-800">
                   "{ashram.history}"
                 </p>
@@ -1974,9 +1976,9 @@ export const AshramDetailPage: React.FC = () => {
                         )}
 
                         <div className="space-y-2 min-w-0">
-                          <h4 className="text-base font-extrabold text-[#0B192C] dark:text-white leading-snug">
+                          <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white leading-snug">
                             {r.name}
-                          </h4>
+                          </h3>
                           <div className="flex flex-wrap items-center gap-1.5 text-xs font-bold text-gray-600 dark:text-gray-300">
                             <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 dark:bg-slate-800 px-2.5 py-1 capitalize">
                               <BedDouble size={12} /> {String(r.type ?? "").replace(/_/g, " ")}
@@ -2209,10 +2211,10 @@ export const AshramDetailPage: React.FC = () => {
           {volunteerJobs.length > 0 && (
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-4 shadow-sm">
               <div className="flex items-center justify-between border-b border-gray-50 dark:border-slate-850 pb-3">
-                <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white">
+                <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white">
                   Current Volunteer & Career Opportunities (
                   {volunteerJobs.length})
-                </h3>
+                </h2>
                 <Link
                   to="/volunteer"
                   className="text-xs font-black text-[#F28C28] hover:underline"
@@ -2240,9 +2242,9 @@ export const AshramDetailPage: React.FC = () => {
                       to={`/volunteer/${j._id}`}
                       className="block hover:underline"
                     >
-                      <h4 className="text-xs font-black text-[#0B192C] dark:text-white">
+                      <h3 className="text-xs font-black text-[#0B192C] dark:text-white">
                         {j.title}
-                      </h4>
+                      </h3>
                     </Link>
                     <p className="text-[11px] font-extrabold text-[#E58C28]">
                       {j.stipend}
@@ -2335,9 +2337,9 @@ export const AshramDetailPage: React.FC = () => {
             <div className="absolute top-0 inset-x-0 h-1 bg-[#F28C28]" />
             <div className="flex items-start justify-between gap-3">
               <div className="space-y-0.5">
-                <h3 className="tvp-display font-semibold text-xl text-[#0B192C] dark:text-white">
+                <h2 className="tvp-display font-semibold text-xl text-[#0B192C] dark:text-white">
                   Overnight Stay Booking
-                </h3>
+                </h2>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   Choose your dates and rooms, then review the price before you pay.
                 </p>
@@ -2675,10 +2677,10 @@ export const AshramDetailPage: React.FC = () => {
                           <span className="text-xs text-emerald-600 dark:text-emerald-400 font-black tracking-wider block">
                             Offer Applied Successfully
                           </span>
-                          <h4 className="text-xs font-black text-[#0B192C] dark:text-white">
+                          <h3 className="text-xs font-black text-[#0B192C] dark:text-white">
                             {appliedOfferData.offerName ||
                               "Exclusive Pilgrim Discount"}
-                          </h4>
+                          </h3>
                         </div>
                       </div>
                       <span className="px-2.5 py-1 bg-emerald-500 text-white rounded-full text-xs font-black shadow-sm">
@@ -3101,9 +3103,9 @@ export const AshramDetailPage: React.FC = () => {
 
           <div id="stay-location" className="scroll-mt-24 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 sm:p-6 rounded-[28px] shadow-sm space-y-4">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              <h4 className="inline-flex items-center gap-2 text-base font-extrabold text-[#0B192C] dark:text-white">
+              <h2 className="inline-flex items-center gap-2 text-base font-extrabold text-[#0B192C] dark:text-white">
                 <Map className="text-[#F28C28]" size={16} /> Location
-              </h4>
+              </h2>
               {ashramLatLng && (
                 <a
                   href={`https://www.google.com/maps/search/?api=1&query=${ashramLatLng[0]},${ashramLatLng[1]}`}
@@ -3156,9 +3158,9 @@ export const AshramDetailPage: React.FC = () => {
             <span className="text-xs font-extrabold text-[#F28C28] tracking-widest">
               More Places
             </span>
-            <h3 className="text-lg md:text-2xl font-extrabold text-[#0B192C] dark:text-white">
+            <h2 className="text-lg md:text-2xl font-extrabold text-[#0B192C] dark:text-white">
               Related Stays in {ashram.address?.city}
-            </h3>
+            </h2>
           </div>
           <div
             ref={setRelatedRow}
@@ -3190,9 +3192,9 @@ export const AshramDetailPage: React.FC = () => {
                   </span>
                 </div>
                 <div className="p-4 flex-grow">
-                  <h4 className="font-extrabold text-xs text-[#0B192C] dark:text-white line-clamp-1">
+                  <h3 className="font-extrabold text-xs text-[#0B192C] dark:text-white line-clamp-1">
                     {rel.name}
-                  </h4>
+                  </h3>
                   <span className="text-[9px] text-[#F28C28] font-bold block">
                     {rel.address?.city}
                   </span>

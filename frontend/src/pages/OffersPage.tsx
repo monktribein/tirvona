@@ -113,9 +113,9 @@ export const OffersPage: React.FC = () => {
     <div className="min-h-screen pb-20 space-y-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
         <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
-          <p className="font-['Kalam'] text-2xl sm:text-4xl lg:text-5xl font-bold text-[#E58C28]">
+          <h1 className="font-['Kalam'] text-2xl sm:text-4xl lg:text-5xl font-bold text-[#E58C28]">
             Exclusive Offers &amp; Deals
-          </p>
+          </h1>
           <div className="flex items-center justify-center gap-2.5 my-1.5">
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
             <Sparkles
@@ -162,9 +162,9 @@ export const OffersPage: React.FC = () => {
         ) : filteredOffers.length === 0 ? (
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-12 text-center space-y-4 shadow-sm">
             <Gift size={48} className="mx-auto text-amber-500/50" />
-            <h3 className="text-xl font-black text-[#0B192C] dark:text-white">
+            <p className="tv-heading-face text-xl font-black text-[#0B192C] dark:text-white">
               {loadFailed ? "Offers Unavailable" : "No Offers Found"}
-            </h3>
+            </p>
             <p className="text-xs text-gray-400">
               {loadFailed
                 ? "We could not reach the offers service. Please try again shortly."

@@ -87,6 +87,5 @@ Disallow: /c/*
 Disallow: /smart-contact.html
 Disallow: /index.html
 
-# Canonical Host and Sitemap
-Host: https://www.tirvona.com
+# Sitemap
 Sitemap: https://www.tirvona.com/sitemap.xml

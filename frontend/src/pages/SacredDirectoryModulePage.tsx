@@ -185,9 +185,9 @@ export const SacredDirectoryModulePage: React.FC = () => {
       <div className="min-h-screen pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
           <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
-            <p className="font-['Kalam'] text-3xl sm:text-5xl font-bold text-[#E58C28]">
+            <h1 className="font-['Kalam'] text-3xl sm:text-5xl font-bold text-[#E58C28]">
               {isFood ? "Food & Satvik Dining" : "Shops & Sacred Services"}
-            </p>
+            </h1>
             <div className="flex items-center justify-center gap-2.5 my-1.5">
               <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
               <Sparkles
@@ -234,9 +234,9 @@ export const SacredDirectoryModulePage: React.FC = () => {
     <div className="min-h-screen pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
         <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
-          <p className="font-['Kalam'] text-2xl sm:text-4xl lg:text-5xl font-bold text-[#E58C28]">
+          <h1 className="font-['Kalam'] text-2xl sm:text-4xl lg:text-5xl font-bold text-[#E58C28]">
             {config.title}
-          </p>
+          </h1>
           <div className="flex items-center justify-center gap-2.5 my-1.5">
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
             <Sparkles
@@ -285,9 +285,9 @@ export const SacredDirectoryModulePage: React.FC = () => {
         ) : items.length === 0 ? (
           <div className="text-center py-16 bg-white dark:bg-[#0B192C] rounded-3xl border border-gray-200 dark:border-slate-800">
             <IconComp size={48} className="text-gray-400 mx-auto mb-3" />
-            <h3 className="font-black text-lg text-gray-700 dark:text-gray-200">
+            <p className="tv-heading-face font-black text-lg text-gray-700 dark:text-gray-200">
               No Items Found
-            </h3>
+            </p>
             <p className="text-xs text-gray-400">
               Try refining your search term or select another service.
             </p>
@@ -319,9 +319,9 @@ export const SacredDirectoryModulePage: React.FC = () => {
                       <span className="text-[10px] text-gray-400 font-extrabold tracking-wider block">
                         {item.city}, {item.state}
                       </span>
-                      <h3 className="font-black text-lg text-[#0B192C] dark:text-white leading-tight">
+                      <h2 className="font-black text-lg text-[#0B192C] dark:text-white leading-tight">
                         {item.title}
-                      </h3>
+                      </h2>
                       <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
                         {item.description}
                       </p>
@@ -365,7 +365,7 @@ export const SacredDirectoryModulePage: React.FC = () => {
             <span className="px-3 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-black">
               In Future
             </span>
-            <h4 className="font-black text-lg">{config.futureTitle}</h4>
+            <h2 className="font-black text-lg">{config.futureTitle}</h2>
             <p className="text-xs text-gray-300">{config.futureDesc}</p>
           </div>
           <span className="px-5 py-2 rounded-full bg-white/10 text-amber-300 font-black text-xs border border-amber-400/30 shrink-0">

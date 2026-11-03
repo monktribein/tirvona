@@ -1255,9 +1255,9 @@ export const PublicLayout: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-5 sm:gap-8 lg:col-span-2">
               <div className="space-y-3">
-                <h4 className="text-xs sm:text-sm font-black text-white tracking-wider border-l-2 border-[#E58C28] pl-2.5">
+                <h2 className="text-xs sm:text-sm font-black text-white tracking-wider border-l-2 border-[#E58C28] pl-2.5">
                   Quick Links
-                </h4>
+                </h2>
                 <ul className="text-xs space-y-2.5 text-slate-300 font-medium pt-1">
                   <li>
                     <Link
@@ -1336,9 +1336,9 @@ export const PublicLayout: React.FC = () => {
               </div>
 
               <div className="space-y-3">
-                <h4 className="text-xs sm:text-sm font-black text-white tracking-wider border-l-2 border-[#F28C28] pl-2.5">
+                <h2 className="text-xs sm:text-sm font-black text-white tracking-wider border-l-2 border-[#F28C28] pl-2.5">
                   Our Services
-                </h4>
+                </h2>
                 <ul className="text-xs space-y-2.5 text-slate-300 font-medium pt-1">
                   {TIRVONA_SERVICES.map((service) => (
                     <li key={service.id}>
@@ -1386,9 +1386,9 @@ export const PublicLayout: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              <h4 className="text-xs sm:text-sm font-black text-white tracking-wider border-l-2 border-emerald-500 pl-2.5">
+              <h2 className="text-xs sm:text-sm font-black text-white tracking-wider border-l-2 border-emerald-500 pl-2.5">
                 Stay Connected
-              </h4>
+              </h2>
               <p className="text-xs text-slate-300 font-medium leading-relaxed">
                 Subscribe for sacred yatra updates, upcoming festival darshan
                 alerts &amp; exclusive stays.

@@ -2,6 +2,7 @@ import { Paginated } from "../components/shared/Pagination";
 import React, { useState, useEffect, useRef } from "react";
 import { ashramUrl, type SluggableAshram } from "../lib/urls";
 import { useCanonicalUrl } from "../lib/useCanonicalUrl";
+import { entitySeo, STATIC_PAGES, toTitleWords } from "../seo/routePolicy";
 import { useSearchParams, useParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ashramService } from "../services";
@@ -58,14 +59,15 @@ export const SearchPage: React.FC = () => {
   // because its results depend on query parameters.
   useCanonicalUrl({
     canonicalPath: cityParam ? `/ashrams/${cityParam.toLowerCase()}` : null,
-    title: cityParam
-      ? `Stays in ${cityFromPath.replace(/\b\w/g, (c) => c.toUpperCase())} · Tirvona`
-      : undefined,
-    description: cityParam
-      ? `Book verified stays in ${cityFromPath}. Compare rooms, tariffs and availability on Tirvona.`
-      : undefined,
+    // Same formula as the server-rendered HTML (src/seo/routePolicy.ts).
+    title: cityParam ? entitySeo.ashramCity(cityParam).title : undefined,
+    description: cityParam ? entitySeo.ashramCity(cityParam).description : undefined,
     replaceUrl: false,
   });
+  // The page's one H1; same wording as the server-rendered HTML for /ashrams and /ashrams/:city.
+  const pageHeading = rawDestination
+    ? `Stays in ${toTitleWords(rawDestination)}`
+    : STATIC_PAGES["/ashrams"].h1;
   const rawCategory =
     searchParams.get("category") || searchParams.get("service") || "";
   const rawQuery =
@@ -772,14 +774,14 @@ export const SearchPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
         <aside className="hidden lg:block space-y-6 lg:sticky lg:top-20">
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm space-y-6">
-            <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-50 dark:border-slate-850 pb-3">
+            <p className="tv-heading-face font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-50 dark:border-slate-850 pb-3">
               <Filter size={16} className="text-[#F28C28]" /> Filters
-            </h3>
+            </p>
 
             <div className="space-y-4">
-              <h4 className="text-[10px] uppercase font-extrabold text-gray-400 tracking-wider">
+              <p className="tv-heading-face text-[10px] uppercase font-extrabold text-gray-400 tracking-wider">
                 Stay Type
-              </h4>
+              </p>
               <div className="space-y-3.5">
                 <label className="flex items-center gap-3 text-xs font-semibold cursor-pointer select-none">
                   <input
@@ -820,9 +822,9 @@ export const SearchPage: React.FC = () => {
             </div>
 
             <div className="space-y-4 pt-4 border-t border-gray-50 dark:border-slate-850">
-              <h4 className="text-[10px] uppercase font-extrabold text-gray-400 tracking-wider">
+              <p className="tv-heading-face text-[10px] uppercase font-extrabold text-gray-400 tracking-wider">
                 Facilities
-              </h4>
+              </p>
               <div className="space-y-3.5">
                 <label className="flex items-center gap-3 text-xs font-semibold cursor-pointer select-none">
                   <input
@@ -878,9 +880,9 @@ export const SearchPage: React.FC = () => {
           </div>
 
           <div className="bg-gradient-to-br from-blue-500/10 via-amber-500/5 to-transparent border border-[#F28C28]/20 p-5 rounded-[24px] space-y-2">
-            <h4 className="text-xs font-extrabold text-[#0B192C] dark:text-white flex items-center gap-2">
+            <p className="tv-heading-face text-xs font-extrabold text-[#0B192C] dark:text-white flex items-center gap-2">
               <Navigation size={14} className="text-[#F28C28]" /> Near Temple Finder
-            </h4>
+            </p>
             <p className="text-[11px] text-gray-500 leading-relaxed font-medium">
               Find stays walking distance from major ghats & temples.
             </p>
@@ -926,6 +928,9 @@ export const SearchPage: React.FC = () => {
         </aside>
 
         <section className="lg:col-span-3 space-y-3">
+          <h1 className="font-extrabold text-base sm:text-lg text-[#0B192C] dark:text-white leading-tight">
+            {pageHeading}
+          </h1>
           <SearchResultStatus
             loading={loading}
             destination={
@@ -941,9 +946,9 @@ export const SearchPage: React.FC = () => {
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#F28C28]/10 text-[#F28C28] text-[9px] font-black uppercase tracking-wider">
                     <Sparkles size={10} className="text-[#E58C28]" /> Destination Guide
                   </span>
-                  <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
+                  <h2 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
                     {destinationGuide.name} Overview
-                  </h3>
+                  </h2>
                 </div>
                 <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium line-clamp-1">
                   Plan your visit with complete ashrams, parking, prasad, and sacred temples in {destinationGuide.name}.
@@ -972,10 +977,10 @@ export const SearchPage: React.FC = () => {
               <div className="w-12 h-12 rounded-full bg-[#FFF4E5] text-[#F28C28] flex items-center justify-center mx-auto">
                 <Search size={20} />
               </div>
-              <h4 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+              <p className="tv-heading-face font-extrabold text-base text-[#0B192C] dark:text-white">
                 No Tirvona Verified Ashrams found matching{" "}
                 {activeKeyword ? `"${activeKeyword}"` : "your query"}
-              </h4>
+              </p>
               <p className="text-xs text-gray-400 max-w-sm mx-auto leading-relaxed">
                 {activeFilterCount > 0
                   ? "Some filters may be restricting your results. Try resetting your active filters."
@@ -1067,7 +1072,7 @@ export const SearchPage: React.FC = () => {
                     <div className="flex-grow flex flex-col justify-between space-y-4">
                       <div className="space-y-2">
                         <div className="flex justify-between items-start gap-2">
-                          <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight flex items-center gap-2">
+                          <h2 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight flex items-center gap-2">
                             <span>{ashram.name}</span>
                             {(ashram.isVerified ?? ashram.status === "approved") && (
                               <img
@@ -1075,7 +1080,7 @@ export const SearchPage: React.FC = () => {
                                 alt="Tirvona Verified"
                                 className="h-9 sm:h-11 w-auto object-contain inline-block shrink-0 align-middle max-w-[140px]" loading="lazy" decoding="async" />
                             )}
-                          </h3>
+                          </h2>
                           {Number(ashram.rating?.average) > 0 ? (
                             <div className="flex items-center gap-1 text-sm font-bold text-[#0B192C] dark:text-accent shrink-0">
                               <Star
@@ -1355,9 +1360,9 @@ export const SearchPage: React.FC = () => {
                   <div className="w-full md:w-[360px] flex flex-col h-[50vh] md:h-full bg-white dark:bg-[#0B192C]">
                     <div className="p-4 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-slate-900">
                       <div>
-                        <h3 className="font-extrabold text-xs text-[#0B192C] dark:text-white tracking-wider">
+                        <p className="tv-heading-face font-extrabold text-xs text-[#0B192C] dark:text-white tracking-wider">
                           Distance Matrix
-                        </h3>
+                        </p>
                         <p className="text-[9px] text-gray-400 font-bold tracking-wider">
                           Closest to Central Landmark
                         </p>
@@ -1391,9 +1396,9 @@ export const SearchPage: React.FC = () => {
                               }`}
                             >
                               <div className="flex justify-between items-start gap-1">
-                                <h4 className="font-extrabold text-[11px] leading-tight text-gray-800 dark:text-gray-200">
+                                <p className="tv-heading-face font-extrabold text-[11px] leading-tight text-gray-800 dark:text-gray-200">
                                   {i + 1}. {item.name}
-                                </h4>
+                                </p>
                                 <span className="text-[9px] font-bold text-[#F28C28] bg-[#F28C28]/10 px-1.5 py-0.5 rounded whitespace-nowrap shadow-sm shrink-0">
                                   {item.distance} km
                                 </span>
@@ -1438,9 +1443,9 @@ export const SearchPage: React.FC = () => {
           />
           <div className="relative w-full max-w-sm bg-white dark:bg-[#0B192C] h-[100vh] h-[100dvh] flex flex-col z-[200] shadow-2xl overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 pt-[max(1rem,calc(0.75rem+env(safe-area-inset-top)))] border-b border-gray-100 dark:border-slate-800">
-              <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2">
+              <p className="tv-heading-face font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2">
                 <Filter size={16} className="text-[#F28C28]" /> Filters {activeFilterCount > 0 && `(${activeFilterCount})`}
-              </h3>
+              </p>
               <button
                 type="button"
                 onClick={() => setMobileFilterOpen(false)}
@@ -1452,9 +1457,9 @@ export const SearchPage: React.FC = () => {
             </div>
             <div className="flex-1 overflow-y-auto p-5 space-y-6">
               <div className="space-y-4">
-                <h4 className="text-[10px] uppercase font-extrabold text-gray-400 tracking-wider">
+                <p className="tv-heading-face text-[10px] uppercase font-extrabold text-gray-400 tracking-wider">
                   Stay Type
-                </h4>
+                </p>
                 <div className="space-y-3.5">
                   <label className="flex items-center gap-3 text-xs font-semibold cursor-pointer select-none">
                     <input
@@ -1493,9 +1498,9 @@ export const SearchPage: React.FC = () => {
               </div>
 
               <div className="space-y-4 pt-4 border-t border-gray-50 dark:border-slate-850">
-                <h4 className="text-[10px] uppercase font-extrabold text-gray-400 tracking-wider">
+                <p className="tv-heading-face text-[10px] uppercase font-extrabold text-gray-400 tracking-wider">
                   Facilities
-                </h4>
+                </p>
                 <div className="space-y-3.5">
                   <label className="flex items-center gap-3 text-xs font-semibold cursor-pointer select-none">
                     <input

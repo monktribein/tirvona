@@ -123,7 +123,7 @@ export const SEO_LANDING_CONFIGS: Record<string, SeoLandingConfig> = {
       },
       {
         title: "Stays Near Prem Mandir",
-        to: "/Stays-near-prem-mandir-vrindavan",
+        to: "/stays-near-prem-mandir-vrindavan",
         tag: "Evening Illumination",
         description:
           "Verified hotels, stays and dharamshalas near Prem Mandir on Raman Reti Road.",
@@ -255,7 +255,7 @@ export const SEO_LANDING_CONFIGS: Record<string, SeoLandingConfig> = {
       },
       {
         title: "Stays Near Prem Mandir",
-        to: "/Stays-near-prem-mandir-vrindavan",
+        to: "/stays-near-prem-mandir-vrindavan",
         tag: "Prem Mandir Proximity",
         description:
           "Stays located close to Prem Mandir with easy access to evening fountain shows.",
@@ -302,8 +302,8 @@ export const SEO_LANDING_CONFIGS: Record<string, SeoLandingConfig> = {
 
   "prem-mandir": {
     id: "prem-mandir",
-    route: "/Stays-near-prem-mandir-vrindavan",
-    canonicalUrl: "https://www.tirvona.com/Stays-near-prem-mandir-vrindavan",
+    route: "/stays-near-prem-mandir-vrindavan",
+    canonicalUrl: "https://www.tirvona.com/stays-near-prem-mandir-vrindavan",
     title: "Hotels Near Prem Mandir Vrindavan | Tirvona",
     metaDescription:
       "Find hotels and stays near Prem Mandir, Vrindavan. Compare locations, prices, amenities and available stays on Tirvona.",
@@ -487,7 +487,7 @@ export const SEO_LANDING_CONFIGS: Record<string, SeoLandingConfig> = {
       },
       {
         title: "Stays Near Prem Mandir",
-        to: "/Stays-near-prem-mandir-vrindavan",
+        to: "/stays-near-prem-mandir-vrindavan",
         tag: "Close to Raman Reti",
         description:
           "Verified hotels and dharamshalas situated close to Prem Mandir.",
@@ -606,7 +606,7 @@ export const SEO_LANDING_CONFIGS: Record<string, SeoLandingConfig> = {
       },
       {
         title: "Stays Near Prem Mandir",
-        to: "/Stays-near-prem-mandir-vrindavan",
+        to: "/stays-near-prem-mandir-vrindavan",
         tag: "Evening Lights",
         description:
           "Affordable accommodation near Prem Mandir on Raman Reti Road.",
@@ -707,7 +707,7 @@ export const SEO_LANDING_CONFIGS: Record<string, SeoLandingConfig> = {
       },
       {
         title: "Stays Near Prem Mandir",
-        to: "/Stays-near-prem-mandir-vrindavan",
+        to: "/stays-near-prem-mandir-vrindavan",
         tag: "Walk to Prem Mandir",
         description:
           "Family stays located close to Prem Mandir with easy parking and dining.",

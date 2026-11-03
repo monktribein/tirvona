@@ -947,9 +947,9 @@ export const HomePage: React.FC = () => {
                   </div>
 
                   <div className="p-4 text-center flex flex-col items-center justify-center min-h-[72px]">
-                    <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#F28C28] transition-colors">
+                    <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#F28C28] transition-colors">
                       {item.name}
-                    </h4>
+                    </h3>
                     <p className="text-[11px] text-gray-400 font-bold mt-1 text-center">
                       {item.state}
                     </p>
@@ -1137,9 +1137,9 @@ export const HomePage: React.FC = () => {
                     </div>
 
                     <div className="p-4 text-center flex flex-col items-center justify-center min-h-[84px]">
-                      <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#F28C28] transition-colors">
+                      <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#F28C28] transition-colors">
                         {t(name)}
-                      </h4>
+                      </h3>
                       <p className="text-[11px] text-gray-400 font-bold mt-0.5 text-center line-clamp-1">
                         {t(subtitle)}
                       </p>
@@ -1445,9 +1445,9 @@ export const HomePage: React.FC = () => {
                       </div>
 
                       <div className="p-4 text-center flex flex-col items-center justify-center min-h-[72px]">
-                        <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#F28C28] transition-colors">
+                        <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#F28C28] transition-colors">
                           {ashram.name}
-                        </h4>
+                        </h3>
                         <p className="text-[11px] text-gray-400 font-bold mt-1 text-center">
                           {ashram.address?.city}, {ashram.address?.state}
                         </p>

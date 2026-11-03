@@ -738,6 +738,7 @@ export const DashboardLayout: React.FC = () => {
         { label: "All Offers", path: "/admin/manage/offers/all" },
         { label: "Featured Offers", path: "/admin/manage/offers/featured" },
         { label: "All Blogs", path: "/admin/manage/blogs/all" },
+        { label: "SEO Pages", path: "/admin/seo/pages" },
         { label: "Visitor Articles", path: "/admin/articles" },
         { label: "Blog Categories", path: "/admin/manage/blogs/categories" },
         { label: "Author Approvals", path: "/admin/manage/blogs/authors" },
@@ -1417,7 +1418,12 @@ export const DashboardLayout: React.FC = () => {
           ...landing,
           icon: <LayoutDashboard size={16} className="text-[#F28C28]" />,
         },
-        groups: user!.role === "service_manager" ? [SUPPORT_HANDLER_GROUP] : [],
+        groups:
+          user!.role === "service_manager"
+            ? [SUPPORT_HANDLER_GROUP]
+            : user!.role === "blog_manager"
+              ? [{ groupName: "SEO", icon: <Tag size={15} />, links: [{ label: "SEO Pages", path: "/admin/seo/pages" }] }]
+              : [],
       };
     }
     if (user?.role === "support") {
