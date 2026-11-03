@@ -7,6 +7,12 @@ on:
 permissions:
   contents: read
 
+# A newer push to the same branch cancels that branch's older run. Runs on main are never
+# cancelled: the production deploy (deploy.yml) starts only after a main run succeeds.
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   backend:
     runs-on: ubuntu-latest

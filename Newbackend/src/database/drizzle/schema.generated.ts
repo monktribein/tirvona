@@ -5339,3 +5339,36 @@ export const hrTasks = pgTable("hr_tasks", {
   _nulls: text("_nulls").array(),
   _extra: jsonb("_extra"),
 });
+
+/** public.seo_pages */
+export const seoPages = pgTable("seo_pages", {
+  id: text("id").primaryKey(), // model: _id
+  "pageType": text("page_type"), // model: pageType
+  "entityId": text("entity_id"), // model: entityId
+  "slug": text("slug"), // model: slug
+  "path": text("path"), // model: path
+  "canonicalUrl": text("canonical_url"), // model: canonicalUrl
+  "seoTitle": text("seo_title"), // model: seoTitle
+  "metaDescription": text("meta_description"), // model: metaDescription
+  "h1": text("h1"), // model: h1
+  "contentJson": jsonb("content_json"), // model: contentJson
+  "schemaJson": jsonb("schema_json"), // model: schemaJson
+  "indexingStatus": text("indexing_status"), // model: indexingStatus
+  "publicationStatus": text("publication_status"), // model: publicationStatus
+  "redirectTo": text("redirect_to"), // model: redirectTo
+  "publishedAt": timestamp("published_at", { withTimezone: true, mode: "date" }), // model: publishedAt
+  "verifiedAt": timestamp("verified_at", { withTimezone: true, mode: "date" }), // model: verifiedAt
+  "verifiedBy": text("verified_by"), // model: verifiedBy
+  "reviewedBy": text("reviewed_by"), // model: reviewedBy
+  "approvedBy": text("approved_by"), // model: approvedBy
+  "retiredAt": timestamp("retired_at", { withTimezone: true, mode: "date" }), // model: retiredAt
+  "legacyWpId": text("legacy_wp_id"), // model: legacyWpId
+  "version": doublePrecision("version"), // model: version
+  "pending": jsonb("pending"), // model: pending
+  "createdBy": text("created_by"), // model: createdBy
+  "updatedBy": text("updated_by"), // model: updatedBy
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});

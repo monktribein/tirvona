@@ -1006,9 +1006,9 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
                           alt={item.name}
                           className="w-16 h-16 rounded-lg object-cover group-hover:scale-105 transition-transform shrink-0" loading="lazy" decoding="async" />
                         <div className="min-w-0 flex-1">
-                          <h4 className="font-extrabold text-sm text-slate-900 dark:text-white truncate group-hover:text-[#F28C28] transition-colors">
+                          <h3 className="font-extrabold text-sm text-slate-900 dark:text-white truncate group-hover:text-[#F28C28] transition-colors">
                             {item.name}
-                          </h4>
+                          </h3>
                           <p className="text-[11px] text-slate-500 truncate">
                             {item.displayDistance}
                           </p>
@@ -1056,9 +1056,9 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
               <div className="w-8 h-8 rounded-lg bg-[#FFF4E5]/50 text-[#F28C28] flex items-center justify-center font-black text-xs">
                 <CheckCircle2 size={18} />
               </div>
-              <h4 className="font-extrabold text-xs text-slate-900 dark:text-white">
+              <h3 className="font-extrabold text-xs text-slate-900 dark:text-white">
                 100% In-Person Verified
-              </h4>
+              </h3>
               <p className="text-[11px] text-slate-500 leading-relaxed">
                 Tirvona verification officers inspect rooms, water, safety, and
                 cleanliness before listing.
@@ -1069,9 +1069,9 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
               <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-[#E58C28] flex items-center justify-center font-black text-xs">
                 <Clock size={18} />
               </div>
-              <h4 className="font-extrabold text-xs text-slate-900 dark:text-white">
+              <h3 className="font-extrabold text-xs text-slate-900 dark:text-white">
                 Temple Proximity Ease
-              </h4>
+              </h3>
               <p className="text-[11px] text-slate-500 leading-relaxed">
                 Walk or take rapid e-rickshaws to morning Mangala Aarti and
                 evening Sandhya Aarti without traffic delays.
@@ -1082,9 +1082,9 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
               <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 flex items-center justify-center font-black text-xs">
                 <ShieldCheck size={18} />
               </div>
-              <h4 className="font-extrabold text-xs text-slate-900 dark:text-white">
+              <h3 className="font-extrabold text-xs text-slate-900 dark:text-white">
                 Zero Hidden Charges
-              </h4>
+              </h3>
               <p className="text-[11px] text-slate-500 leading-relaxed">
                 Transparent room tariffs with clear booking guarantees and
                 direct instant confirmation.
@@ -1095,9 +1095,9 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
               <div className="w-8 h-8 rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-600 flex items-center justify-center font-black text-xs">
                 <UtensilsCrossed size={18} />
               </div>
-              <h4 className="font-extrabold text-xs text-slate-900 dark:text-white">
+              <h3 className="font-extrabold text-xs text-slate-900 dark:text-white">
                 Satvik Food & Hospitality
-              </h4>
+              </h3>
               <p className="text-[11px] text-slate-500 leading-relaxed">
                 Clean pilgrim atmospheres catering to elderly parents, families,
                 and spiritual travelers.
@@ -1237,9 +1237,9 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
                     </span>
                   </div>
                   <div className="p-4 space-y-1">
-                    <h4 className="font-extrabold text-sm text-slate-900 dark:text-white group-hover:text-[#F28C28] dark:group-hover:text-[#E58C28] transition-colors line-clamp-1">
+                    <h3 className="font-extrabold text-sm text-slate-900 dark:text-white group-hover:text-[#F28C28] dark:group-hover:text-[#E58C28] transition-colors line-clamp-1">
                       {link.title}
-                    </h4>
+                    </h3>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
                       {link.description}
                     </p>

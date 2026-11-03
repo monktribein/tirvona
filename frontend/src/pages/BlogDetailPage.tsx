@@ -7,6 +7,8 @@ import { AutoImageSlider } from "../components/shared/AutoImageSlider";
 import { toast } from "../lib/toast";
 import { RichContent } from "../components/richText/RichContent";
 import { isRichHtml } from "../lib/richText";
+import { useCanonicalUrl } from "../lib/useCanonicalUrl";
+import { blogPostPath, entitySeo } from "../seo/routePolicy";
 import {
   Calendar,
   Clock,
@@ -199,9 +201,9 @@ export const BlogDetailPage: React.FC = () => {
         <div className="w-7 h-7 rounded-full bg-[#F28C28] text-white font-extrabold text-xs flex items-center justify-center shrink-0">
           {String(c.userName || "?").charAt(0).toUpperCase()}
         </div>
-        <h5 className="font-bold text-xs text-[#0B192C] dark:text-white truncate">
+        <p className="tv-heading-face font-bold text-xs text-[#0B192C] dark:text-white truncate">
           {c.userName || "Devotee Pilgrim"}
-        </h5>
+        </p>
         {c.isAuthor && (
           <span className="px-2 py-0.5 rounded-full bg-[#FFF4E5] dark:bg-blue-950 text-[#F28C28] dark:text-amber-300 text-[9px] font-black shrink-0">
             AUTHOR
@@ -239,6 +241,15 @@ export const BlogDetailPage: React.FC = () => {
     0,
   );
 
+  const blogSeo = data?.post ? entitySeo.blog(data.post) : null;
+  useCanonicalUrl({
+    canonicalPath: data?.post?.slug ? blogPostPath(data.post) : null,
+    title: blogSeo?.title,
+    description: blogSeo?.description,
+    image: data?.post?.coverImage,
+    replaceUrl: false,
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen pt-32 text-center">
@@ -253,9 +264,9 @@ export const BlogDetailPage: React.FC = () => {
   if (!data?.post) {
     return (
       <div className="min-h-screen pt-32 text-center">
-        <h2 className="text-xl font-black text-gray-700 dark:text-gray-200 mb-4">
+        <h1 className="text-xl font-black text-gray-700 dark:text-gray-200 mb-4">
           Article Not Found
-        </h2>
+        </h1>
         <button
           onClick={() => navigate("/blog")}
           className="px-6 py-2.5 rounded-full bg-[#F28C28] text-white font-bold text-xs shadow-md hover:bg-[#D97706] transition-colors"
@@ -530,9 +541,9 @@ export const BlogDetailPage: React.FC = () => {
 
               {post.gallery?.length > 0 && (
                 <div className="space-y-3 pt-2">
-                  <h4 className="font-black text-base text-[#0B192C] dark:text-white">
+                  <h2 className="font-black text-base text-[#0B192C] dark:text-white">
                     Sacred Photo Gallery
-                  </h4>
+                  </h2>
                   <div className="grid grid-cols-2 gap-4">
                     {post.gallery.map((img: string, i: number) => (
                       <div
@@ -550,20 +561,20 @@ export const BlogDetailPage: React.FC = () => {
               )}
 
               <div className="pt-6 border-t border-gray-100 dark:border-slate-800 space-y-6">
-                <h3 className="font-black text-xl text-[#0B192C] dark:text-white flex items-center gap-2">
+                <h2 className="font-black text-xl text-[#0B192C] dark:text-white flex items-center gap-2">
                   <MessageSquare size={20} className="text-[#F28C28]" />
                   <span>
                     Pilgrim Discussion & Comments ({totalComments})
                   </span>
-                </h3>
+                </h2>
 
                 <form
                   onSubmit={handleAddComment}
                   className="space-y-3 p-5 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800"
                 >
-                  <h5 className="font-bold text-xs text-[#0B192C] dark:text-white">
+                  <h3 className="font-bold text-xs text-[#0B192C] dark:text-white">
                     Leave a Devotional Comment
-                  </h5>
+                  </h3>
                   {source === "blog" && (
                     <input
                       type="text"
@@ -689,9 +700,9 @@ export const BlogDetailPage: React.FC = () => {
           <div className="space-y-6">
             <div className="bg-white dark:bg-[#0B192C] rounded-[32px] p-6 border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
               <div className="pt-2 border-t border-gray-100 dark:border-slate-800 space-y-3">
-                <h5 className="font-black text-xs text-gray-400 tracking-wider">
+                <h2 className="font-black text-xs text-gray-400 tracking-wider">
                   Related Articles
-                </h5>
+                </h2>
                 <div className="space-y-3">
                   {relatedPosts?.map((item: any) => (
                     <div
@@ -713,9 +724,9 @@ export const BlogDetailPage: React.FC = () => {
                             "/blogs/rishikesh_ashram_1785404729056.png";
                         }} loading="lazy" decoding="async" />
                       <div className="space-y-0.5">
-                        <h6 className="font-extrabold text-xs text-[#0B192C] dark:text-white line-clamp-2 group-hover:text-[#F28C28] transition-colors">
+                        <h3 className="font-extrabold text-xs text-[#0B192C] dark:text-white line-clamp-2 group-hover:text-[#F28C28] transition-colors">
                           {item.title}
-                        </h6>
+                        </h3>
                         <span className="text-[10px] text-gray-400 font-bold">
                           {item.readingTime || "5 min read"}
                         </span>
@@ -727,7 +738,7 @@ export const BlogDetailPage: React.FC = () => {
 
               <div className="bg-gradient-to-br from-[#0B192C] to-[#F28C28] text-white p-6 rounded-2xl space-y-3 text-center shadow-lg">
                 <Sparkles size={24} className="text-amber-400 mx-auto" />
-                <h5 className="font-black text-sm">Planning a Pilgrimage?</h5>
+                <h2 className="font-black text-sm">Planning a Pilgrimage?</h2>
                 <p className="text-xs text-blue-100 font-medium">
                   Book verified stays, satvik rooms & temple darshan
                   online.

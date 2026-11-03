@@ -6,6 +6,8 @@ import React, {
   useState,
 } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { useCanonicalUrl } from "../../../lib/useCanonicalUrl";
+import { entitySeo } from "../../../seo/routePolicy";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MapPin,
@@ -101,6 +103,14 @@ export const ParkingDetailPage: React.FC = () => {
   );
 
   const [parking, setParking] = useState<ParkingLocationDetail | null>(null);
+  // Same title, description and canonical as the server-rendered HTML (src/seo/routePolicy.ts).
+  const parkingSeo = parking ? entitySeo.parking(parking) : null;
+  useCanonicalUrl({
+    canonicalPath: parking?.slug ? `/parking/${parking.slug}` : null,
+    title: parkingSeo?.title,
+    description: parkingSeo?.description,
+    replaceUrl: false,
+  });
   const [slotTypes, setSlotTypes] = useState<ParkingSlotTypeAvailability[]>([]);
   const [selectedSlotType, setSelectedSlotType] = useState<string>("");
   const [vehicleTypes, setVehicleTypes] = useState<ParkingVehicleType[]>([]);

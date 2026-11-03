@@ -28,6 +28,8 @@ import { PujaProcessButton, PujaProcessGuide } from "../components/PujaProcessGu
 import { WatchLiveButton } from "../components/YouTubeLive";
 import { PujaSamagriSection } from "./PujaSamagriSection";
 import { getErrorMessage } from "../../../lib/api";
+import { useCanonicalUrl } from "../../../lib/useCanonicalUrl";
+import { entitySeo } from "../../../seo/routePolicy";
 import { useAuth } from "../../../contexts/AuthContext";
 import { toast } from "../../../lib/toast";
 import { openRazorpayCheckout, type RazorpayResult } from "../../../lib/razorpay";
@@ -516,6 +518,15 @@ export const PublicProviderDetailPage: React.FC = () => {
     setConsultModalOpen(false);
     setConsultSuccess(false);
   };
+
+  const providerSeo = provider ? entitySeo.pandit(provider) : null;
+  useCanonicalUrl({
+    canonicalPath: provider ? `/pandit/${provider.slug || provider.id}` : null,
+    title: providerSeo?.title,
+    description: providerSeo?.description,
+    image: provider?.avatarUrl || undefined,
+    replaceUrl: false,
+  });
 
   // ── Loading and error states ─────────────────────────────────────────
   if (loading) {

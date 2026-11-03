@@ -176,10 +176,10 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
   if (reviews.length === 0) {
     return (
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-4 shadow-sm text-left">
-        <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-50 dark:border-slate-850 pb-3">
+        <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-50 dark:border-slate-850 pb-3">
           <Star size={18} className="text-[#F28C28] fill-[#F28C28]" /> Guest
           Reviews (0)
-        </h3>
+        </h2>
         <p className="text-xs text-gray-400 italic">
           No reviews posted yet for this stay. Be the first to share your
           spiritual experience!
@@ -197,10 +197,10 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 dark:border-slate-800 pb-4">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-base sm:text-lg font-black text-[#0B192C] dark:text-white flex items-center gap-2">
+            <h2 className="text-base sm:text-lg font-black text-[#0B192C] dark:text-white flex items-center gap-2">
               <MessageSquareQuote size={20} className="text-[#F28C28]" /> Guest
               Reviews ({reviews.length})
-            </h3>
+            </h2>
             <VerifiedBadge
               isVerified={true}
               text="Verified Pilgrims"
@@ -271,9 +271,9 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
                             e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(reviewerName)}&background=0A4DA6&color=fff`;
                           }} loading="lazy" decoding="async" />
                         <div className="space-y-0.5">
-                          <h4 className="text-xs font-black text-[#0B192C] dark:text-white line-clamp-1">
+                          <h3 className="text-xs font-black text-[#0B192C] dark:text-white line-clamp-1">
                             {reviewerName}
-                          </h4>
+                          </h3>
                           <span className="text-[9px] font-extrabold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                             <ShieldCheck size={10} /> Verified Stay
                           </span>
@@ -389,10 +389,10 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
           >
             <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-black text-[#0B192C] dark:text-white flex items-center gap-2">
+                <h2 className="text-lg font-black text-[#0B192C] dark:text-white flex items-center gap-2">
                   <Star className="text-[#D4AF37] fill-[#D4AF37]" size={20} />{" "}
                   All Guest Reviews ({reviews.length})
-                </h3>
+                </h2>
                 <p className="text-xs text-gray-400 font-semibold mt-0.5">
                   Verified guest ratings and authentic feedback for{" "}
                   {ashramName || "this Stay"}.
@@ -434,9 +434,9 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
                               e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(reviewerName)}&background=0A4DA6&color=fff`;
                             }} loading="lazy" decoding="async" />
                           <div>
-                            <h4 className="text-xs font-black text-[#0B192C] dark:text-white">
+                            <h3 className="text-xs font-black text-[#0B192C] dark:text-white">
                               {reviewerName}
-                            </h4>
+                            </h3>
                             <span className="text-[9px] font-extrabold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
                               <ShieldCheck size={9} /> Verified Stay
                             </span>

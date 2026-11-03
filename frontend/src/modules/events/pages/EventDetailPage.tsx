@@ -32,6 +32,8 @@ import {
   formatDateRange,
   seatsTone,
 } from "../utils/eventFormat";
+import { useCanonicalUrl } from "../../../lib/useCanonicalUrl";
+import { entitySeo } from "../../../seo/routePolicy";
 
 const FALLBACK_IMAGE =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 240 160' preserveAspectRatio='xMidYMid slice'%3E%3Crect width='240' height='160' fill='%23f1f5f9'/%3E%3Cg transform='translate(108 68)' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/g%3E%3C/svg%3E";
@@ -87,6 +89,15 @@ export const EventDetailPage: React.FC = () => {
     selectedDay?.seatsRemaining ?? 10,
   );
 
+  const eventSeo = event ? entitySeo.event(event) : null;
+  useCanonicalUrl({
+    canonicalPath: event ? `/events/${event.slug || idOrSlug}` : null,
+    title: eventSeo?.title,
+    description: eventSeo?.description,
+    image: event?.coverImage || event?.images?.[0],
+    replaceUrl: false,
+  });
+
   const register = async () => {
     if (!event) return;
     if (!user) {
@@ -139,9 +150,9 @@ export const EventDetailPage: React.FC = () => {
             size={36}
             className="text-gray-300 dark:text-slate-700 mx-auto"
           />
-          <h4 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+          <h1 className="font-extrabold text-base text-[#0B192C] dark:text-white">
             {error || "Event not found"}
-          </h4>
+          </h1>
           <button
             type="button"
             onClick={() => navigate("/events")}
@@ -175,9 +186,9 @@ export const EventDetailPage: React.FC = () => {
           ) : null}
         </div>
 
-        <h2 className="text-3xl md:text-5xl font-extrabold text-[#0B192C] dark:text-white leading-tight">
+        <h1 className="text-3xl md:text-5xl font-extrabold text-[#0B192C] dark:text-white leading-tight">
           {event.name}
-        </h2>
+        </h1>
 
         {event.tagline ? (
           <p className="text-sm font-bold text-[#E58C28]">{event.tagline}</p>
@@ -253,9 +264,9 @@ export const EventDetailPage: React.FC = () => {
         <div className="space-y-6 min-w-0">
           {event.description ? (
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 sm:p-6 shadow-sm space-y-3">
-              <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+              <h2 className="font-extrabold text-base text-[#0B192C] dark:text-white">
                 About this event
-              </h3>
+              </h2>
               <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium leading-relaxed whitespace-pre-line">
                 {event.description}
               </p>
@@ -279,9 +290,9 @@ export const EventDetailPage: React.FC = () => {
 
           {event.dailySchedule?.length ? (
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 sm:p-6 shadow-sm space-y-3">
-              <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+              <h2 className="font-extrabold text-base text-[#0B192C] dark:text-white">
                 Daily programme
-              </h3>
+              </h2>
               <div className="space-y-2">
                 {event.dailySchedule.map((item, index) => (
                   <div
@@ -309,9 +320,9 @@ export const EventDetailPage: React.FC = () => {
 
           {event.facilities?.length ? (
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 sm:p-6 shadow-sm space-y-3">
-              <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+              <h2 className="font-extrabold text-base text-[#0B192C] dark:text-white">
                 What is arranged
-              </h3>
+              </h2>
               <div className="grid sm:grid-cols-2 gap-2.5">
                 {event.facilities.map((facility) => (
                   <span
@@ -330,10 +341,10 @@ export const EventDetailPage: React.FC = () => {
 
           {event.dressCode || event.instructions ? (
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 sm:p-6 shadow-sm space-y-3">
-              <h3 className="inline-flex items-center gap-2 font-extrabold text-base text-[#0B192C] dark:text-white">
+              <h2 className="inline-flex items-center gap-2 font-extrabold text-base text-[#0B192C] dark:text-white">
                 <Shirt size={16} className="text-[#E58C28] stroke-[2.5]" />
                 Before you go
-              </h3>
+              </h2>
               {event.dressCode ? (
                 <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium leading-relaxed">
                   <span className="font-extrabold text-[#0B192C] dark:text-white">
@@ -352,9 +363,9 @@ export const EventDetailPage: React.FC = () => {
 
           {event.termsAndConditions ? (
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 sm:p-6 shadow-sm space-y-3">
-              <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+              <h2 className="font-extrabold text-base text-[#0B192C] dark:text-white">
                 Terms
-              </h3>
+              </h2>
               <p className="text-[11px] text-gray-400 font-medium leading-relaxed whitespace-pre-line">
                 {event.termsAndConditions}
               </p>
@@ -364,9 +375,9 @@ export const EventDetailPage: React.FC = () => {
 
         <aside className="lg:sticky lg:top-24 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 shadow-lg shadow-[#0B192C]/5 space-y-4">
           <div>
-            <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+            <h2 className="font-extrabold text-base text-[#0B192C] dark:text-white">
               {registrationAllowed ? "Reserve your place" : "Open to all"}
-            </h3>
+            </h2>
             <p className="mt-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
               Entry is free
             </p>

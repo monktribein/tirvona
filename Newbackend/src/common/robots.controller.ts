@@ -19,7 +19,6 @@ export class RobotsController {
         "User-agent: *",
         "Disallow: /",
         "",
-        "Host: https://www.tirvona.com",
         "Sitemap: https://www.tirvona.com/sitemap.xml",
         "",
       ].join("\n");
@@ -115,8 +114,7 @@ export class RobotsController {
       "Disallow: /smart-contact.html",
       "Disallow: /index.html",
       "",
-      "# Canonical Host and Sitemap",
-      "Host: https://www.tirvona.com",
+      "# Sitemap",
       "Sitemap: https://www.tirvona.com/sitemap.xml",
       "",
     ].join("\n");

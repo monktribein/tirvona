@@ -619,9 +619,9 @@ export const FoodMarketplacePage: React.FC = () => {
         {!loading && !error && filteredMeals.length === 0 && (
           <div className="text-center py-20 bg-white dark:bg-[#0B192C] rounded-3xl border border-slate-200 dark:border-slate-800 p-8">
             <Utensils className="mx-auto text-amber-500 mb-3 opacity-60" size={40} />
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
+            <p className="tv-heading-face text-lg font-bold text-slate-800 dark:text-slate-100">
               No approved meals found in {selectedZone}
-            </h3>
+            </p>
             <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
               Outlets in this zone are either currently closed or have reached their daily preparation capacity. Try selecting another zone or filter.
             </p>
@@ -717,9 +717,9 @@ export const FoodMarketplacePage: React.FC = () => {
                     <div className="p-5">
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <h3 className="text-base font-extrabold text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                          <h2 className="text-base font-extrabold text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                             {meal.label}
-                          </h3>
+                          </h2>
                           {meal.outlet && (
                             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
                               <span>By {meal.outlet.brandName}</span>
@@ -816,9 +816,9 @@ export const FoodMarketplacePage: React.FC = () => {
           <div className="bg-white dark:bg-[#0B192C] rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-5">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div>
-                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
                   Configure Your Thali
-                </h3>
+                </h2>
                 <p className="text-xs text-slate-500">
                   Select your exact dietary &amp; spice preference
                 </p>
@@ -935,9 +935,9 @@ export const FoodMarketplacePage: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white dark:bg-[#0B192C] rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
             <AlertCircle className="text-amber-500" size={32} />
-            <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
               Start new cart from {pendingCartSwitch.meal.outlet?.brandName}?
-            </h3>
+            </h2>
             <p className="text-xs text-slate-500 leading-relaxed">
               In Release 1, orders are fulfilled by a single kitchen. Your current cart contains items from{" "}
               <strong>{cartOutlet?.brandName}</strong>. Adding this item will clear your previous selection.
@@ -967,7 +967,7 @@ export const FoodMarketplacePage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2 text-slate-900 dark:text-white">
                 <Bed className="text-amber-500" size={20} />
-                <h3 className="text-base font-extrabold">Link Your Ashram Stay</h3>
+                <h2 className="text-base font-extrabold">Link Your Ashram Stay</h2>
               </div>
               <button
                 onClick={() => setShowStayModal(false)}
@@ -1074,9 +1074,9 @@ export const FoodMarketplacePage: React.FC = () => {
             {/* Drawer Header */}
             <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <div>
-                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
                   Your Bhojan Cart
-                </h3>
+                </h2>
                 <p className="text-xs text-slate-500">
                   {cartOutlet?.brandName}
                 </p>
@@ -1211,9 +1211,9 @@ export const FoodMarketplacePage: React.FC = () => {
           <div className="bg-white dark:bg-[#0B192C] rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-5 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div>
-                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
                   Complete Your Order
-                </h3>
+                </h2>
                 <p className="text-xs text-slate-500">
                   Server-generated authoritative price quote
                 </p>
@@ -1355,9 +1355,9 @@ export const FoodMarketplacePage: React.FC = () => {
             {/* Gallery Header */}
             <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800">
               <div>
-                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
                   {galleryMeal.label}
-                </h3>
+                </h2>
                 <p className="text-xs text-slate-500">
                   {galleryMeal.outlet?.brandName} · {galleryMeal.family}
                 </p>

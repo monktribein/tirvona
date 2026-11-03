@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useCanonicalUrl } from "../../../lib/useCanonicalUrl";
+import { entitySeo } from "../../../seo/routePolicy";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertCircle,
@@ -48,6 +50,14 @@ export const AartiDetailPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [session, setSession] = useState<AartiSession | null>(null);
+  // Same title, description and canonical as the server-rendered HTML (src/seo/routePolicy.ts).
+  const aartiSeo = session ? entitySeo.aarti(session) : null;
+  useCanonicalUrl({
+    canonicalPath: session ? `/aarti/${session.slug || session._id}` : null,
+    title: aartiSeo?.title,
+    description: aartiSeo?.description,
+    replaceUrl: false,
+  });
   const [passes, setPasses] = useState<AartiPassType[]>([]);
   const [activeImage, setActiveImage] = useState(0);
   const [date, setDate] = useState(searchParams.get("date") ?? "");

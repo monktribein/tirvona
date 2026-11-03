@@ -94,9 +94,9 @@ export const BlogListPage: React.FC = () => {
     <div className="min-h-screen pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 mb-6">
         <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
-          <p className="font-['Kalam'] text-2xl sm:text-4xl lg:text-5xl font-bold text-[#E58C28]">
+          <h1 className="font-['Kalam'] text-2xl sm:text-4xl lg:text-5xl font-bold text-[#E58C28]">
             Sacred Articles &amp; Knowledge Hub
-          </p>
+          </h1>
           <div className="flex items-center justify-center gap-2.5 my-1.5">
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
             <Sparkles
@@ -146,9 +146,9 @@ export const BlogListPage: React.FC = () => {
         ) : posts.length === 0 ? (
           <div className="text-center py-16 bg-white dark:bg-[#0B192C] rounded-3xl border border-gray-200 dark:border-slate-800">
             <BookOpen size={48} className="text-gray-400 mx-auto mb-3" />
-            <h3 className="font-black text-lg text-gray-700 dark:text-gray-200">
+            <p className="tv-heading-face font-black text-lg text-gray-700 dark:text-gray-200">
               No Posts Found
-            </h3>
+            </p>
             <p className="text-xs text-gray-400">
               Try adjusting your filters or search term.
             </p>
@@ -216,9 +216,9 @@ export const BlogListPage: React.FC = () => {
                           </span>)}
                         </div>
 
-                        <h3 className="font-black text-lg text-[#0B192C] dark:text-white leading-tight group-hover:text-[#F28C28] transition-colors line-clamp-2 h-12 flex items-start">
+                        <h2 className="font-black text-lg text-[#0B192C] dark:text-white leading-tight group-hover:text-[#F28C28] transition-colors line-clamp-2 h-12 flex items-start">
                           {item.title}
-                        </h3>
+                        </h2>
 
                         <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed h-9 overflow-hidden">
                           {item.excerpt}

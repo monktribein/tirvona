@@ -133,6 +133,12 @@ const ALL_PERMISSIONS = [
   "hr.tasks.manage",
   "hr.attendance.manage",
   "hr.reports.view",
+  // SEO publishing (Content → SEO Pages): writer, fact-checker, approver, publisher, retire.
+  "seo.pages.edit",
+  "seo.pages.verify",
+  "seo.pages.approve",
+  "seo.pages.publish",
+  "seo.pages.retire",
 ];
 
 export const UserManagementPage: React.FC = () => {

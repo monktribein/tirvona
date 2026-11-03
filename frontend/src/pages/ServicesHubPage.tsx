@@ -259,9 +259,9 @@ export const ServicesHubPage: React.FC = () => {
     <div className="min-h-screen pb-20 text-left">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
         <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
-          <p className="font-['Kalam'] text-2xl sm:text-4xl lg:text-5xl font-bold text-[#E58C28]">
+          <h1 className="font-['Kalam'] text-2xl sm:text-4xl lg:text-5xl font-bold text-[#E58C28]">
             Local Services Directory
-          </p>
+          </h1>
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
             Verified transport cabs, certified temple guides, pure Satvik
             bhojnalayas, 24x7 emergency medical assistance, and sacred puja
@@ -387,9 +387,9 @@ export const ServicesHubPage: React.FC = () => {
         ) : services.length === 0 ? (
           <div className="text-center py-20 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] space-y-4">
             <Sparkles className="mx-auto text-gray-300" size={48} />
-            <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+            <p className="tv-heading-face font-extrabold text-base text-[#0B192C] dark:text-white">
               No service providers found
-            </h3>
+            </p>
             <p className="text-xs text-gray-400 max-w-sm mx-auto">
               No active service providers matched your category filter or search
               keywords. Try selecting "All Services".
@@ -443,9 +443,9 @@ export const ServicesHubPage: React.FC = () => {
 
                   <div className="p-5 space-y-4 flex-grow flex flex-col justify-between">
                     <div className="space-y-2">
-                      <h3 className="font-black text-base text-[#0B192C] dark:text-white leading-tight">
+                      <h2 className="font-black text-base text-[#0B192C] dark:text-white leading-tight">
                         {item.name}
-                      </h3>
+                      </h2>
                       <p className="text-xs text-gray-500 dark:text-gray-400 font-medium line-clamp-2">
                         {item.description || item.tagline}
                       </p>

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { ashramUrl } from "../lib/urls";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { useCanonicalUrl } from "../lib/useCanonicalUrl";
+import { entitySeo } from "../seo/routePolicy";
 import {
   MapPin,
   Building2,
@@ -48,6 +50,14 @@ export const VolunteerJobDetailPage: React.FC = () => {
   const { addNotification } = useNotifications();
 
   const [job, setJob] = useState<VolunteerJobItem | null>(null);
+  // Same title, description and canonical as the server-rendered HTML (src/seo/routePolicy.ts).
+  const jobSeo = job ? entitySeo.volunteerJob(job) : null;
+  useCanonicalUrl({
+    canonicalPath: job?._id ? `/volunteer/${job._id}` : null,
+    title: jobSeo?.title,
+    description: jobSeo?.description,
+    replaceUrl: false,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

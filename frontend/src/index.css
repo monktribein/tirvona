@@ -181,6 +181,14 @@ h1, h2, h3, h4, h5, h6 {
   text-transform: capitalize;
 }
 
+/* Interface labels (filter panels, empty states) styled like headings but not document sections,
+   so they stay out of the page outline without changing how they look. */
+.tv-heading-face {
+  font-family: "Plus Jakarta Sans", "Inter", sans-serif;
+  letter-spacing: -0.025em;
+  text-transform: capitalize;
+}
+
 p::first-letter {
   text-transform: uppercase;
 }

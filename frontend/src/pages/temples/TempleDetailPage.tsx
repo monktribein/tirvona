@@ -63,7 +63,9 @@ export default function TempleDetailPage() {
     if (temple.seo?.twitterImage || ogImage) setName("twitter:image", temple.seo?.twitterImage || ogImage);
     const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
     const siteOrigin = isLocal ? window.location.origin : "https://www.tirvona.com";
-    const canonical = temple.seo?.canonicalUrl || `${siteOrigin}/temples/${temple.slug}`;
+    // An editor-set canonical is honoured only on this site, matching the server-rendered page.
+    const ownCanonical = String(temple.seo?.canonicalUrl || "");
+    const canonical = ownCanonical.startsWith("https://www.tirvona.com/") ? ownCanonical : `${siteOrigin}/temples/${temple.slug}`;
     let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
     if (!link) { link = document.createElement("link"); link.rel = "canonical"; document.head.appendChild(link); }
     link.href = canonical;

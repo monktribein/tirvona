@@ -54,11 +54,14 @@ describe("HR migration file (real Postgres)", () => {
   });
 
   let beforeHr: string[] = [];
+  /** Tables that migrations newer than 0013 add; they stay when the HR rollback runs. */
+  let laterTables: string[] = [];
+  const files = readdirSync(MIGRATIONS).filter((f) => /^\d{4}_[a-z0-9_]+\.sql$/.test(f)).sort();
+  const hrIndex = files.indexOf(HR_MIGRATION);
 
   it("adds only new HR tables on top of every earlier migration", async () => {
-    const files = readdirSync(MIGRATIONS).filter((f) => /^\d{4}_[a-z0-9_]+\.sql$/.test(f)).sort();
-    expect(files.at(-1)).toBe(HR_MIGRATION);
-    for (const file of files.slice(0, -1)) await pool.query(sqlOf(join(MIGRATIONS, file)));
+    expect(hrIndex).toBeGreaterThan(-1);
+    for (const file of files.slice(0, hrIndex)) await pool.query(sqlOf(join(MIGRATIONS, file)));
     beforeHr = await tables();
     expect(beforeHr.some((t) => t.startsWith("hr_"))).toBe(false);
 
@@ -70,7 +73,10 @@ describe("HR migration file (real Postgres)", () => {
     expect(after.filter((t) => !beforeHr.includes(t)).sort()).toEqual(HR_TABLES);
   });
 
-  it("produces exactly the layout the API verifies at startup", async () => {
+  it("produces exactly the layout the API verifies at startup (with every later migration applied too)", async () => {
+    const withHr = await tables();
+    for (const file of files.slice(hrIndex + 1)) await pool.query(sqlOf(join(MIGRATIONS, file)));
+    laterTables = (await tables()).filter((t) => !withHr.includes(t));
     await expect(new PgStore(pool, REGISTRY).verifySchema()).resolves.not.toThrow();
   });
 
@@ -101,7 +107,9 @@ describe("HR migration file (real Postgres)", () => {
     await pool.query("CREATE TABLE IF NOT EXISTS public.schema_migrations (name text PRIMARY KEY)");
     await pool.query(`INSERT INTO public.schema_migrations (name) VALUES ('${HR_MIGRATION}') ON CONFLICT DO NOTHING`);
     await pool.query(sqlOf(join(ROOT, "database", "rollback", "0013_hr_management.down.sql")));
-    expect((await tables()).filter((t) => t !== "schema_migrations")).toEqual(beforeHr.filter((t) => t !== "schema_migrations"));
+    expect((await tables()).filter((t) => t !== "schema_migrations")).toEqual(
+      [...beforeHr, ...laterTables].filter((t) => t !== "schema_migrations").sort(),
+    );
     expect((await pool.query(`SELECT count(*)::int AS n FROM public.schema_migrations WHERE name = '${HR_MIGRATION}'`)).rows[0].n).toBe(0);
   });
 });

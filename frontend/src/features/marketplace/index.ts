@@ -1,1 +1,0 @@
-export { marketplaceService } from "../../services";

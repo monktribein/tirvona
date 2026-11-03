@@ -47,9 +47,9 @@ export const FaqPage: React.FC = () => {
         <span className="px-4 py-1.5 bg-[#F28C28]/10 text-[#F28C28] text-[10px] font-extrabold rounded-full tracking-wider">
           Support Desk
         </span>
-        <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[#0B192C] dark:text-white">
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[#0B192C] dark:text-white">
           Frequently Asked Questions
-        </h2>
+        </h1>
         <p className="text-xs text-gray-455 max-w-lg mx-auto">
           Need clarification on bookings, registrations, or inspection
           guidelines? Browse answers to common questions below.
@@ -68,9 +68,9 @@ export const FaqPage: React.FC = () => {
                 {faq.category}
               </span>
             </div>
-            <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white">
+            <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white">
               {faq.q}
-            </h3>
+            </h2>
             <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed pl-3 border-l-2 border-[#F28C28]/30">
               {faq.a}
             </p>
