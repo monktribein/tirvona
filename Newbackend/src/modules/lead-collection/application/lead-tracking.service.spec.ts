@@ -363,6 +363,67 @@ describe("LeadTrackingService shifts", () => {
     jest.useRealTimers();
   });
 
+  it("starts the route at the phone's first fix, not the district centre signing in made up", async () => {
+    const record = {
+      _id: "64b7f3a1c2d4e5f6a7b8c9d4",
+      date: "2026-09-09",
+      status: "present",
+      checkedIn: true,
+      checkedOut: true,
+      checkInTime: new Date(iso(0)),
+      checkOutTime: new Date(iso(120)),
+      notes: "Shift login check-in",
+      checkInCoords: { lat: 27.4924, lng: 77.6737, accuracy: 15 },
+      checkOutCoords: { lat: 27.5102, lng: 77.67, accuracy: 10 },
+    };
+    const { service, attendance } = build({
+      // 2km from the district centre seconds after signing in, and there all morning.
+      storedFixes: [
+        { lat: 27.51, lng: 77.67, accuracy: 20, recordedAt: new Date(iso(0.05)) },
+        { lat: 27.5102, lng: 77.67, accuracy: 15, recordedAt: new Date(iso(90)) },
+      ],
+    });
+    attendance.findOne.mockReturnValue(chain(record));
+
+    const shift = await service.shiftRoute(AGENT_ID, record._id);
+
+    expect(shift.checkIn.lat).toBeNull();
+    expect(shift.summary.startLocation).toEqual({ lat: 27.51, lng: 77.67 });
+    expect(shift.summary.totalKm).toBeLessThan(0.1);
+    expect(shift.summary.visited).toHaveLength(1);
+    expect(shift.summary.visited[0].minutes).toBeGreaterThanOrEqual(90);
+  });
+
+  it("measures again a saved total that counted the made-up check-in point", async () => {
+    const { service, attendance } = build({
+      storedFixes: [
+        { lat: 27.51, lng: 77.67, accuracy: 20, recordedAt: new Date(iso(1)) },
+        { lat: 27.511, lng: 77.67, accuracy: 15, recordedAt: new Date(iso(30)) },
+      ],
+    });
+    const shift = {
+      _id: "64b7f3a1c2d4e5f6a7b8c9d5",
+      checkInTime: new Date(iso(0)),
+      checkOutTime: new Date(iso(60)),
+      checkedOut: true,
+      notes: "Shift login check-in",
+      checkInCoords: { lat: 27.4924, lng: 77.6737, accuracy: 15 },
+      distanceKm: 2.56,
+      trackedPoints: 2,
+    };
+
+    const [row] = await service.withShiftDistances(AGENT_ID, [shift]);
+
+    expect(row.distanceKm).toBeCloseTo(0.11, 2);
+    const [, update] = attendance.updateOne.mock.calls.at(-1);
+    expect(update.$set.distanceKm).toBeCloseTo(0.11, 2);
+
+    // Once corrected, viewing it again writes nothing.
+    attendance.updateOne.mockClear();
+    await service.withShiftDistances(AGENT_ID, [{ ...shift, distanceKm: row.distanceKm }]);
+    expect(attendance.updateOne).not.toHaveBeenCalled();
+  });
+
   it("gives each attendance row the distance of its own shift", async () => {
     const { service } = build({
       storedFixes: [

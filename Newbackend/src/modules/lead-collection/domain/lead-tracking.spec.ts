@@ -81,15 +81,27 @@ describe("filterFixes", () => {
   });
 
   it("treats standing-still jitter as idle rather than distance", () => {
-    // Three fixes a couple of metres apart: a stationary phone drifting.
+    // Fixes a couple of metres and 30 seconds apart: a stationary phone drifting.
     const { accepted, rejected } = filterFixes([
       fix(27.49, 77.67, 0),
-      fix(27.490_01, 77.670_01, 2),
-      fix(27.490_02, 77.67, 4),
+      fix(27.490_01, 77.670_01, 0.5),
+      fix(27.490_02, 77.67, 1),
     ]);
 
     expect(accepted).toHaveLength(1);
     expect(rejected.every((row) => row.reason === "not_moved")).toBe(true);
+  });
+
+  it("keeps a still fix every couple of minutes, adding no distance", () => {
+    // Standing in one place for six minutes, one fix every 30 seconds.
+    const fixes = Array.from({ length: 13 }, (_, i) =>
+      fix(27.49 + (i % 2) * 0.000_02, 77.67, i * 0.5),
+    );
+
+    const { accepted } = filterFixes(fixes);
+
+    expect(accepted.map((f) => f.recordedAt)).toEqual([at(0), at(2), at(4), at(6)]);
+    expect(accepted.every((f) => f.metresFromPrevious === 0)).toBe(true);
   });
 
   it("never lets a rejected fix become the baseline for the next one", () => {
@@ -222,6 +234,77 @@ describe("summariseDay", () => {
     expect(summary.movingMinutes).toBe(0);
     expect(summary.idleMinutes).toBe(0);
     expect(summary.trackedMinutes).toBe(180);
+    // Shown, so a supervisor sees the hole instead of a shorter day.
+    expect(summary.timeline).toMatchObject([{ kind: "gap", minutes: 180, km: 1.4 }]);
+    expect(summary.visited).toHaveLength(0);
+  });
+
+  it("finds a stay that left a silence, not points, at the same place", () => {
+    // Stationary fixes were not stored, so an hour at one shop is two fixes.
+    const summary = summariseDay("2026-09-09", [
+      stored(27.49, 77.67, 0),
+      stored(27.4901, 77.67, 60, 11),
+      stored(27.5, 77.68, 70, 1400),
+    ]);
+
+    expect(summary.visited).toHaveLength(1);
+    expect(summary.visited[0]).toMatchObject({ arrivedAt: at(0), leftAt: at(60), minutes: 60 });
+    expect(summary.timeline.map((leg) => leg.kind)).toEqual(["stop", "move"]);
+  });
+
+  it("runs a stop up to a fix close by after a silence", () => {
+    // Two hours, then the next fix 140m away: the agent stayed, then left.
+    const summary = summariseDay("2026-09-09", [
+      stored(27.49, 77.67, 0),
+      stored(27.4913, 77.67, 120, 140),
+    ]);
+
+    expect(summary.visited).toHaveLength(1);
+    expect(summary.visited[0]).toMatchObject({ lat: 27.49, arrivedAt: at(0), leftAt: at(120), fixes: 1 });
+    expect(summary.timeline).toMatchObject([{ kind: "stop", minutes: 120 }]);
+    expect(summary.idleMinutes).toBe(120);
+  });
+
+  it("does not call a short pause a stop", () => {
+    const summary = summariseDay("2026-09-09", [
+      stored(27.49, 77.67, 0),
+      stored(27.4901, 77.67, 3, 11),
+      stored(27.5, 77.68, 10, 1400),
+    ]);
+
+    expect(summary.visited).toHaveLength(0);
+    expect(summary.timeline.every((leg) => leg.kind === "move")).toBe(true);
+  });
+
+  it("splits a day of silences into stops: a long morning in one place, then next door", () => {
+    // Four fixes in nine hours, the shape a phone left open on a desk records.
+    const summary = summariseDay("2026-09-09", [
+      stored(27.49, 77.67, 0),
+      stored(27.4902, 77.67, 89, 22),
+      stored(27.4897, 77.6687, 436, 137),
+      stored(27.4902, 77.67, 537, 134),
+    ]);
+
+    expect(summary.visited.map((v) => [v.arrivedAt, v.leftAt])).toEqual([
+      [at(0), at(436)],
+      [at(436), at(537)],
+    ]);
+    expect(summary.timeline.map((leg) => leg.kind)).toEqual(["stop", "stop"]);
+  });
+
+  it("keeps still fixes in the stop but out of the route line", () => {
+    const summary = summariseDay("2026-09-09", [
+      stored(27.49, 77.67, 0),
+      stored(27.49, 77.67, 2, 0),
+      stored(27.49, 77.67, 4, 0),
+      stored(27.49, 77.67, 6, 0),
+      stored(27.5, 77.68, 10, 1400),
+    ]);
+
+    expect(summary.fixes).toBe(5);
+    expect(summary.route.map((p) => p.recordedAt)).toEqual([at(0), at(10)]);
+    expect(summary.visited).toMatchObject([{ minutes: 6, fixes: 4 }]);
+    expect(summary.latest?.recordedAt).toEqual(at(10));
   });
 
   it("returns the route in time order for the map to draw", () => {

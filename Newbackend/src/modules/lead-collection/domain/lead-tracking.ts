@@ -36,7 +36,8 @@ export interface RejectedFix {
 }
 
 export interface TimelineLeg {
-  kind: "move" | "stop";
+  /** `gap`: no fixes for longer than `maxGapMinutes`, and the agent ended up elsewhere. */
+  kind: "move" | "stop" | "gap";
   startedAt: Date;
   endedAt: Date;
   minutes: number;
@@ -148,9 +149,15 @@ export const filterFixes = (
       continue;
     }
 
-    // Standing still still produces fixes. They are kept out of the route so
-    // the day's total is distance travelled rather than accumulated jitter.
+    // Standing still still produces fixes. They add no distance, so the day's
+    // total is distance travelled rather than accumulated jitter; one every
+    // few minutes is kept to show the agent was still there.
     if (metres < LEAD_TRACKING.minMovementMetres) {
+      if (elapsedMinutes >= LEAD_TRACKING.stillFixMinutes) {
+        accepted.push({ ...fix, metresFromPrevious: 0 });
+        last = { lat: fix.lat, lng: fix.lng, recordedAt: fix.recordedAt };
+        continue;
+      }
       rejected.push({ recordedAt: fix.recordedAt, reason: "not_moved" });
       continue;
     }
@@ -191,10 +198,12 @@ export interface DaySummary {
  * Turns a day's stored fixes into the numbers the dashboards show.
  *
  * A stop is a run of consecutive fixes that never leaves `stopRadiusMetres`
- * of where the run began and lasts at least `stopMinutes`; anything else is
- * movement. A gap longer than `maxGapMinutes` is treated as tracking having
- * been off rather than as a very slow journey, so it counts toward neither
- * moving nor idle time.
+ * of where the run began and lasts at least `stopMinutes`, however far apart
+ * in time those fixes are. A silence before a fix that is still within
+ * `silentStayMetres` extends the stop up to that fix. Anything else is
+ * movement, except a gap longer than `maxGapMinutes` that ends somewhere
+ * else: where the agent was is unknown, so it is shown as a gap and counts
+ * toward neither moving nor idle time.
  */
 export const summariseDay = (
   date: string,
@@ -241,6 +250,7 @@ export const summariseDay = (
     let end = index;
 
     // Extend while the agent stays within the stop radius of the anchor.
+    // A long wait between two of these fixes is still the same stay.
     while (
       end + 1 < ordered.length &&
       metresBetween(
@@ -248,37 +258,43 @@ export const summariseDay = (
         anchor.lng,
         ordered[end + 1].lat,
         ordered[end + 1].lng,
-      ) <= LEAD_TRACKING.stopRadiusMetres &&
-      minutesBetween(ordered[end].recordedAt, ordered[end + 1].recordedAt) <=
-        LEAD_TRACKING.maxGapMinutes
+      ) <= LEAD_TRACKING.stopRadiusMetres
     )
       end += 1;
 
-    const dwell = minutesBetween(
-      anchor.recordedAt,
-      ordered[end].recordedAt,
-    );
+    // A silence before a fix close by: the agent stayed until then.
+    const last = ordered[end];
+    const after = ordered[end + 1];
+    const stayedUntilAfter =
+      after != null &&
+      minutesBetween(last.recordedAt, after.recordedAt) >=
+        LEAD_TRACKING.stopMinutes &&
+      metresBetween(last.lat, last.lng, after.lat, after.lng) <=
+        LEAD_TRACKING.silentStayMetres;
+    const leftAt = stayedUntilAfter ? after.recordedAt : last.recordedAt;
+    const dwell = minutesBetween(anchor.recordedAt, leftAt);
 
-    if (end > index && dwell >= LEAD_TRACKING.stopMinutes) {
+    if (dwell >= LEAD_TRACKING.stopMinutes) {
       idleMinutes += dwell;
       timeline.push({
         kind: "stop",
         startedAt: anchor.recordedAt,
-        endedAt: ordered[end].recordedAt,
+        endedAt: leftAt,
         minutes: round(dwell, 1),
         km: 0,
         from: { lat: anchor.lat, lng: anchor.lng },
-        to: { lat: ordered[end].lat, lng: ordered[end].lng },
+        to: { lat: last.lat, lng: last.lng },
       });
       visited.push({
         lat: round(anchor.lat, 6),
         lng: round(anchor.lng, 6),
         arrivedAt: anchor.recordedAt,
-        leftAt: ordered[end].recordedAt,
+        leftAt,
         minutes: round(dwell, 1),
         fixes: end - index + 1,
       });
-      index = end;
+      // The next leg starts where this stay ended.
+      index = stayedUntilAfter ? end + 1 : end;
       continue;
     }
 
@@ -286,18 +302,20 @@ export const summariseDay = (
     const next = ordered[index + 1];
     const gap = minutesBetween(anchor.recordedAt, next.recordedAt);
     const legMetres = Math.max(0, Number(next.metresFromPrevious ?? 0));
+    const leg = {
+      startedAt: anchor.recordedAt,
+      endedAt: next.recordedAt,
+      minutes: round(gap, 1),
+      km: round(legMetres / 1000, 3),
+      from: { lat: anchor.lat, lng: anchor.lng },
+      to: { lat: next.lat, lng: next.lng },
+    };
 
     if (gap <= LEAD_TRACKING.maxGapMinutes) {
       movingMinutes += gap;
-      timeline.push({
-        kind: "move",
-        startedAt: anchor.recordedAt,
-        endedAt: next.recordedAt,
-        minutes: round(gap, 1),
-        km: round(legMetres / 1000, 3),
-        from: { lat: anchor.lat, lng: anchor.lng },
-        to: { lat: next.lat, lng: next.lng },
-      });
+      timeline.push({ kind: "move", ...leg });
+    } else {
+      timeline.push({ kind: "gap", ...leg });
     }
     index += 1;
   }
@@ -317,11 +335,14 @@ export const summariseDay = (
     startLocation: { lat: first.lat, lng: first.lng },
     endLocation: { lat: last.lat, lng: last.lng },
     latest: { lat: last.lat, lng: last.lng, recordedAt: last.recordedAt },
-    route: ordered.map((fix) => ({
-      lat: fix.lat,
-      lng: fix.lng,
-      recordedAt: fix.recordedAt,
-    })),
+    // Still fixes add nothing to the line, and road routing takes few points.
+    route: ordered
+      .filter((fix, i) => i === 0 || Number(fix.metresFromPrevious ?? 0) > 0)
+      .map((fix) => ({
+        lat: fix.lat,
+        lng: fix.lng,
+        recordedAt: fix.recordedAt,
+      })),
     timeline,
     visited,
   };

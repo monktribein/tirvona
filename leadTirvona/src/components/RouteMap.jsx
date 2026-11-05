@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import GoogleRouteMap from './GoogleRouteMap';
 import { isGoogleMapsConfigured } from '../utils/googleMaps';
+import { stopLetter } from '../utils/stopLetter';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -72,8 +73,8 @@ function LeafletRouteMap({ route = [], stops = [], height = '360px' }) {
 
     stops.forEach((stop, index) => {
       if (!Number.isFinite(stop?.lat) || !Number.isFinite(stop?.lng)) return;
-      L.marker([stop.lat, stop.lng], { icon: pin('#E58C28', String(index + 1)) })
-        .bindPopup(`Stopped ${Math.round(stop.minutes)} min`)
+      L.marker([stop.lat, stop.lng], { icon: pin('#E58C28', stopLetter(index)) })
+        .bindPopup(`Stop ${stopLetter(index)} · ${Math.round(stop.minutes)} min`)
         .addTo(layer);
     });
 

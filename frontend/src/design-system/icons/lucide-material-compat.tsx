@@ -164,6 +164,7 @@ export const LayoutGrid = materialIcon("grid_view");
 export const LifeBuoy = materialIcon("support");
 export const Link = materialIcon("link");
 export const Loader2 = materialIcon("progress_activity");
+export const LocateOff = materialIcon("location_disabled");
 export const Lock = materialIcon("lock");
 export const LogIn = materialIcon("login");
 export const LogOut = materialIcon("logout");

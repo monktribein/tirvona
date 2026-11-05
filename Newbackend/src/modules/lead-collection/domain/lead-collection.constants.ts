@@ -60,12 +60,24 @@ export const LEAD_TRACKING = {
   maxAccuracyMetres: 100,
   /** Below this, two fixes are the same place: GPS jitter, not movement. */
   minMovementMetres: 10,
+  /**
+   * Standing still, one fix this often is still kept (as zero distance), so a
+   * stay is recorded as points and the agent's last-seen time stays current.
+   */
+  stillFixMinutes: 2,
   /** Faster than this between two fixes is a bad fix, not a journey. */
   maxSpeedKmph: 150,
   /** Staying inside this radius for the dwell minutes below is a stop. */
   stopRadiusMetres: 120,
   /** How long an agent must linger before it counts as a visited location. */
   stopMinutes: 5,
+  /**
+   * A silence of at least `stopMinutes` between two fixes this close together
+   * is a stay where the first one was taken: until `stillFixMinutes` existed,
+   * a phone standing still left no points at all, only a gap. Farther apart,
+   * where the agent was in between is unknown.
+   */
+  silentStayMetres: 300,
   /** A gap longer than this breaks the timeline rather than drawing a line. */
   maxGapMinutes: 45,
   /** Points accepted in one batch upload. */
@@ -73,3 +85,13 @@ export const LEAD_TRACKING = {
   /** How long raw points are retained before the TTL sweep deletes them. */
   retentionDays: 180,
 } as const;
+
+/**
+ * Notes on the attendance row that signing in opens. Rows from before
+ * 2026-11-05 with these notes carry the district centre as their check-in
+ * point, not a fix from the phone, so that point is not where the shift began.
+ */
+export const LOGIN_CHECK_IN_NOTES = [
+  "Shift login check-in",
+  "Initial shift login attendance",
+] as const;
