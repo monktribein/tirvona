@@ -3,7 +3,7 @@ import {
   AlertCircle,
   Clock,
   Loader2,
-  MapPin,
+  LocateOff,
   Navigation,
   RefreshCw,
   Route,
@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import RouteMap from './RouteMap';
 import { supervisorApi } from '../services/supervisorApi';
+import { stopLetter } from '../utils/stopLetter';
 
 /**
  * One agent's movement for one day, for the supervisor.
@@ -178,7 +179,11 @@ export default function AgentTrackingView({ agentId, agentName }) {
               Movement timeline
             </p>
             <ul className="divide-y divide-slate-100 max-h-72 overflow-y-auto">
-              {day.timeline.map((leg, index) => (
+              {day.timeline.map((leg, index) => {
+                const letter = stopLetter(
+                  day.timeline.slice(0, index).filter((l) => l.kind === 'stop').length
+                );
+                return (
                 <li
                   key={`${leg.startedAt}-${index}`}
                   className="flex items-center gap-3 px-4 py-2.5"
@@ -186,12 +191,16 @@ export default function AgentTrackingView({ agentId, agentName }) {
                   <span
                     className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
                       leg.kind === 'stop'
-                        ? 'bg-amber-50 text-amber-700'
-                        : 'bg-blue-50 text-blue-700'
+                        ? 'bg-amber-50 text-amber-700 text-[11px] font-black'
+                        : leg.kind === 'gap'
+                          ? 'bg-slate-100 text-slate-500'
+                          : 'bg-blue-50 text-blue-700'
                     }`}
                   >
                     {leg.kind === 'stop' ? (
-                      <MapPin size={13} />
+                      letter
+                    ) : leg.kind === 'gap' ? (
+                      <LocateOff size={13} />
                     ) : (
                       <Navigation size={13} />
                     )}
@@ -199,8 +208,10 @@ export default function AgentTrackingView({ agentId, agentName }) {
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-bold text-slate-900">
                       {leg.kind === 'stop'
-                        ? 'Stopped'
-                        : `Travelled${leg.km ? ` ${leg.km} km` : ''}`}
+                        ? `Stop ${letter}`
+                        : leg.kind === 'gap'
+                          ? `No location received${leg.km ? ` · next seen ${leg.km} km away` : ''}`
+                          : `Travelled${leg.km ? ` ${leg.km} km` : ''}`}
                     </p>
                     <p className="text-[10px] font-semibold text-slate-400">
                       <Clock size={9} className="inline mr-1" />
@@ -209,7 +220,8 @@ export default function AgentTrackingView({ agentId, agentName }) {
                     </p>
                   </div>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           </div>
         </>

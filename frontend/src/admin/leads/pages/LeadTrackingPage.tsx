@@ -3,6 +3,7 @@ import {
   Clock,
   Route,
   Loader2,
+  LocateOff,
   MapPin,
   Navigation,
   RefreshCw,
@@ -11,6 +12,7 @@ import {
 } from "lucide-react";
 import {
   leadCollectionService,
+  stopLetter,
   type LeadUser,
   type TrackingAgent,
   type TrackingDay,
@@ -147,9 +149,9 @@ export const LeadTrackingPage: React.FC = () => {
         id: `visit-${index}`,
         latitude: visit.lat,
         longitude: visit.lng,
-        title: `Stop ${index + 1}`,
+        title: `Stop ${stopLetter(index)}`,
         subtitle: `${clock(visit.arrivedAt)} – ${clock(visit.leftAt)} · ${duration(visit.minutes)}`,
-        badge: "Stop",
+        badge: `Stop ${stopLetter(index)}`,
       }),
     );
 
@@ -348,7 +350,11 @@ export const LeadTrackingPage: React.FC = () => {
             </p>
           ) : (
             <ul className="divide-y divide-gray-100 dark:divide-slate-800 max-h-[360px] overflow-y-auto">
-              {day.timeline.map((leg, index) => (
+              {day.timeline.map((leg, index) => {
+                const stopIndex = day.timeline
+                  .slice(0, index)
+                  .filter((l) => l.kind === "stop").length;
+                return (
                 <li
                   key={`${leg.startedAt}-${index}`}
                   className="px-5 py-3 flex items-center gap-3"
@@ -356,19 +362,27 @@ export const LeadTrackingPage: React.FC = () => {
                   <span
                     className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
                       leg.kind === "stop"
-                        ? "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
-                        : "bg-blue-100 text-[#F28C28] dark:bg-blue-950/60 dark:text-amber-300"
+                        ? "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 text-xs font-black"
+                        : leg.kind === "gap"
+                          ? "bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-gray-400"
+                          : "bg-blue-100 text-[#F28C28] dark:bg-blue-950/60 dark:text-amber-300"
                     }`}
                   >
                     {leg.kind === "stop" ? (
-                      <MapPin size={14} />
+                      stopLetter(stopIndex)
+                    ) : leg.kind === "gap" ? (
+                      <LocateOff size={14} />
                     ) : (
                       <Navigation size={14} />
                     )}
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-extrabold text-[#0B192C] dark:text-white">
-                      {leg.kind === "stop" ? "Stopped" : "Travelled"}
+                      {leg.kind === "stop"
+                        ? `Stop ${stopLetter(stopIndex)}`
+                        : leg.kind === "gap"
+                          ? `No location received${leg.km > 0 ? ` · next seen ${leg.km} km away` : ""}`
+                          : "Travelled"}
                       {leg.kind === "move" && leg.km > 0
                         ? ` ${leg.km} km`
                         : ""}
@@ -379,7 +393,8 @@ export const LeadTrackingPage: React.FC = () => {
                     </p>
                   </div>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </div>

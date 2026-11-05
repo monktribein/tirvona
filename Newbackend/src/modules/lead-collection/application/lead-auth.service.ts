@@ -7,6 +7,7 @@ import { leadCollectionConfig } from "../config/lead-collection.config";
 import {
   LEAD_CONNECTION,
   LEAD_USER_MODEL,
+  LOGIN_CHECK_IN_NOTES,
 } from "../domain/lead-collection.constants";
 import type {
   AuthenticatedLeadUser,
@@ -89,14 +90,11 @@ export class LeadAuthService {
 
     if (user.role === "field_agent" && this.attendanceService) {
       try {
-        const defaultLat = user.district === "Mathura" ? 27.4924 : 27.5806;
-        const defaultLng = user.district === "Mathura" ? 77.6737 : 77.7006;
+        // No coordinates: the server does not know where the phone is. The
+        // shift's route starts at the first fix the phone sends.
         await this.attendanceService.markCheckIn(authUser, {
-          latitude: defaultLat,
-          longitude: defaultLng,
-          accuracy: 15,
           address: `${user.district || 'Mathura'}, ${user.state || 'Uttar Pradesh'}`,
-          notes: "Shift login check-in",
+          notes: LOGIN_CHECK_IN_NOTES[0],
         });
       } catch {
         // Non-blocking

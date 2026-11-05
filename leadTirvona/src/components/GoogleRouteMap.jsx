@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { MAX_ROAD_ROUTE_POINTS, computeRoadRoute, loadGoogleMaps } from '../utils/googleMaps';
+import { stopLetter } from '../utils/stopLetter';
 
 const DEFAULT_CENTRE = { lat: 27.4924, lng: 77.6737 }; // Mathura
 
@@ -107,7 +108,7 @@ export default function GoogleRouteMap({ route = [], stops = [], height = '360px
     stops.forEach((stop, index) => {
       if (!Number.isFinite(stop?.lat) || !Number.isFinite(stop?.lng)) return;
       overlays.push(
-        pin(map, { lat: stop.lat, lng: stop.lng }, '#E58C28', String(index + 1), `Stopped ${Math.round(stop.minutes)} min`, info)
+        pin(map, { lat: stop.lat, lng: stop.lng }, '#E58C28', stopLetter(index), `Stop ${stopLetter(index)} · ${Math.round(stop.minutes)} min`, info)
       );
     });
     if (points.length > 1)

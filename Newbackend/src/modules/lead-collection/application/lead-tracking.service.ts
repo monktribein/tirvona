@@ -13,6 +13,7 @@ import {
   LEAD_LOCATION_PING_MODEL,
   LEAD_TRACKING,
   LEAD_USER_MODEL,
+  LOGIN_CHECK_IN_NOTES,
 } from "../domain/lead-collection.constants";
 import {
   filterFixes,
@@ -34,6 +35,15 @@ const hasFix = (coords: any): coords is { lat: number; lng: number; accuracy?: n
   Number.isFinite(coords.lat) &&
   Number.isFinite(coords.lng) &&
   !(coords.lat === 0 && coords.lng === 0);
+
+/** A check-in point that signing in made up (the district centre), not a fix from the phone. */
+const placedAtLogin = (record: any): boolean =>
+  (LOGIN_CHECK_IN_NOTES as readonly string[]).includes(String(record?.notes ?? "")) &&
+  hasFix(record?.checkInCoords);
+
+/** Where the phone was at check-in, when it sent a real fix. */
+const checkInFix = (record: any) =>
+  hasFix(record?.checkInCoords) && !placedAtLogin(record) ? record.checkInCoords : null;
 
 /**
  * Last moment of a shift's attendance day. Attendance days are IST dates, so
@@ -132,16 +142,23 @@ export class LeadTrackingService {
     return Boolean(record?.checkInTime) && !this.isOpenToday(record, now);
   }
 
-  /** A finished shift's saved total, when one has been measured. */
-  private savedDistance(record: any): { km: number; points: number } | null {
-    return typeof record?.distanceKm === "number" && Number.isFinite(record.distanceKm)
-      ? { km: record.distanceKm, points: Number(record.trackedPoints ?? 0) }
-      : null;
+  /**
+   * A finished shift's saved total, when one has been measured. Totals saved
+   * for a shift with a made-up check-in point included a phantom leg from it,
+   * so they are measured again while the shift's points are still kept.
+   */
+  private savedDistance(record: any, now = Date.now()): { km: number; points: number } | null {
+    if (typeof record?.distanceKm !== "number" || !Number.isFinite(record.distanceKm)) return null;
+    const pointsKept =
+      new Date(record.checkInTime).getTime() > now - LEAD_TRACKING.retentionDays * 24 * 60 * 60_000;
+    if (placedAtLogin(record) && pointsKept) return null;
+    return { km: record.distanceKm, points: Number(record.trackedPoints ?? 0) };
   }
 
   /** Stores a finished shift's distance so it outlives the raw points' retention. */
   private async storeDistance(record: any, km: number, points: number): Promise<void> {
     if (!record?._id) return;
+    if (record.distanceKm === km && Number(record.trackedPoints) === points) return;
     await this.attendance
       .updateOne(
         { _id: record._id },
@@ -200,8 +217,8 @@ export class LeadTrackingService {
    */
   private buildShift(record: any, pings: any[]): DaySummary {
     const raw: RawFix[] = [];
-    const checkIn = record.checkInCoords;
-    if (hasFix(checkIn))
+    const checkIn = checkInFix(record);
+    if (checkIn)
       raw.push({
         lat: checkIn.lat,
         lng: checkIn.lng,
@@ -262,7 +279,7 @@ export class LeadTrackingService {
     }
     const shifts = await this.attendance
       .find(filter)
-      .select("date checkInTime checkOutTime checkedIn checkedOut checkInCoords checkOutCoords status distanceKm trackedPoints")
+      .select("date checkInTime checkOutTime checkedIn checkedOut checkInCoords checkOutCoords status notes distanceKm trackedPoints")
       .lean();
     const measured = await this.withShiftDistances(agentId, shifts as any[]);
     const byId = new Map(measured.map((row: any) => [String(row._id), row]));
@@ -341,8 +358,8 @@ export class LeadTrackingService {
       onDuty: !checkOutAt && this.isOpenToday(record),
       checkIn: {
         at: checkInAt,
-        lat: hasFix(record.checkInCoords) ? record.checkInCoords.lat : null,
-        lng: hasFix(record.checkInCoords) ? record.checkInCoords.lng : null,
+        lat: checkInFix(record)?.lat ?? null,
+        lng: checkInFix(record)?.lng ?? null,
         address: String(record.checkInAddress ?? ""),
       },
       checkOut: checkOutAt
@@ -372,7 +389,7 @@ export class LeadTrackingService {
     const now = Date.now();
     // Finished shifts with a saved total need no points at all.
     const toMeasure = records.filter(
-      (r) => r.checkInTime && !(this.isFinished(r, now) && this.savedDistance(r)),
+      (r) => r.checkInTime && !(this.isFinished(r, now) && this.savedDistance(r, now)),
     );
 
     const windows = new Map(toMeasure.map((r) => [r, this.shiftWindow(r, now)]));
@@ -387,7 +404,7 @@ export class LeadTrackingService {
     const backfill: Promise<void>[] = [];
     const rows = records.map((record) => {
       if (!record.checkInTime) return { ...record, distanceKm: 0, trackedPoints: 0 };
-      const saved = this.isFinished(record, now) ? this.savedDistance(record) : null;
+      const saved = this.isFinished(record, now) ? this.savedDistance(record, now) : null;
       if (saved) return { ...record, distanceKm: saved.km, trackedPoints: saved.points };
 
       const window = windows.get(record)!;

@@ -5,6 +5,7 @@ import {
   Clock,
   MapPinned,
   Loader2,
+  LocateOff,
   LogIn,
   LogOut,
   MapPin,
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 import {
   leadCollectionService,
+  stopLetter,
   type ShiftRoute,
   type ShiftRouteAgent,
 } from "../../../services/leadCollection.service";
@@ -117,9 +119,9 @@ export const LeadShiftRoutePage: React.FC = () => {
         id: `stop-${index}`,
         latitude: visit.lat,
         longitude: visit.lng,
-        title: `Stop ${index + 1}`,
+        title: `Stop ${stopLetter(index)}`,
         subtitle: `${clock(visit.arrivedAt)} – ${clock(visit.leftAt)} · ${duration(visit.minutes)}`,
-        badge: `Stop ${index + 1}`,
+        badge: `Stop ${stopLetter(index)}`,
       }),
     );
 
@@ -380,6 +382,9 @@ export const LeadShiftRoutePage: React.FC = () => {
           <div className={`${card} overflow-hidden`}>
             <div className="px-5 py-4 border-b border-gray-100 dark:border-slate-800">
               <h3 className="text-sm font-black text-[#0B192C] dark:text-white">Movement timeline</h3>
+              <p className="text-[11px] text-gray-400 font-semibold">
+                Every place the agent stayed 5 minutes or longer is a stop, lettered in order.
+              </p>
             </div>
             <ul className="divide-y divide-gray-100 dark:divide-slate-800 max-h-[420px] overflow-y-auto">
               <li className="px-5 py-3 flex items-center gap-3">
@@ -391,27 +396,62 @@ export const LeadShiftRoutePage: React.FC = () => {
                   <p className="text-[10px] text-gray-400 font-semibold">{clock(shift.checkIn.at)}</p>
                 </div>
               </li>
-              {summary.timeline.map((leg, index) => (
-                <li key={`${leg.startedAt}-${index}`} className="px-5 py-3 flex items-center gap-3">
-                  <span
-                    className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                      leg.kind === "stop"
-                        ? "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
-                        : "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
-                    }`}
-                  >
-                    {leg.kind === "stop" ? <MapPin size={14} /> : <Navigation size={14} />}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-extrabold text-[#0B192C] dark:text-white">
-                      {leg.kind === "stop" ? "Stopped" : `Travelled ${km(leg.km)}`}
-                    </p>
-                    <p className="text-[10px] text-gray-400 font-semibold">
-                      {clock(leg.startedAt)} – {clock(leg.endedAt)} · {duration(leg.minutes)}
-                    </p>
-                  </div>
-                </li>
-              ))}
+              {summary.timeline.map((leg, index) => {
+                if (leg.kind === "stop") {
+                  const letter = stopLetter(summary.timeline.slice(0, index).filter((l) => l.kind === "stop").length);
+                  // The newest stop of a live shift, with the agent still in it.
+                  const stillHere =
+                    onDuty && index === summary.timeline.length - 1 && leg.endedAt === summary.latest?.recordedAt;
+                  return (
+                    <li key={`${leg.startedAt}-${index}`} className="px-5 py-3 flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 text-xs font-black">
+                        {letter}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-extrabold text-[#0B192C] dark:text-white">
+                          Stop {letter} · {duration(leg.minutes)}
+                          {stillHere && <span className="ml-1.5 text-emerald-600 dark:text-emerald-400">· still here</span>}
+                        </p>
+                        <p className="text-[10px] text-gray-400 font-semibold">
+                          {clock(leg.startedAt)} – {stillHere ? "now" : clock(leg.endedAt)} ·{" "}
+                          <a
+                            href={mapsLink(leg.from.lat, leg.from.lng)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-bold text-[#F28C28] hover:underline"
+                          >
+                            {leg.from.lat.toFixed(5)}, {leg.from.lng.toFixed(5)} ↗
+                          </a>
+                        </p>
+                      </div>
+                    </li>
+                  );
+                }
+                return (
+                  <li key={`${leg.startedAt}-${index}`} className="px-5 py-3 flex items-center gap-3">
+                    <span
+                      className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                        leg.kind === "gap"
+                          ? "bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-gray-400"
+                          : "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
+                      }`}
+                    >
+                      {leg.kind === "gap" ? <LocateOff size={14} /> : <Navigation size={14} />}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-extrabold text-[#0B192C] dark:text-white">
+                        {leg.kind === "gap" ? `No location received · ${duration(leg.minutes)}` : `Travelled ${km(leg.km)}`}
+                      </p>
+                      <p className="text-[10px] text-gray-400 font-semibold">
+                        {clock(leg.startedAt)} – {clock(leg.endedAt)} ·{" "}
+                        {leg.kind === "gap"
+                          ? `phone locked or app closed · next seen ${km(leg.km)} away`
+                          : duration(leg.minutes)}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
               <li className="px-5 py-3 flex items-center gap-3">
                 <span
                   className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
