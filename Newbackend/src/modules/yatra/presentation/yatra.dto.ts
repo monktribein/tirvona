@@ -442,6 +442,9 @@ export class SettingsDto {
   @IsOptional() @Type(() => Number) @IsInt() paymentLinkMinutes?: number;
   @IsOptional() @Type(() => Number) @IsInt() maxSeatsPerBooking?: number;
   @IsOptional() @Type(() => Number) @IsInt() salesCloseMinutes?: number;
+  @IsOptional() @Type(() => Number) @IsInt() rideFullRefundHours?: number;
+  @IsOptional() @Type(() => Number) @IsInt() ridePartnerResponseHours?: number;
+  @IsOptional() @Type(() => Number) @IsInt() reminderHours?: number;
   @IsOptional() @IsString() @MaxLength(20) supportPhone?: string;
 }
 

@@ -182,10 +182,21 @@ describe("Tirvona Yatra P5 (real Postgres)", () => {
       for (const documentType of ["pan_card", "driving_licence", "registration_certificate", "insurance"]) await ctx.upload("/v1/yatra/ride-partner/documents", partner, { documentType }).expect(201);
       await ctx.put("/v1/yatra/ride-partner/payout", partner, { accountHolderName: "Krishna Cabs", upiId: "krishna@upi" }).expect(200);
       await ctx.post("/v1/yatra/ride-partner/submit", partner, { acceptTerms: true }).expect(201);
+      // The organiser KYC queue and its overview count are not disturbed by ride partner documents.
+      const pendingBefore = (await ctx.get("/v1/yatra/admin/overview", admin).expect(200)).body.data.documentsPending;
+      const queue = await ctx.get("/v1/yatra/admin/documents?status=pending&page=1&limit=50", admin).expect(200);
+      expect(queue.body.data.every((d: any) => d.operatorName)).toBe(true);
       const list = await ctx.get("/v1/yatra/admin/ride-partners?status=submitted", admin).expect(200);
       s.partnerId = list.body.data[0].id;
+      const partnerDocs = (await ctx.get(`/v1/yatra/admin/ride-partners/${s.partnerId}`, admin).expect(200)).body.data.documents;
+      expect(partnerDocs).toHaveLength(4);
+      await ctx.post(`/v1/yatra/admin/documents/${partnerDocs[0].id}/review`, admin, { decision: "approve" }).expect(404);
       await ctx.post(`/v1/yatra/admin/ride-partners/${s.partnerId}/review`, finance, { action: "approve" }).expect(403);
       await ctx.post(`/v1/yatra/admin/ride-partners/${s.partnerId}/review`, admin, { action: "approve" }).expect(201);
+      // Approval verifies the documents the partner submitted.
+      const mine = await ctx.get("/v1/yatra/ride-partner/documents", partner).expect(200);
+      expect(mine.body.data.map((d: any) => d.status)).toEqual(["approved", "approved", "approved", "approved"]);
+      expect((await ctx.get("/v1/yatra/admin/overview", admin).expect(200)).body.data.documentsPending).toBe(pendingBefore);
       // A partner that is not approved never appears and cannot be assigned.
       const other = await ctx.post("/v1/yatra/ride-partner/register", partner2, { businessName: "Other Cabs", city: "Vrindavan", serviceAreas: ["Vrindavan"] }).expect(201);
       s.partner2Id = other.body.data.partner.id;

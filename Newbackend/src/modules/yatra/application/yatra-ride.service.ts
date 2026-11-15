@@ -361,6 +361,8 @@ export class YatraRideService {
     if (rule.to === "approved" && !partner.approvedAt) set.approvedAt = new Date();
     const after = await this.partners.findOneAndUpdate({ _id: partnerId, status: partner.status }, { $set: set }, { new: true }).lean();
     if (!after) throw new YatraException("This partner changed while you were reviewing. Reload and try again.", 409);
+    // Approval is the verification of the documents the partner submitted.
+    if (action === "approve") await this.documents.updateMany({ ridePartnerId: partner._id, status: "pending" }, { $set: { status: "approved", reviewedBy: actor.id, reviewedAt: new Date() } });
     await this.audit.record(actor, `ride_partner.${action}`, { partnerId, note }, { before: { status: partner.status }, after: { status: rule.to } });
     await this.notifier.users([String(partner.ownerUserId)], "Ride partner update", `Your ride partner account is now ${rule.to}${note ? `: ${note}` : "."}`, "/ride-partner/dashboard", "yatra.partner");
     return partnerView(after);

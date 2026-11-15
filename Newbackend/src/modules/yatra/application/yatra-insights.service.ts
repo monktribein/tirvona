@@ -203,7 +203,7 @@ export class YatraInsightsService {
   async adminOverview(): Promise<any> {
     const [operators, documentsPending, vehiclesPending, toursPending, departuresOpen, cancellations, requestsOpen, ledger, pendingPayments] = await Promise.all([
       this.operators.find({}).select("status").lean(),
-      this.documents.countDocuments({ status: "pending" }),
+      this.documents.countDocuments({ status: "pending", operatorId: { $ne: null } }),
       this.vehicles.countDocuments({ status: "pending_verification" }),
       this.tours.countDocuments({ status: { $in: ["pending_review", "approved"] } }),
       this.departures.countDocuments({ status: "scheduled", departAt: { $gt: new Date() } }),

@@ -59,12 +59,12 @@ export const AdminYatraOverviewPage: React.FC = () => {
             <Stat label="Upcoming departures" value={o.data.upcomingDepartures} to="/admin/yatra/departures" icon={<CalendarDays size={16} />} />
             <Stat label="Unpaid seat holds" value={o.data.unpaidHolds} hint="Free themselves when the hold lapses" />
           </div>
-          {o.data.p5Counts && (
+          {o.data.partnersToReview !== undefined && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              <Stat label="Ride partners to review" value={o.data.p5Counts.partnersToReview} tone={o.data.p5Counts.partnersToReview ? "warn" : undefined} to="/admin/yatra/ride-partners" icon={<Users size={16} />} />
-              <Stat label="Rides needing a partner" value={o.data.p5Counts.ridesNeedingPartner} tone={o.data.p5Counts.ridesNeedingPartner ? "warn" : undefined} to="/admin/yatra/rides" icon={<Route size={16} />} />
-              <Stat label="Open incidents" value={o.data.p5Counts.openIssues} tone={o.data.p5Counts.openIssues ? "warn" : undefined} to="/ops/yatra" icon={<ClipboardList size={16} />} />
-              <Stat label="Payouts to process" value={o.data.p5Counts.payoutsToProcess} tone={o.data.p5Counts.payoutsToProcess ? "warn" : undefined} to="/admin/yatra/finance?tab=payouts" icon={<IndianRupee size={16} />} />
+              <Stat label="Ride partners to review" value={o.data.partnersToReview} tone={o.data.partnersToReview ? "warn" : undefined} to="/admin/yatra/ride-partners" icon={<Users size={16} />} />
+              <Stat label="Rides needing a partner" value={o.data.ridesNeedingPartner} tone={o.data.ridesNeedingPartner ? "warn" : undefined} to="/admin/yatra/rides" icon={<Route size={16} />} />
+              <Stat label="Open incidents" value={o.data.openIssues} tone={o.data.openIssues ? "warn" : undefined} to="/ops/yatra" icon={<ClipboardList size={16} />} />
+              <Stat label="Payouts to process" value={o.data.payoutsToProcess} tone={o.data.payoutsToProcess ? "warn" : undefined} to="/admin/yatra/finance?tab=payouts" icon={<IndianRupee size={16} />} />
             </div>
           )}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

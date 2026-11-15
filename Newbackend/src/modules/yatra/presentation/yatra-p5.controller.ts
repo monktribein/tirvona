@@ -162,6 +162,7 @@ export class YatraRidePartnerController {
   }
 
   @Post("requests/:id/issues")
+  @YatraWriteThrottle(10, 600_000)
   async issue(@CurrentUser() user: AuthenticatedUser, @Param("id", EntityIdPipe) id: string, @Body() dto: IssueReportDto) {
     return ok(await this.rides.reportIssue(user, id, dto, "partner"), "Issue reported to Tirvona.");
   }
@@ -180,6 +181,7 @@ export class YatraRidePartnerController {
   }
 
   @Post("payouts")
+  @YatraWriteThrottle(10, 3_600_000)
   async requestPayout(@CurrentUser() user: AuthenticatedUser, @Body() dto: PayoutRequestDto) {
     return ok(await this.finance.requestPayout(user, "ride_partner", await this.payeeId(user), dto.amount, dto.note), "Payout requested.");
   }
@@ -220,6 +222,7 @@ export class YatraRideCustomerController {
   }
 
   @Post("journeys/:id/issues")
+  @YatraWriteThrottle(10, 600_000)
   async journeyIssue(@CurrentUser() user: AuthenticatedUser, @Param("id", EntityIdPipe) id: string, @Body() dto: IssueReportDto) {
     return ok(await this.rides.reportJourneyIssue(user, id, dto), "Issue reported to Tirvona.");
   }
@@ -241,6 +244,7 @@ export class YatraRideCustomerController {
   }
 
   @Post("rides/:id/issues")
+  @YatraWriteThrottle(10, 600_000)
   async issue(@CurrentUser() user: AuthenticatedUser, @Param("id", EntityIdPipe) id: string, @Body() dto: IssueReportDto) {
     return ok(await this.rides.reportIssue(user, id, dto, "customer"), "Issue reported to Tirvona.");
   }
@@ -255,6 +259,7 @@ export class YatraOperatorPayoutController {
   constructor(private readonly insights: YatraInsightsService) {}
 
   @Post("payouts")
+  @YatraWriteThrottle(10, 3_600_000)
   async request(@CurrentUser() user: AuthenticatedUser, @Body() dto: PayoutRequestDto) {
     return ok(await this.insights.requestPayout(user, dto.amount, dto.note), "Payout requested. Tirvona Finance will review it.");
   }

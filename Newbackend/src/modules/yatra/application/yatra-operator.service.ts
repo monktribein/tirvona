@@ -458,23 +458,26 @@ export class YatraOperatorService {
   }
 
   async adminDocuments(query: { status?: string; page: number; limit: number }): Promise<any> {
-    const filter: Record<string, unknown> = query.status ? { status: query.status } : {};
+    // Organiser documents only; ride partner documents are verified on the ride partner page.
+    const filter: Record<string, unknown> = { operatorId: { $ne: null } };
+    if (query.status) filter.status = query.status;
     const [rows, total] = await Promise.all([
       this.documents.find(filter).sort({ createdAt: -1 }).skip((query.page - 1) * query.limit).limit(query.limit).lean(),
       this.documents.countDocuments(filter),
     ]);
-    const ops = await this.operators.find({ _id: { $in: [...new Set(rows.map((r: any) => String(r.operatorId)))] } }).select("organisationName").lean();
+    const operatorIds = [...new Set(rows.filter((r: any) => r.operatorId).map((r: any) => String(r.operatorId)))];
+    const ops = operatorIds.length ? await this.operators.find({ _id: { $in: operatorIds } }).select("organisationName").lean() : [];
     const names = new Map(ops.map((o: any) => [String(o._id), o.organisationName]));
     return { items: rows.map((r: any) => ({ ...documentView(r), operatorName: names.get(String(r.operatorId)) ?? "" })), total };
   }
 
   async adminReviewDocument(admin: YatraActor, documentId: string, decision: "approve" | "reject", note = ""): Promise<any> {
     if (decision === "reject" && note.trim().length < 3) throw new YatraException("Please give a reason (at least 3 characters).", 400);
-    const doc = await this.documents.findById(documentId).lean();
+    const doc = await this.documents.findOne({ _id: documentId, operatorId: { $ne: null } }).lean();
     if (!doc) throw new YatraException("Document not found.", 404);
     const status = decision === "approve" ? "approved" : "rejected";
     const after = await this.documents.findOneAndUpdate(
-      { _id: documentId },
+      { _id: documentId, operatorId: { $ne: null } },
       { $set: { status, reviewNote: note.trim(), reviewedBy: admin.id, reviewedAt: new Date() } },
       { new: true },
     ).lean();
