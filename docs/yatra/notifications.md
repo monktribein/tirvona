@@ -27,7 +27,11 @@ layout. A failed email never blocks a booking or refund.
 
 ## WhatsApp: NOT implemented, templates need Meta approval
 
-Tirvona does not send WhatsApp messages yet. Business-initiated WhatsApp messages need templates
+Status: **pending, not operational.**
+
+Tirvona does not send WhatsApp messages yet. The organiser console's "Share on WhatsApp" buttons (booking links and payment links) are only `wa.me` share links: they open the organiser's own WhatsApp with a pre-filled message, and the organiser sends it. They are not Tirvona notifications.
+
+Business-initiated WhatsApp messages need templates
 pre-approved by Meta. Submit these (category **Utility**, language English and Hindi) when WhatsApp
 sending is planned. `{{n}}` are template variables.
 
