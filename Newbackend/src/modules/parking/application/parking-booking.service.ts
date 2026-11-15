@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from "@nestjs/common";
+import { ConflictException, Injectable, Logger } from "@nestjs/common";
 import { InjectModel } from "../../../database/orm-nest";
 import { ConfigService } from "@nestjs/config";
 import type { ClientSession, Model } from "../../../database/orm";
@@ -6,6 +6,13 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import QRCode from "qrcode";
 import Razorpay from "razorpay";
 import { TransactionService } from "../../../common/database/transaction.service";
+import {
+  PaymentRefundedException,
+  UNAPPLIED_REASONS,
+  UnusablePaymentSignal,
+  isUnappliedPayment,
+  unappliedReason,
+} from "../../../common/payments/unapplied-payment";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import {
   actorFromUser,
@@ -61,6 +68,8 @@ const isObjectId = (value: unknown): boolean =>
  */
 @Injectable()
 export class ParkingBookingService {
+  private readonly logger = new Logger(ParkingBookingService.name);
+
   constructor(
     @Inject(PARKING_REPOSITORY) private readonly repository: ParkingRepository,
     private readonly transactions: TransactionService,
@@ -638,37 +647,52 @@ export class ParkingBookingService {
       });
       throw new ParkingException("Payment signature verification failed.", 400);
     }
-    const result = await this.transactions.run(async (session) => {
-      const booking = await this.loadPayableBooking(actor, id, session);
-      const gatewayConfigured = Boolean(
-        this.config.get<string>("razorpayKeySecret"),
+    let result: any;
+    try {
+      result = await this.transactions.run((session) =>
+        this.applyVerifiedPayment(actor, id, dto, session),
       );
-      let payment = await this.payments
-        .findOne({
-          bookingId: booking._id,
-          purpose: "booking",
-          status: "pending",
-          ...(gatewayConfigured
-            ? { "gateway.orderId": String(dto.razorpay_order_id ?? "") }
-            : {}),
-        })
+    } catch (error) {
+      // Genuine money for this booking that the booking cannot take: the
+      // attempt was rolled back, so give the money back.
+      if (error instanceof UnusablePaymentSignal)
+        return this.refundUnappliedPayment(actor, id, dto, error.reason);
+      throw error;
+    }
+    return this.withQrImage(result);
+  }
+
+  private async applyVerifiedPayment(
+    actor: BookingActor,
+    id: string,
+    dto: ConfirmParkingPaymentDto,
+    session: ClientSession,
+  ): Promise<any> {
+    const gatewayConfigured = Boolean(
+      this.config.get<string>("razorpayKeySecret"),
+    );
+    let booking: any;
+    let payment: any;
+    if (gatewayConfigured) {
+      booking = await this.bookings
+        .findOne({ _id: id, ...bookingOwnerFilter(actor) })
+        .session(session);
+      if (!booking) throw new ParkingException("Booking not found.", 404);
+      payment = await this.boundGatewayPayment(booking, dto, session);
+      // Paid already (from the wallet, or through another order): this
+      // payment is a second charge for the same parking.
+      if (booking.paymentStatus === "paid")
+        throw new UnusablePaymentSignal(UNAPPLIED_REASONS.alreadyPaid);
+      await this.ensureBayForLatePayment(booking, session);
+    } else {
+      // Development without Razorpay keys (refused in production by
+      // `verifyRazorpay`).
+      booking = await this.loadPayableBooking(actor, id, session);
+      payment = await this.payments
+        .findOne({ bookingId: booking._id, purpose: "booking", status: "pending" })
         .sort({ createdAt: -1 })
         .session(session);
-      // Gateway share plus wallet share must make up the booking total.
-      const totalPaise = Math.round(Number(booking.pricing.totalAmount) * 100);
-      if (
-        payment &&
-        Math.round(Number(payment.amount) * 100) +
-          Math.round(Number(payment.walletAmount ?? 0) * 100) !==
-          totalPaise
-      )
-        payment = null;
-      if (!payment && gatewayConfigured)
-        throw new ParkingException(
-          "This payment does not belong to this booking.",
-          400,
-          "PAYMENT_ORDER_MISMATCH",
-        );
+      if (payment && !this.coversTotal(booking, payment)) payment = null;
       if (!payment)
         [payment] = await this.payments.create(
           [
@@ -683,33 +707,235 @@ export class ParkingBookingService {
           ],
           { session },
         );
-      if (Number(payment.walletAmount ?? 0) > 0)
-        await this.wallet.spend(
+    }
+    if (Number(payment.walletAmount ?? 0) > 0)
+      await this.wallet.spend(
+        {
+          userId: String(booking.customerId),
+          module: "parking",
+          sourceId: booking._id,
+          amount: Number(payment.walletAmount),
+          reference: booking.bookingReference,
+          description: `Paid for parking ${booking.bookingReference}`,
+          actorId: actor.userId,
+        },
+        session,
+      );
+    return this.settlePayment(session, booking, payment, actor, {
+      method: gatewayConfigured ? "razorpay" : dto.method || "demo",
+      transactionId: dto.razorpay_payment_id || `PKTXN-${Date.now()}`,
+      gateway: {
+        orderId: dto.razorpay_order_id || "",
+        paymentId: dto.razorpay_payment_id || "",
+        signature: dto.razorpay_signature || "",
+        provider: "razorpay",
+      },
+    });
+  }
+
+  /** Gateway share plus wallet share must make up the booking total. */
+  private coversTotal(booking: any, payment: any): boolean {
+    return (
+      Math.round(Number(payment.amount) * 100) +
+        Math.round(Number(payment.walletAmount ?? 0) * 100) ===
+      Math.round(Number(booking.pricing.totalAmount) * 100)
+    );
+  }
+
+  /** The payment row the verified Razorpay order belongs to, on this booking. */
+  private async boundGatewayPayment(
+    booking: any,
+    dto: ConfirmParkingPaymentDto,
+    session: ClientSession,
+  ): Promise<any> {
+    const payment = await this.payments
+      .findOne({
+        bookingId: booking._id,
+        purpose: "booking",
+        "gateway.orderId": String(dto.razorpay_order_id ?? ""),
+      })
+      .sort({ createdAt: -1 })
+      .session(session);
+    if (payment?.status === "paid")
+      throw new ConflictException("This booking is already paid.");
+    if (isUnappliedPayment(payment))
+      throw new PaymentRefundedException(
+        "This payment could not be used for this booking and has already been refunded.",
+      );
+    if (!payment || !this.coversTotal(booking, payment))
+      throw new ParkingException(
+        "This payment does not belong to this booking.",
+        400,
+        "PAYMENT_ORDER_MISMATCH",
+      );
+    if (payment.status !== "pending")
+      throw new UnusablePaymentSignal(UNAPPLIED_REASONS.superseded);
+    return payment;
+  }
+
+  /**
+   * Makes sure a booking whose hold ran out can still take a verified
+   * payment. If the expiry sweep has not run yet the space is still held; if
+   * it has, the space is taken again when still free. Otherwise the payment
+   * cannot be used and is refunded.
+   */
+  private async ensureBayForLatePayment(
+    booking: any,
+    session: ClientSession,
+  ): Promise<void> {
+    const lapsed =
+      booking.status !== "pending" ||
+      (booking.reservationExpiresAt &&
+        booking.reservationExpiresAt < new Date());
+    if (!lapsed) return;
+    if (booking.status === "cancelled")
+      throw new UnusablePaymentSignal(UNAPPLIED_REASONS.cancelled);
+    if (booking.status !== "pending" && booking.status !== "expired")
+      throw new UnusablePaymentSignal(UNAPPLIED_REASONS.closed);
+    if (booking.exitAt && new Date(booking.exitAt) < new Date())
+      throw new UnusablePaymentSignal(UNAPPLIED_REASONS.over);
+    if (booking.status === "expired") {
+      const slotType = await this.repository.findSlotType(
+        String(booking.slotTypeId),
+        String(booking.locationId),
+        session,
+      );
+      const held = slotType
+        ? await this.repository.reserveInventory({
+            locationId: String(booking.locationId),
+            slotTypeId: String(booking.slotTypeId),
+            dates: booking.occupiedDates,
+            units: Math.max(
+              1,
+              Math.ceil(
+                PARKING_VEHICLE_META[
+                  booking.vehicleType as keyof typeof PARKING_VEHICLE_META
+                ]?.footprint ?? 1,
+              ),
+            ),
+            capacity: Number(slotType.totalCapacity),
+            session,
+          })
+        : { ok: false };
+      if (!held.ok) throw new UnusablePaymentSignal(UNAPPLIED_REASONS.bayTaken);
+      booking.status = "pending";
+      booking.history.push({
+        status: "pending",
+        note: "Space held again for a payment that arrived after the hold expired",
+        updatedBy: null,
+      });
+    }
+  }
+
+  /**
+   * Hands back a verified payment this booking could not use, exactly once
+   * however many times the callback or webhook repeats it. A website customer
+   * gets it in their Tirvona wallet straight away, like every parking refund;
+   * a WhatsApp guest has no wallet, so the payment is left marked for a
+   * gateway refund, which the admin Payment issues page lists for finance.
+   * Always ends by throwing `PaymentRefundedException` saying what happened.
+   */
+  private async refundUnappliedPayment(
+    actor: BookingActor,
+    id: string,
+    dto: ConfirmParkingPaymentDto,
+    reason: string,
+  ): Promise<never> {
+    const outcome = await this.transactions.run(async (session) => {
+      const booking = await this.bookings
+        .findOne({ _id: id, ...bookingOwnerFilter(actor) })
+        .session(session);
+      const payment = await this.payments
+        .findOne({
+          bookingId: id,
+          purpose: "booking",
+          "gateway.orderId": String(dto.razorpay_order_id ?? ""),
+        })
+        .sort({ createdAt: -1 })
+        .session(session);
+      if (!booking || !payment)
+        throw new ParkingException("Booking not found.", 404);
+      if (payment.status === "paid")
+        throw new ConflictException("This booking is already paid.");
+      if (isUnappliedPayment(payment)) return null;
+
+      const amount = roundMoney(Number(payment.amount ?? 0));
+      const toWallet = Boolean(booking.customerId);
+      await this.payments.updateOne(
+        { _id: payment._id },
+        {
+          $set: {
+            // A wallet refund is final now; a gateway refund is still owed.
+            status: toWallet ? "refunded" : "failed",
+            failureReason: unappliedReason(reason),
+            transactionId: String(dto.razorpay_payment_id ?? ""),
+            "gateway.paymentId": String(dto.razorpay_payment_id ?? ""),
+            refund: {
+              amount,
+              reference: `PKREF-${Date.now().toString().slice(-8)}`,
+              ...(toWallet ? { at: new Date() } : {}),
+              reason,
+            },
+          },
+        },
+        { session },
+      );
+      if (toWallet)
+        await this.wallet.credit(
           {
             userId: String(booking.customerId),
+            amount,
             module: "parking",
+            category: "refund",
             sourceId: booking._id,
-            amount: Number(payment.walletAmount),
             reference: booking.bookingReference,
-            description: `Paid for parking ${booking.bookingReference}`,
-            actorId: actor.userId,
+            description: `Refund for parking ${booking.bookingReference}: payment could not be used`,
+            idempotencyKey: `refund:unapplied:${String(dto.razorpay_payment_id)}`,
+            actorRole: "system",
           },
           session,
         );
-      return this.settlePayment(session, booking, payment, actor, {
-        method: this.config.get<string>("razorpayKeySecret")
-          ? "razorpay"
-          : dto.method || "demo",
-        transactionId: dto.razorpay_payment_id || `PKTXN-${Date.now()}`,
-        gateway: {
-          orderId: dto.razorpay_order_id || "",
-          paymentId: dto.razorpay_payment_id || "",
-          signature: dto.razorpay_signature || "",
-          provider: "razorpay",
-        },
-      });
+      // Wallet money parked for this checkout goes back too — unless the
+      // booking is still open for a newer checkout that may be using it.
+      if (booking.status !== "pending")
+        await this.wallet.releaseHold("parking", booking._id, session);
+      if (amount > 0)
+        await this.notifications.create(
+          [
+            {
+              ...parkingOwnerFields(booking),
+              bookingId: booking._id,
+              event: "refund",
+              title: "Payment refunded",
+              message: toWallet
+                ? `${reason}. The ₹${amount} you paid for ${booking.bookingReference} has been added to your Tirvona wallet.`
+                : `${reason}. The ₹${amount} you paid for ${booking.bookingReference} will be refunded to your original payment method.`,
+              channel: "in_app",
+              status: "queued",
+              recipientPhone: booking.driverPhone || "",
+              meta: {
+                bookingReference: booking.bookingReference,
+                correlationId: `parking:${String(booking._id)}:refund_unapplied:${String(dto.razorpay_payment_id)}`,
+              },
+            },
+          ],
+          { session },
+        );
+      return { amount, toWallet, bookingReference: booking.bookingReference };
     });
-    return this.withQrImage(result);
+
+    if (!outcome)
+      throw new PaymentRefundedException(
+        "This payment could not be used for this booking and has already been refunded.",
+      );
+    this.logger.warn(
+      `Parking ${outcome.bookingReference}: payment ${String(dto.razorpay_payment_id)} could not be applied (${reason}); ₹${outcome.amount} ${outcome.toWallet ? "refunded to the wallet" : "owed as a gateway refund"}`,
+    );
+    throw new PaymentRefundedException(
+      outcome.toWallet
+        ? `${reason}. The ₹${outcome.amount} you paid has been added to your Tirvona wallet.`
+        : `${reason}. The ₹${outcome.amount} you paid will be refunded to your original payment method.`,
+    );
   }
 
   /**

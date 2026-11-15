@@ -8,6 +8,11 @@ import { FoodPartnerService } from "./application/food-partner.service";
 import { FoodCatalogService } from "./application/food-catalog.service";
 import { fakeCrypto, fakeModel, newId } from "./testing/fake-model";
 
+// Several tests hash real passwords with bcrypt at cost 12 (pure JS), which
+// takes ~1.5 s per hash; one test does three, landing at ~4.7 s on its own and
+// over the default 5 s limit on a loaded machine. The work is intentional.
+jest.setTimeout(20_000);
+
 describe("Food restaurant partners (owner signup, admin approval, menu)", () => {
   let vendors: ReturnType<typeof fakeModel>;
   let outlets: ReturnType<typeof fakeModel>;

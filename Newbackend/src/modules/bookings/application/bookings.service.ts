@@ -16,6 +16,13 @@ import type { Model } from "../../../database/orm";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import Razorpay from "razorpay";
 import { TransactionService } from "../../../common/database/transaction.service";
+import {
+  PaymentRefundedException,
+  UNAPPLIED_REASONS,
+  UnusablePaymentSignal,
+  isUnappliedPayment,
+  unappliedReason,
+} from "../../../common/payments/unapplied-payment";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { canManageAllAshrams, isAshramOwner } from "../../../common/auth/ashram-access";
 import { resolveAshramScope } from "../../../common/auth/ashram-scope";
@@ -840,8 +847,11 @@ export class BookingsService {
       );
     if (payment.status === "success")
       throw new ConflictException("Booking is already paid");
-    if (payment.status !== "pending")
-      throw new BadRequestException("This payment can no longer be confirmed");
+    // Already handed back by an earlier callback or webhook delivery.
+    if (isUnappliedPayment(payment))
+      throw new PaymentRefundedException(
+        "This payment could not be used for this booking and has already been refunded.",
+      );
     if (String(payment.bookingId) !== String(booking._id))
       throw new BadRequestException(
         "This payment does not belong to this booking",
@@ -873,6 +883,10 @@ export class BookingsService {
       );
     if (gateway?.currency && gateway.currency.toUpperCase() !== "INR")
       throw new BadRequestException("Unexpected payment currency");
+    // Genuine money for this booking, but on an order that is no longer the
+    // live one: it cannot be applied, so it is refunded rather than ignored.
+    if (payment.status !== "pending")
+      throw new UnusablePaymentSignal(UNAPPLIED_REASONS.superseded);
   }
 
   private async recordRejectedPayment(
@@ -959,6 +973,23 @@ export class BookingsService {
       });
       throw new BadRequestException("Payment signature verification failed");
     }
+    try {
+      return await this.confirmVerifiedPayment(id, actor, dto, gateway);
+    } catch (error) {
+      // The money is genuine and belongs to this booking, but the booking
+      // cannot take it. The attempt has been rolled back; hand the money back.
+      if (error instanceof UnusablePaymentSignal)
+        return this.refundUnappliedPayment(id, dto, error.reason);
+      throw error;
+    }
+  }
+
+  private async confirmVerifiedPayment(
+    id: string,
+    actor: BookingActor,
+    dto: ConfirmBookingPaymentDto,
+    gateway?: { amountPaise?: number; currency?: string },
+  ): Promise<any> {
     return this.transactions.run(async (session) => {
       if (dto.idempotencyKey) {
         const prior = await this.payments
@@ -983,8 +1014,6 @@ export class BookingsService {
         .session(session);
       if (!booking) throw new NotFoundException("Booking not found");
       await this.assertCanPayFor(actor, booking);
-      if (booking.paymentStatus === "fully_paid")
-        throw new ConflictException("Booking is already paid");
 
       // Bind the Razorpay order to *this* booking's pending payment before
       // anything is confirmed or any inventory is touched.
@@ -997,7 +1026,10 @@ export class BookingsService {
       try {
         this.assertPaymentBoundToBooking(booking, payment, gateway);
       } catch (error) {
-        if (!(error instanceof ConflictException))
+        if (
+          !(error instanceof ConflictException) &&
+          !(error instanceof UnusablePaymentSignal)
+        )
           await this.recordRejectedPayment(
             String(booking._id),
             dto,
@@ -1005,6 +1037,10 @@ export class BookingsService {
           );
         throw error;
       }
+      // Paid already — by the wallet, at the front desk, or through another
+      // order. This payment is a second charge for the same stay.
+      if (booking.paymentStatus === "fully_paid")
+        throw new UnusablePaymentSignal(UNAPPLIED_REASONS.alreadyPaid);
 
       // The wallet share was parked when this order was opened; it is spent
       // here, in the same transaction that confirms the booking, so a booking
@@ -1073,18 +1109,31 @@ export class BookingsService {
 
     if (holdLapsed) {
       if (["cancelled", "refunded"].includes(booking.status))
-        throw new BadRequestException(
-          "This booking was cancelled; the payment will be refunded",
-        );
-      for (const room of this.roomUnits(booking))
-        await this.repository.holdInventory({
-          ashramId: String(booking.ashramId),
-          roomId: room.roomId,
-          dates: booking.occupiedDates,
-          count: room.units,
-          capacity: room.units,
-          session,
-        });
+        throw new UnusablePaymentSignal(UNAPPLIED_REASONS.cancelled);
+      if (booking.status === "expired") {
+        // The expiry sweep already gave the rooms back; take them again if
+        // they are still free, otherwise the money goes back to the guest.
+        try {
+          for (const room of this.roomUnits(booking))
+            await this.repository.holdInventory({
+              ashramId: String(booking.ashramId),
+              roomId: room.roomId,
+              dates: booking.occupiedDates,
+              count: room.units,
+              capacity: room.units,
+              session,
+            });
+        } catch (error) {
+          if (error instanceof ConflictException)
+            throw new UnusablePaymentSignal(UNAPPLIED_REASONS.roomTaken);
+          throw error;
+        }
+      } else if (booking.status !== "pending") {
+        throw new UnusablePaymentSignal(UNAPPLIED_REASONS.closed);
+      }
+      // A still-"pending" booking whose timer ran out has not been swept
+      // yet: its rooms are still held for it, so they must not be held a
+      // second time (that would leave one room blocked on those dates).
       booking.status = "pending";
       booking.reservationExpiresAt = new Date(Date.now() + 15 * 60_000);
       await this.audits.create(
@@ -3059,11 +3108,166 @@ export class BookingsService {
         captured,
       );
     } catch (error) {
-      // Already confirmed (e.g. the client callback won the race) — the
-      // webhook arriving after is expected and not an error from its
-      // perspective; anything else is a real failure worth surfacing.
+      // Refunded instead of applied: the money is dealt with.
+      if (error instanceof PaymentRefundedException) return true;
       if (!(error instanceof ConflictException)) throw error;
+      // Already confirmed by this very payment (e.g. the client callback won
+      // the race) — expected, not an error. Any other conflict (say, the room
+      // hold changing underneath us) has NOT used the money yet, so it is
+      // surfaced and Razorpay retries the event later.
+      const current = await this.payments
+        .findOne({ _id: payment._id })
+        .select("status")
+        .lean();
+      if ((current as any)?.status !== "success") throw error;
     }
     return true;
+  }
+
+  /**
+   * Hands back a verified payment that this booking could not use, exactly
+   * once however many times the callback or webhook repeats it.
+   *
+   * A website pilgrim gets the money in their Tirvona wallet straight away,
+   * as with any cancellation refund. A WhatsApp guest has no wallet, so a
+   * gateway refund goes into the finance refund queue. Either way the payment
+   * row is stamped as unapplied, so it can never be confirmed afterwards.
+   * Always ends by throwing `PaymentRefundedException` with what happened.
+   */
+  private async refundUnappliedPayment(
+    id: string,
+    dto: ConfirmBookingPaymentDto,
+    reason: string,
+  ): Promise<never> {
+    const outcome = await this.transactions.run(async (session) => {
+      const booking = await this.bookings.findOne({ _id: id }).session(session);
+      const payment = await this.payments
+        .findOne({ bookingId: id, "gateway.orderId": dto.razorpay_order_id })
+        .session(session);
+      if (!booking || !payment) throw new NotFoundException("Booking not found");
+      if (payment.status === "success")
+        throw new ConflictException("Booking is already paid");
+      if (isUnappliedPayment(payment)) return null;
+
+      const amount = roundMoney(Number(payment.amount ?? 0));
+      const toWallet = Boolean(booking.customerId);
+      const walletModule = this.walletModuleFor(booking);
+      await this.payments.updateOne(
+        { _id: payment._id },
+        {
+          $set: {
+            // A wallet refund is final now; a gateway refund is "refunded"
+            // only once finance processes it from the refund queue.
+            status: toWallet ? "refunded" : "failed",
+            failureReason: unappliedReason(reason),
+            transactionId: dto.razorpay_payment_id,
+            "gateway.paymentId": dto.razorpay_payment_id,
+          },
+        },
+        { session },
+      );
+      if (toWallet)
+        await this.wallet.credit(
+          {
+            userId: String(booking.customerId),
+            amount,
+            module: walletModule,
+            category: "refund",
+            sourceId: booking._id,
+            reference: booking.bookingId,
+            description: `Refund for ${booking.bookingId}: payment could not be used`,
+            idempotencyKey: `refund:unapplied:${dto.razorpay_payment_id}`,
+            actorRole: "system",
+          },
+          session,
+        );
+      // Wallet money parked for this checkout goes back too — unless the
+      // booking is still open for a newer checkout that may be using it.
+      if (booking.status !== "pending")
+        await this.wallet.releaseHold(walletModule, booking._id, session);
+      if (amount > 0)
+        await this.refunds.create(
+          [
+            {
+              refundReference: financialReference("REF"),
+              bookingId: booking._id,
+              paymentId: payment._id,
+              requestedByWhatsAppCustomerId: booking.whatsappCustomerId,
+              amount,
+              percentage: 100,
+              reason: `Payment could not be used: ${reason}`,
+              status: toWallet ? "success" : "pending",
+              method: toWallet ? "wallet" : "gateway",
+              ...(toWallet ? { processedAt: new Date() } : {}),
+            },
+          ],
+          { session },
+        );
+      await Promise.all([
+        this.audits.create(
+          [
+            {
+              action: "BOOKING_PAYMENT_REFUNDED_UNAPPLIED",
+              bookingId: booking._id,
+              ashramId: booking.ashramId,
+              details: {
+                reason,
+                amount,
+                refundMethod: toWallet ? "wallet" : "gateway",
+                razorpayOrderId: dto.razorpay_order_id,
+                razorpayPaymentId: dto.razorpay_payment_id,
+              },
+            },
+          ],
+          { session },
+        ),
+        this.notifications.create(
+          [
+            {
+              userId: booking.customerId,
+              whatsappCustomerId: booking.whatsappCustomerId,
+              bookingId: booking._id,
+              ashramId: booking.ashramId,
+              event: "payment_refunded",
+              title: "Payment refunded",
+              message: toWallet
+                ? `${reason}. The ₹${amount} you paid for ${booking.bookingId} has been added to your Tirvona wallet.`
+                : `${reason}. The ₹${amount} you paid for ${booking.bookingId} will be refunded to your original payment method.`,
+              pushEnabled: true,
+              data: {
+                bookingId: String(booking._id),
+                refundAmount: String(amount),
+                refundMethod: toWallet ? "wallet" : "gateway",
+              },
+              meta: {
+                correlationId: `booking:${String(booking._id)}:refund_unapplied:${dto.razorpay_payment_id}`,
+              },
+            },
+          ],
+          { session },
+        ),
+      ]);
+      return { amount, toWallet, bookingRef: booking.bookingId };
+    });
+
+    if (!outcome)
+      throw new PaymentRefundedException(
+        "This payment could not be used for this booking and has already been refunded.",
+      );
+    this.logger.warn(
+      `Booking ${outcome.bookingRef}: payment ${dto.razorpay_payment_id} could not be applied (${reason}); ₹${outcome.amount} refunded via ${outcome.toWallet ? "wallet" : "finance refund queue"}`,
+    );
+    void this.publishEnterpriseNotification(
+      "Payment refunded",
+      `A payment of ₹${outcome.amount} for ${outcome.bookingRef} could not be used (${reason}) and was ${outcome.toWallet ? "refunded to the guest's wallet" : "queued for a gateway refund"}.`,
+      "warning",
+      "PAYMENTS",
+      { bookingId: id },
+    );
+    throw new PaymentRefundedException(
+      outcome.toWallet
+        ? `${reason}. The ₹${outcome.amount} you paid has been added to your Tirvona wallet.`
+        : `${reason}. The ₹${outcome.amount} you paid will be refunded to your original payment method.`,
+    );
   }
 }

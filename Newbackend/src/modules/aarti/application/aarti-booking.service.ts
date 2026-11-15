@@ -1,4 +1,4 @@
-import { ConflictException, Inject, Injectable } from "@nestjs/common";
+import { ConflictException, Inject, Injectable, Logger } from "@nestjs/common";
 import { InjectModel } from "../../../database/orm-nest";
 import { ConfigService } from "@nestjs/config";
 import type { ClientSession, Model } from "../../../database/orm";
@@ -6,6 +6,13 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import QRCode from "qrcode";
 import Razorpay from "razorpay";
 import { TransactionService } from "../../../common/database/transaction.service";
+import {
+  PaymentRefundedException,
+  UNAPPLIED_REASONS,
+  UnusablePaymentSignal,
+  isUnappliedPayment,
+  unappliedReason,
+} from "../../../common/payments/unapplied-payment";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { AARTI_MODEL } from "../domain/aarti.constants";
 import {
@@ -34,6 +41,8 @@ import { roundMoney } from "../../wallet/domain/wallet.constants";
 
 @Injectable()
 export class AartiBookingService {
+  private readonly logger = new Logger(AartiBookingService.name);
+
   constructor(
     @Inject(AARTI_REPOSITORY) private readonly repository: AartiRepository,
     private readonly transactions: TransactionService,
@@ -461,58 +470,302 @@ export class AartiBookingService {
     if (!this.verifyRazorpay(dto))
       throw new AartiException("Payment signature verification failed.", 400);
 
-    const result = await this.transactions.run(async (txSession) => {
-      const booking = await this.loadPayableBooking(id, user.id, txSession);
+    let result: any;
+    try {
+      result = await this.transactions.run((txSession) =>
+        this.applyVerifiedPayment(id, user, dto, txSession),
+      );
+    } catch (error) {
+      // Genuine money for this booking that the booking cannot take: the
+      // attempt was rolled back, so give the money back to the pilgrim.
+      if (error instanceof UnusablePaymentSignal)
+        return this.refundUnappliedPayment(id, user, dto, error.reason);
+      throw error;
+    }
+    return this.withQrImage(result);
+  }
 
-      let payment = await this.payments
+  /**
+   * The payment row this verified Razorpay payment belongs to.
+   *
+   * A valid signature proves the order/payment pair is genuine for this
+   * merchant, not that the order was opened for *this* booking. So the order
+   * must be one this booking opened, and its gateway + wallet shares must make
+   * up the booking total — otherwise a cheap payment made for any other order
+   * could be presented to confirm a dearer aarti pass.
+   */
+  private async boundGatewayPayment(
+    booking: any,
+    dto: ConfirmAartiPaymentDto,
+    txSession: ClientSession,
+  ): Promise<any> {
+    const payment = await this.payments
+      .findOne({
+        bookingId: booking._id,
+        purpose: "booking",
+        "gateway.orderId": String(dto.razorpay_order_id ?? ""),
+      })
+      .sort({ createdAt: -1 })
+      .session(txSession);
+    if (!payment)
+      throw new AartiException(
+        "This payment does not belong to this booking.",
+        400,
+        "PAYMENT_ORDER_MISMATCH",
+      );
+    if (payment.status === "paid")
+      throw new ConflictException("This booking is already paid.");
+    if (isUnappliedPayment(payment))
+      throw new PaymentRefundedException(
+        "This payment could not be used for this booking and has already been refunded.",
+      );
+    const totalPaise = Math.round(Number(booking.pricing.totalAmount) * 100);
+    if (
+      Math.round(Number(payment.amount) * 100) +
+        Math.round(Number(payment.walletAmount ?? 0) * 100) !==
+      totalPaise
+    )
+      throw new AartiException(
+        "The payment amount does not match this booking.",
+        400,
+        "PAYMENT_AMOUNT_MISMATCH",
+      );
+    // Paid for an order a newer checkout replaced: genuine money that this
+    // booking will not use, so it is refunded rather than left captured.
+    if (payment.status !== "pending")
+      throw new UnusablePaymentSignal(UNAPPLIED_REASONS.superseded);
+    return payment;
+  }
+
+  /**
+   * Makes sure a booking whose hold ran out can still take a verified
+   * payment. If the expiry sweep has not run yet the passes are still held;
+   * if it has, they are taken again when still free. Otherwise the payment
+   * cannot be used and is refunded.
+   */
+  private async ensureSeatsForLatePayment(
+    booking: any,
+    txSession: ClientSession,
+  ): Promise<void> {
+    const lapsed =
+      booking.status !== "pending" ||
+      (booking.reservationExpiresAt &&
+        booking.reservationExpiresAt < new Date());
+    if (!lapsed) return;
+    if (booking.status === "cancelled")
+      throw new UnusablePaymentSignal(UNAPPLIED_REASONS.cancelled);
+    if (booking.status !== "pending" && booking.status !== "expired")
+      throw new UnusablePaymentSignal(UNAPPLIED_REASONS.closed);
+    if (booking.endsAt && new Date(booking.endsAt) < new Date())
+      throw new UnusablePaymentSignal(UNAPPLIED_REASONS.over);
+    if (booking.status === "expired") {
+      const passType = await this.repository.findPassType(
+        String(booking.passTypeId),
+        String(booking.sessionId),
+        txSession,
+      );
+      const held = passType
+        ? await this.repository.reserveSeats({
+            sessionId: String(booking.sessionId),
+            passTypeId: String(booking.passTypeId),
+            date: booking.sessionDate,
+            seats: Number(booking.passCount),
+            capacity: Number(passType.totalCapacity),
+            session: txSession,
+          })
+        : { ok: false };
+      if (!held.ok) throw new UnusablePaymentSignal(UNAPPLIED_REASONS.seatsTaken);
+      booking.status = "pending";
+      booking.history.push({
+        status: "pending",
+        note: "Passes held again for a payment that arrived after the hold expired",
+      });
+    }
+  }
+
+  private async applyVerifiedPayment(
+    id: string,
+    user: AuthenticatedUser,
+    dto: ConfirmAartiPaymentDto,
+    txSession: ClientSession,
+  ): Promise<any> {
+    const gatewayConfigured = Boolean(
+      this.config.get<string>("razorpayKeySecret"),
+    );
+    if (!gatewayConfigured) return this.applyDemoPayment(id, user, dto, txSession);
+
+    const booking = await this.bookings
+      .findOne({ _id: id, customerId: user.id })
+      .session(txSession);
+    if (!booking) throw new AartiException("Booking not found.", 404);
+    const payment = await this.boundGatewayPayment(booking, dto, txSession);
+    // Paid already (from the wallet, or through another order): this
+    // payment is a second charge for the same pass.
+    if (booking.paymentStatus === "paid")
+      throw new UnusablePaymentSignal(UNAPPLIED_REASONS.alreadyPaid);
+    await this.ensureSeatsForLatePayment(booking, txSession);
+    return this.spendWalletShareAndSettle(txSession, booking, payment, user, dto);
+  }
+
+  /** Development without Razorpay keys (refused in production by `verifyRazorpay`). */
+  private async applyDemoPayment(
+    id: string,
+    user: AuthenticatedUser,
+    dto: ConfirmAartiPaymentDto,
+    txSession: ClientSession,
+  ): Promise<any> {
+    const booking = await this.loadPayableBooking(id, user.id, txSession);
+    let payment = await this.payments
+      .findOne({
+        bookingId: booking._id,
+        purpose: "booking",
+        status: "pending",
+      })
+      .sort({ createdAt: -1 })
+      .session(txSession);
+    if (!payment)
+      [payment] = await this.payments.create(
+        [
+          {
+            bookingId: booking._id,
+            userId: user.id,
+            ashramId: booking.ashramId,
+            amount: booking.pricing.totalAmount,
+            purpose: "booking",
+            method: dto.method || "demo",
+          },
+        ],
+        { session: txSession },
+      );
+    return this.spendWalletShareAndSettle(txSession, booking, payment, user, dto);
+  }
+
+  private async spendWalletShareAndSettle(
+    txSession: ClientSession,
+    booking: any,
+    payment: any,
+    user: AuthenticatedUser,
+    dto: ConfirmAartiPaymentDto,
+  ): Promise<any> {
+    if (Number(payment.walletAmount ?? 0) > 0)
+      await this.wallet.spend(
+        {
+          userId: user.id,
+          module: "aarti",
+          sourceId: booking._id,
+          amount: Number(payment.walletAmount),
+          reference: booking.bookingReference,
+          description: `Paid for aarti pass ${booking.bookingReference}`,
+          actorId: user.id,
+        },
+        txSession,
+      );
+    return this.settlePayment(txSession, booking, payment, user, {
+      method: this.config.get<string>("razorpayKeySecret")
+        ? "razorpay"
+        : dto.method || "demo",
+      transactionId: dto.razorpay_payment_id || `ARTXN-${Date.now()}`,
+      gateway: {
+        orderId: dto.razorpay_order_id || "",
+        paymentId: dto.razorpay_payment_id || "",
+        signature: dto.razorpay_signature || "",
+        provider: "razorpay",
+      },
+    });
+  }
+
+  /**
+   * Hands back a verified payment this booking could not use — to the
+   * pilgrim's Tirvona wallet, like every aarti refund — exactly once however
+   * many times the callback or webhook repeats it. The payment row is stamped
+   * as unapplied so it can never confirm the booking afterwards. Always ends
+   * by throwing `PaymentRefundedException` saying what happened.
+   */
+  private async refundUnappliedPayment(
+    id: string,
+    user: AuthenticatedUser,
+    dto: ConfirmAartiPaymentDto,
+    reason: string,
+  ): Promise<never> {
+    const outcome = await this.transactions.run(async (txSession) => {
+      const booking = await this.bookings
+        .findOne({ _id: id, customerId: user.id })
+        .session(txSession);
+      const payment = await this.payments
         .findOne({
-          bookingId: booking._id,
+          bookingId: id,
           purpose: "booking",
-          status: "pending",
+          "gateway.orderId": String(dto.razorpay_order_id ?? ""),
         })
         .sort({ createdAt: -1 })
         .session(txSession);
-      if (!payment)
-        [payment] = await this.payments.create(
+      if (!booking || !payment)
+        throw new AartiException("Booking not found.", 404);
+      if (payment.status === "paid")
+        throw new ConflictException("This booking is already paid.");
+      if (isUnappliedPayment(payment)) return null;
+
+      const amount = roundMoney(Number(payment.amount ?? 0));
+      const reference = aartiRefundReference();
+      await this.payments.updateOne(
+        { _id: payment._id },
+        {
+          $set: {
+            status: "refunded",
+            failureReason: unappliedReason(reason),
+            transactionId: String(dto.razorpay_payment_id ?? ""),
+            "gateway.paymentId": String(dto.razorpay_payment_id ?? ""),
+            refund: { amount, reference, at: new Date(), reason },
+          },
+        },
+        { session: txSession },
+      );
+      await this.wallet.credit(
+        {
+          userId: String(booking.customerId),
+          amount,
+          module: "aarti",
+          category: "refund",
+          sourceId: booking._id,
+          reference: booking.bookingReference,
+          description: `Refund for aarti pass ${booking.bookingReference}: payment could not be used`,
+          idempotencyKey: `refund:unapplied:${String(dto.razorpay_payment_id)}`,
+          actorRole: "system",
+        },
+        txSession,
+      );
+      // Wallet money parked for this checkout goes back too — unless the
+      // booking is still open for a newer checkout that may be using it.
+      if (booking.status !== "pending")
+        await this.wallet.releaseHold("aarti", booking._id, txSession);
+      if (amount > 0)
+        await this.notifications.create(
           [
             {
+              userId: booking.customerId,
               bookingId: booking._id,
-              userId: user.id,
-              ashramId: booking.ashramId,
-              amount: booking.pricing.totalAmount,
-              purpose: "booking",
-              method: dto.method || "demo",
+              event: "refund",
+              title: "Payment refunded",
+              message: `${reason}. The ₹${amount} you paid for ${booking.bookingReference} has been added to your Tirvona wallet.`,
+              channel: "in_app",
+              status: "queued",
             },
           ],
           { session: txSession },
         );
-      if (Number(payment.walletAmount ?? 0) > 0)
-        await this.wallet.spend(
-          {
-            userId: user.id,
-            module: "aarti",
-            sourceId: booking._id,
-            amount: Number(payment.walletAmount),
-            reference: booking.bookingReference,
-            description: `Paid for aarti pass ${booking.bookingReference}`,
-            actorId: user.id,
-          },
-          txSession,
-        );
-      return this.settlePayment(txSession, booking, payment, user, {
-        method: this.config.get<string>("razorpayKeySecret")
-          ? "razorpay"
-          : dto.method || "demo",
-        transactionId: dto.razorpay_payment_id || `ARTXN-${Date.now()}`,
-        gateway: {
-          orderId: dto.razorpay_order_id || "",
-          paymentId: dto.razorpay_payment_id || "",
-          signature: dto.razorpay_signature || "",
-          provider: "razorpay",
-        },
-      });
+      return { amount, bookingReference: booking.bookingReference };
     });
-    return this.withQrImage(result);
+
+    if (!outcome)
+      throw new PaymentRefundedException(
+        "This payment could not be used for this booking and has already been refunded.",
+      );
+    this.logger.warn(
+      `Aarti ${outcome.bookingReference}: payment ${String(dto.razorpay_payment_id)} could not be applied (${reason}); ₹${outcome.amount} refunded to the wallet`,
+    );
+    throw new PaymentRefundedException(
+      `${reason}. The ₹${outcome.amount} you paid has been added to your Tirvona wallet.`,
+    );
   }
 
   /**

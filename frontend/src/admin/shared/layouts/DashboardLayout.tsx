@@ -844,6 +844,7 @@ export const DashboardLayout: React.FC = () => {
       icon: <Undo2 size={15} />,
       links: [
         { label: "Refund Queue", path: "/admin/refunds" },
+        { label: "Payment Issues", path: "/admin/payment-issues" },
         { label: "Refund Policies", path: "/admin/refunds/policies" },
       ],
     },
@@ -1372,6 +1373,11 @@ export const DashboardLayout: React.FC = () => {
             groupName: "Marketplace Finance",
             icon: <DollarSign size={15} />,
             links: [{ label: "Marketplace Payouts & Commission", path: "/admin/manage/marketplace/payouts" }],
+          },
+          {
+            groupName: "Payments",
+            icon: <Undo2 size={15} />,
+            links: [{ label: "Payment Issues", path: "/admin/payment-issues" }],
           },
           {
             groupName: "Pilgrim Wallets",

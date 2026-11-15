@@ -10,6 +10,8 @@ import { ProvidersModule } from "../providers/providers.module";
 import { PaymentWebhookEventSchema } from "./infrastructure/persistence/payment-webhook-event.schema";
 import { PaymentsWebhookService } from "./application/payments-webhook.service";
 import { PaymentsWebhookController } from "./presentation/payments-webhook.controller";
+import { PaymentIssuesService } from "./application/payment-issues.service";
+import { PaymentIssuesController } from "./presentation/payment-issues.controller";
 
 /// Cross-cutting Razorpay webhook receiver. Imports the payment-taking
 /// modules (rather than owning their booking/order logic itself) so the
@@ -30,7 +32,7 @@ import { PaymentsWebhookController } from "./presentation/payments-webhook.contr
     ProvidersModule,
     FoodModule,
   ],
-  controllers: [PaymentsWebhookController],
-  providers: [PaymentsWebhookService],
+  controllers: [PaymentsWebhookController, PaymentIssuesController],
+  providers: [PaymentsWebhookService, PaymentIssuesService],
 })
 export class PaymentsModule {}

@@ -667,18 +667,19 @@ export class ParkingManagementService {
             status: "pending",
             reservationExpiresAt: { $lt: new Date() },
           },
-          {
-            $set: { status: "expired", reservationExpiresAt: null },
-            $push: {
-              history: {
-                status: "expired",
-                note: "Reservation hold expired before payment",
-              },
-            },
-          },
+          { $set: { status: "expired", reservationExpiresAt: null } },
           { new: true, session },
         );
         if (!booking) return;
+        // Not a `$push` in the update above: the Postgres driver cannot
+        // serialise a pushed sub-document next to existing ones, which made
+        // this whole sweep throw on the first stale booking.
+        booking.history.push({
+          status: "expired",
+          note: "Reservation hold expired before payment",
+          at: new Date(),
+        });
+        await booking.save({ session });
         await this.notifications.create(
           [
             {
@@ -733,15 +734,17 @@ export class ParkingManagementService {
       await this.transactionsService.run(async (session) => {
         const booking = await this.bookings.findOneAndUpdate(
           { _id: item._id, status: "upcoming", entryAt: { $lt: cutoff } },
-          {
-            $set: { status: "no_show" },
-            $push: {
-              history: { status: "no_show", note: "Arrival window elapsed" },
-            },
-          },
+          { $set: { status: "no_show" } },
           { new: true, session },
         );
         if (!booking) return;
+        // See the expiry step above for why this is not a `$push`.
+        booking.history.push({
+          status: "no_show",
+          note: "Arrival window elapsed",
+          at: new Date(),
+        });
+        await booking.save({ session });
         await this.notifications.create(
           [
             {

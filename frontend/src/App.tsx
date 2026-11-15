@@ -249,6 +249,9 @@ const RefundRequestsPage = lazy(
 const RefundRequestDetailPage = lazy(
   () => import("./admin/refunds/pages/RefundRequestDetailPage"),
 );
+const PaymentIssuesPage = lazy(
+  () => import("./admin/refunds/pages/PaymentIssuesPage"),
+);
 const RefundPoliciesPage = lazy(
   () => import("./admin/refunds/pages/RefundPoliciesPage"),
 );
@@ -1503,6 +1506,10 @@ const AppContent: React.FC = () => {
             <Route
               path="/admin/refunds/:id"
               element={<RefundRequestDetailPage />}
+            />
+            <Route
+              path="/admin/payment-issues"
+              element={<PaymentIssuesPage />}
             />
           </Route>
 

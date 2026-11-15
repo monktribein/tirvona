@@ -17,6 +17,9 @@ import {
 } from "./food-notification.service";
 import { randomBytes } from "crypto";
 
+/** An order still unpaid this long after it was placed is closed as PAYMENT_EXPIRED. */
+export const FOOD_UNPAID_ORDER_TTL_MS = 24 * 60 * 60_000;
+
 export interface CreateOrderDto {
   quoteId: string;
   idempotencyKey: string;
@@ -664,6 +667,59 @@ export class FoodOrderService {
       })),
       events,
     };
+  }
+
+  /**
+   * Closes orders that were placed but never paid, so they stop showing as
+   * "Payment pending" forever. Nothing is held for an unpaid food order, and
+   * a payment that still arrives later is not lost: `FoodPaymentService`
+   * marks the order paid and sends it to the kitchen, which accepts it or the
+   * vendor-timeout sweep refunds it. Each order is claimed with a conditional
+   * update, so several instances cannot close the same order twice.
+   */
+  async expireUnpaidOrders(
+    olderThanMs = FOOD_UNPAID_ORDER_TTL_MS,
+  ): Promise<number> {
+    const stale = await this.orderModel
+      .find({
+        orderStatus: "PAYMENT_PENDING",
+        paymentStatus: { $ne: "PAID" },
+        createdAt: { $lt: new Date(Date.now() - olderThanMs) },
+      })
+      .select("_id orderNumber")
+      .limit(200)
+      .lean();
+
+    let expired = 0;
+    for (const candidate of stale as any[]) {
+      try {
+        const order = await this.orderModel.findOneAndUpdate(
+          {
+            _id: candidate._id,
+            orderStatus: "PAYMENT_PENDING",
+            paymentStatus: { $ne: "PAID" },
+          },
+          { $set: { orderStatus: "PAYMENT_EXPIRED" } },
+          { new: true },
+        );
+        // Paid or cancelled a moment ago.
+        if (!order) continue;
+        await this.recordOrderEvent(
+          order._id,
+          "PAYMENT_PENDING",
+          "PAYMENT_EXPIRED",
+          "system",
+          "system_scheduler",
+          "Order was never paid",
+        );
+        expired += 1;
+      } catch (error) {
+        this.logger.error(
+          `Closing unpaid order ${candidate.orderNumber} failed: ${(error as Error).message}`,
+        );
+      }
+    }
+    return expired;
   }
 
   private async recordOrderEvent(
