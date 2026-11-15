@@ -351,6 +351,70 @@ const FoodMarketplacePage = namedPage(
   () => import("./pages/food/FoodMarketplacePage"),
   "FoodMarketplacePage",
 );
+
+// Tirvona Yatra (bus & tour bookings). Every screen shows a "not available yet" notice while the
+// API's YATRA_ENABLED flag is off.
+const yatraPublicPages = () => import("./modules/yatra/pages/YatraPublicPages");
+const yatraJourneyPages = () => import("./modules/yatra/pages/YatraJourneyPages");
+const yatraOperatorSetup = () => import("./modules/yatra/operator/OperatorSetupPages");
+const yatraOperatorTours = () => import("./modules/yatra/operator/OperatorTourPages");
+const yatraOperatorSales = () => import("./modules/yatra/operator/OperatorSalesPages");
+const yatraAdminPages = () => import("./admin/yatra/AdminYatraPages");
+const YatraHomePage = namedPage(yatraPublicPages, "YatraHomePage");
+const YatraDeparturePage = namedPage(yatraPublicPages, "YatraDeparturePage");
+const YatraCheckoutPage = namedPage(yatraPublicPages, "YatraCheckoutPage");
+const YatraLinkPage = namedPage(yatraPublicPages, "YatraLinkPage");
+const YatraPayLinkPage = namedPage(yatraPublicPages, "YatraPayLinkPage");
+const YatraPartnerPage = namedPage(yatraPublicPages, "YatraPartnerPage");
+const MyJourneysPage = namedPage(yatraJourneyPages, "MyJourneysPage");
+const JourneyDetailPage = namedPage(yatraJourneyPages, "JourneyDetailPage");
+const SupplierYatraRequestsPage = namedPage(yatraJourneyPages, "SupplierYatraRequestsPage");
+const OperatorDashboardPage = namedPage(yatraOperatorSetup, "OperatorDashboardPage");
+const OperatorProfilePage = namedPage(yatraOperatorSetup, "OperatorProfilePage");
+const OperatorDocumentsPage = namedPage(yatraOperatorSetup, "OperatorDocumentsPage");
+const OperatorStaffPage = namedPage(yatraOperatorSetup, "OperatorStaffPage");
+const OperatorVehiclesPage = namedPage(yatraOperatorSetup, "OperatorVehiclesPage");
+const OperatorToursPage = namedPage(yatraOperatorTours, "OperatorToursPage");
+const OperatorTourEditorPage = namedPage(yatraOperatorTours, "OperatorTourEditorPage");
+const OperatorDeparturesPage = namedPage(yatraOperatorSales, "OperatorDeparturesPage");
+const OperatorDepartureDetailPage = namedPage(yatraOperatorSales, "OperatorDepartureDetailPage");
+const OperatorBookingsPage = namedPage(yatraOperatorSales, "OperatorBookingsPage");
+const OperatorNewBookingPage = namedPage(yatraOperatorSales, "OperatorNewBookingPage");
+const OperatorBookingDetailPage = namedPage(yatraOperatorSales, "OperatorBookingDetailPage");
+const OperatorLinksPage = namedPage(yatraOperatorSales, "OperatorLinksPage");
+const OperatorEarningsPage = namedPage(yatraOperatorSales, "OperatorEarningsPage");
+const OperatorReportsPage = namedPage(yatraOperatorSales, "OperatorReportsPage");
+const OperatorNotificationsPage = namedPage(yatraOperatorSales, "OperatorNotificationsPage");
+const AdminYatraOverviewPage = namedPage(yatraAdminPages, "AdminYatraOverviewPage");
+const AdminYatraOperatorsPage = namedPage(yatraAdminPages, "AdminYatraOperatorsPage");
+const AdminYatraOperatorDetailPage = namedPage(yatraAdminPages, "AdminYatraOperatorDetailPage");
+const AdminYatraDocumentsPage = namedPage(yatraAdminPages, "AdminYatraDocumentsPage");
+const AdminYatraVehiclesPage = namedPage(yatraAdminPages, "AdminYatraVehiclesPage");
+const AdminYatraToursPage = namedPage(yatraAdminPages, "AdminYatraToursPage");
+const AdminYatraTourDetailPage = namedPage(yatraAdminPages, "AdminYatraTourDetailPage");
+const AdminYatraDeparturesPage = namedPage(yatraAdminPages, "AdminYatraDeparturesPage");
+const AdminYatraDepartureDetailPage = namedPage(yatraAdminPages, "AdminYatraDepartureDetailPage");
+const AdminYatraBookingsPage = namedPage(yatraAdminPages, "AdminYatraBookingsPage");
+const AdminYatraBookingDetailPage = namedPage(yatraAdminPages, "AdminYatraBookingDetailPage");
+const AdminYatraCancellationsPage = namedPage(yatraAdminPages, "AdminYatraCancellationsPage");
+const AdminYatraServiceRequestsPage = namedPage(yatraAdminPages, "AdminYatraServiceRequestsPage");
+const AdminYatraFinancePage = namedPage(yatraAdminPages, "AdminYatraFinancePage");
+const AdminYatraAuditPage = namedPage(yatraAdminPages, "AdminYatraAuditPage");
+const AdminYatraSettingsPage = namedPage(yatraAdminPages, "AdminYatraSettingsPage");
+const yatraRidePartnerPages = () => import("./modules/yatra/ridePartner/RidePartnerPages");
+const yatraAdminRidePages = () => import("./admin/yatra/AdminYatraRidePages");
+const RidePartnerDashboardPage = namedPage(yatraRidePartnerPages, "RidePartnerDashboardPage");
+const RidePartnerProfilePage = namedPage(yatraRidePartnerPages, "RidePartnerProfilePage");
+const RidePartnerVehiclesPage = namedPage(yatraRidePartnerPages, "RidePartnerVehiclesPage");
+const RidePartnerDocumentsPage = namedPage(yatraRidePartnerPages, "RidePartnerDocumentsPage");
+const RidePartnerRequestsPage = namedPage(yatraRidePartnerPages, "RidePartnerRequestsPage");
+const RidePartnerEarningsPage = namedPage(yatraRidePartnerPages, "RidePartnerEarningsPage");
+const RidePartnerNotificationsPage = namedPage(yatraRidePartnerPages, "RidePartnerNotificationsPage");
+const AdminYatraRidePartnersPage = namedPage(yatraAdminRidePages, "AdminYatraRidePartnersPage");
+const AdminYatraRidePartnerDetailPage = namedPage(yatraAdminRidePages, "AdminYatraRidePartnerDetailPage");
+const AdminYatraRidesPage = namedPage(yatraAdminRidePages, "AdminYatraRidesPage");
+const YatraFinanceCenterPage = namedPage(() => import("./admin/yatra/YatraFinanceCenterPage"), "YatraFinanceCenterPage");
+const YatraOpsPage = namedPage(() => import("./modules/yatra/ops/YatraOpsPage"), "YatraOpsPage");
 const FoodOrderTrackingPage = namedPage(
   () => import("./pages/food/FoodOrderTrackingPage"),
   "FoodOrderTrackingPage",
@@ -812,6 +876,13 @@ const AppContent: React.FC = () => {
             {/* legacy; nginx 301s these in production */}
             <Route path="/aarti/:id" element={<AartiDetailPage />} />
 
+            {/* Tirvona Yatra public pages */}
+            <Route path="/yatra" element={<YatraHomePage />} />
+            <Route path="/yatra/departures/:code" element={<YatraDeparturePage />} />
+            <Route path="/yatra/go/:code" element={<YatraLinkPage />} />
+            <Route path="/yatra/pay/:token" element={<YatraPayLinkPage />} />
+            <Route path="/yatra-partner" element={<YatraPartnerPage />} />
+
           </Route>
 
           {/* The signed WhatsApp payment link. Deliberately outside every
@@ -888,6 +959,99 @@ const AppContent: React.FC = () => {
             <Route path="/profile/aarti" element={<AartiMyBookingsPage />} />
             <Route path="/profile/events" element={<EventMyPassesPage />} />
             <Route path="/events/pass/:passCode" element={<EventPassPage />} />
+            <Route path="/yatra/checkout/:bookingId" element={<YatraCheckoutPage />} />
+            <Route path="/profile/journeys" element={<MyJourneysPage />} />
+            <Route path="/profile/journeys/:journeyId" element={<JourneyDetailPage />} />
+          </Route>
+
+          {/* Tirvona Yatra organiser console: any signed-in user; the API scopes every call to the
+              caller's own organiser and checks the caller's organiser role. */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/operator" element={<Navigate to="/operator/dashboard" replace />} />
+            <Route path="/operator/register" element={<Navigate to="/operator/dashboard" replace />} />
+            <Route path="/operator/dashboard" element={<OperatorDashboardPage />} />
+            <Route path="/operator/profile" element={<OperatorProfilePage />} />
+            <Route path="/operator/documents" element={<OperatorDocumentsPage />} />
+            <Route path="/operator/staff" element={<OperatorStaffPage />} />
+            <Route path="/operator/vehicles" element={<OperatorVehiclesPage />} />
+            <Route path="/operator/tours" element={<OperatorToursPage />} />
+            <Route path="/operator/tours/new" element={<OperatorTourEditorPage />} />
+            <Route path="/operator/tours/:tourId" element={<OperatorTourEditorPage />} />
+            <Route path="/operator/departures" element={<OperatorDeparturesPage />} />
+            <Route path="/operator/departures/:departureId" element={<OperatorDepartureDetailPage />} />
+            <Route path="/operator/bookings" element={<OperatorBookingsPage />} />
+            <Route path="/operator/bookings/new" element={<OperatorNewBookingPage />} />
+            <Route path="/operator/bookings/:bookingId" element={<OperatorBookingDetailPage />} />
+            <Route path="/operator/links" element={<OperatorLinksPage />} />
+            <Route path="/operator/earnings" element={<OperatorEarningsPage />} />
+            <Route path="/operator/reports" element={<OperatorReportsPage />} />
+            <Route path="/operator/notifications" element={<OperatorNotificationsPage />} />
+            {/* Tirvona Yatra ride partner console; the API scopes every call to the caller's own partner account. */}
+            <Route path="/ride-partner" element={<Navigate to="/ride-partner/dashboard" replace />} />
+            <Route path="/ride-partner/dashboard" element={<RidePartnerDashboardPage />} />
+            <Route path="/ride-partner/profile" element={<RidePartnerProfilePage />} />
+            <Route path="/ride-partner/vehicles" element={<RidePartnerVehiclesPage />} />
+            <Route path="/ride-partner/documents" element={<RidePartnerDocumentsPage />} />
+            <Route path="/ride-partner/requests" element={<RidePartnerRequestsPage />} />
+            <Route path="/ride-partner/earnings" element={<RidePartnerEarningsPage />} />
+            <Route path="/ride-partner/notifications" element={<RidePartnerNotificationsPage />} />
+          </Route>
+
+          {/* Tirvona Yatra Super Admin console. Only Super Admin approves and publishes. */}
+          <Route
+            element={
+              <ProtectedRoute allowedRoles={["super_admin"]}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/admin/yatra" element={<AdminYatraOverviewPage />} />
+            <Route path="/admin/yatra/operators" element={<AdminYatraOperatorsPage />} />
+            <Route path="/admin/yatra/operators/:operatorId" element={<AdminYatraOperatorDetailPage />} />
+            <Route path="/admin/yatra/documents" element={<AdminYatraDocumentsPage />} />
+            <Route path="/admin/yatra/vehicles" element={<AdminYatraVehiclesPage />} />
+            <Route path="/admin/yatra/tours" element={<AdminYatraToursPage />} />
+            <Route path="/admin/yatra/tours/:tourId" element={<AdminYatraTourDetailPage />} />
+            <Route path="/admin/yatra/departures" element={<AdminYatraDeparturesPage />} />
+            <Route path="/admin/yatra/departures/:departureId" element={<AdminYatraDepartureDetailPage />} />
+            <Route path="/admin/yatra/bookings" element={<AdminYatraBookingsPage />} />
+            <Route path="/admin/yatra/bookings/:bookingId" element={<AdminYatraBookingDetailPage />} />
+            <Route path="/admin/yatra/cancellations" element={<AdminYatraCancellationsPage />} />
+            <Route path="/admin/yatra/service-requests" element={<AdminYatraServiceRequestsPage />} />
+            <Route path="/admin/yatra/collections" element={<AdminYatraFinancePage />} />
+            <Route path="/admin/yatra/ride-partners" element={<AdminYatraRidePartnersPage />} />
+            <Route path="/admin/yatra/ride-partners/:partnerId" element={<AdminYatraRidePartnerDetailPage />} />
+            <Route path="/admin/yatra/rides" element={<AdminYatraRidesPage />} />
+            <Route path="/admin/yatra/audit" element={<AdminYatraAuditPage />} />
+            <Route path="/admin/yatra/settings" element={<AdminYatraSettingsPage />} />
+          </Route>
+
+          {/* Tirvona Yatra Finance Center: the roles the backend's finance controller allows. */}
+          <Route
+            element={
+              <ProtectedRoute allowedRoles={["super_admin", "finance_manager"]}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/admin/yatra/finance" element={<YatraFinanceCenterPage />} />
+          </Route>
+
+          {/* Tirvona Yatra Destination Ops: HR and Executive see only their office area (enforced by the API). */}
+          <Route
+            element={
+              <ProtectedRoute allowedRoles={["super_admin", "hr", "executive"]}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/ops/yatra" element={<YatraOpsPage />} />
           </Route>
 
           <Route
@@ -1576,6 +1740,7 @@ const AppContent: React.FC = () => {
             <Route path="/restaurant/menu" element={<RestaurantMenuPage />} />
             <Route path="/restaurant/wallet" element={<RestaurantWalletPage />} />
             <Route path="/restaurant/profile" element={<RestaurantProfilePage />} />
+            <Route path="/restaurant/yatra-requests" element={<SupplierYatraRequestsPage />} />
           </Route>
 
           {/* Pandit / Provider console: any signed-in user; backend scopes calls to caller's own profile. */}
@@ -1595,6 +1760,7 @@ const AppContent: React.FC = () => {
             <Route path="/provider/verification" element={<ProviderVerificationPage />} />
             <Route path="/provider/bookings" element={<ProviderBookingsPage />} />
             <Route path="/provider/wallet" element={<ProviderWalletPage />} />
+            <Route path="/provider/yatra-requests" element={<SupplierYatraRequestsPage />} />
 
             {/* Legacy aliases so direct links from old app keep working smoothly */}
             <Route path="/pandit/dashboard" element={<Navigate to="/provider/dashboard" replace />} />

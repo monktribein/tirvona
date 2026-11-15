@@ -2,6 +2,7 @@
 
 | Folder / file | What it covers |
 |---|---|
+| [`yatra/`](yatra/README.md) | Tirvona Yatra (bus and group tours): rules, code map, lifecycles, tests and the launch checklist |
 | [`seo/`](seo/README.md) | How server-rendered SEO, the sitemap and the SEO publishing system work; the SEO team's keyword research |
 | [`day-stay/`](day-stay/) | Day-stay (short stay) product: design, database, payment flow, test reports, release and pilot runbooks. The `FINAL-*` files are the approved versions |
 | [`db-cleanup/`](db-cleanup/) | Database cleanup plan, table catalogue and report, including the steps still pending on production |

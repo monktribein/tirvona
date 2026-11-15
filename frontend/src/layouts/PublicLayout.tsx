@@ -16,6 +16,7 @@ import { providerSelfService } from "../modules/pandit";
 import { useCurrency } from "../contexts/CurrencyContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import { getFormattingLocale } from "../utils/format";
+import { useYatraEnabled } from "../modules/yatra/yatraUi";
 import { realEmail } from "../utils/email";
 import { TIRVONA_SERVICES, isServiceActive } from "../design-system/premium";
 import {
@@ -85,6 +86,7 @@ const FooterAccordion: React.FC<{
 
 export const PublicLayout: React.FC = () => {
   const { user, logout } = useAuth();
+  const yatraEnabled = useYatraEnabled() === true;
   const { unreadCount: _unreadCount, notifications: _notifications, markAllAsRead: _markAllAsRead, removeNotification: _removeNotification } =
     useNotifications();
   const navigate = useNavigate();
@@ -1307,6 +1309,20 @@ export const PublicLayout: React.FC = () => {
                       Yatra Circuits
                     </Link>
                   </li>
+                  {yatraEnabled && (
+                    <li>
+                      <Link
+                        to="/yatra"
+                        className="hover:text-amber-400 transition-colors flex items-center gap-1"
+                      >
+                        <ArrowRight
+                          size={10}
+                          className="text-slate-500 shrink-0"
+                        />{" "}
+                        Tirvona Yatra: Bus &amp; Group Tours
+                      </Link>
+                    </li>
+                  )}
                   <li>
                     <Link
                       to="/blog"

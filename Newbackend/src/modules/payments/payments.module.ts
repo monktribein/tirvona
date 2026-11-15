@@ -7,6 +7,7 @@ import { DayStayModule } from "../day-stay/day-stay.module";
 import { FoodModule } from "../food/food.module";
 import { MarketplaceModule } from "../marketplace/marketplace.module";
 import { ProvidersModule } from "../providers/providers.module";
+import { YatraModule } from "../yatra/yatra.module";
 import { PaymentWebhookEventSchema } from "./infrastructure/persistence/payment-webhook-event.schema";
 import { PaymentsWebhookService } from "./application/payments-webhook.service";
 import { PaymentsWebhookController } from "./presentation/payments-webhook.controller";
@@ -31,6 +32,7 @@ import { PaymentIssuesController } from "./presentation/payment-issues.controlle
     MarketplaceModule,
     ProvidersModule,
     FoodModule,
+    YatraModule,
   ],
   controllers: [PaymentsWebhookController, PaymentIssuesController],
   providers: [PaymentsWebhookService, PaymentIssuesService],

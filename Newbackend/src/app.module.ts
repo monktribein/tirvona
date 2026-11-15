@@ -56,6 +56,7 @@ import { PartnersModule } from "./modules/partners/partners.module";
 import { FoodModule } from "./modules/food/food.module";
 import { HrModule } from "./modules/hr/hr.module";
 import { SeoModule } from "./modules/seo/seo.module";
+import { YatraModule } from "./modules/yatra/yatra.module";
 import {
   hybridRateLimitTracker,
   ipRateLimitTracker,
@@ -160,6 +161,7 @@ import {
     FoodModule,
     HrModule,
     SeoModule,
+    YatraModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

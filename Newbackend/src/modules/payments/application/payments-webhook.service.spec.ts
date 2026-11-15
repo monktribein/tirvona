@@ -14,7 +14,7 @@ describe("PaymentsWebhookService retries", () => {
     const bookings: any = { confirmPaymentFromWebhook: jest.fn().mockResolvedValue(true) };
     const none: any = { confirmPaymentFromWebhook: jest.fn().mockResolvedValue(false) };
     const service = new PaymentsWebhookService(
-      {} as any, events, bookings, none, none, none, none, none, none,
+      {} as any, events, bookings, none, none, none, none, none, none, none,
     );
     return { service, row, bookings };
   };

@@ -61,6 +61,7 @@ import { ashramService } from "../../../services";
 import { SectionSummaryStrip } from "../components/SectionSummary";
 import { hrService, type HrAccessInfo } from "../../../services/hr.service";
 import { hrNavGroups } from "../../hr/hrNav";
+import { useYatraEnabled } from "../../../modules/yatra/yatraUi";
 
 interface NavGroup {
   groupName: string;
@@ -293,6 +294,113 @@ const RESTAURANT_GROUPS: NavGroup[] = [
   },
 ];
 
+/** Tirvona Yatra organiser console; shown on every /operator page (the organiser belongs to the user, not to a role). */
+const OPERATOR_GROUPS: NavGroup[] = [
+  {
+    groupName: "Organisation",
+    icon: <Building2 size={15} />,
+    links: [
+      { label: "Profile, KYC & Payout", path: "/operator/profile" },
+      { label: "Documents", path: "/operator/documents" },
+      { label: "Team", path: "/operator/staff" },
+    ],
+  },
+  {
+    groupName: "Vehicles & Tours",
+    icon: <Car size={15} />,
+    links: [
+      { label: "Vehicles", path: "/operator/vehicles" },
+      { label: "Tours", path: "/operator/tours" },
+      { label: "Departures & Seats", path: "/operator/departures" },
+    ],
+  },
+  {
+    groupName: "Bookings",
+    icon: <ClipboardList size={15} />,
+    links: [
+      { label: "All Bookings", path: "/operator/bookings" },
+      { label: "Book for a Customer", path: "/operator/bookings/new" },
+      { label: "Booking Links & QR", path: "/operator/links" },
+    ],
+  },
+  {
+    groupName: "Money & Reports",
+    icon: <Wallet size={15} />,
+    links: [
+      { label: "Earnings & Payouts", path: "/operator/earnings" },
+      { label: "Reports", path: "/operator/reports" },
+      { label: "Notifications", path: "/operator/notifications" },
+    ],
+  },
+];
+
+/** Super Admin's Tirvona Yatra console (shown only while Yatra is switched on). */
+const YATRA_ADMIN_GROUP: NavGroup = {
+  groupName: "Tirvona Yatra (Pilgrimage Tours)",
+  icon: <Car size={15} />,
+  links: [
+    { label: "Yatra Overview", path: "/admin/yatra" },
+    { label: "Organisers", path: "/admin/yatra/operators" },
+    { label: "KYC Documents", path: "/admin/yatra/documents" },
+    { label: "Vehicle Verification", path: "/admin/yatra/vehicles" },
+    { label: "Tour Review & Publishing", path: "/admin/yatra/tours" },
+    { label: "Departures & Seat Inventory", path: "/admin/yatra/departures" },
+    { label: "All Yatra Bookings", path: "/admin/yatra/bookings" },
+    { label: "Cancellation Requests", path: "/admin/yatra/cancellations" },
+    { label: "Meal & Puja Requests", path: "/admin/yatra/service-requests" },
+    { label: "Ride Partners", path: "/admin/yatra/ride-partners" },
+    { label: "Local Rides", path: "/admin/yatra/rides" },
+    { label: "Destination Ops", path: "/ops/yatra" },
+    { label: "Yatra Finance Center", path: "/admin/yatra/finance" },
+    { label: "Collections & Ledger", path: "/admin/yatra/collections" },
+    { label: "Yatra Audit Log", path: "/admin/yatra/audit" },
+    { label: "Yatra Settings", path: "/admin/yatra/settings" },
+  ],
+};
+
+/** Tirvona Yatra ride partner console; shown on every /ride-partner page (the partner account belongs to the user). */
+const RIDE_PARTNER_GROUPS: NavGroup[] = [
+  {
+    groupName: "My Partner Account",
+    icon: <Car size={15} />,
+    links: [
+      { label: "Profile & Payout", path: "/ride-partner/profile" },
+      { label: "Vehicles", path: "/ride-partner/vehicles" },
+      { label: "Documents", path: "/ride-partner/documents" },
+    ],
+  },
+  {
+    groupName: "Rides & Money",
+    icon: <Wallet size={15} />,
+    links: [
+      { label: "Ride Requests", path: "/ride-partner/requests" },
+      { label: "Earnings & Payouts", path: "/ride-partner/earnings" },
+      { label: "Notifications", path: "/ride-partner/notifications" },
+    ],
+  },
+];
+
+/** Finance Manager's Yatra money desk (shown only while Yatra is switched on). */
+const YATRA_FINANCE_GROUP: NavGroup = {
+  groupName: "Tirvona Yatra",
+  icon: <Car size={15} />,
+  links: [{ label: "Yatra Finance Center", path: "/admin/yatra/finance" }],
+};
+
+/** HR and Executive logins run Yatra arrivals, rides and incidents for their office area. */
+const YATRA_OPS_GROUP: NavGroup = {
+  groupName: "Tirvona Yatra",
+  icon: <MapPin size={15} />,
+  links: [{ label: "Destination Ops", path: "/ops/yatra" }],
+};
+
+/** Restaurants and pandits answer Tirvona Yatra meal and puja requests here. */
+const YATRA_SUPPLIER_GROUP = (path: string): NavGroup => ({
+  groupName: "Yatra Requests",
+  icon: <Clock size={15} />,
+  links: [{ label: "Meal & Puja Requests", path }],
+});
+
 /** Seller console; shown on every /vendor page (the store belongs to the user, not to a role). */
 const VENDOR_GROUPS: NavGroup[] = [
   {
@@ -339,6 +447,7 @@ const VENDOR_GROUPS: NavGroup[] = [
 
 export const DashboardLayout: React.FC = () => {
   const { user, logout } = useAuth();
+  const yatraEnabled = useYatraEnabled() === true;
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -383,7 +492,11 @@ export const DashboardLayout: React.FC = () => {
       ? "Seller"
       : location.pathname.startsWith("/restaurant") && ["customer", "pilgrim"].includes(String(user?.role))
         ? "Restaurant Owner"
-        : getFormattedRole(user?.role);
+        : location.pathname.startsWith("/operator") && ["customer", "pilgrim"].includes(String(user?.role))
+          ? "Yatra Organiser"
+          : location.pathname.startsWith("/ride-partner") && ["customer", "pilgrim"].includes(String(user?.role))
+            ? "Ride Partner"
+            : getFormattedRole(user?.role);
 
   const refreshOwnerStays = React.useCallback(async () => {
     if (!isStayOwnerOrAdmin) return;
@@ -782,6 +895,7 @@ export const DashboardLayout: React.FC = () => {
       icon: <UtensilsCrossed size={15} />,
       links: FOOD_ADMIN_LINKS,
     },
+    ...(yatraEnabled ? [YATRA_ADMIN_GROUP] : []),
     {
       groupName: "Homepage Banners",
       icon: <Image size={15} />,
@@ -1104,6 +1218,26 @@ export const DashboardLayout: React.FC = () => {
   ];
 
   const getRoleNavData = () => {
+    if (location.pathname.startsWith("/operator")) {
+      return {
+        topLink: {
+          label: "Organiser Dashboard",
+          path: "/operator/dashboard",
+          icon: <LayoutDashboard size={16} className="text-[#F28C28]" />,
+        },
+        groups: OPERATOR_GROUPS,
+      };
+    }
+    if (location.pathname.startsWith("/ride-partner")) {
+      return {
+        topLink: {
+          label: "Ride Partner Dashboard",
+          path: "/ride-partner/dashboard",
+          icon: <LayoutDashboard size={16} className="text-[#F28C28]" />,
+        },
+        groups: RIDE_PARTNER_GROUPS,
+      };
+    }
     if (location.pathname.startsWith("/vendor")) {
       return {
         topLink: {
@@ -1121,7 +1255,7 @@ export const DashboardLayout: React.FC = () => {
           path: "/restaurant/dashboard",
           icon: <LayoutDashboard size={16} className="text-[#F28C28]" />,
         },
-        groups: RESTAURANT_GROUPS,
+        groups: yatraEnabled ? [...RESTAURANT_GROUPS, YATRA_SUPPLIER_GROUP("/restaurant/yatra-requests")] : RESTAURANT_GROUPS,
       };
     }
     if (location.pathname.startsWith("/provider")) {
@@ -1131,7 +1265,7 @@ export const DashboardLayout: React.FC = () => {
           path: "/provider/dashboard",
           icon: <LayoutDashboard size={16} className="text-[#F28C28]" />,
         },
-        groups: panditProviderGroups,
+        groups: yatraEnabled ? [...panditProviderGroups, YATRA_SUPPLIER_GROUP("/provider/yatra-requests")] : panditProviderGroups,
       };
     }
     if (user?.role === "super_admin") {
@@ -1181,7 +1315,7 @@ export const DashboardLayout: React.FC = () => {
           path: user.role === "executive" ? "/admin/executive/area" : "/admin/hr/area",
           icon: <LayoutDashboard size={16} className="text-[#F28C28]" />,
         },
-        groups: [...superAdminGroups.filter((group) => areaSections.includes(group.groupName)), ...areaStayGroups],
+        groups: [...superAdminGroups.filter((group) => areaSections.includes(group.groupName)), ...areaStayGroups, ...(yatraEnabled ? [YATRA_OPS_GROUP] : [])],
       };
     }
     if (
@@ -1388,6 +1522,7 @@ export const DashboardLayout: React.FC = () => {
               { label: "Pandit Withdrawals", path: "/admin/pandits/withdrawals" },
             ],
           },
+          ...(yatraEnabled ? [YATRA_FINANCE_GROUP] : []),
           SUPPORT_HANDLER_GROUP,
         ],
       };
