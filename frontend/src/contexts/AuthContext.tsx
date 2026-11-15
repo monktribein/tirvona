@@ -106,6 +106,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       window.removeEventListener("tirvona:unauthorized", clearExpiredSession);
   }, []);
 
+  // All tabs share one saved login. When another tab signs out, has its
+  // session expire, or signs in as someone else, follow it here. Otherwise
+  // this tab keeps showing the old account while its requests go out with no
+  // token (401 on every poll) or with another account's token.
+  useEffect(() => {
+    const clearSession = () => {
+      setToken(null);
+      setUser(null);
+      setLoading(false);
+    };
+    const adopt = async (next: string) => {
+      setToken(next);
+      try {
+        const res = await authService.me();
+        if (localStorage.getItem(TOKEN_KEY) !== next) return;
+        setUser(res.data.success ? res.data.data : null);
+      } catch {
+        // A 401 is handled by the API client. Any other failure shows this tab
+        // signed out rather than risk showing the previous account.
+        if (localStorage.getItem(TOKEN_KEY) === next) setUser(null);
+      }
+    };
+    const onStorage = (event: StorageEvent) => {
+      if (event.storageArea !== window.localStorage) return;
+      if (event.key !== null && event.key !== TOKEN_KEY) return;
+      const next = localStorage.getItem(TOKEN_KEY);
+      if (!next || next === "undefined" || next === "null") clearSession();
+      else if (event.key === TOKEN_KEY) void adopt(next);
+    };
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("tirvona:session-ended", clearSession);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("tirvona:session-ended", clearSession);
+    };
+  }, []);
+
   useEffect(() => {
     if (user && (!token || (!user.id && !(user as any)._id))) {
       localStorage.removeItem(TOKEN_KEY);

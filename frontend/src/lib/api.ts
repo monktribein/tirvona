@@ -17,6 +17,17 @@ export const API_BASE_URL = (
 
 export const TOKEN_KEY = "ab_token";
 
+/** The bearer token a request went out with, if any. */
+const sentToken = (config: any): string | null => {
+  const headers = config?.headers;
+  const value =
+    typeof headers?.get === "function"
+      ? headers.get("Authorization")
+      : headers?.Authorization;
+  const match = typeof value === "string" ? /^Bearer\s+(.+)$/i.exec(value) : null;
+  return match ? match[1] : null;
+};
+
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,
   timeout: 20_000,
@@ -74,10 +85,20 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error?.response?.status === 401 && localStorage.getItem(TOKEN_KEY)) {
-      localStorage.removeItem(TOKEN_KEY);
-      delete api.defaults.headers.common.Authorization;
-      window.dispatchEvent(new Event("tirvona:unauthorized"));
+    if (error?.response?.status === 401) {
+      const saved = localStorage.getItem(TOKEN_KEY);
+      if (!saved) {
+        // No saved login at all (another tab signed out or its session
+        // expired). A tab still showing an account must drop it, or it keeps
+        // polling with no token and gets a 401 every time.
+        window.dispatchEvent(new Event("tirvona:session-ended"));
+      } else if (sentToken(error.config) === saved) {
+        localStorage.removeItem(TOKEN_KEY);
+        delete api.defaults.headers.common.Authorization;
+        window.dispatchEvent(new Event("tirvona:unauthorized"));
+      }
+      // Otherwise the request went out before a newer login was saved; that
+      // newer login must not be thrown away.
     }
     const skipToast = error?.config?.skipToast === true;
     if (!skipToast && error?.code !== "ERR_CANCELED") {
