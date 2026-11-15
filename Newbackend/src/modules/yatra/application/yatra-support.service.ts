@@ -242,7 +242,12 @@ export class YatraNotifier {
       const siteUrl = String(this.config.get<string>("frontendUrl") ?? "").replace(/\/+$/, "");
       const { ctaPath, ...rest } = input;
       const body: EmailTemplateInput = { ...rest, siteUrl, recipientName: name, ...(ctaPath ? { cta: { label: "Open in Tirvona", url: `${siteUrl}${ctaPath}` } } : {}) };
-      await new Resend(apiKey).emails.send({ from, to, replyTo: this.config.get<string>("resendReplyTo") || undefined, subject: input.title, html: renderEmail(body), text: renderEmailText(body) });
+      // The Resend SDK reports API-level rejections in `error` instead of throwing.
+      const result: any = await new Resend(apiKey).emails.send({ from, to, replyTo: this.config.get<string>("resendReplyTo") || undefined, subject: input.title, html: renderEmail(body), text: renderEmailText(body) });
+      if (result?.error) {
+        this.logger.warn(`Yatra email rejected by Resend: ${String(result.error.name ?? "error")}: ${String(result.error.message ?? "").slice(0, 200)}`);
+        return false;
+      }
       return true;
     } catch (error) {
       this.logger.warn(`Yatra email failed: ${(error as Error).message}`);
