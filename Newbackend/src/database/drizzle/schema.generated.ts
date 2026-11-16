@@ -5426,6 +5426,8 @@ export const yatraBookings = pgTable("yatra_bookings", {
   "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
   "commissionSnapshot": jsonb("commission_snapshot"), // model: commissionSnapshot
   "reminderSentAt": timestamp("reminder_sent_at", { withTimezone: true, mode: "date" }), // model: reminderSentAt
+  "droppingPointId": text("dropping_point_id"), // model: droppingPointId
+  "droppingPointName": text("dropping_point_name"), // model: droppingPointName
   _nulls: text("_nulls").array(),
   _extra: jsonb("_extra"),
 });
@@ -5456,6 +5458,10 @@ export const yatraDepartures = pgTable("yatra_departures", {
   "createdBy": text("created_by"), // model: createdBy
   "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
   "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  "droppingPoints": jsonb("dropping_points"), // model: droppingPoints
+  "restStops": jsonb("rest_stops"), // model: restStops
+  "charterEnabled": boolean("charter_enabled"), // model: charterEnabled
+  "seatFares": jsonb("seat_fares"), // model: seatFares
   _nulls: text("_nulls").array(),
   _extra: jsonb("_extra"),
 });
@@ -5733,6 +5739,8 @@ export const yatraTours = pgTable("yatra_tours", {
   "createdBy": text("created_by"), // model: createdBy
   "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
   "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  "otherPolicies": jsonb("other_policies"), // model: otherPolicies
+  "serviceAddOns": jsonb("service_add_ons"), // model: serviceAddOns
   _nulls: text("_nulls").array(),
   _extra: jsonb("_extra"),
 });
@@ -5954,6 +5962,72 @@ export const yatraRideRequests = pgTable("yatra_ride_requests", {
   "refundAmount": doublePrecision("refund_amount"), // model: refundAmount
   "commissionSnapshot": jsonb("commission_snapshot"), // model: commissionSnapshot
   "history": jsonb("history"), // model: history
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.yatra_ratings */
+export const yatraRatings = pgTable("yatra_ratings", {
+  id: text("id").primaryKey(), // model: _id
+  "bookingId": text("booking_id"), // model: bookingId
+  "departureId": text("departure_id"), // model: departureId
+  "tourId": text("tour_id"), // model: tourId
+  "operatorId": text("operator_id"), // model: operatorId
+  "vehicleId": text("vehicle_id"), // model: vehicleId
+  "customerId": text("customer_id"), // model: customerId
+  "customerName": text("customer_name"), // model: customerName
+  "stars": doublePrecision("stars"), // model: stars
+  "comment": text("comment"), // model: comment
+  "status": text("status"), // model: status
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  "tags": text("tags").array(), // model: tags
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.yatra_charter_requests */
+export const yatraCharterRequests = pgTable("yatra_charter_requests", {
+  id: text("id").primaryKey(), // model: _id
+  "requestNumber": text("request_number"), // model: requestNumber
+  "departureId": text("departure_id"), // model: departureId
+  "tourId": text("tour_id"), // model: tourId
+  "operatorId": text("operator_id"), // model: operatorId
+  "customerId": text("customer_id"), // model: customerId
+  "contactName": text("contact_name"), // model: contactName
+  "contactPhone": text("contact_phone"), // model: contactPhone
+  "groupSize": doublePrecision("group_size"), // model: groupSize
+  "message": text("message"), // model: message
+  "status": text("status"), // model: status
+  "organiserNote": text("organiser_note"), // model: organiserNote
+  "respondedBy": text("responded_by"), // model: respondedBy
+  "respondedAt": timestamp("responded_at", { withTimezone: true, mode: "date" }), // model: respondedAt
+  "bookingId": text("booking_id"), // model: bookingId
+  "history": jsonb("history"), // model: history
+  "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
+  "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
+  _nulls: text("_nulls").array(),
+  _extra: jsonb("_extra"),
+});
+
+/** public.yatra_trip_locations */
+export const yatraTripLocations = pgTable("yatra_trip_locations", {
+  id: text("id").primaryKey(), // model: _id
+  "departureId": text("departure_id"), // model: departureId
+  "operatorId": text("operator_id"), // model: operatorId
+  "status": text("status"), // model: status
+  "latitude": doublePrecision("latitude"), // model: latitude
+  "longitude": doublePrecision("longitude"), // model: longitude
+  "accuracyM": doublePrecision("accuracy_m"), // model: accuracyM
+  "speedKmph": doublePrecision("speed_kmph"), // model: speedKmph
+  "heading": doublePrecision("heading"), // model: heading
+  "recordedAt": timestamp("recorded_at", { withTimezone: true, mode: "date" }), // model: recordedAt
+  "startedAt": timestamp("started_at", { withTimezone: true, mode: "date" }), // model: startedAt
+  "stoppedAt": timestamp("stopped_at", { withTimezone: true, mode: "date" }), // model: stoppedAt
+  "sharedBy": text("shared_by"), // model: sharedBy
+  "sharedByName": text("shared_by_name"), // model: sharedByName
   "createdAt": timestamp("created_at", { withTimezone: true, mode: "date" }), // model: createdAt
   "updatedAt": timestamp("updated_at", { withTimezone: true, mode: "date" }), // model: updatedAt
   _nulls: text("_nulls").array(),

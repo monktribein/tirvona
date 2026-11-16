@@ -38,6 +38,7 @@ export const META_TRANSACTIONAL_EVENT = {
   PARKING_REMINDER: "parking_reminder",
   AARTI_REMINDER: "aarti_reminder",
   EVENT_REMINDER: "event_reminder",
+  YATRA_CONFIRMED: "yatra_confirmed",
 } as const;
 
 export type MetaTransactionalEvent =
@@ -200,6 +201,24 @@ export const META_TRANSACTIONAL_TEMPLATE_SPEC: Readonly<
       "entry_code",
     ],
   },
+  // Not approved in Meta yet. Until a name is set in WHATSAPP_META_TEMPLATE_YATRA_CONFIRMED the full
+  // ticket message goes out as text through the existing MSG91 / AK NEXUS path, like any unconfigured event.
+  [E.YATRA_CONFIRMED]: {
+    proposedName: "tirvona_yatra_confirmed",
+    bodyVariables: [
+      "customer_name",
+      "service_name",
+      "reference",
+      "scheduled_at",
+      "seats",
+      "boarding_point",
+      "amount_paid",
+      "entry_code",
+      // The bus rules and the cancellation / refund policy, each as one line.
+      "rules_summary",
+      "refund_summary",
+    ],
+  },
   [E.EVENT_REMINDER]: {
     proposedName: "tirvona_event_reminder",
     bodyVariables: [
@@ -257,6 +276,9 @@ export const META_TRANSACTIONAL_EVENT_BY_OUTBOX: Readonly<
     checked_in: E.SERVICE_CHECKED_IN,
     aarti_reminder: E.AARTI_REMINDER,
   }),
+  yatra: Object.freeze({
+    booking_confirmed: E.YATRA_CONFIRMED,
+  }),
   event: Object.freeze({
     registration_confirmed: E.EVENT_REGISTERED,
     cancellation: E.RESERVATION_CANCELLED,
@@ -310,4 +332,5 @@ export const WHATSAPP_BOOKING_TYPE_LABEL: Readonly<Record<string, string>> =
     parking: "Parking",
     aarti: "Aarti",
     event: "Event registration",
+    yatra: "Yatra ticket",
   });

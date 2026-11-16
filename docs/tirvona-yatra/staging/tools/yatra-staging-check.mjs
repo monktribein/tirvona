@@ -13,9 +13,10 @@
  *              variables above are set, whether the Razorpay key is a test or live key, and which
  *              database project is configured (masked).
  *   db-plan    Read-only: `migrate --plan` (lists pending migrations; changes nothing).
- *   db         APPLIES 0015/0016 and verifies.   [writes to the database]
+ *   db         APPLIES the pending Yatra migrations (0015, 0016, 0017) and verifies.   [writes to the database]
  *              On a database other than the live one it also rolls back and re-applies; on the live
- *              database it applies only if exactly 0015 and 0016 are pending and never rolls back.
+ *              database it applies only the Yatra migrations still pending (any of 0015, 0016 and 0017,
+ *              and nothing else) and never rolls back.
  *   services   Razorpay order + signature, Cloudinary upload, Resend email. [external writes]
  *   e2e        Full stack with real Razorpay checkout and webhooks.        [writes data and moves money]
  *
@@ -177,7 +178,7 @@ async function phaseDb() {
       const all = (await c.query("SELECT count(*)::int AS n FROM information_schema.tables WHERE table_schema='public'")).rows[0].n;
       const hasLedger = (await c.query("SELECT to_regclass('public.schema_migrations') AS t")).rows[0].t !== null;
       const migs = hasLedger ? (await c.query("SELECT name FROM public.schema_migrations WHERE name LIKE '001%' ORDER BY name")).rows.map((r) => r.name) : [];
-      return { yatra, all, m15: migs.includes("0015_yatra_module.sql"), m16: migs.includes("0016_yatra_rides_finance_ops.sql") };
+      return { yatra, all, m15: migs.includes("0015_yatra_module.sql"), m16: migs.includes("0016_yatra_rides_finance_ops.sql"), m17: migs.includes("0017_yatra_ratings.sql") };
     } finally {
       await c.end();
     }
@@ -188,15 +189,15 @@ async function phaseDb() {
   };
   try {
     const before = await state();
-    record("db: connected to the configured database", "PASS", `${before.all} public tables before; 0015 applied=${before.m15}, 0016 applied=${before.m16}`);
+    record("db: connected to the configured database", "PASS", `${before.all} public tables before; 0015 applied=${before.m15}, 0016 applied=${before.m16}, 0017 applied=${before.m17}`);
     const plan = dbTool("migrate.js", url, ["--plan"]);
     record("db: migrate --plan", "INFO", plan.split("\n").slice(-6).join(" | "));
     if (s.ON_LIVE_DB) {
       const pending = plan.split("\n").map((l) => l.match(/^pending\s+(\S+)/)?.[1]).filter(Boolean);
-      const expected = ["0015_yatra_module.sql", "0016_yatra_rides_finance_ops.sql"];
-      const exact = pending.length === 2 && expected.every((m) => pending.includes(m));
-      record("db: live database has exactly 0015 and 0016 pending", exact ? "PASS" : "REFUSED", exact ? "" : `pending: ${pending.join(", ") || "none"}; nothing applied`);
-      if (!exact) throw new Error("live database: refusing to apply anything other than exactly 0015 and 0016");
+      const allowed = ["0015_yatra_module.sql", "0016_yatra_rides_finance_ops.sql", "0017_yatra_ratings.sql"];
+      const exact = pending.length > 0 && pending.every((m) => allowed.includes(m));
+      record("db: live database has only Yatra migrations pending", exact ? "PASS" : "REFUSED", exact ? "" : `pending: ${pending.join(", ") || "none"}; nothing applied`);
+      if (!exact) throw new Error("live database: refusing to apply anything other than the Yatra migrations 0015, 0016 and 0017");
     }
     dbTool("migrate.js", url);
     record("db: migrate", "PASS");
@@ -204,25 +205,29 @@ async function phaseDb() {
     record("db: verify after apply", /schema OK/.test(v1) && /nothing pending/.test(v1) ? "PASS" : "FAIL", v1.split("\n").slice(-2).join(" | "));
     record("db: migrate again is a no-op", /up to date/i.test(dbTool("migrate.js", url)) ? "PASS" : "FAIL");
     let st = await state();
-    record("db: 22 Yatra tables, both migrations recorded", st.yatra === 22 && st.m15 && st.m16 ? "PASS" : "FAIL", JSON.stringify(st));
+    record("db: 23 Yatra tables, all three migrations recorded", st.yatra === 23 && st.m15 && st.m16 && st.m17 ? "PASS" : "FAIL", JSON.stringify(st));
     if (s.ON_LIVE_DB) {
       record("db: rollback / re-apply", "SKIPPED", "never run on the live database (a rollback drops tables); rehearsed on a throwaway PostgreSQL 17 instead");
     } else {
+      await rollback("0017_yatra_ratings.down.sql");
+      st = await state();
+      record("db: rollback 0017 leaves the 22 earlier Yatra tables", st.yatra === 22 && st.m16 && !st.m17 ? "PASS" : "FAIL", JSON.stringify(st));
       await rollback("0016_yatra_rides_finance_ops.down.sql");
       st = await state();
       record("db: rollback 0016 leaves the 15 P0–P4 tables", st.yatra === 15 && st.m15 && !st.m16 ? "PASS" : "FAIL", JSON.stringify(st));
       dbTool("migrate.js", url);
       const v2 = dbTool("verify.js", url);
-      record("db: re-apply 0016 and verify", /schema OK/.test(v2) ? "PASS" : "FAIL");
+      record("db: re-apply 0016 and 0017 and verify", /schema OK/.test(v2) ? "PASS" : "FAIL");
       const total = (await state()).all;
+      await rollback("0017_yatra_ratings.down.sql");
       await rollback("0016_yatra_rides_finance_ops.down.sql");
       await rollback("0015_yatra_module.down.sql");
       st = await state();
-      record("db: full rollback removes every Yatra table and leaves the rest", st.yatra === 0 && !st.m15 && !st.m16 && st.all === total - 22 ? "PASS" : "FAIL", JSON.stringify(st));
+      record("db: full rollback removes every Yatra table and leaves the rest", st.yatra === 0 && !st.m15 && !st.m16 && st.all === total - 23 ? "PASS" : "FAIL", JSON.stringify(st));
       dbTool("migrate.js", url);
       const v3 = dbTool("verify.js", url);
       st = await state();
-      record("db: re-apply 0015 + 0016 and verify", /schema OK/.test(v3) && st.yatra === 22 ? "PASS" : "FAIL", v3.split("\n").slice(-2).join(" | "));
+      record("db: re-apply 0015, 0016 and 0017 and verify", /schema OK/.test(v3) && st.yatra === 23 ? "PASS" : "FAIL", v3.split("\n").slice(-2).join(" | "));
     }
   } catch (e) {
     record("db: unexpected error", "FAIL", String(e.stderr || e.message).slice(0, 400));

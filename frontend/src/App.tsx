@@ -964,8 +964,8 @@ const AppContent: React.FC = () => {
             <Route path="/profile/journeys/:journeyId" element={<JourneyDetailPage />} />
           </Route>
 
-          {/* Tirvona Yatra organiser console: any signed-in user; the API scopes every call to the
-              caller's own organiser and checks the caller's organiser role. */}
+          {/* Tirvona Yatra partner console: any signed-in user; the API scopes every call to the
+              caller's own partner and checks the caller's partner role. */}
           <Route
             element={
               <ProtectedRoute>

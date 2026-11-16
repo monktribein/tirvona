@@ -3,7 +3,9 @@ import { InjectModel } from "../../../database/orm-nest";
 import type { Model } from "../../../database/orm";
 import { TransactionService } from "../../../common/database/transaction.service";
 import { uniqueSlug } from "../../../common/slug/slug.util";
-import { phoneCandidates } from "../../../common/phone/phone.util";
+import bcrypt from "bcryptjs";
+import { generateTemporaryPassword } from "../../../common/auth/temporary-password";
+import { canonicalPhone, phoneCandidates } from "../../../common/phone/phone.util";
 import { escapeRegex } from "../../../common/utils/escape-regex";
 import { BankAccountCrypto } from "../../payouts/infrastructure/bank-account.crypto";
 import {
@@ -22,7 +24,7 @@ import {
   YatraNotifier,
 } from "./yatra-support.service";
 
-/** Organiser fields any member may see. Never includes the encrypted account number. */
+/** Partner fields any member may see. Never includes the encrypted account number. */
 export const operatorView = (op: any) =>
   op && {
     id: String(op._id),
@@ -62,7 +64,7 @@ export const operatorView = (op: any) =>
     createdAt: op.createdAt,
   };
 
-/** What the public sees about an organiser on a tour page. */
+/** What the public sees about a partner on a tour page. */
 export const operatorPublicView = (op: any) =>
   op && {
     id: String(op._id),
@@ -108,7 +110,7 @@ const REVIEW_TRANSITIONS: Record<string, { from: string[]; to: string; needsNote
   reinstate: { from: ["suspended"], to: "approved" },
 };
 
-/** Fields locked once Tirvona has approved the organiser (its legal identity). */
+/** Fields locked once Tirvona has approved the partner (its legal identity). */
 const LEGAL_FIELDS = ["organisationName", "organisationType", "panNumber", "gstin", "registrationNumber"];
 
 @Injectable()
@@ -120,6 +122,8 @@ export class YatraOperatorService {
     private readonly notifier: YatraNotifier,
     private readonly storage: YatraDocumentStorage,
     private readonly crypto: BankAccountCrypto,
+    // The platform's own user model (as the HR module uses), to create the partner's login.
+    @InjectModel("User") private readonly accounts: Model<any>,
     @InjectModel(YATRA_MODEL.Operator) private readonly operators: Model<any>,
     @InjectModel(YATRA_MODEL.Member) private readonly members: Model<any>,
     @InjectModel(YATRA_MODEL.Document) private readonly documents: Model<any>,
@@ -132,9 +136,9 @@ export class YatraOperatorService {
   // ------------------------------------------------------------- registration
   async register(user: YatraActor, dto: any): Promise<any> {
     if (await this.access.membership(user.id))
-      throw new YatraException("This account already belongs to a Yatra organiser.", 409, "ALREADY_MEMBER");
+      throw new YatraException("This account already belongs to a Yatra partner.", 409, "ALREADY_MEMBER");
     if (await this.operators.exists({ ownerUserId: user.id }))
-      throw new YatraException("This account has already registered an organiser.", 409, "ALREADY_REGISTERED");
+      throw new YatraException("This account has already registered a partner.", 409, "ALREADY_REGISTERED");
     const account = await this.users.findById(user.id).lean();
     const slug = await uniqueSlug(dto.organisationName, {
       exists: async (candidate) => Boolean(await this.operators.exists({ slug: candidate })),
@@ -178,6 +182,40 @@ export class YatraOperatorService {
       return created;
     });
     return this.me({ ...user, id: user.id }, operator);
+  }
+
+  /**
+   * Super Admin creates a partner: a normal Tirvona login plus the organisation (draft, owned by that
+   * login). The password is either the one typed or a generated one, returned once, and it works as
+   * given: the partner is not forced to change it (they can at any time from their profile). They then
+   * complete the profile, KYC and payout details and submit for approval like any partner.
+   */
+  async adminCreateOrganiser(actor: YatraActor, dto: any): Promise<any> {
+    const email = String(dto.email).trim().toLowerCase();
+    if (await this.accounts.exists({ email })) throw new YatraException("An account with this email already exists. Ask the person to sign in, or use a different email.", 409, "EMAIL_EXISTS");
+    if (await this.accounts.exists({ phone: { $in: phoneCandidates(dto.phone) } })) throw new YatraException("An account with this phone number already exists.", 409, "PHONE_EXISTS");
+    const password = String(dto.password ?? "").trim() || generateTemporaryPassword();
+    const account = await this.accounts.create({
+      name: String(dto.name).trim(),
+      email,
+      phone: canonicalPhone(dto.phone),
+      passwordHash: await bcrypt.hash(password, 12),
+      role: "customer",
+      status: "active",
+      isVerified: true,
+    });
+    const userId = String(account._id);
+    try {
+      const organiser = await this.register(
+        { id: userId, role: "customer" } as YatraActor,
+        { organisationName: dto.organisationName, organisationType: dto.organisationType, contactName: String(dto.name).trim(), contactPhone: canonicalPhone(dto.phone), contactEmail: email, city: dto.city, state: dto.state },
+      );
+      await this.audit.record(actor, "operator.account_created", { operatorId: organiser?.operator?.id, userId, organisationName: dto.organisationName });
+      return { organiser, login: { userId, email, phone: canonicalPhone(dto.phone), temporaryPassword: password, mustChangePassword: false } };
+    } catch (error) {
+      await this.accounts.deleteOne({ _id: account._id }); // never leave a login without its organisation
+      throw error;
+    }
   }
 
   async me(user: YatraActor, known?: any): Promise<any> {
@@ -254,7 +292,7 @@ export class YatraOperatorService {
     const { operator } = await this.access.require(user, "manageOrganisation", { writable: true });
     if (!["draft", "rejected"].includes(operator.status))
       throw new YatraException("Your organisation has already been submitted.", 409);
-    if (!acceptTerms) throw new YatraException("Please accept the Tirvona Yatra organiser terms.", 400);
+    if (!acceptTerms) throw new YatraException("Please accept the Tirvona Yatra partner terms.", 400);
     const missing: string[] = [];
     if (!operator.contactPhone) missing.push("contact phone");
     if (!operator.city) missing.push("city");
@@ -290,7 +328,7 @@ export class YatraOperatorService {
     const elsewhere = await this.members.findOne({ userId: account._id, status: "active" }).lean();
     if (elsewhere)
       throw new YatraException(
-        String(elsewhere.operatorId) === String(operator._id) ? "This person is already in your team." : "This account already works for another organiser.",
+        String(elsewhere.operatorId) === String(operator._id) ? "This person is already in your team." : "This account already works for another partner.",
         409,
       );
     const existing = await this.members.findOne({ operatorId: operator._id, userId: account._id });
@@ -314,7 +352,7 @@ export class YatraOperatorService {
       });
     }
     await this.audit.record(user, "operator.staff_added", { operatorId: String(operator._id), userId: String(account._id), role: dto.role });
-    await this.notifier.users([String(account._id)], "You were added to a Yatra organiser", `${operator.displayName || operator.organisationName} added you as ${dto.role}.`, "/operator/dashboard");
+    await this.notifier.users([String(account._id)], "You were added to a Yatra partner", `${operator.displayName || operator.organisationName} added you as ${dto.role}.`, "/operator/dashboard");
     return memberView(member);
   }
 
@@ -417,7 +455,7 @@ export class YatraOperatorService {
 
   async adminDetail(operatorId: string): Promise<any> {
     const operator = await this.operators.findById(operatorId).lean();
-    if (!operator) throw new YatraException("Organiser not found.", 404);
+    if (!operator) throw new YatraException("Partner not found.", 404);
     const [members, documents, vehicles, tours] = await Promise.all([
       this.members.find({ operatorId }).lean(),
       this.documents.find({ operatorId }).sort({ createdAt: -1 }).lean(),
@@ -438,13 +476,13 @@ export class YatraOperatorService {
     if (!rule) throw new YatraException("Unknown review action.", 400);
     if (rule.needsNote && note.trim().length < 3) throw new YatraException("Please give a reason (at least 3 characters).", 400);
     const operator = await this.operators.findById(operatorId).lean();
-    if (!operator) throw new YatraException("Organiser not found.", 404);
+    if (!operator) throw new YatraException("Partner not found.", 404);
     if (!rule.from.includes(operator.status))
-      throw new YatraException(`An organiser that is ${operator.status.replace(/_/g, " ")} cannot be moved to ${rule.to.replace(/_/g, " ")}.`, 409);
+      throw new YatraException(`A partner that is ${operator.status.replace(/_/g, " ")} cannot be moved to ${rule.to.replace(/_/g, " ")}.`, 409);
     const set: Record<string, unknown> = { status: rule.to, reviewedAt: new Date(), reviewedBy: admin.id, reviewNote: note.trim() };
     if (rule.to === "approved" && !operator.approvedAt) set.approvedAt = new Date();
     const after = await this.operators.findOneAndUpdate({ _id: operatorId, status: operator.status }, { $set: set }, { new: true }).lean();
-    if (!after) throw new YatraException("This organiser changed while you were reviewing. Reload and try again.", 409);
+    if (!after) throw new YatraException("This partner changed while you were reviewing. Reload and try again.", 409);
     await this.audit.record(admin, `operator.${action}`, { operatorId, note: note.trim() }, { before: { status: operator.status }, after: { status: rule.to } });
     const messages: Record<string, string> = {
       approve: "Your organisation is approved. You can now submit tours and open departures.",
@@ -453,12 +491,12 @@ export class YatraOperatorService {
       reinstate: "Your organisation is active again.",
       start_review: "Tirvona has started reviewing your organisation.",
     };
-    await this.notifier.users([String(operator.ownerUserId)], "Yatra organiser update", messages[action], "/operator/dashboard", "yatra.operator");
+    await this.notifier.users([String(operator.ownerUserId)], "Yatra partner update", messages[action], "/operator/dashboard", "yatra.operator");
     return operatorView(after);
   }
 
   async adminDocuments(query: { status?: string; page: number; limit: number }): Promise<any> {
-    // Organiser documents only; ride partner documents are verified on the ride partner page.
+    // Partner documents only; ride partner documents are verified on the ride partner page.
     const filter: Record<string, unknown> = { operatorId: { $ne: null } };
     if (query.status) filter.status = query.status;
     const [rows, total] = await Promise.all([
@@ -487,6 +525,6 @@ export class YatraOperatorService {
     return documentView(after);
   }
 
-  /** Names of the given fields that are locked for an approved organiser (for the UI). */
+  /** Names of the given fields that are locked for an approved partner (for the UI). */
   static readonly legalFields = LEGAL_FIELDS;
 }

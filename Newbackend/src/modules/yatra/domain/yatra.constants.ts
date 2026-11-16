@@ -1,5 +1,5 @@
 /**
- * Tirvona Yatra: bus and group-tour journeys sold by verified organisers from
+ * Tirvona Yatra: bus and group-tour journeys sold by verified partners from
  * one central seat inventory. Every customer payment goes to Tirvona's own
  * Razorpay account; organisers never collect money. See docs/yatra/README.md.
  */
@@ -37,9 +37,12 @@ export const YATRA_MODEL = {
   Payout: "YatraPayout",
   Reconciliation: "YatraReconciliation",
   Issue: "YatraIssue",
+  Rating: "YatraRating",
+  TripLocation: "YatraTripLocation",
+  CharterRequest: "YatraCharterRequest",
 } as const;
 
-/** The only role that can approve organisers, verify documents and publish tours. */
+/** The only role that can approve partners, verify documents and publish tours. */
 export const YATRA_ADMIN_ROLES = ["super_admin"];
 /** Commission rules, payouts, transfers and reconciliation. */
 export const YATRA_FINANCE_ROLES = ["super_admin", "finance_manager"];
@@ -67,12 +70,12 @@ export const ORGANISATION_TYPES = [
   "other",
 ] as const;
 
-/** Roles inside one organiser. Platform roles (users.role) are not changed. */
+/** Roles inside one partner. Platform roles (users.role) are not changed. */
 export const MEMBER_ROLES = ["owner", "manager", "staff"] as const;
 export type MemberRole = (typeof MEMBER_ROLES)[number];
 export const MEMBER_STATUSES = ["active", "removed"] as const;
 
-/** What each organiser role may do. Checked on the server for every call. */
+/** What each partner role may do. Checked on the server for every call. */
 export const MEMBER_PERMISSIONS = {
   manageOrganisation: ["owner"],
   manageStaff: ["owner"],
@@ -86,6 +89,8 @@ export const MEMBER_PERMISSIONS = {
   createBookings: ["owner", "manager", "staff"],
   viewBookings: ["owner", "manager", "staff"],
   checkIn: ["owner", "manager", "staff"],
+  // The driver (a staff member) shares the bus's live location from their phone.
+  shareLocation: ["owner", "manager", "staff"],
 } as const satisfies Record<string, readonly MemberRole[]>;
 export type MemberPermission = keyof typeof MEMBER_PERMISSIONS;
 
@@ -153,8 +158,13 @@ export const VEHICLE_STATUSES = [
   "rejected",
   "suspended",
 ] as const;
-export const SEAT_LAYOUT_TEMPLATES = ["2x2", "2x1", "1x1", "sleeper_2x1", "custom"] as const;
-export type SeatLayoutTemplate = (typeof SEAT_LAYOUT_TEMPLATES)[number];
+export const SEAT_LAYOUT_TEMPLATES = ["2x2", "2x1", "1x1", "sleeper_2x1", "sleeper_double", "custom"] as const;
+/**
+ * A bus plan is one of the named layouts, "custom", or any "<left>x<right>" (seats on the left of the aisle
+ * by seats on the right, 1 to 4 each, e.g. 2x3 or 1x2) and "sleeper_<left>x<right>" for berths.
+ */
+export type SeatLayoutTemplate = (typeof SEAT_LAYOUT_TEMPLATES)[number] | `${number}x${number}` | `sleeper_${number}x${number}`;
+export const SEAT_LAYOUT_PATTERN = /^((sleeper_)?[1-4]x[1-4]|sleeper_double|custom)$/;
 export const SEAT_KINDS = ["seater", "sleeper"] as const;
 export const MAX_SEATS_PER_VEHICLE = 120;
 
@@ -173,7 +183,7 @@ export const TOUR_STATUSES = [
   "unpublished",
 ] as const;
 export type TourStatus = (typeof TOUR_STATUSES)[number];
-/** Organisers may edit a tour only in these states; an edit sends it back to draft. */
+/** Partners may edit a tour only in these states; an edit sends it back to draft. */
 export const TOUR_EDITABLE_STATUSES: TourStatus[] = ["draft", "rejected", "unpublished"];
 
 // ----------------------------------------------------------------- departures
@@ -258,7 +268,7 @@ export const DIETARY_PREFERENCES = ["satvik", "jain", "regular", "no_onion_garli
 export const YATRA_DEFAULT_SETTINGS = {
   /** Minutes a website checkout holds its seats. */
   holdMinutes: 10,
-  /** Minutes an organiser-assisted booking holds its seats for the payment link. */
+  /** Minutes a partner-assisted booking holds its seats for the payment link. */
   paymentLinkMinutes: 30,
   maxSeatsPerBooking: 10,
   /** Sales stop this many minutes before departure. */
@@ -315,7 +325,7 @@ export const PAYEE_TYPES = ["operator", "ride_partner"] as const;
 export type PayeeType = (typeof PAYEE_TYPES)[number];
 /**
  * The payee ledger: one immutable row per money movement owed to (credit) or
- * taken from (debit) an organiser or ride partner. Balances are always summed
+ * taken from (debit) a partner or ride partner. Balances are always summed
  * from these rows, never stored.
  */
 export const PAYEE_ENTRY_TYPES = [
@@ -353,3 +363,50 @@ export const ISSUE_CATEGORIES = ["incident", "service", "ride", "booking", "paym
 export const ISSUE_SEVERITIES = ["low", "medium", "high", "critical"] as const;
 export const ISSUE_STATUSES = ["open", "in_progress", "resolved", "closed"] as const;
 export const ISSUE_SUBJECTS = ["booking", "ride", "service_request", "departure", "none"] as const;
+
+// ----------------------------------------- trip details, live location, full-bus requests
+/** A pilgrim's request for the whole bus. Only a partner's answer moves it on; payment is the normal checkout. */
+export const CHARTER_STATUSES = ["requested", "accepted", "declined", "cancelled"] as const;
+/** What a traveller can tick when rating a trip; "Loved by travellers" counts these. */
+export const RATING_TAGS = ["Punctual", "Clean bus", "Comfortable seats", "Courteous staff", "Safe driving", "Good value"] as const;
+/** The driver may share the live location from this long before departure until this long after return. */
+export const LOCATION_SHARE_BEFORE_HOURS = 6;
+export const LOCATION_SHARE_AFTER_HOURS = 12;
+/** A position older than this is shown as "last seen" rather than live. */
+export const LOCATION_STALE_SECONDS = 600;
+
+export const OTHER_POLICY_KEYS = ["childPolicy", "luggagePolicy", "petsPolicy", "alcoholPolicy", "pickupPolicy"] as const;
+export type OtherPolicyKey = (typeof OTHER_POLICY_KEYS)[number];
+export const OTHER_POLICY_TITLES: Record<OtherPolicyKey, string> = {
+  childPolicy: "Child passenger policy",
+  luggagePolicy: "Luggage policy",
+  petsPolicy: "Pets policy",
+  alcoholPolicy: "Alcohol policy",
+  pickupPolicy: "Pick-up time policy",
+};
+/** Tirvona's standard wording, shown until the partner writes its own for a tour. */
+export const DEFAULT_OTHER_POLICIES: Record<OtherPolicyKey, string> = {
+  childPolicy: "Every traveller who needs a seat, including a child, needs a ticket. Ask the partner about infants.",
+  luggagePolicy: "Reasonable personal luggage is carried free. Excess or very heavy luggage may be refused or charged by the partner.",
+  petsPolicy: "Pets are not allowed unless the partner says so for this trip.",
+  alcoholPolicy: "Carrying or drinking alcohol on the bus is prohibited. The partner may ask anyone who breaks this rule to leave the bus.",
+  pickupPolicy: "The bus will not wait beyond the scheduled boarding time. Arriving late is not a reason for a refund.",
+};
+
+/** Where the WhatsApp ticket sends people for more details. */
+export const TIRVONA_APP_URL = "https://play.google.com/store/apps/details?id=com.tirvona.app";
+
+/**
+ * An optional add-on at booking: a small fee per seat that guarantees a full refund of the fare when the
+ * pilgrim cancels at least `cutoffHours` before departure. The fee itself is never refunded and belongs to Tirvona.
+ */
+export const CANCELLATION_PROTECTION = { feePerSeat: 15, refundPercent: 100, cutoffHours: 6 } as const;
+
+/** Services a partner can add to a tour at its own price: short stay, food and a local taxi. */
+export const SERVICE_ADD_ON_KEYS = ["stay", "food", "taxi"] as const;
+export type ServiceAddOnKey = (typeof SERVICE_ADD_ON_KEYS)[number];
+export const SERVICE_ADD_ON_TITLES: Record<ServiceAddOnKey, string> = {
+  stay: "Short stay",
+  food: "Food and meals",
+  taxi: "Local taxi",
+};

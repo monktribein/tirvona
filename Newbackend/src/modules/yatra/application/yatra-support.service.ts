@@ -1,4 +1,6 @@
-import { Injectable, Logger, ServiceUnavailableException } from "@nestjs/common";
+import { Injectable, Logger, Optional, ServiceUnavailableException } from "@nestjs/common";
+import { WhatsAppTransactionalNotificationService } from "../../../integrations/whatsapp/services/whatsapp-transactional-notification.service";
+import type { WhatsAppYatraContext } from "../../../integrations/whatsapp/utils/whatsapp-message.builder";
 import { ConfigService } from "@nestjs/config";
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import Razorpay from "razorpay";
@@ -22,7 +24,7 @@ import { memberCan, toPaise } from "../domain/yatra.utils";
 
 export type YatraActor = Pick<AuthenticatedUser, "id" | "role"> & Partial<AuthenticatedUser>;
 
-/** Who the caller is inside an organiser, and the organiser itself. */
+/** Who the caller is inside a partner, and the partner itself. */
 @Injectable()
 export class YatraAccessService {
   constructor(
@@ -39,9 +41,9 @@ export class YatraAccessService {
   }
 
   /**
-   * The caller's organiser, after checking the caller's organiser role allows
-   * `permission`. With `approved`, a suspended or unapproved organiser is
-   * refused too. Every organiser endpoint goes through here, so one organiser
+   * The caller's partner, after checking the caller's partner role allows
+   * `permission`. With `approved`, a suspended or unapproved partner is
+   * refused too. Every partner endpoint goes through here, so one organiser
    * can never reach another's records.
    */
   async require(
@@ -51,9 +53,9 @@ export class YatraAccessService {
   ): Promise<{ member: any; operator: any }> {
     const found = await this.membership(user.id);
     if (!found)
-      throw new YatraException("You have not registered as a Yatra organiser yet.", 404, "NOT_AN_ORGANISER");
+      throw new YatraException("You have not registered as a Yatra partner yet.", 404, "NOT_AN_ORGANISER");
     if (permission && !memberCan(found.member.role, permission))
-      throw new YatraException("Your organiser role does not allow this. Ask your organisation's owner.", 403, "ROLE_NOT_ALLOWED");
+      throw new YatraException("Your partner role does not allow this. Ask your organisation's owner.", 403, "ROLE_NOT_ALLOWED");
     if (options.writable && found.operator.status === "suspended")
       throw new YatraException("Your organisation is suspended. Contact Tirvona support.", 403, "OPERATOR_SUSPENDED");
     if (options.approved && found.operator.status !== "approved")
@@ -216,7 +218,32 @@ export class YatraNotifier {
     @InjectModel(YATRA_MODEL.Member) private readonly members: Model<any>,
     @InjectModel(YATRA_MODEL.UserRef) private readonly userRefs: Model<any>,
     private readonly config: ConfigService,
+    @Optional() private readonly whatsapp?: WhatsAppTransactionalNotificationService,
   ) {}
+
+  /**
+   * The ticket message on WhatsApp, to the traveller's own number (the booking contact, else the account's
+   * phone). Whoever booked, the ticket goes to the person it belongs to. Never throws.
+   */
+  async whatsappTicket(
+    target: { _id: unknown; customerId?: unknown; contact?: { phone?: string } },
+    context: WhatsAppYatraContext,
+  ): Promise<boolean> {
+    try {
+      if (!this.whatsapp) return false;
+      let phone = target.contact?.phone ?? "";
+      if (!phone && target.customerId) {
+        const user = await this.userRefs.findById(target.customerId).select("phone").lean();
+        phone = user?.phone ?? "";
+      }
+      if (!phone) return false;
+      const result = await this.whatsapp.sendYatraTicket({ phone, bookingId: String(target._id), context });
+      return result.status === "accepted";
+    } catch (error) {
+      this.logger.warn(`Yatra WhatsApp ticket failed: ${(error as Error).message}`);
+      return false;
+    }
+  }
 
   /**
    * Transactional email through the existing Resend account and Tirvona email
@@ -263,7 +290,7 @@ export class YatraNotifier {
     }
   }
 
-  /** The organiser's owner and managers. */
+  /** The partner's owner and managers. */
   async operatorTeam(operatorId: string, title: string, body: string, deepLink?: string, kind = "yatra.operator"): Promise<void> {
     try {
       const team = await this.members

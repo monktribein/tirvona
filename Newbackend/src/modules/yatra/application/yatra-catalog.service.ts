@@ -7,9 +7,12 @@ import { TOUR_EDITABLE_STATUSES, YATRA_MODEL } from "../domain/yatra.constants";
 import { YatraException } from "../domain/yatra.errors";
 import {
   DEFAULT_CANCELLATION_POLICY,
+  cleanOtherPolicies,
   cityKey,
   generateSeatLayout,
   normaliseCustomLayout,
+  otherPoliciesView,
+  cleanServiceAddOns,
   validateCancellationPolicy,
   validateCustomLayout,
   vehicleNumberKey,
@@ -61,6 +64,10 @@ export const tourView = (t: any) =>
     coverImage: t.coverImage || t.images?.[0] || "",
     baseFare: t.baseFare,
     cancellationPolicy: t.cancellationPolicy ?? DEFAULT_CANCELLATION_POLICY,
+    // What the partner wrote (for the editor) and the full list shown to pilgrims (their wording or Tirvona's).
+    otherPolicies: t.otherPolicies ?? {},
+    policies: otherPoliciesView(t.otherPolicies),
+    serviceAddOns: cleanServiceAddOns(t.serviceAddOns),
     circuitTemplateId: t.circuitTemplateId ? String(t.circuitTemplateId) : null,
     circuitTemplateName: t.circuitTemplateName ?? "",
     status: t.status,
@@ -220,6 +227,8 @@ export class YatraCatalogService {
       { new: true },
     ).lean();
     if (!after) throw new YatraException("This vehicle changed while you were reviewing. Reload and try again.", 409);
+    // Approving a vehicle verifies the documents submitted for it (RC, permit, insurance, pollution, fitness).
+    if (action === "approve") await this.documents.updateMany({ vehicleId, status: "pending" }, { $set: { status: "approved", reviewedBy: admin.id, reviewedAt: new Date() } });
     await this.audit.record(admin, `vehicle.${action}`, { vehicleId, operatorId: String(vehicle.operatorId), note }, { before: { status: vehicle.status }, after: { status: rule.to } });
     await this.notifier.operatorTeam(String(vehicle.operatorId), "Vehicle verification", `${vehicle.registrationNumber} is now ${rule.to.replace(/_/g, " ")}${note ? `: ${note}` : "."}`, "/operator/vehicles");
     return vehicleView(after);
@@ -296,6 +305,8 @@ export class YatraCatalogService {
     const out: Record<string, unknown> = {};
     const keys = ["title", "summary", "description", "productType", "originCity", "originState", "destinationCity", "destinationState", "durationDays", "durationNights", "stops", "itinerary", "highlights", "inclusions", "exclusions", "images", "coverImage", "baseFare", "cancellationPolicy", "circuitTemplateId", "circuitTemplateName"];
     for (const key of keys) if (dto[key] !== undefined) out[key] = dto[key];
+    if (dto.otherPolicies !== undefined) out.otherPolicies = cleanOtherPolicies(dto.otherPolicies);
+    if (dto.serviceAddOns !== undefined) out.serviceAddOns = cleanServiceAddOns(dto.serviceAddOns);
     if (dto.originCity !== undefined) out.originCityKey = cityKey(dto.originCity);
     if (dto.destinationCity !== undefined) out.destinationCityKey = cityKey(dto.destinationCity);
     if (Array.isArray(dto.stops)) out.stops = dto.stops.map((s: any, i: number) => ({ ...s, order: i + 1 }));
@@ -425,7 +436,7 @@ export class YatraCatalogService {
 
   /**
    * Only Super Admin moves a tour through review and onto the public site.
-   * Publishing also needs the organiser to be approved.
+   * Publishing also needs the partner to be approved.
    */
   async adminReviewTour(admin: YatraActor, tourId: string, action: "approve" | "reject" | "publish" | "unpublish", note = ""): Promise<any> {
     const tour = await this.tours.findById(tourId).lean();
@@ -441,7 +452,7 @@ export class YatraCatalogService {
     if (rule.needsNote && note.trim().length < 3) throw new YatraException("Please give a reason (at least 3 characters).", 400);
     if (action === "publish") {
       const operator = await this.operators.findById(tour.operatorId).select("status").lean();
-      if (operator?.status !== "approved") throw new YatraException("Approve the organiser before publishing its tours.", 409, "OPERATOR_NOT_APPROVED");
+      if (operator?.status !== "approved") throw new YatraException("Approve the partner before publishing its tours.", 409, "OPERATOR_NOT_APPROVED");
     }
     const set: Record<string, unknown> = { status: rule.to, reviewNote: note.trim(), reviewedAt: new Date(), reviewedBy: admin.id };
     if (action === "publish") Object.assign(set, { publishedAt: new Date(), publishedBy: admin.id });

@@ -21,6 +21,8 @@ import type { Response } from "express";
 import { type AuthenticatedUser, CurrentUser } from "../../../common/decorators/current-user.decorator";
 import { DOCUMENT_MAX_BYTES } from "../domain/yatra.constants";
 import { YatraBookingService } from "../application/yatra-booking.service";
+import { YatraCharterService } from "../application/yatra-charter.service";
+import { YatraTripService } from "../application/yatra-trip.service";
 import { YatraCatalogService } from "../application/yatra-catalog.service";
 import { YatraInsightsService } from "../application/yatra-insights.service";
 import { YatraInventoryService } from "../application/yatra-inventory.service";
@@ -36,6 +38,8 @@ import {
   DateRangeDto,
   DepartureQueryDto,
   LinkActiveDto,
+  RespondCharterDto,
+  ShareLocationDto,
   PayoutDetailsDto,
   ReasonDto,
   RegisterOperatorDto,
@@ -51,11 +55,11 @@ import {
 import { EntityIdPipe, ok, paged, YatraEnabledGuard, YatraWriteThrottle } from "./yatra-http";
 
 /**
- * The organiser console. Any signed-in account may register an organiser;
- * every other call is scoped on the server to the caller's own organiser
- * and checked against the caller's organiser role (owner/manager/staff).
+ * The partner console. Any signed-in account may register a partner;
+ * every other call is scoped on the server to the caller's own partner
+ * and checked against the caller's partner role (owner/manager/staff).
  */
-@ApiTags("Yatra · Organiser")
+@ApiTags("Yatra · Partner")
 @ApiBearerAuth()
 @UseGuards(YatraEnabledGuard)
 @Controller("v1/yatra/operator")
@@ -66,7 +70,39 @@ export class YatraOperatorController {
     private readonly inventory: YatraInventoryService,
     private readonly bookings: YatraBookingService,
     private readonly insights: YatraInsightsService,
+    private readonly trips: YatraTripService,
+    private readonly charters: YatraCharterService,
   ) {}
+
+  // ----------------------------------------------------------- live location
+  @Get("departures/:id/location")
+  async locationStatus(@CurrentUser() user: AuthenticatedUser, @Param("id", EntityIdPipe) id: string) {
+    return ok(await this.trips.organiserStatus(user, id));
+  }
+
+  // The driver's page posts a position every few seconds while it is open.
+  @Post("departures/:id/location")
+  @YatraWriteThrottle(120, 60_000)
+  async shareLocation(@CurrentUser() user: AuthenticatedUser, @Param("id", EntityIdPipe) id: string, @Body() dto: ShareLocationDto) {
+    return ok(await this.trips.share(user, id, dto));
+  }
+
+  @Post("departures/:id/location/stop")
+  async stopLocation(@CurrentUser() user: AuthenticatedUser, @Param("id", EntityIdPipe) id: string) {
+    return ok(await this.trips.stop(user, id), "Location sharing stopped.");
+  }
+
+  // ---------------------------------------------------------- full-bus requests
+  @Get("charter-requests")
+  async charterRequests(@CurrentUser() user: AuthenticatedUser, @Query("status") status?: string) {
+    return ok(await this.charters.listForOperator(user, status));
+  }
+
+  @Post("charter-requests/:id/respond")
+  @YatraWriteThrottle(30, 600_000)
+  async respondCharter(@CurrentUser() user: AuthenticatedUser, @Param("id", EntityIdPipe) id: string, @Body() dto: RespondCharterDto) {
+    return ok(await this.charters.respond(user, id, dto), dto.action === "accept" ? "Accepted. The seats are held for the pilgrim to pay." : "Request declined.");
+  }
 
   // ------------------------------------------------------------ organisation
   @Get("me")
@@ -77,7 +113,7 @@ export class YatraOperatorController {
   @Post("register")
   @YatraWriteThrottle(5, 3_600_000)
   async register(@CurrentUser() user: AuthenticatedUser, @Body() dto: RegisterOperatorDto) {
-    return ok(await this.operators.register(user, dto), "Organiser registered. Complete your profile and KYC to submit it for approval.");
+    return ok(await this.operators.register(user, dto), "Partner registered. Complete your profile and KYC to submit it for approval.");
   }
 
   @Patch("profile")

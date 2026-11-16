@@ -7,6 +7,7 @@ import { NotificationsModule } from "../notifications/notifications.module";
 import { payoutConfig } from "../payouts/config/payout.config";
 import { BankAccountCrypto } from "../payouts/infrastructure/bank-account.crypto";
 import { WalletModule } from "../wallet/wallet.module";
+import { WhatsAppModule } from "../../integrations/whatsapp/whatsapp.module";
 import { YatraBookingService } from "./application/yatra-booking.service";
 import { YatraCatalogService } from "./application/yatra-catalog.service";
 import { RAZORPAY_RECON_CLIENT, RazorpayReconHttpClient, YatraFinanceService } from "./application/yatra-finance.service";
@@ -39,6 +40,10 @@ import { YatraAdminController } from "./presentation/yatra-admin.controller";
 import { YatraOperatorController } from "./presentation/yatra-operator.controller";
 import { YatraCustomerController, YatraPublicController } from "./presentation/yatra-public.controller";
 import { YatraEnabledGuard } from "./presentation/yatra-http";
+import { YatraRatingService } from "./application/yatra-rating.service";
+import { YatraCharterService } from "./application/yatra-charter.service";
+import { YatraTripService } from "./application/yatra-trip.service";
+import { UserSchema } from "../users/infrastructure/persistence/user.schema";
 
 /**
  * Tirvona Yatra: organisers, tours, departures, the central seat inventory,
@@ -49,10 +54,11 @@ import { YatraEnabledGuard } from "./presentation/yatra-http";
 @Module({
   imports: [
     ConfigModule.forFeature(payoutConfig),
-    OrmModule.forFeature([...YATRA_SCHEMAS, ...YATRA_P5_SCHEMAS, ...YATRA_REF_SCHEMAS].map(([name, schema]) => ({ name, schema: schema as any }))),
+    OrmModule.forFeature([...YATRA_SCHEMAS, ...YATRA_P5_SCHEMAS, ...YATRA_REF_SCHEMAS].map(([name, schema]): { name: string; schema: any } => ({ name, schema: schema as any })).concat([{ name: "User", schema: UserSchema as any }])),
     AuditModule,
     HrLocationModule,
     NotificationsModule,
+    WhatsAppModule,
     WalletModule,
   ],
   controllers: [
@@ -85,6 +91,9 @@ import { YatraEnabledGuard } from "./presentation/yatra-http";
     YatraInventoryService,
     YatraBookingService,
     YatraJourneyService,
+    YatraRatingService,
+    YatraTripService,
+    YatraCharterService,
     YatraInsightsService,
     YatraWebhookService,
     YatraMaintenanceService,

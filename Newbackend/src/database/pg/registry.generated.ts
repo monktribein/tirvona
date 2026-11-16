@@ -29145,6 +29145,16 @@ export const REGISTRY: Registry = {
      "field": "reminderSentAt",
      "column": "reminder_sent_at",
      "kind": "date"
+    },
+    {
+     "field": "droppingPointId",
+     "column": "dropping_point_id",
+     "kind": "string"
+    },
+    {
+     "field": "droppingPointName",
+     "column": "dropping_point_name",
+     "kind": "string"
     }
    ],
    "indexes": [
@@ -29319,6 +29329,26 @@ export const REGISTRY: Registry = {
      "field": "updatedAt",
      "column": "updated_at",
      "kind": "date"
+    },
+    {
+     "field": "droppingPoints",
+     "column": "dropping_points",
+     "kind": "json"
+    },
+    {
+     "field": "restStops",
+     "column": "rest_stops",
+     "kind": "json"
+    },
+    {
+     "field": "charterEnabled",
+     "column": "charter_enabled",
+     "kind": "boolean"
+    },
+    {
+     "field": "seatFares",
+     "column": "seat_fares",
+     "kind": "json"
     }
    ],
    "indexes": [
@@ -30750,6 +30780,16 @@ export const REGISTRY: Registry = {
      "field": "updatedAt",
      "column": "updated_at",
      "kind": "date"
+    },
+    {
+     "field": "otherPolicies",
+     "column": "other_policies",
+     "kind": "json"
+    },
+    {
+     "field": "serviceAddOns",
+     "column": "service_add_ons",
+     "kind": "json"
     }
    ],
    "indexes": [
@@ -31946,6 +31986,333 @@ export const REGISTRY: Registry = {
       "cityKey": 1,
       "pickupAt": 1
      },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "yatra_ratings",
+   "schema": "public",
+   "table": "yatra_ratings",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "bookingId",
+     "column": "booking_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "departureId",
+     "column": "departure_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "tourId",
+     "column": "tour_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "operatorId",
+     "column": "operator_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "vehicleId",
+     "column": "vehicle_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "customerId",
+     "column": "customer_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "customerName",
+     "column": "customer_name",
+     "kind": "string"
+    },
+    {
+     "field": "stars",
+     "column": "stars",
+     "kind": "number"
+    },
+    {
+     "field": "comment",
+     "column": "comment",
+     "kind": "string"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    },
+    {
+     "field": "tags",
+     "column": "tags",
+     "kind": "string[]"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "bookingId_1",
+     "keys": {
+      "bookingId": 1
+     },
+     "unique": true,
+     "enforced": true
+    },
+    {
+     "name": "operatorId_1_status_1_createdAt_-1",
+     "keys": {
+      "operatorId": 1,
+      "status": 1,
+      "createdAt": -1
+     },
+     "enforced": true
+    },
+    {
+     "name": "departureId_1",
+     "keys": {
+      "departureId": 1
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "yatra_charter_requests",
+   "schema": "public",
+   "table": "yatra_charter_requests",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "requestNumber",
+     "column": "request_number",
+     "kind": "string"
+    },
+    {
+     "field": "departureId",
+     "column": "departure_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "tourId",
+     "column": "tour_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "operatorId",
+     "column": "operator_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "customerId",
+     "column": "customer_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "contactName",
+     "column": "contact_name",
+     "kind": "string"
+    },
+    {
+     "field": "contactPhone",
+     "column": "contact_phone",
+     "kind": "string"
+    },
+    {
+     "field": "groupSize",
+     "column": "group_size",
+     "kind": "number"
+    },
+    {
+     "field": "message",
+     "column": "message",
+     "kind": "string"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "organiserNote",
+     "column": "organiser_note",
+     "kind": "string"
+    },
+    {
+     "field": "respondedBy",
+     "column": "responded_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "respondedAt",
+     "column": "responded_at",
+     "kind": "date"
+    },
+    {
+     "field": "bookingId",
+     "column": "booking_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "history",
+     "column": "history",
+     "kind": "json"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "requestNumber_1",
+     "keys": {
+      "requestNumber": 1
+     },
+     "unique": true,
+     "enforced": true
+    },
+    {
+     "name": "operatorId_1_status_1_createdAt_-1",
+     "keys": {
+      "operatorId": 1,
+      "status": 1,
+      "createdAt": -1
+     },
+     "enforced": true
+    },
+    {
+     "name": "customerId_1_createdAt_-1",
+     "keys": {
+      "customerId": 1,
+      "createdAt": -1
+     },
+     "enforced": true
+    },
+    {
+     "name": "departureId_1_customerId_1",
+     "keys": {
+      "departureId": 1,
+      "customerId": 1
+     },
+     "unique": true,
+     "partialFilterExpression": {
+      "status": "requested"
+     },
+     "enforced": true
+    }
+   ]
+  },
+  {
+   "database": "test",
+   "collection": "yatra_trip_locations",
+   "schema": "public",
+   "table": "yatra_trip_locations",
+   "idKind": "objectId",
+   "columns": [
+    {
+     "field": "departureId",
+     "column": "departure_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "operatorId",
+     "column": "operator_id",
+     "kind": "objectId"
+    },
+    {
+     "field": "status",
+     "column": "status",
+     "kind": "string"
+    },
+    {
+     "field": "latitude",
+     "column": "latitude",
+     "kind": "number"
+    },
+    {
+     "field": "longitude",
+     "column": "longitude",
+     "kind": "number"
+    },
+    {
+     "field": "accuracyM",
+     "column": "accuracy_m",
+     "kind": "number"
+    },
+    {
+     "field": "speedKmph",
+     "column": "speed_kmph",
+     "kind": "number"
+    },
+    {
+     "field": "heading",
+     "column": "heading",
+     "kind": "number"
+    },
+    {
+     "field": "recordedAt",
+     "column": "recorded_at",
+     "kind": "date"
+    },
+    {
+     "field": "startedAt",
+     "column": "started_at",
+     "kind": "date"
+    },
+    {
+     "field": "stoppedAt",
+     "column": "stopped_at",
+     "kind": "date"
+    },
+    {
+     "field": "sharedBy",
+     "column": "shared_by",
+     "kind": "objectId"
+    },
+    {
+     "field": "sharedByName",
+     "column": "shared_by_name",
+     "kind": "string"
+    },
+    {
+     "field": "createdAt",
+     "column": "created_at",
+     "kind": "date"
+    },
+    {
+     "field": "updatedAt",
+     "column": "updated_at",
+     "kind": "date"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "departureId_1",
+     "keys": {
+      "departureId": 1
+     },
+     "unique": true,
      "enforced": true
     }
    ]

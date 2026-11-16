@@ -127,7 +127,7 @@ export class YatraInsightsService {
   }
 
   // ---------------------------------------------------------- organiser money
-  /** The organiser's payable, from the payee ledger: earnings net of commission, taxes, refunds and transfers. */
+  /** The partner's payable, from the payee ledger: earnings net of commission, taxes, refunds and transfers. */
   async earnings(user: YatraActor, query: { from?: string; to?: string; page: number; limit: number }): Promise<any> {
     const { operator } = await this.access.require(user, "viewFinance");
     const payeeId = String(operator._id);

@@ -21,6 +21,21 @@ describe("yatra domain rules", () => {
     expect(generateSeatLayout("2x1", 300).seats).toHaveLength(120);
   });
 
+  it("splits a double-decker sleeper between the lower and upper deck without sharing a position", () => {
+    const layout = generateSeatLayout("sleeper_double", 11);
+    const lower = layout.seats.filter((s) => s.deck === "lower");
+    const upper = layout.seats.filter((s) => s.deck === "upper");
+    expect(lower).toHaveLength(6);
+    expect(upper).toHaveLength(5);
+    expect(layout.seats.every((s) => s.kind === "sleeper")).toBe(true);
+    expect(layout.seats.map((s) => s.seatNo)).toEqual(Array.from({ length: 11 }, (_, i) => String(i + 1)));
+    expect(new Set(layout.seats.map((s) => `${s.deck}:${s.row}:${s.col}`)).size).toBe(11);
+    expect(layout.rows).toBe(2);
+    expect(validateCustomLayout(layout.seats)).toBeNull();
+    // A single-deck template is unchanged.
+    expect(generateSeatLayout("sleeper_2x1", 6).seats.every((s) => s.deck === "lower")).toBe(true);
+  });
+
   it("rejects custom layouts with duplicate seats or positions", () => {
     expect(validateCustomLayout([{ seatNo: "A1", row: 0, col: 0 }, { seatNo: "a1", row: 0, col: 1 }])).toMatch(/twice/);
     expect(validateCustomLayout([{ seatNo: "A1", row: 0, col: 0 }, { seatNo: "A2", row: 0, col: 0 }])).toMatch(/same position/);
@@ -57,7 +72,7 @@ describe("yatra domain rules", () => {
       now,
     };
     expect(unsellableReason(ok)).toBeNull();
-    expect(unsellableReason({ ...ok, operator: { status: "suspended" } })).toMatch(/organiser/);
+    expect(unsellableReason({ ...ok, operator: { status: "suspended" } })).toMatch(/partner/);
     expect(unsellableReason({ ...ok, tour: { status: "approved" } })).toMatch(/not published/);
     expect(unsellableReason({ ...ok, vehicle: { status: "pending_verification" } })).toMatch(/vehicle/);
     expect(unsellableReason({ ...ok, departure: { status: "draft", departAt: ok.departure.departAt } })).toMatch(/closed/);

@@ -250,8 +250,8 @@ export class YatraRideCustomerController {
   }
 }
 
-/** Organiser payout requests (own organiser only). */
-@ApiTags("Yatra · Organiser")
+/** Partner payout requests (own partner only). */
+@ApiTags("Yatra · Partner")
 @ApiBearerAuth()
 @UseGuards(YatraEnabledGuard)
 @Controller("v1/yatra/operator")

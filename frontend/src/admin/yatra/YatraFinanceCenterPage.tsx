@@ -18,9 +18,9 @@ const TABS = [
   { value: "razorpay", label: "Razorpay reconciliation" },
   { value: "reports", label: "Reports" },
 ];
-const PAYEE_LABEL: Record<string, string> = { operator: "Organiser", ride_partner: "Ride partner" };
+const PAYEE_LABEL: Record<string, string> = { operator: "Partner", ride_partner: "Ride partner" };
 const APPLIES_LABEL: Record<string, string> = { yatra_booking: "Tour bookings", ride: "Local rides", addon_referral: "Meal & puja referrals" };
-const CHANNEL_LABEL: Record<string, string> = { any: "Every channel", MARKETPLACE: "Tirvona website", DIRECT: "Organiser's own sales" };
+const CHANNEL_LABEL: Record<string, string> = { any: "Every channel", MARKETPLACE: "Tirvona website", DIRECT: "Partner's own sales" };
 const pct = (bps: number) => `${(Number(bps || 0) / 100).toFixed(2).replace(/\.00$/, "")}%`;
 const istToday = () => new Date(Date.now() + 330 * 60_000).toISOString().slice(0, 10);
 const daysAgo = (n: number) => new Date(Date.now() + 330 * 60_000 - n * 86_400_000).toISOString().slice(0, 10);
@@ -43,7 +43,7 @@ export const YatraFinanceCenterPage: React.FC = () => {
       <div className="space-y-5">
         <EnterprisePageHeader
           title="Yatra Finance Center"
-          subtitle="Collections, Tirvona commission, what is owed to organisers and ride partners, and manual payouts. Nothing here sends money automatically."
+          subtitle="Collections, Tirvona commission, what is owed to partners and ride partners, and manual payouts. Nothing here sends money automatically."
           icon={<IndianRupee size={20} />}
           actions={user?.role === "super_admin" ? <Link to="/admin/yatra/collections" className="text-xs font-bold text-[#F28C28] hover:underline">Collections & ledger →</Link> : undefined}
         />
@@ -74,7 +74,7 @@ const Overview: React.FC<{ onTab: (t: string) => void }> = ({ onTab }) => {
         <>
           {d.data.bookingsAwaitingRule > 0 && (
             <div role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 p-3 text-xs font-semibold text-amber-800 dark:text-amber-200 flex flex-wrap gap-2 items-center justify-between">
-              <span>{d.data.bookingsAwaitingRule} confirmed booking{d.data.bookingsAwaitingRule === 1 ? " has" : "s have"} no commission rule, so the organiser earning is not posted yet.</span>
+              <span>{d.data.bookingsAwaitingRule} confirmed booking{d.data.bookingsAwaitingRule === 1 ? " has" : "s have"} no commission rule, so the partner earning is not posted yet.</span>
               <EnterpriseButton size="sm" onClick={() => onTab("rules")}>Fix in Commission rules</EnterpriseButton>
             </div>
           )}
@@ -97,7 +97,7 @@ const Overview: React.FC<{ onTab: (t: string) => void }> = ({ onTab }) => {
           </Panel>
           <Panel title="Owed and paid out">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <Stat label="Owed to organisers" value={rupees(d.data.payables.organisers)} hint="Delivered journeys, not yet paid" />
+              <Stat label="Owed to partners" value={rupees(d.data.payables.organisers)} hint="Delivered journeys, not yet paid" />
               <Stat label="Owed to ride partners" value={rupees(d.data.payables.ridePartners)} hint="Completed rides, not yet paid" />
               <Stat label="Not yet delivered" value={rupees(d.data.payables.notYetDelivered.organisers + d.data.payables.notYetDelivered.ridePartners)} hint="Becomes payable after the journey ends" />
               <Stat label="Payouts in progress" value={rupees(d.data.transfers.pending)} hint={`${d.data.transfers.pendingCount} request${d.data.transfers.pendingCount === 1 ? "" : "s"}`} tone={d.data.transfers.pendingCount ? "warn" : undefined} />
@@ -138,8 +138,8 @@ const Payables: React.FC = () => {
   return (
     <Panel>
       <div className="space-y-3">
-        <Chips value={type} onChange={setType} options={[{ value: "", label: "Everyone" }, { value: "operator", label: "Organisers" }, { value: "ride_partner", label: "Ride partners" }]} />
-        {list.state !== "ready" ? <PanelState state={list.state} error={list.error} onRetry={list.reload} /> : !list.data?.length ? <Empty title="No approved organisers or ride partners yet" /> : (
+        <Chips value={type} onChange={setType} options={[{ value: "", label: "Everyone" }, { value: "operator", label: "Partners" }, { value: "ride_partner", label: "Ride partners" }]} />
+        {list.state !== "ready" ? <PanelState state={list.state} error={list.error} onRetry={list.reload} /> : !list.data?.length ? <Empty title="No approved partners or ride partners yet" /> : (
           <ResponsiveTable
             rows={list.data}
             rowKey={(p) => `${p.payeeType}:${p.payeeId}`}
@@ -356,14 +356,14 @@ const Rules: React.FC = () => {
   const { busy, run } = useAction();
   const name = (r: any) => {
     const id = r.operatorId ?? r.ridePartnerId;
-    if (!id) return r.appliesTo === "ride" ? "All ride partners" : "All organisers";
+    if (!id) return r.appliesTo === "ride" ? "All ride partners" : "All partners";
     return payees.data?.find((p) => p.payeeId === id)?.name ?? "One payee";
   };
   return (
     <>
       {awaiting.state === "ready" && !!awaiting.data?.length && (
         <Panel title={`Bookings without a commission rule (${awaiting.data.length})`}>
-          <p className="text-xs text-gray-500 mb-2">These were confirmed while no rule matched. Add the right rule below, then apply it to each booking; the organiser earning is posted then.</p>
+          <p className="text-xs text-gray-500 mb-2">These were confirmed while no rule matched. Add the right rule below, then apply it to each booking; the partner earning is posted then.</p>
           <ResponsiveTable
             rows={awaiting.data}
             rowKey={(b: any) => b.id}
@@ -379,7 +379,7 @@ const Rules: React.FC = () => {
       )}
       <Panel title="Commission rules" actions={<EnterpriseButton size="sm" onClick={() => setOpen(true)}>New rule or new version</EnterpriseButton>}>
         <div className="space-y-3">
-          <p className="text-[11px] text-gray-500">Each booking, ride and add-on keeps the rule that applied when it was created. Saving a rule for the same scope creates a new version and retires the old one; past bookings do not change. The most specific rule wins (one organiser or partner, then channel, then everyone).</p>
+          <p className="text-[11px] text-gray-500">Each booking, ride and add-on keeps the rule that applied when it was created. Saving a rule for the same scope creates a new version and retires the old one; past bookings do not change. The most specific rule wins (one partner or partner, then channel, then everyone).</p>
           <Chips value={status} onChange={setStatus} options={[{ value: "active", label: "Active" }, { value: "retired", label: "History" }, { value: "", label: "All" }]} />
           {rules.state !== "ready" ? <PanelState state={rules.state} error={rules.error} onRetry={rules.reload} /> : !rules.data?.length ? <Empty title="No rules yet" text="Until a rule exists, confirmed bookings wait in the list above and no commission is assumed." /> : (
             <ResponsiveTable
@@ -439,7 +439,7 @@ const RuleModal: React.FC<{ payees: any[]; onClose: () => void; onDone: () => vo
           <Field label="Sales channel"><select className={inputClass} value={f.channel} onChange={(e) => setF({ ...f, channel: e.target.value })}>{Object.entries(CHANNEL_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></Field>
         ) : <div className="hidden sm:block" />}
         {f.appliesTo !== "addon_referral" && (
-          <Field label={forRide ? "Ride partner" : "Organiser"} className="sm:col-span-2" hint="Leave as everyone for the default rule.">
+          <Field label={forRide ? "Ride partner" : "Partner"} className="sm:col-span-2" hint="Leave as everyone for the default rule.">
             <select className={inputClass} value={f.payeeId} onChange={(e) => setF({ ...f, payeeId: e.target.value })}><option value="">Everyone</option>{choices.map((p) => <option key={p.payeeId} value={p.payeeId}>{p.name}</option>)}</select>
           </Field>
         )}
@@ -447,7 +447,7 @@ const RuleModal: React.FC<{ payees: any[]; onClose: () => void; onDone: () => vo
         <Field label="Flat fee per booking (₹)"><input type="number" min={0} step="0.01" className={inputClass} value={f.flatFee} onChange={(e) => setF({ ...f, flatFee: e.target.value })} /></Field>
         <Field label="GST on commission (%)"><input type="number" min={0} max={100} step="0.01" className={inputClass} value={f.gst} onChange={(e) => setF({ ...f, gst: e.target.value })} /></Field>
         <Field label="TDS on gross (%)"><input type="number" min={0} max={100} step="0.01" className={inputClass} value={f.tds} onChange={(e) => setF({ ...f, tds: e.target.value })} /></Field>
-        <Field label="Name"><input className={inputClass} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="e.g. Pilot organisers 2026" /></Field>
+        <Field label="Name"><input className={inputClass} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="e.g. Pilot partners 2026" /></Field>
         <Field label="Note"><input className={inputClass} value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} /></Field>
         <div className="sm:col-span-2 flex justify-end gap-2"><EnterpriseButton type="button" variant="ghost" onClick={onClose}>Close</EnterpriseButton><EnterpriseButton type="submit" disabled={busy === "rule"}>Save rule</EnterpriseButton></div>
       </form>
@@ -464,7 +464,7 @@ const Razorpay: React.FC = () => {
   return (
     <Panel title="Razorpay settlement reconciliation">
       <div className="space-y-3">
-        <p className="text-[11px] text-gray-500">Checks every Yatra payment captured on a day (India time) against Razorpay and its settlement report. This is separate from organiser and ride partner payout reconciliation.</p>
+        <p className="text-[11px] text-gray-500">Checks every Yatra payment captured on a day (India time) against Razorpay and its settlement report. This is separate from partner and ride partner payout reconciliation.</p>
         <div className="flex flex-wrap gap-3 items-end">
           <Field label="Day"><input type="date" max={istToday()} className={inputClass} value={day} onChange={(e) => setDay(e.target.value)} /></Field>
           <EnterpriseButton icon={<RefreshCw size={14} />} disabled={busy === "run" || !day} onClick={() => run("run", () => yatraFinance.runReconciliation(day), runs.reload, "Reconciliation finished.")}>Run for this day</EnterpriseButton>

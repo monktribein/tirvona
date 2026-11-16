@@ -13,20 +13,27 @@ import {
   MANIFEST_BOOKING_STATUSES,
   OPEN_BOOKING_STATUSES,
   YATRA_MODEL,
+  CANCELLATION_PROTECTION,
+  TIRVONA_APP_URL,
   YATRA_PAYMENT_LINK_PURPOSE,
   type BookingSource,
 } from "../domain/yatra.constants";
 import { YatraException } from "../domain/yatra.errors";
 import {
+  bookingRefundQuote,
   bookingReference,
   csvCell,
   DEFAULT_CANCELLATION_POLICY,
+  fareCollected,
   journeyNumber,
+  otherPoliciesView,
+  priceServiceAddOns,
   roundMoney,
+  seatFareOf,
   ticketCode,
   toPaise,
-  yatraRefundQuote,
 } from "../domain/yatra.utils";
+import type { WhatsAppYatraContext } from "../../../integrations/whatsapp/utils/whatsapp-message.builder";
 import { YatraFinanceService } from "./yatra-finance.service";
 import { YatraInventoryService } from "./yatra-inventory.service";
 import {
@@ -69,12 +76,19 @@ export const bookingView = (b: any) =>
     contact: { name: b.contact?.name ?? "", phone: b.contact?.phone ?? "", email: b.contact?.email ?? "" },
     boardingPointId: b.boardingPointId ?? "",
     boardingPointName: b.boardingPointName ?? "",
+    droppingPointId: b.droppingPointId ?? "",
+    droppingPointName: b.droppingPointName ?? "",
     departAt: b.departAt,
     tourTitle: b.tourTitle ?? "",
     pricing: {
       farePerSeat: b.pricing?.farePerSeat ?? 0,
       seatCount: b.pricing?.seatCount ?? b.seatCount,
       subtotal: b.pricing?.subtotal ?? 0,
+      protected: Boolean(b.pricing?.protected),
+      protectionFee: b.pricing?.protectionFee ?? 0,
+      addOns: b.pricing?.addOns ?? [],
+      addOnsTotal: b.pricing?.addOnsTotal ?? 0,
+      seatFares: b.pricing?.seatFares ?? null,
       totalAmount: b.pricing?.totalAmount ?? 0,
       amountPaid: b.pricing?.amountPaid ?? 0,
       refundAmount: b.pricing?.refundAmount ?? 0,
@@ -105,7 +119,7 @@ export const bookingView = (b: any) =>
     createdAt: b.createdAt,
   };
 
-/** The booking as the organiser and admin see it: adds who booked it and through which link. */
+/** The booking as the partner and admin see it: adds who booked it and through which link. */
 export const bookingStaffView = (b: any) =>
   b && {
     ...bookingView(b),
@@ -142,6 +156,7 @@ export class YatraBookingService {
     @InjectModel(YATRA_MODEL.Tour) private readonly tours: Model<any>,
     @InjectModel(YATRA_MODEL.Operator) private readonly operators: Model<any>,
     @InjectModel(YATRA_MODEL.UserRef) private readonly users: Model<any>,
+    @InjectModel(YATRA_MODEL.Vehicle) private readonly vehicles: Model<any>,
   ) {}
 
   // ================================================================ creation
@@ -150,7 +165,7 @@ export class YatraBookingService {
     let source: BookingSource = "MARKETPLACE";
     let attribution = { linkId: null as unknown, code: "", campaign: "" };
     if (dto.linkCode) {
-      // A link only counts for its own organiser's departure; anything else is ignored.
+      // A link only counts for its own partner's departure; anything else is ignored.
       const link = await this.links.findOne({ code: String(dto.linkCode).toLowerCase(), active: true }).lean();
       if (
         link &&
@@ -177,9 +192,9 @@ export class YatraBookingService {
   }
 
   /**
-   * An organiser books seats for its own customer from the same central
+   * A partner books seats for its own customer from the same central
    * inventory. The booking is held until the customer pays Tirvona through
-   * a payment link; nothing is confirmed by the organiser.
+   * a payment link; nothing is confirmed by the partner.
    */
   async createOrganizerBooking(user: YatraActor, dto: any): Promise<any> {
     const { operator, member } = await this.access.require(user, "createBookings", { approved: true });
@@ -200,6 +215,38 @@ export class YatraBookingService {
     const link = await this.issueLink(booking, user.id, settings.paymentLinkMinutes);
     await this.audit.record(user, "booking.organizer_created", { operatorId: String(operator._id), bookingId: String(booking._id), seats: booking.seats });
     return { booking: bookingStaffView(link.booking), paymentLink: link.url, paymentLinkExpiresAt: link.expiresAt };
+  }
+
+  /**
+   * Holds every seat of a departure for one pilgrim whose full-bus request the partner accepted.
+   * Payment is the normal Tirvona checkout; nothing here confirms the booking. The traveller names
+   * are placeholders until the pilgrim fills them in on their journey page.
+   */
+  async createCharterBooking(input: { departure: any; customerId: string; organiserUserId: string; contact: { name: string; phone: string; email?: string } }): Promise<any> {
+    const { departure } = input;
+    if (!(await this.inventory.wholeBusFree(departure))) throw new YatraException("Some seats on this departure are already booked, so the whole bus can no longer be held.", 409, "SEATS_TAKEN");
+    const blocked = new Set((departure.blockedSeats ?? []).map((s: string) => String(s)));
+    const seatNos: string[] = (departure.seatLayout?.seats ?? []).map((s: any) => String(s.seatNo)).filter((n: string) => !blocked.has(n));
+    if (!seatNos.length) throw new YatraException("This departure has no seats to hold.", 409);
+    const settings = await this.settings.get();
+    const first = String(input.contact.name || "Group leader").trim();
+    const passengers = seatNos.map((_, i) => ({ name: i === 0 ? first : `${first} (group member ${i + 1})`, ...(i === 0 ? { phone: input.contact.phone } : {}) }));
+    return this.createBooking({
+      departure,
+      dto: {
+        passengers,
+        seats: departure.seatMode === "choose" ? seatNos : [],
+        contact: input.contact,
+        boardingPointId: departure.boardingPoints?.[0]?.id,
+        droppingPointId: departure.droppingPoints?.[0]?.id,
+      },
+      source: "MARKETPLACE",
+      attribution: { linkId: null, code: "", campaign: "" },
+      customerId: input.customerId,
+      bookedByUserId: input.organiserUserId,
+      holdMinutes: Math.max(settings.paymentLinkMinutes, settings.holdMinutes),
+      maxSeats: Math.max(settings.maxSeatsPerBooking, seatNos.length),
+    });
   }
 
   private async loadDeparture(dto: any): Promise<any> {
@@ -234,8 +281,27 @@ export class YatraBookingService {
       throw new YatraException("Choose one seat for each traveller.", 400, "SEATS_REQUIRED");
     const boarding = (departure.boardingPoints ?? []).find((p: any) => p.id === dto.boardingPointId) ?? (departure.boardingPoints?.length === 1 ? departure.boardingPoints[0] : null);
     if (!boarding) throw new YatraException("Choose a boarding point.", 400, "BOARDING_POINT_REQUIRED");
+    // A dropping point is required only when the partner listed some.
+    const droppingList: any[] = departure.droppingPoints ?? [];
+    const dropping = droppingList.find((p: any) => p.id === dto.droppingPointId) ?? (droppingList.length === 1 ? droppingList[0] : null);
+    if (droppingList.length && !dropping) throw new YatraException("Choose a dropping point.", 400, "DROPPING_POINT_REQUIRED");
     const fare = roundMoney(departure.fare);
-    const total = roundMoney(fare * count);
+    // Each chosen seat is sold at its own rate; seats given automatically cost the default fare.
+    const seatRates: Record<string, number> = {};
+    let subtotal = roundMoney(fare * count);
+    if (departure.seatMode === "choose") {
+      subtotal = 0;
+      for (const seatNo of chosen) {
+        const rate = seatFareOf(departure, String(seatNo));
+        seatRates[String(seatNo).toUpperCase()] = rate;
+        subtotal = roundMoney(subtotal + rate);
+      }
+    }
+    const protect = Boolean(dto.cancellationProtection);
+    const protectionFee = protect ? roundMoney(CANCELLATION_PROTECTION.feePerSeat * count) : 0;
+    // Optional services of the tour (stay, food, taxi), priced per traveller at the partner's rate.
+    const addOns = priceServiceAddOns(tour?.serviceAddOns, dto.addOns, count);
+    const total = roundMoney(subtotal + protectionFee + addOns.total);
     const holdUntil = new Date(Date.now() + input.holdMinutes * 60_000);
     // The commission rule that applies now stays with the booking for life.
     const commissionSnapshot = await this.finance.snapshotFor("yatra_booking", { source: input.source, operatorId: departure.operatorId });
@@ -264,9 +330,11 @@ export class YatraBookingService {
             },
             boardingPointId: boarding.id,
             boardingPointName: boarding.name,
+            droppingPointId: dropping?.id ?? "",
+            droppingPointName: dropping?.name ?? "",
             departAt: departure.departAt,
             tourTitle: tour?.title ?? "",
-            pricing: { farePerSeat: fare, seatCount: count, subtotal: total, totalAmount: total, amountPaid: 0, refundAmount: 0, currency: "INR" },
+            pricing: { farePerSeat: fare, seatCount: count, subtotal, protected: protect, protectionFee, addOns: addOns.lines, addOnsTotal: addOns.total, seatFares: departure.seatMode === "choose" ? seatRates : null, totalAmount: total, amountPaid: 0, refundAmount: 0, currency: "INR" },
             policySnapshot: tour?.cancellationPolicy ?? DEFAULT_CANCELLATION_POLICY,
             commissionSnapshot,
             status: "held",
@@ -315,7 +383,7 @@ export class YatraBookingService {
     const operator = await this.operators.findById(booking.operatorId).select("organisationName displayName contactPhone").lean();
     return {
       booking: bookingView(booking),
-      departure: departure && { departureCode: departure.departureCode, departAt: departure.departAt, returnAt: departure.returnAt, boardingPoints: departure.boardingPoints ?? [], status: departure.status },
+      departure: departure && { departureCode: departure.departureCode, departAt: departure.departAt, returnAt: departure.returnAt, boardingPoints: departure.boardingPoints ?? [], droppingPoints: departure.droppingPoints ?? [], status: departure.status },
       operator: operator && { name: operator.displayName || operator.organisationName, contactPhone: operator.contactPhone ?? "" },
     };
   }
@@ -612,6 +680,64 @@ export class YatraBookingService {
       ],
       ctaPath: booking.journeyId ? `/profile/journeys/${String(booking.journeyId)}` : "/profile/journeys",
     });
+    // WhatsApp ticket: the same message whether the pilgrim or a partner made the booking.
+    try {
+      await this.notifier.whatsappTicket(booking, await this.whatsappContext(booking));
+    } catch (error) {
+      this.logger.warn(`Yatra WhatsApp ticket not sent for ${booking.bookingReference}: ${(error as Error).message}`);
+    }
+  }
+
+  /** What the WhatsApp ticket says: seats, passengers, points, rules and the refund policy in plain words. */
+  private async whatsappContext(booking: any): Promise<WhatsAppYatraContext> {
+    const [departure, tour, operator] = await Promise.all([
+      this.departures.findById(booking.departureId).lean(),
+      this.tours.findById(booking.tourId).lean(),
+      this.operators.findById(booking.operatorId).select("displayName organisationName").lean(),
+    ]);
+    const vehicle = departure?.vehicleId ? await this.vehicles.findById(departure.vehicleId).select("registrationNumber make model isAc").lean() : null;
+    const boarding = (departure?.boardingPoints ?? []).find((p: any) => p.id === booking.boardingPointId);
+    const dropping = (departure?.droppingPoints ?? []).find((p: any) => p.id === booking.droppingPointId);
+    const passengers = (Array.isArray(booking.passengers) ? booking.passengers : []).map((p: any, i: number) => ({
+      name: String(p?.name ?? "").trim(),
+      seat: p?.seatNo ?? p?.seat ?? booking.seats?.[i],
+    }));
+    const policy = booking.policySnapshot ?? DEFAULT_CANCELLATION_POLICY;
+    const refundLines: string[] = [];
+    for (const w of policy.windows ?? [])
+      refundLines.push(`${w.label || `${w.hoursBefore} hours or more before departure`}: ${w.refundPercent}% of the fare refunded`);
+    refundLines.push(policy.notes || `Cancelling later: ${Number(policy.defaultRefundPercent ?? 0)}% refund.`);
+    if (booking.pricing?.protected)
+      refundLines.unshift(`You added cancellation protection: cancel at least ${CANCELLATION_PROTECTION.cutoffHours} hours before departure for a full refund of the fare. The ₹${booking.pricing.protectionFee} protection fee is not refundable.`);
+    refundLines.push("Refunds are credited to your Tirvona Wallet.");
+    const siteUrl = String(this.config.get<string>("frontendUrl") ?? "").replace(/\/+$/, "");
+    const route = [tour?.originCity, tour?.destinationCity].filter(Boolean).join(" → ");
+    return {
+      guestName: booking.contact?.name || passengers[0]?.name,
+      reference: booking.bookingReference,
+      ticketCode: booking.ticketCode,
+      tourTitle: booking.tourTitle || tour?.title,
+      route,
+      departAt: booking.departAt,
+      returnAt: departure?.returnAt ?? undefined,
+      seats: booking.seats ?? [],
+      passengers,
+      boardingName: booking.boardingPointName || boarding?.name,
+      boardingAddress: boarding?.address || boarding?.landmark || "",
+      boardingTime: boarding?.time,
+      droppingName: booking.droppingPointName || dropping?.name,
+      droppingTime: dropping?.time,
+      vehicle: vehicle ? [vehicle.registrationNumber, [vehicle.make, vehicle.model].filter(Boolean).join(" "), vehicle.isAc ? "AC" : ""].filter(Boolean).join(" · ") : undefined,
+      operatorName: operator?.displayName || operator?.organisationName,
+      amountPaid: booking.pricing?.amountPaid,
+      protectionFee: booking.pricing?.protected ? booking.pricing?.protectionFee : undefined,
+      addOnLines: (booking.pricing?.addOns ?? []).map((a: any) => `${a.title} – ₹${a.amount}`),
+      currency: booking.pricing?.currency,
+      refundLines,
+      ruleLines: otherPoliciesView(tour?.otherPolicies).map((p) => `${p.title}: ${p.text}`),
+      ticketUrl: booking.journeyId && siteUrl ? `${siteUrl}/profile/journeys/${String(booking.journeyId)}` : undefined,
+      appUrl: TIRVONA_APP_URL,
+    };
   }
 
   // ============================================================ payment links
@@ -634,7 +760,7 @@ export class YatraBookingService {
     return { url: `${base}/yatra/pay/${token}`, expiresAt, booking: updated };
   }
 
-  /** A fresh payment link for an organiser booking; re-holds its seats if the old hold lapsed. */
+  /** A fresh payment link for a partner booking; re-holds its seats if the old hold lapsed. */
   async reissuePaymentLink(user: YatraActor, bookingId: string): Promise<any> {
     const { operator } = await this.access.require(user, "createBookings", { approved: true });
     const settings = await this.settings.get();
@@ -700,7 +826,7 @@ export class YatraBookingService {
   /** The customer signs in and pays: the booking becomes theirs (for the journey and any refund). */
   async paymentLinkOrder(user: YatraActor, token: string): Promise<any> {
     const { booking, expired } = await this.bookingForToken(token);
-    if (expired) throw new YatraException("This payment link has expired. Ask your organiser for a new one.", 410, "LINK_EXPIRED");
+    if (expired) throw new YatraException("This payment link has expired. Ask your partner for a new one.", 410, "LINK_EXPIRED");
     const claimed = await this.bookings.findOneAndUpdate(
       { _id: booking._id, $or: [{ customerId: null }, { customerId: user.id }] },
       { $set: { customerId: user.id } },
@@ -725,14 +851,15 @@ export class YatraBookingService {
     const qr = await QRCode.toDataURL(payload, { width: 480, margin: 2, errorCorrectionLevel: "M" });
     const departure = await this.departures.findById(booking.departureId).lean();
     const boarding = (departure?.boardingPoints ?? []).find((p: any) => p.id === booking.boardingPointId);
-    return { booking: bookingView(booking), qr, boardingPoint: boarding ?? null, departureCode: departure?.departureCode ?? "" };
+    const dropping = (departure?.droppingPoints ?? []).find((p: any) => p.id === booking.droppingPointId);
+    return { booking: bookingView(booking), qr, boardingPoint: boarding ?? null, droppingPoint: dropping ?? null, departureCode: departure?.departureCode ?? "" };
   }
 
   // ============================================================ cancellation
   async refundPreview(user: YatraActor, bookingId: string): Promise<any> {
     const booking = await this.ownBooking(user, bookingId);
     if (booking.paymentStatus !== "paid") return { refundPercent: 0, refundAmount: 0, label: "Nothing has been paid." };
-    return yatraRefundQuote(booking.policySnapshot, booking.pricing.amountPaid, new Date(booking.departAt));
+    return bookingRefundQuote(booking);
   }
 
   async requestCancellation(user: YatraActor, bookingId: string, reason: string, asOrganizer = false): Promise<any> {
@@ -745,7 +872,7 @@ export class YatraBookingService {
     if (!booking) throw new YatraException("Booking not found.", 404);
     if (booking.status !== "confirmed") throw new YatraException("Only a confirmed booking can be cancelled.", 409);
     if (new Date(booking.departAt).getTime() <= Date.now()) throw new YatraException("This journey has already departed.", 409);
-    const quote = yatraRefundQuote(booking.policySnapshot, booking.pricing.amountPaid, new Date(booking.departAt));
+    const quote = bookingRefundQuote(booking);
     booking.status = "cancellation_requested";
     booking.cancellation = {
       status: "requested",
@@ -792,7 +919,7 @@ export class YatraBookingService {
         await booking.save({ session });
         return { booking, refund: 0 };
       }
-      const quote = yatraRefundQuote(booking.policySnapshot, booking.pricing.amountPaid, new Date(booking.departAt), new Date(), options.refundPercent);
+      const quote = bookingRefundQuote(booking, new Date(), options.refundPercent);
       const now = new Date();
       if (!booking.cancellation?.status) {
         booking.cancellation = { status: "requested", requestedAt: now, requestedBy: admin.id, reason: note || "Cancelled by Tirvona", quotedPercent: quote.refundPercent, quotedAmount: quote.refundAmount };
@@ -806,7 +933,7 @@ export class YatraBookingService {
       booking.cancellation.refundAmount = quote.refundAmount;
       booking.pricing.refundAmount = quote.refundAmount;
       if (quote.refundAmount > 0) {
-        booking.paymentStatus = quote.refundAmount >= booking.pricing.amountPaid ? "refunded" : "partially_refunded";
+        booking.paymentStatus = quote.refundAmount >= fareCollected(booking) ? "refunded" : "partially_refunded";
         booking.cancellation.refundedToWalletAt = now;
       }
       booking.history.push({ status: "cancelled", note: `Cancelled. Refund ₹${quote.refundAmount} (${quote.refundPercent}%) to wallet.`, by: admin.id });
@@ -927,7 +1054,7 @@ export class YatraBookingService {
 
   async operatorRelease(user: YatraActor, bookingId: string): Promise<any> {
     const { operator } = await this.access.require(user, "createBookings", { writable: true });
-    const booking = await this.releaseOpen(bookingId, user, "Released by organiser", { operatorId: operator._id });
+    const booking = await this.releaseOpen(bookingId, user, "Released by partner", { operatorId: operator._id });
     await this.audit.record(user, "booking.organizer_released", { bookingId, operatorId: String(operator._id) });
     return bookingStaffView(booking.toObject());
   }
@@ -945,6 +1072,7 @@ export class YatraBookingService {
         source: b.source,
         boardingPointId: b.boardingPointId,
         boardingPointName: b.boardingPointName,
+        droppingPointName: b.droppingPointName ?? "",
         contactPhone: b.contact?.phone ?? "",
         ...passengerView(p),
       })),

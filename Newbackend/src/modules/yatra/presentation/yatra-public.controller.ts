@@ -8,11 +8,16 @@ import { YatraBookingService } from "../application/yatra-booking.service";
 import { YatraInventoryService } from "../application/yatra-inventory.service";
 import { YatraInsightsService } from "../application/yatra-insights.service";
 import { YatraJourneyService } from "../application/yatra-journey.service";
+import { YatraRatingService } from "../application/yatra-rating.service";
+import { YatraCharterService } from "../application/yatra-charter.service";
+import { YatraTripService } from "../application/yatra-trip.service";
 import {
   BookingQueryDto,
   ConfirmPaymentDto,
   CreateBookingDto,
+  CreateCharterRequestDto,
   JourneyLinkDto,
+  RatingDto,
   ReasonDto,
   SearchDto,
   ServiceRequestDto,
@@ -82,7 +87,31 @@ export class YatraCustomerController {
   constructor(
     private readonly bookings: YatraBookingService,
     private readonly journeys: YatraJourneyService,
+    private readonly ratings: YatraRatingService,
+    private readonly trips: YatraTripService,
+    private readonly charters: YatraCharterService,
   ) {}
+
+  @Get("bookings/:id/tracking")
+  async tracking(@CurrentUser() user: AuthenticatedUser, @Param("id", EntityIdPipe) id: string) {
+    return ok(await this.trips.forBooking(user, id));
+  }
+
+  @Post("charter-requests")
+  @YatraWriteThrottle(5, 3_600_000)
+  async requestWholeBus(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateCharterRequestDto) {
+    return ok(await this.charters.create(user, dto), "Your request was sent to the partner.");
+  }
+
+  @Get("charter-requests")
+  async myCharterRequests(@CurrentUser() user: AuthenticatedUser) {
+    return ok(await this.charters.listMine(user));
+  }
+
+  @Post("charter-requests/:id/cancel")
+  async cancelCharterRequest(@CurrentUser() user: AuthenticatedUser, @Param("id", EntityIdPipe) id: string) {
+    return ok(await this.charters.cancelMine(user, id), "Your request was withdrawn.");
+  }
 
   @Post("bookings")
   @YatraWriteThrottle(20, 600_000)
@@ -124,6 +153,17 @@ export class YatraCustomerController {
   @Get("bookings/:id/refund-preview")
   async refundPreview(@CurrentUser() user: AuthenticatedUser, @Param("id", EntityIdPipe) id: string) {
     return ok(await this.bookings.refundPreview(user, id));
+  }
+
+  @Get("bookings/:id/rating")
+  async myRating(@CurrentUser() user: AuthenticatedUser, @Param("id", EntityIdPipe) id: string) {
+    return ok(await this.ratings.mine(user, id));
+  }
+
+  @Post("bookings/:id/rating")
+  @YatraWriteThrottle(10, 600_000)
+  async rate(@CurrentUser() user: AuthenticatedUser, @Param("id", EntityIdPipe) id: string, @Body() dto: RatingDto) {
+    return ok(await this.ratings.rate(user, id, dto), "Thank you for rating your trip.");
   }
 
   @Post("bookings/:id/cancel-request")

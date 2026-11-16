@@ -23,7 +23,7 @@ import {
   snapshotOf,
   type CommissionSnapshot,
 } from "../domain/yatra-finance";
-import { csvCell, detectDocumentType, randomCode, roundMoney } from "../domain/yatra.utils";
+import { csvCell, detectDocumentType, fareCollected, randomCode, roundMoney } from "../domain/yatra.utils";
 import { type YatraActor, YatraAuditService, YatraDocumentStorage, YatraNotifier } from "./yatra-support.service";
 
 /** Reads payments and settlements from Razorpay. Replaceable in tests. */
@@ -176,8 +176,8 @@ export class YatraFinanceService {
    * the snapshot of the version they were created under.
    */
   async createRule(actor: YatraActor, dto: any): Promise<any> {
-    if (dto.operatorId && dto.ridePartnerId) throw new YatraException("A rule is for an organiser or a ride partner, not both.", 400);
-    if (dto.appliesTo === "ride" && dto.operatorId) throw new YatraException("Ride rules can name a ride partner, not an organiser.", 400);
+    if (dto.operatorId && dto.ridePartnerId) throw new YatraException("A rule is for a partner or a ride partner, not both.", 400);
+    if (dto.appliesTo === "ride" && dto.operatorId) throw new YatraException("Ride rules can name a ride partner, not a partner.", 400);
     if (dto.appliesTo !== "ride" && dto.ridePartnerId) throw new YatraException("Only ride rules can name a ride partner.", 400);
     const channel = dto.appliesTo === "yatra_booking" ? dto.channel ?? "any" : "any";
     const ruleKey = ruleKeyFor(dto.appliesTo, channel, dto.operatorId, dto.ridePartnerId);
@@ -250,11 +250,12 @@ export class YatraFinanceService {
     }
   }
 
-  /** Posts a confirmed booking's earning for its organiser (payable after the journey ends). */
+  /** Posts a confirmed booking's earning for its partner (payable after the journey ends). */
   async postBookingEarning(session: ClientSession, booking: any, eligibleAt: Date): Promise<boolean> {
     const snap: CommissionSnapshot | null = booking.commissionSnapshot ?? null;
     if (!snap || snap.missing) return false;
-    const b = commissionBreakdown(booking.pricing.amountPaid, snap);
+    // Commission and the partner's earning are on the fare; a protection fee belongs to Tirvona.
+    const b = commissionBreakdown(fareCollected(booking), snap);
     const base = { payeeType: "operator", payeeId: booking.operatorId, bookingId: booking._id, reference: booking.bookingReference, source: booking.source, ruleSnapshot: snap, eligibleAt };
     const key = `payee:booking:${String(booking._id)}`;
     await this.post(session, [
@@ -266,13 +267,13 @@ export class YatraFinanceService {
     return true;
   }
 
-  /** Takes back a refund from the organiser, returning the matching commission and taxes. */
+  /** Takes back a refund from the partner, returning the matching commission and taxes. */
   async postBookingRefund(session: ClientSession, booking: any, refundAmount: number): Promise<void> {
     const snap: CommissionSnapshot | null = booking.commissionSnapshot ?? null;
     if (!snap || snap.missing || refundAmount <= 0) return;
     const earning = await this.entries.findOne({ idempotencyKey: `payee:booking:${String(booking._id)}:gross` }).session(session);
     if (!earning) return;
-    const r = refundReversal(commissionBreakdown(booking.pricing.amountPaid, snap), refundAmount);
+    const r = refundReversal(commissionBreakdown(fareCollected(booking), snap), refundAmount);
     const base = { payeeType: "operator", payeeId: booking.operatorId, bookingId: booking._id, reference: booking.bookingReference, source: booking.source, ruleSnapshot: snap, eligibleAt: earning.eligibleAt };
     const key = `payee:booking:${String(booking._id)}:refund`;
     await this.post(session, [
@@ -299,7 +300,7 @@ export class YatraFinanceService {
     return true;
   }
 
-  /** Organiser referral share on a delivered add-on (only when a referral rule applied). */
+  /** Partner referral share on a delivered add-on (only when a referral rule applied). */
   async postReferral(request: any): Promise<boolean> {
     const snap: CommissionSnapshot | null = request.commissionSnapshot ?? null;
     if (!snap || snap.missing || !request.operatorId || request.paymentStatus !== "paid") return false;
@@ -360,7 +361,7 @@ export class YatraFinanceService {
   // ================================================================ balances
   private async payee(payeeType: PayeeType, payeeId: string): Promise<any> {
     const row = payeeType === "operator" ? await this.operators.findById(payeeId).lean() : await this.partners.findById(payeeId).lean();
-    if (!row) throw new YatraException(payeeType === "operator" ? "Organiser not found." : "Ride partner not found.", 404);
+    if (!row) throw new YatraException(payeeType === "operator" ? "Partner not found." : "Ride partner not found.", 404);
     return row;
   }
 
@@ -660,7 +661,7 @@ export class YatraFinanceService {
   /**
    * Razorpay settlement reconciliation for one day (India time): every Yatra
    * payment captured that day is checked against Razorpay, and against the
-   * settlement report. Independent of organiser payout reconciliation.
+   * settlement report. Independent of partner payout reconciliation.
    */
   async reconcileRazorpay(actor: YatraActor | null, day: string): Promise<any> {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) throw new YatraException("Use a date like 2026-12-01.", 400);

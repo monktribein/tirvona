@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { EnterpriseButton } from "../shared/components/EnterpriseButton";
 import { EnterprisePageHeader } from "../shared/components/EnterprisePageHeader";
+import { EnterpriseModal } from "../shared/components/EnterpriseModal";
+import { toast } from "../../lib/toast";
 import { askReason, Chips, Empty, Field, inputClass, Pager, Panel, PanelState, ResponsiveTable, Stat, useAction, useRemote } from "../../modules/marketplace/ui";
 import { yatraAdmin } from "../../modules/yatra/services/yatra.service";
 import { dateLong, dateTimeIst, InfoRow, rupees, SeatMap, StatusPill, statusLabel, YatraGate } from "../../modules/yatra/yatraUi";
@@ -46,11 +48,11 @@ export const AdminYatraOverviewPage: React.FC = () => {
   const o = useRemote<any>(() => yatraAdmin.overview(), []);
   return (
     <Gate>
-      <EnterprisePageHeader title="Tirvona Yatra" subtitle="Organisers, tours, departures, bookings and money. Only Super Admin approves and publishes." icon={<Bus size={20} />} />
+      <EnterprisePageHeader title="Tirvona Yatra" subtitle="Partners, tours, departures, bookings and money. Only Super Admin approves and publishes." icon={<Bus size={20} />} />
       {o.state !== "ready" || !o.data ? <PanelState state={o.state} error={o.error} onRetry={o.reload} /> : (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <Stat label="Organisers to review" value={o.data.operatorsAwaitingReview} tone={o.data.operatorsAwaitingReview ? "warn" : undefined} to="/admin/yatra/operators?status=submitted" icon={<Users size={16} />} />
+            <Stat label="Partners to review" value={o.data.operatorsAwaitingReview} tone={o.data.operatorsAwaitingReview ? "warn" : undefined} to="/admin/yatra/operators?status=submitted" icon={<Users size={16} />} />
             <Stat label="Documents to verify" value={o.data.documentsPending} tone={o.data.documentsPending ? "warn" : undefined} to="/admin/yatra/documents" icon={<FileText size={16} />} />
             <Stat label="Vehicles to verify" value={o.data.vehiclesPending} tone={o.data.vehiclesPending ? "warn" : undefined} to="/admin/yatra/vehicles" icon={<Bus size={16} />} />
             <Stat label="Tours awaiting action" value={o.data.toursAwaitingAction} tone={o.data.toursAwaitingAction ? "warn" : undefined} to="/admin/yatra/tours" icon={<Route size={16} />} />
@@ -80,24 +82,90 @@ export const AdminYatraOverviewPage: React.FC = () => {
 };
 
 // =============================================================== organisers
+/**
+ * Super Admin creates a partner's Tirvona login and organisation together. The password (typed or
+ * generated) is shown once; the partner must change it at the first sign-in and then completes the profile.
+ */
+const CreateOrganiserModal: React.FC<{ onClose: () => void; onCreated: () => void }> = ({ onClose, onCreated }) => {
+  const navigate = useNavigate();
+  const [f, setF] = useState({ name: "", email: "", phone: "", organisationName: "", organisationType: "proprietorship", city: "", state: "", password: "" });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [created, setCreated] = useState<any>(null);
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
+  const copy = (text: string, what: string) => navigator.clipboard?.writeText(text).then(() => toast.success(`${what} copied`), () => toast.error("Could not copy; select the text instead."));
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      const res = await yatraAdmin.createOrganiser(Object.fromEntries(Object.entries(f).filter(([, v]) => v.trim())));
+      setCreated(res.data.data);
+      onCreated();
+    } catch (err: any) {
+      setError(err?.response?.data?.message ?? "The partner account could not be created.");
+    } finally {
+      setBusy(false);
+    }
+  };
+  if (created) {
+    const login = created.login;
+    const text = `Tirvona Yatra partner login\nSign in: ${window.location.origin}/login\nEmail: ${login.email}\nPassword: ${login.temporaryPassword}\n(You can change the password later from your profile.)`;
+    return (
+      <EnterpriseModal isOpen onClose={onClose} title="Partner account created" subtitle="Give these details to the partner. The password is shown only now.">
+        <div className="space-y-3">
+          <div className="rounded-xl bg-gray-50 dark:bg-slate-800 p-3 text-xs space-y-1.5">
+            <p><span className="font-bold text-gray-500">Email (login):</span> <b className="break-all">{login.email}</b></p>
+            <p><span className="font-bold text-gray-500">Password:</span> <b className="font-mono text-sm select-all">{login.temporaryPassword}</b></p>
+          </div>
+          <p className="text-[11px] text-gray-500">The partner signs in at the normal Tirvona login and lands on their partner dashboard, where they complete the profile, KYC documents and payout details and submit for your approval. They can change the password from their profile at any time. The password cannot be shown again; if it is lost, reset it from User Management.</p>
+          <div className="flex flex-wrap justify-end gap-2">
+            <EnterpriseButton variant="outline" onClick={() => copy(text, "Login details")}>Copy login details</EnterpriseButton>
+            <EnterpriseButton variant="outline" onClick={() => copy(login.temporaryPassword, "Password")}>Copy password</EnterpriseButton>
+            <EnterpriseButton onClick={() => navigate(`/admin/yatra/operators/${created.organiser.operator.id}`)}>Open organiser</EnterpriseButton>
+          </div>
+        </div>
+      </EnterpriseModal>
+    );
+  }
+  return (
+    <EnterpriseModal isOpen onClose={onClose} title="Create partner account" subtitle="Creates the partner's Tirvona login and organisation. They complete KYC and you approve.">
+      <form onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Field label="Partner's name" required><input className={inputClass} value={f.name} onChange={set("name")} required minLength={2} maxLength={80} autoComplete="off" /></Field>
+        <Field label="Organisation name" required><input className={inputClass} value={f.organisationName} onChange={set("organisationName")} required minLength={3} maxLength={120} /></Field>
+        <Field label="Email (their login)" required><input type="email" className={inputClass} value={f.email} onChange={set("email")} required autoComplete="off" /></Field>
+        <Field label="Phone" required><input type="tel" className={inputClass} value={f.phone} onChange={set("phone")} required autoComplete="off" /></Field>
+        <Field label="Type"><select className={inputClass} value={f.organisationType} onChange={set("organisationType")}>{["proprietorship", "partnership", "private_limited", "llp", "trust", "society", "other"].map((t) => <option key={t} value={t}>{t.replace(/_/g, " ")}</option>)}</select></Field>
+        <Field label="City"><input className={inputClass} value={f.city} onChange={set("city")} maxLength={80} /></Field>
+        <Field label="State"><input className={inputClass} value={f.state} onChange={set("state")} maxLength={80} /></Field>
+        <Field label="Password" hint="Leave empty to generate a strong one. At least 8 characters if you type one."><input className={inputClass} value={f.password} onChange={set("password")} minLength={8} maxLength={72} autoComplete="new-password" /></Field>
+        {error && <p role="alert" className="sm:col-span-2 text-xs font-semibold text-rose-600">{error}</p>}
+        <div className="sm:col-span-2 flex justify-end gap-2"><EnterpriseButton type="button" variant="ghost" onClick={onClose}>Close</EnterpriseButton><EnterpriseButton type="submit" disabled={busy}>{busy ? "Creating…" : "Create partner"}</EnterpriseButton></div>
+      </form>
+    </EnterpriseModal>
+  );
+};
+
 export const AdminYatraOperatorsPage: React.FC = () => {
   const navigate = useNavigate();
+  const [creating, setCreating] = useState(false);
   const initial = new URLSearchParams(window.location.search).get("status") ?? "";
   const q = usePagedQueue((p) => yatraAdmin.operators(p), initial);
   return (
     <Gate>
-      <EnterprisePageHeader title="Yatra organisers" subtitle="Verify KYC and approve, reject or suspend organisers." icon={<Users size={20} />} />
+      <EnterprisePageHeader title="Yatra partners" subtitle="Create partner accounts, verify KYC, and approve, reject or suspend partners." icon={<Users size={20} />} actions={<EnterpriseButton onClick={() => setCreating(true)}>Create partner account</EnterpriseButton>} />
+      {creating && <CreateOrganiserModal onClose={() => setCreating(false)} onCreated={() => q.remote.reload()} />}
       <Panel>
         <div className="space-y-3">
           <Chips value={q.status} onChange={q.setStatus} options={[{ value: "", label: "All" }, { value: "submitted", label: "Submitted" }, { value: "under_review", label: "Under review" }, { value: "approved", label: "Approved" }, { value: "rejected", label: "Rejected" }, { value: "suspended", label: "Suspended" }, { value: "draft", label: "Drafts" }]} />
-          {q.remote.state !== "ready" ? <PanelState state={q.remote.state} error={q.remote.error} onRetry={q.remote.reload} /> : !q.remote.data?.length ? <Empty title="No organisers here" /> : (
+          {q.remote.state !== "ready" ? <PanelState state={q.remote.state} error={q.remote.error} onRetry={q.remote.reload} /> : !q.remote.data?.length ? <Empty title="No partners here" /> : (
             <>
               <ResponsiveTable
                 rows={q.remote.data}
                 rowKey={(o) => o.id}
                 onRowClick={(o) => navigate(`/admin/yatra/operators/${o.id}`)}
                 columns={[
-                  { header: "Organiser", cell: (o) => <div><p className="font-black">{o.organisationName}</p><p className="text-[10px] text-gray-500">{o.organisationType.replace(/_/g, " ")} · {o.city || "—"}</p></div> },
+                  { header: "Partner", cell: (o) => <div><p className="font-black">{o.organisationName}</p><p className="text-[10px] text-gray-500">{o.organisationType.replace(/_/g, " ")} · {o.city || "—"}</p></div> },
                   { header: "Contact", cell: (o) => <span className="text-gray-500">{[o.contactName, o.contactPhone].filter(Boolean).join(" · ")}</span> },
                   { header: "PAN", cell: (o) => o.kyc.panNumber || "—" },
                   { header: "Submitted", cell: (o) => (o.submittedAt ? dateLong(o.submittedAt) : "—") },
@@ -118,7 +186,7 @@ export const AdminYatraOperatorDetailPage: React.FC = () => {
   const d = useRemote<any>(() => yatraAdmin.operator(operatorId), [operatorId]);
   const { busy, run } = useAction();
   const review = (action: string, needsNote = false) => {
-    const note = needsNote ? askReason("Reason (the organiser will see it):") : window.prompt("Optional note for the organiser:") ?? "";
+    const note = needsNote ? askReason("Reason (the partner will see it):") : window.prompt("Optional note for the partner:") ?? "";
     if (needsNote && !note) return;
     run(action, () => yatraAdmin.reviewOperator(operatorId, action, note || undefined), d.reload, "Saved.");
   };
@@ -212,7 +280,7 @@ export const AdminYatraDocumentsPage: React.FC = () => {
                 rows={q.remote.data}
                 rowKey={(x) => x.id}
                 columns={[
-                  { header: "Organiser", cell: (x) => <Link className="font-bold hover:underline" to={`/admin/yatra/operators/${x.operatorId}`}>{x.operatorName}</Link> },
+                  { header: "Partner", cell: (x) => <Link className="font-bold hover:underline" to={`/admin/yatra/operators/${x.operatorId}`}>{x.operatorName}</Link> },
                   { header: "Document", cell: (x) => <span>{x.documentType.replace(/_/g, " ")}{x.vehicleId ? " (vehicle)" : ""}</span> },
                   { header: "Number", cell: (x) => x.documentNumber || "—" },
                   { header: "Valid until", cell: (x) => (x.expiresAt ? dateLong(x.expiresAt) : "—") },
@@ -243,13 +311,13 @@ export const AdminYatraVehiclesPage: React.FC = () => {
   const q = usePagedQueue((p) => yatraAdmin.vehicles(p), "pending_verification");
   const { busy, run } = useAction();
   const act = (id: string, action: "approve" | "reject" | "suspend") => {
-    const note = action === "approve" ? "" : askReason("Reason (the organiser will see it):");
+    const note = action === "approve" ? "" : askReason("Reason (the partner will see it):");
     if (action !== "approve" && !note) return;
     run(id, () => yatraAdmin.reviewVehicle(id, action, note || undefined), q.remote.reload);
   };
   return (
     <Gate>
-      <EnterprisePageHeader title="Vehicle verification" subtitle="Check the RC, permit and insurance on the organiser's page before approving a vehicle." icon={<Bus size={20} />} />
+      <EnterprisePageHeader title="Vehicle verification" subtitle="Check the RC, permit and insurance on the partner's page before approving a vehicle." icon={<Bus size={20} />} />
       <Panel>
         <div className="space-y-3">
           <Chips value={q.status} onChange={q.setStatus} options={[{ value: "pending_verification", label: "To verify" }, { value: "approved", label: "Approved" }, { value: "rejected", label: "Rejected" }, { value: "suspended", label: "Suspended" }, { value: "", label: "All" }]} />
@@ -260,7 +328,7 @@ export const AdminYatraVehiclesPage: React.FC = () => {
                 rowKey={(v) => v.id}
                 columns={[
                   { header: "Vehicle", cell: (v) => <div><p className="font-black">{v.registrationNumber}</p><p className="text-[10px] text-gray-500">{v.vehicleType.replace(/_/g, " ")} · {v.seatCapacity} seats{v.isAc ? " · AC" : ""}</p></div> },
-                  { header: "Organiser", cell: (v) => <Link className="hover:underline" to={`/admin/yatra/operators/${v.operatorId}`}>{v.operatorName}</Link> },
+                  { header: "Partner", cell: (v) => <Link className="hover:underline" to={`/admin/yatra/operators/${v.operatorId}`}>{v.operatorName}</Link> },
                   { header: "Permit", cell: (v) => v.permitType.replace(/_/g, " ") },
                   { header: "Status", cell: (v) => <StatusPill status={v.status} /> },
                   {
@@ -302,7 +370,7 @@ export const AdminYatraToursPage: React.FC = () => {
                 onRowClick={(t) => navigate(`/admin/yatra/tours/${t.id}`)}
                 columns={[
                   { header: "Tour", cell: (t) => <div><p className="font-black">{t.title}</p><p className="text-[10px] text-gray-500">{t.originCity} → {t.destinationCity} · {t.durationDays} days · {t.productType.replace(/_/g, " ")}</p></div> },
-                  { header: "Organiser", cell: (t) => <div><p>{t.operatorName}</p><StatusPill status={t.operatorStatus} /></div> },
+                  { header: "Partner", cell: (t) => <div><p>{t.operatorName}</p><StatusPill status={t.operatorStatus} /></div> },
                   { header: "Fare", cell: (t) => rupees(t.baseFare) },
                   { header: "Status", cell: (t) => <StatusPill status={t.status} /> },
                 ]}
@@ -321,7 +389,7 @@ export const AdminYatraTourDetailPage: React.FC = () => {
   const d = useRemote<any>(() => yatraAdmin.tour(tourId), [tourId]);
   const { busy, run } = useAction();
   const act = (action: string, needsNote = false) => {
-    const note = needsNote ? askReason("Reason (the organiser will see it):") : "";
+    const note = needsNote ? askReason("Reason (the partner will see it):") : "";
     if (needsNote && !note) return;
     run(action, () => yatraAdmin.reviewTour(tourId, action, note || undefined), d.reload, "Saved.");
   };
@@ -332,7 +400,7 @@ export const AdminYatraTourDetailPage: React.FC = () => {
         return (
           <>
             <EnterprisePageHeader title={t.title} subtitle={`${d.data.operator?.organisationName ?? ""} · ${t.originCity} → ${t.destinationCity}`} icon={<Route size={20} />} actions={<StatusPill status={t.status} />} />
-            {d.data.operator?.status !== "approved" && <p className="text-xs rounded-2xl p-3 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300">The organiser is {statusLabel(d.data.operator?.status).toLowerCase()}. A tour can be published only for an approved organiser.</p>}
+            {d.data.operator?.status !== "approved" && <p className="text-xs rounded-2xl p-3 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300">The partner is {statusLabel(d.data.operator?.status).toLowerCase()}. A tour can be published only for an approved organiser.</p>}
             <div className="flex flex-wrap gap-2">
               {t.status === "pending_review" && <EnterpriseButton variant="outline" disabled={!!busy} onClick={() => act("approve")}>Approve (not live yet)</EnterpriseButton>}
               {["pending_review", "approved", "unpublished"].includes(t.status) && <EnterpriseButton variant="success" disabled={!!busy} onClick={() => act("publish")}>Publish</EnterpriseButton>}
@@ -470,14 +538,14 @@ export const AdminYatraBookingsPage: React.FC = () => {
   const queue = { status, setStatus: (v: string) => { setStatus(v); setPage(1); }, page, setPage, remote };
   return (
     <Gate>
-      <EnterprisePageHeader title="Yatra bookings" subtitle="All bookings across organisers, with source and payment state." icon={<ClipboardList size={20} />} />
+      <EnterprisePageHeader title="Yatra bookings" subtitle="All bookings across partners, with source and payment state." icon={<ClipboardList size={20} />} />
       <Panel>
         <div className="space-y-3">
           <div className="flex flex-col md:flex-row gap-2 md:items-center md:justify-between">
             <Chips value={queue.status} onChange={queue.setStatus} options={[{ value: "", label: "All" }, { value: "confirmed", label: "Confirmed" }, { value: "payment_pending", label: "Awaiting payment" }, { value: "held", label: "Held" }, { value: "cancellation_requested", label: "Cancellation requested" }, { value: "cancelled", label: "Cancelled" }, { value: "expired", label: "Expired" }]} />
             <div className="flex gap-2">
               <select aria-label="Source" className={`${inputClass} md:!w-44`} value={source} onChange={(e) => { setSource(e.target.value); setPage(1); }}>
-                <option value="">All sources</option><option value="MARKETPLACE">Website</option><option value="OPERATOR_LINK">Organiser link</option><option value="ORGANIZER">Organiser-assisted</option>
+                <option value="">All sources</option><option value="MARKETPLACE">Website</option><option value="OPERATOR_LINK">Partner link</option><option value="ORGANIZER">Partner-assisted</option>
               </select>
               <input aria-label="Booking reference" placeholder="Booking reference" className={`${inputClass} md:!w-48`} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { setSearch(q.trim()); setPage(1); } }} onBlur={() => setSearch(q.trim())} />
             </div>
@@ -522,7 +590,7 @@ export const AdminYatraBookingDetailPage: React.FC = () => {
               <Panel title="Booking">
                 <InfoRow label="Departure">{dateTimeIst(b.departAt)}</InfoRow>
                 <InfoRow label="Source">{statusLabel(b.source)}{b.attribution.code ? ` · link ${b.attribution.code}` : ""}</InfoRow>
-                {b.organizerStaffUserId && <InfoRow label="Organiser staff">{b.organizerStaffUserId} ({b.organizerMemberRole})</InfoRow>}
+                {b.organizerStaffUserId && <InfoRow label="Partner staff">{b.organizerStaffUserId} ({b.organizerMemberRole})</InfoRow>}
                 <InfoRow label="Customer account">{b.customerId ?? "Not yet claimed"}</InfoRow>
                 <InfoRow label="Contact">{b.contact.name} · {b.contact.phone}</InfoRow>
                 <InfoRow label="Seats">{b.seats.join(", ")}</InfoRow>
@@ -689,13 +757,13 @@ export const AdminYatraFinancePage: React.FC = () => {
             <Stat label="Refunds to wallets" value={rupees(f.data.totals.refundsToWallet)} />
             <Stat label="Unusable payments returned" value={rupees(f.data.totals.unappliedReturned)} tone={f.data.totals.unappliedReturned ? "warn" : undefined} />
           </div>
-          <Panel title="By organiser">
+          <Panel title="By partner">
             {!f.data.perOperator.length ? <Empty title="No sales yet" /> : (
               <ResponsiveTable
                 rows={f.data.perOperator}
                 rowKey={(r: any) => r.operatorId}
                 columns={[
-                  { header: "Organiser", cell: (r: any) => <Link className="font-bold hover:underline" to={`/admin/yatra/operators/${r.operatorId}`}>{r.operatorName}</Link> },
+                  { header: "Partner", cell: (r: any) => <Link className="font-bold hover:underline" to={`/admin/yatra/operators/${r.operatorId}`}>{r.operatorName}</Link> },
                   { header: "Gross", cell: (r: any) => rupees(r.grossSales) },
                   { header: "Refunds", cell: (r: any) => rupees(r.refunds) },
                   { header: "Net", cell: (r: any) => <b>{rupees(r.netSales)}</b> },
@@ -788,7 +856,7 @@ export const AdminYatraSettingsPage: React.FC = () => {
         <Panel>
           <form onSubmit={(e) => { e.preventDefault(); run("save", () => yatraAdmin.saveSettings({ holdMinutes: Number(values.holdMinutes), paymentLinkMinutes: Number(values.paymentLinkMinutes), maxSeatsPerBooking: Number(values.maxSeatsPerBooking), salesCloseMinutes: Number(values.salesCloseMinutes), rideFullRefundHours: Number(values.rideFullRefundHours), ridePartnerResponseHours: Number(values.ridePartnerResponseHours), reminderHours: Number(values.reminderHours), supportPhone: values.supportPhone }), () => { setF(null); return s.reload(); }, "Settings saved."); }} className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-3xl">
             <Field label="Website seat hold (minutes)" hint="5 to 30"><input type="number" min={5} max={30} className={inputClass} value={values.holdMinutes} onChange={(e) => setF({ ...values, holdMinutes: e.target.value })} /></Field>
-            <Field label="Organiser payment-link hold (minutes)" hint="10 to 120"><input type="number" min={10} max={120} className={inputClass} value={values.paymentLinkMinutes} onChange={(e) => setF({ ...values, paymentLinkMinutes: e.target.value })} /></Field>
+            <Field label="Partner payment-link hold (minutes)" hint="10 to 120"><input type="number" min={10} max={120} className={inputClass} value={values.paymentLinkMinutes} onChange={(e) => setF({ ...values, paymentLinkMinutes: e.target.value })} /></Field>
             <Field label="Most seats in one booking" hint="1 to 40"><input type="number" min={1} max={40} className={inputClass} value={values.maxSeatsPerBooking} onChange={(e) => setF({ ...values, maxSeatsPerBooking: e.target.value })} /></Field>
             <Field label="Stop sales before departure (minutes)" hint="0 to 1440"><input type="number" min={0} max={1440} className={inputClass} value={values.salesCloseMinutes} onChange={(e) => setF({ ...values, salesCloseMinutes: e.target.value })} /></Field>
             <Field label="Full ride refund if cancelled (hours before pickup)" hint="0 to 72"><input type="number" min={0} max={72} className={inputClass} value={values.rideFullRefundHours} onChange={(e) => setF({ ...values, rideFullRefundHours: e.target.value })} /></Field>

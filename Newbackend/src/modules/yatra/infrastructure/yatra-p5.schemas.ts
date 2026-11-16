@@ -1,5 +1,6 @@
 import { Schema, SchemaTypes } from "../../../database/orm";
 import {
+  CHARTER_STATUSES,
   COMMISSION_APPLIES_TO,
   COMMISSION_CHANNELS,
   COMMISSION_RULE_STATUSES,
@@ -280,6 +281,76 @@ YatraIssueSchema.index({ cityKey: 1, status: 1, createdAt: -1 });
 YatraIssueSchema.index({ status: 1, createdAt: -1 });
 YatraIssueSchema.index({ subjectId: 1 });
 
+/** A pilgrim's rating of a finished trip: one per booking, for the partner that ran it. */
+export const YatraRatingSchema = new Schema(
+  {
+    bookingId: id(YATRA_MODEL.Booking, true),
+    departureId: id(YATRA_MODEL.Departure, true),
+    tourId: id(YATRA_MODEL.Tour, true),
+    operatorId: id(YATRA_MODEL.Operator, true),
+    vehicleId: id(YATRA_MODEL.Vehicle),
+    customerId: id("User", true),
+    // First name only: reviews are shown publicly.
+    customerName: { type: String, default: "" },
+    stars: { type: Number, required: true, min: 1, max: 5 },
+    comment: { type: String, default: "", maxlength: 500 },
+    tags: [{ type: String }],
+    status: { type: String, enum: ["visible", "hidden"], default: "visible" },
+  },
+  opts("yatra_ratings"),
+);
+YatraRatingSchema.index({ bookingId: 1 }, { unique: true });
+YatraRatingSchema.index({ operatorId: 1, status: 1, createdAt: -1 });
+YatraRatingSchema.index({ departureId: 1 });
+
+/** The latest position of a bus whose driver is sharing it. One row per departure; nothing is kept after sharing stops. */
+export const YatraTripLocationSchema = new Schema(
+  {
+    departureId: id(YATRA_MODEL.Departure, true),
+    operatorId: id(YATRA_MODEL.Operator, true),
+    status: { type: String, enum: ["sharing", "stopped"], default: "stopped" },
+    latitude: { type: Number, default: null, min: -90, max: 90 },
+    longitude: { type: Number, default: null, min: -180, max: 180 },
+    accuracyM: { type: Number, default: null },
+    speedKmph: { type: Number, default: null },
+    heading: { type: Number, default: null },
+    recordedAt: { type: Date, default: null },
+    startedAt: { type: Date, default: null },
+    stoppedAt: { type: Date, default: null },
+    sharedBy: id("User"),
+    sharedByName: { type: String, default: "" },
+  },
+  opts("yatra_trip_locations"),
+);
+YatraTripLocationSchema.index({ departureId: 1 }, { unique: true });
+
+/** A pilgrim's request to book the whole bus; the partner accepts (holding every seat for payment) or declines. */
+export const YatraCharterRequestSchema = new Schema(
+  {
+    requestNumber: { type: String, required: true },
+    departureId: id(YATRA_MODEL.Departure, true),
+    tourId: id(YATRA_MODEL.Tour, true),
+    operatorId: id(YATRA_MODEL.Operator, true),
+    customerId: id("User", true),
+    contactName: { type: String, default: "" },
+    contactPhone: { type: String, default: "" },
+    groupSize: { type: Number, default: 0, min: 0 },
+    message: { type: String, default: "", maxlength: 1000 },
+    status: { type: String, enum: CHARTER_STATUSES, default: "requested" },
+    organiserNote: { type: String, default: "" },
+    respondedBy: id("User"),
+    respondedAt: { type: Date, default: null },
+    bookingId: id(YATRA_MODEL.Booking),
+    history: [historyEntry],
+  },
+  opts("yatra_charter_requests"),
+);
+YatraCharterRequestSchema.index({ requestNumber: 1 }, { unique: true });
+YatraCharterRequestSchema.index({ operatorId: 1, status: 1, createdAt: -1 });
+YatraCharterRequestSchema.index({ customerId: 1, createdAt: -1 });
+// One open request per pilgrim per departure.
+YatraCharterRequestSchema.index({ departureId: 1, customerId: 1 }, { unique: true, partialFilterExpression: { status: "requested" } });
+
 export const YATRA_P5_SCHEMAS = [
   [YATRA_MODEL.RidePartner, YatraRidePartnerSchema],
   [YATRA_MODEL.RideRequest, YatraRideRequestSchema],
@@ -288,4 +359,7 @@ export const YATRA_P5_SCHEMAS = [
   [YATRA_MODEL.Payout, YatraPayoutSchema],
   [YATRA_MODEL.Reconciliation, YatraReconciliationSchema],
   [YATRA_MODEL.Issue, YatraIssueSchema],
+  [YATRA_MODEL.Rating, YatraRatingSchema],
+  [YATRA_MODEL.TripLocation, YatraTripLocationSchema],
+  [YATRA_MODEL.CharterRequest, YatraCharterRequestSchema],
 ] as const;

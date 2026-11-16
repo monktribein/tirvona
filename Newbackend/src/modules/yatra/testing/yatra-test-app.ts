@@ -33,6 +33,7 @@ import { DRIVER_URI } from "../../../database/database";
 import { enablePostgresDriver } from "../../../database/pg/pg-driver";
 import { REGISTRY } from "../../../database/pg/registry.generated";
 import { createTestDatabase, type TestDatabase } from "../../../database/pg/test-database";
+import { WhatsAppTransactionalNotificationService } from "../../../integrations/whatsapp/services/whatsapp-transactional-notification.service";
 import { InAppNotificationService } from "../../notifications/application/in-app-notification.service";
 import { NotificationsGateway } from "../../notifications/notifications.gateway";
 import { FcmService } from "../../notifications/fcm/fcm.service";
@@ -88,6 +89,8 @@ export const demoPay = () => `demo_pay_${randomBytes(6).toString("hex")}`;
 export interface YatraTestApp {
   app: INestApplication;
   db: TestDatabase;
+  /** WhatsApp tickets the app tried to send (the real sender is replaced). */
+  whatsappSent: Array<{ phone: string; bookingId: string; context: any }>;
   model: (name: string) => any;
   rows: (sql: string, params?: unknown[]) => Promise<any[]>;
   get: (path: string, user?: TestUser) => request.Test;
@@ -111,6 +114,7 @@ export async function createYatraTestApp(options: { recon?: RazorpayReconClient 
     FRONTEND_URL: "https://www.tirvona.test",
     PAYOUT_ENCRYPTION_KEY: randomBytes(32).toString("base64"),
   });
+  const whatsappSent: Array<{ phone: string; bookingId: string; context: any }> = [];
   const db = await createTestDatabase(REGISTRY.tables);
   enablePostgresDriver({ pool: db.pool, registry: REGISTRY, ttlSweep: false });
 
@@ -141,6 +145,8 @@ export async function createYatraTestApp(options: { recon?: RazorpayReconClient 
   })
     .overrideModule(NotificationsModule)
     .useModule(FakeNotificationsModule)
+    .overrideProvider(WhatsAppTransactionalNotificationService)
+    .useValue({ sendYatraTicket: async (input: any) => { whatsappSent.push(input); return { status: "accepted", provider: "test" }; } })
     .overrideProvider(YatraDocumentStorage)
     .useValue(new FakeStorage());
   if (options.recon) builder = builder.overrideProvider(RAZORPAY_RECON_CLIENT).useValue(options.recon);
@@ -157,6 +163,7 @@ export async function createYatraTestApp(options: { recon?: RazorpayReconClient 
   return {
     app,
     db,
+    whatsappSent,
     model,
     rows: async (sql, params = []) => (await db.pool.query(sql, params)).rows,
     get: (path, user) => (user ? http().get(`/api${path}`).set(as(user)) : http().get(`/api${path}`)),
@@ -222,7 +229,8 @@ export async function seedOrganiser(
     durationDays: 2,
     baseFare: 1500,
     summary: "Darshan",
-    itinerary: [{ dayNumber: 1, title: "Day one" }],
+    itinerary: [{ dayNumber: 1, title: "Day one", date: "2026-12-01", time: "06:30", breaks: [{ place: "Mathura highway dhaba", time: "09:00", minutes: 30, note: "Breakfast" }] }],
+    serviceAddOns: [{ key: "stay", price: 400 }, { key: "food", price: 150, note: "Veg meals" }],
     inclusions: ["Bus"],
   }).expect(201);
   await ctx.post(`/v1/yatra/operator/tours/${tour.body.data.id}/submit`, owner).expect(201);

@@ -19,6 +19,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { toast } from "../../../lib/toast";
+import { uploadService } from "../../../services";
 import { EnterpriseButton } from "../../../admin/shared/components/EnterpriseButton";
 import { EnterprisePageHeader } from "../../../admin/shared/components/EnterprisePageHeader";
 import { EnterpriseModal } from "../../../admin/shared/components/EnterpriseModal";
@@ -44,7 +45,7 @@ export const OperatorDashboardPage: React.FC = () => (
       const c = me.checklist;
       return (
         <div className="space-y-5">
-          <EnterprisePageHeader title={op.displayName} subtitle={`Yatra organiser · your role: ${me.member.role}`} icon={<LayoutDashboard size={20} />} actions={<StatusPill status={op.status} />} />
+          <EnterprisePageHeader title={op.displayName} subtitle={`Yatra partner · your role: ${me.member.role}`} icon={<LayoutDashboard size={20} />} actions={<StatusPill status={op.status} />} />
           <div className={`rounded-2xl border p-4 text-xs font-semibold ${op.status === "approved" ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-900 dark:text-emerald-300" : "border-amber-200 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-300"}`}>
             {STATUS_NOTE[op.status]}
             {op.reviewNote && <span className="block mt-1">Note from Tirvona: {op.reviewNote}</span>}
@@ -329,14 +330,37 @@ const Staff: React.FC<{ me: any }> = ({ me }) => {
 };
 
 // ================================================================== vehicles
-const LAYOUTS: Record<string, { columns: number; used: number[] }> = { "2x2": { columns: 5, used: [0, 1, 3, 4] }, "2x1": { columns: 4, used: [0, 1, 3] }, "1x1": { columns: 3, used: [0, 2] }, sleeper_2x1: { columns: 4, used: [0, 1, 3] } };
+/** A plan is "<left>x<right>" (seats left and right of the aisle), "sleeper_<left>x<right>" or the double-decker. */
+const parseTemplate = (template: string) => {
+  const m = /^(sleeper_)?([1-4])x([1-4])$/.exec(template);
+  return m ? { sleeper: Boolean(m[1]), left: Number(m[2]), right: Number(m[3]) } : { sleeper: template === "sleeper_double", left: 2, right: 1 };
+};
+type SeatType = "seater" | "sleeper" | "double";
+const seatTypeOf = (template: string): SeatType => (template === "sleeper_double" ? "double" : parseTemplate(template).sleeper ? "sleeper" : "seater");
+const buildTemplate = (type: SeatType, left: number, right: number) => (type === "double" ? "sleeper_double" : `${type === "sleeper" ? "sleeper_" : ""}${left}x${right}`);
+const layoutSpec = (template: string) => {
+  if (template === "sleeper_double") return { columns: 4, used: [0, 1, 3] };
+  const { left, right } = parseTemplate(template);
+  return { columns: left + 1 + right, used: [...Array.from({ length: left }, (_, i) => i), ...Array.from({ length: right }, (_, i) => left + 1 + i)] };
+};
+const layoutName = (template: string): string => {
+  if (template === "custom") return "custom layout";
+  if (template === "sleeper_double") return "double-decker sleeper";
+  const { sleeper, left, right } = parseTemplate(template);
+  return `${left} + ${right} ${sleeper ? "sleeper" : "seater"}`;
+};
 /** Same numbering as the server, for a live preview while the form is filled in. */
 const previewLayout = (template: string, capacity: number) => {
-  const spec = LAYOUTS[template] ?? LAYOUTS["2x2"];
+  const spec = layoutSpec(template);
   const n = Math.max(1, Math.min(120, capacity || 1));
+  const double = template === "sleeper_double";
+  const lower = double ? Math.ceil(n / 2) : n;
   return {
     columns: spec.columns,
-    seats: Array.from({ length: n }, (_, i) => ({ seatNo: String(i + 1), row: Math.floor(i / spec.used.length), col: spec.used[i % spec.used.length], kind: template === "sleeper_2x1" ? "sleeper" : "seater", status: "available" })),
+    seats: Array.from({ length: n }, (_, i) => {
+      const index = i >= lower ? i - lower : i;
+      return { seatNo: String(i + 1), row: Math.floor(index / spec.used.length), col: spec.used[index % spec.used.length], deck: i >= lower ? "upper" : "lower", kind: template.startsWith("sleeper") ? "sleeper" : "seater", status: "available" };
+    }),
   };
 };
 
@@ -364,7 +388,7 @@ const Vehicles: React.FC<{ me: any }> = ({ me }) => {
             rowKey={(v) => v.id}
             columns={[
               { header: "Vehicle", cell: (v) => <div><p className="font-black">{v.registrationNumber}</p><p className="text-[10px] text-gray-500">{[v.make, v.model].filter(Boolean).join(" ") || v.vehicleType.replace(/_/g, " ")}{v.isAc ? " · AC" : ""}</p></div> },
-              { header: "Seats", cell: (v) => `${v.seatCapacity} · ${v.seatLayout?.template ?? "2x2"}` },
+              { header: "Seats", cell: (v) => `${v.seatCapacity} · ${layoutName(v.seatLayout?.template ?? "2x2")}` },
               { header: "Permit", cell: (v) => v.permitType.replace(/_/g, " ") },
               { header: "Status", cell: (v) => <div><StatusPill status={v.status} />{v.reviewNote && <p className="text-[10px] text-gray-500 mt-0.5">{v.reviewNote}</p>}</div> },
               {
@@ -405,16 +429,51 @@ const VehicleForm: React.FC<{ vehicle: any; onClose: () => void; onSaved: () => 
     isAc: Boolean(vehicle.isAc),
     amenities: (vehicle.amenities ?? []).join(", "),
   });
+  // Photos are public (customers see them). RC and pollution certificate are private; customers only see
+  // whether Tirvona verified them, and the pollution certificate's validity.
+  const [photos, setPhotos] = useState<string[]>(vehicle.images ?? []);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [rc, setRc] = useState<{ file: File | null; number: string; expiresAt: string }>({ file: null, number: "", expiresAt: "" });
+  const [puc, setPuc] = useState<{ file: File | null; expiresAt: string }>({ file: null, expiresAt: "" });
   const [busy, setBusy] = useState(false);
+  const addPhotos = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setPhotoBusy(true);
+    try {
+      const room = 6 - photos.length;
+      if (room <= 0) toast.error("You can add up to 6 photos.");
+      const urls: string[] = [];
+      for (const file of Array.from(files).slice(0, Math.max(0, room))) urls.push(await uploadService.file(file, "yatra/vehicles"));
+      setPhotos((current) => [...current, ...urls]);
+    } catch (err: any) {
+      toast.error(err?.message ?? "A photo could not be uploaded.");
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+  const uploadDoc = (vehicleId: string, documentType: string, file: File, extra: Record<string, string>) => {
+    const body = new FormData();
+    body.append("file", file);
+    body.append("documentType", documentType);
+    body.append("vehicleId", vehicleId);
+    for (const [k, v] of Object.entries(extra)) if (v) body.append(k, k === "expiresAt" ? new Date(`${v}T00:00:00+05:30`).toISOString() : v);
+    return yatraOperator.uploadDocument(body);
+  };
   const preview = previewLayout(f.layoutTemplate, Number(f.seatCapacity));
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    const body = { ...f, seatCapacity: Number(f.seatCapacity), amenities: f.amenities.split(",").map((s: string) => s.trim()).filter(Boolean) };
+    const body = { ...f, seatCapacity: Number(f.seatCapacity), amenities: f.amenities.split(",").map((s: string) => s.trim()).filter(Boolean), images: photos };
     try {
-      if (isNew) await yatraOperator.createVehicle(body);
+      let vehicleId = vehicle.id as string;
+      if (isNew) vehicleId = (await yatraOperator.createVehicle(body)).data.data.id;
       else await yatraOperator.updateVehicle(vehicle.id, body);
-      toast.success(isNew ? "Vehicle added." : "Vehicle saved.");
+      // The vehicle exists now; its documents are filed against it. A failed upload does not undo the vehicle.
+      const failed: string[] = [];
+      if (rc.file) await uploadDoc(vehicleId, "registration_certificate", rc.file, { documentNumber: rc.number, expiresAt: rc.expiresAt }).catch(() => failed.push("RC"));
+      if (puc.file) await uploadDoc(vehicleId, "pollution_certificate", puc.file, { expiresAt: puc.expiresAt }).catch(() => failed.push("pollution certificate"));
+      if (failed.length) toast.error(`The vehicle was saved, but the ${failed.join(" and ")} did not upload. Add it under Documents.`);
+      else toast.success(isNew ? "Vehicle added." : "Vehicle saved.");
       onSaved();
     } catch {
       // The API client shows the reason.
@@ -432,10 +491,57 @@ const VehicleForm: React.FC<{ vehicle: any; onClose: () => void; onSaved: () => 
           <Field label="Make"><input className={inputClass} value={f.make} onChange={(e) => setF({ ...f, make: e.target.value })} /></Field>
           <Field label="Model"><input className={inputClass} value={f.model} onChange={(e) => setF({ ...f, model: e.target.value })} /></Field>
           <Field label="Seats" required><input type="number" min={1} max={120} className={inputClass} value={f.seatCapacity} onChange={(e) => setF({ ...f, seatCapacity: e.target.value })} required /></Field>
-          <Field label="Seat layout"><select className={inputClass} value={f.layoutTemplate} onChange={(e) => setF({ ...f, layoutTemplate: e.target.value })}><option value="2x2">2 + 2 seater</option><option value="2x1">2 + 1 seater</option><option value="1x1">1 + 1 seater</option><option value="sleeper_2x1">2 + 1 sleeper</option></select></Field>
+          <Field label="Bus type">
+            <select className={inputClass} value={seatTypeOf(f.layoutTemplate)} onChange={(e) => { const t = parseTemplate(f.layoutTemplate); setF({ ...f, layoutTemplate: buildTemplate(e.target.value as SeatType, t.left, t.right) }); }}>
+              <option value="seater">Single decker · seater</option>
+              <option value="sleeper">Single decker · sleeper</option>
+              <option value="double">Double decker · sleeper (lower + upper)</option>
+            </select>
+          </Field>
+          {seatTypeOf(f.layoutTemplate) !== "double" && (
+            <>
+              <Field label="Seats on the left of the aisle" hint="Looking from the back towards the driver">
+                <select className={inputClass} value={parseTemplate(f.layoutTemplate).left} onChange={(e) => { const t = parseTemplate(f.layoutTemplate); setF({ ...f, layoutTemplate: buildTemplate(seatTypeOf(f.layoutTemplate), Number(e.target.value), t.right) }); }}>
+                  {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n} seat{n === 1 ? "" : "s"} per row</option>)}
+                </select>
+              </Field>
+              <Field label="Seats on the right of the aisle" hint={`Layout: ${layoutName(f.layoutTemplate)} (for example 2 + 3 or 1 + 2)`}>
+                <select className={inputClass} value={parseTemplate(f.layoutTemplate).right} onChange={(e) => { const t = parseTemplate(f.layoutTemplate); setF({ ...f, layoutTemplate: buildTemplate(seatTypeOf(f.layoutTemplate), t.left, Number(e.target.value)) }); }}>
+                  {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n} seat{n === 1 ? "" : "s"} per row</option>)}
+                </select>
+              </Field>
+            </>
+          )}
           <Field label="Permit"><select className={inputClass} value={f.permitType} onChange={(e) => setF({ ...f, permitType: e.target.value })}>{["tourist_permit", "contract_carriage", "stage_carriage", "all_india_tourist", "other"].map((t) => <option key={t} value={t}>{t.replace(/_/g, " ")}</option>)}</select></Field>
           <Field label="Amenities" hint="Comma separated, e.g. Charging point, Water"><input className={inputClass} value={f.amenities} onChange={(e) => setF({ ...f, amenities: e.target.value })} /></Field>
           <label className="flex items-center gap-2 text-xs font-bold"><input type="checkbox" checked={f.isAc} onChange={(e) => setF({ ...f, isAc: e.target.checked })} /> Air conditioned</label>
+        </div>
+        <div className="space-y-2">
+          <p className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300">Vehicle photos <span className="font-medium text-gray-400">(up to 6; customers see these on the departure page)</span></p>
+          <div className="flex flex-wrap gap-2">
+            {photos.map((src, i) => (
+              <div key={src} className="relative h-20 w-28 rounded-xl overflow-hidden border border-gray-100 dark:border-slate-800">
+                <img src={src} alt={`Vehicle photo ${i + 1}`} className="w-full h-full object-cover" />
+                <button type="button" aria-label={`Remove photo ${i + 1}`} onClick={() => setPhotos(photos.filter((_, j) => j !== i))} className="absolute top-1 right-1 h-5 w-5 rounded-full bg-black/60 text-white text-xs leading-none">×</button>
+              </div>
+            ))}
+            {photos.length < 6 && (
+              <label className={`h-20 w-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-slate-700 flex items-center justify-center text-[11px] font-bold text-gray-500 cursor-pointer hover:border-[#F28C28] ${photoBusy ? "opacity-60 pointer-events-none" : ""}`}>
+                {photoBusy ? "Uploading…" : "+ Add photos"}
+                <input type="file" accept="image/*" multiple className="sr-only" onChange={(e) => { addPhotos(e.target.files); e.target.value = ""; }} />
+              </label>
+            )}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-gray-100 dark:border-slate-800 p-3 space-y-3">
+          <p className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300">Documents <span className="font-medium text-gray-400">(private; customers only see "verified" and the pollution certificate's validity)</span></p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Registration certificate (RC)"><input type="file" accept="image/*,application/pdf" className={inputClass} onChange={(e) => setRc({ ...rc, file: e.target.files?.[0] ?? null })} /></Field>
+            <Field label="RC number"><input className={inputClass} value={rc.number} onChange={(e) => setRc({ ...rc, number: e.target.value })} /></Field>
+            <Field label="Pollution certificate (PUC)"><input type="file" accept="image/*,application/pdf" className={inputClass} onChange={(e) => setPuc({ ...puc, file: e.target.files?.[0] ?? null })} /></Field>
+            <Field label="Pollution certificate valid until" hint={puc.file && !puc.expiresAt ? "Add the date so customers can see it is valid." : undefined}><input type="date" className={inputClass} value={puc.expiresAt} onChange={(e) => setPuc({ ...puc, expiresAt: e.target.value })} /></Field>
+          </div>
+          <p className="text-[11px] text-gray-400">Insurance and permit are added under Documents. Tirvona verifies everything when it approves the vehicle.</p>
         </div>
         <div>
           <p className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300 mb-2">Seat preview</p>

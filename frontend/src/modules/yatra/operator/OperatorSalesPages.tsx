@@ -100,16 +100,34 @@ const DepartureForm: React.FC<{ onClose: () => void; onSaved: (id: string) => vo
       ? departure.boardingPoints.map((p: any) => ({ id: p.id, name: p.name, address: p.address ?? "", landmark: p.landmark ?? "", time: toLocalInput(p.time) }))
       : [{ name: "", address: "", landmark: "", time: "" }],
   );
+  const [drops, setDrops] = useState<Point[]>(
+    (departure?.droppingPoints ?? []).map((p: any) => ({ id: p.id, name: p.name, address: p.address ?? "", landmark: p.landmark ?? "", time: toLocalInput(p.time) })),
+  );
+  const [rests, setRests] = useState<Array<{ id?: string; name: string; time: string; durationMinutes: string }>>(
+    (departure?.restStops ?? []).map((p: any) => ({ id: p.id, name: p.name, time: toLocalInput(p.time), durationMinutes: p.durationMinutes ? String(p.durationMinutes) : "" })),
+  );
+  const [charter, setCharter] = useState(Boolean(departure?.charterEnabled));
+  const [rates, setRates] = useState<Record<string, string>>(Object.fromEntries(Object.entries(departure?.seatFares ?? {}).map(([k, v]) => [k, String(v)])));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const tour = tours.data?.find((t) => t.id === f.tourId);
+  const layout = departure?.seatLayout ?? vehicles.data?.find((v) => v.id === f.vehicleId)?.seatLayout ?? null;
+  const defaultFare = Number(f.fare || tour?.baseFare || 0);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setBusy(true);
-    const boardingPoints = points.filter((p) => p.name.trim()).map((p) => ({ id: p.id, name: p.name.trim(), address: p.address || undefined, landmark: p.landmark || undefined, time: fromLocalInput(p.time) }));
-    const body: Record<string, unknown> = { boardingPoints, notes: f.notes };
+    const clean = (list: Point[]) => list.filter((p) => p.name.trim()).map((p) => ({ id: p.id, name: p.name.trim(), address: p.address || undefined, landmark: p.landmark || undefined, time: fromLocalInput(p.time) }));
+    const boardingPoints = clean(points);
+    const body: Record<string, unknown> = {
+      boardingPoints,
+      droppingPoints: clean(drops),
+      restStops: rests.filter((r) => r.name.trim()).map((r) => ({ id: r.id, name: r.name.trim(), time: fromLocalInput(r.time), durationMinutes: r.durationMinutes ? Number(r.durationMinutes) : undefined })),
+      charterEnabled: charter,
+      seatFares: f.seatMode === "choose" ? Object.fromEntries(Object.entries(rates).filter(([, v]) => Number(v) > 0).map(([k, v]) => [k, Number(v)])) : {},
+      notes: f.notes,
+    };
     if (isDraft) {
       Object.assign(body, {
         departAt: fromLocalInput(f.departAt),
@@ -162,18 +180,23 @@ const DepartureForm: React.FC<{ onClose: () => void; onSaved: (id: string) => vo
           <Field label="Seat selection"><select className={inputClass} value={f.seatMode} onChange={(e) => setF({ ...f, seatMode: e.target.value })} disabled={!isDraft}><option value="choose">Travellers choose seats</option><option value="auto">Assign seats automatically</option></select></Field>
           <Field label="Seats not for sale" hint="Comma separated, e.g. 1, 2 for guide seats" className="sm:col-span-2"><input className={inputClass} value={f.blockedSeats} onChange={(e) => setF({ ...f, blockedSeats: e.target.value })} disabled={!isDraft} /></Field>
         </div>
-        {!isDraft && <p className="text-[11px] text-gray-500">Time, fare and seats are locked while the departure is open. Ask Tirvona for changes.</p>}
+        {!isDraft && <p className="text-[11px] text-gray-500">Time, default fare and seats are locked while the departure is open. You can still change the rate of a seat nobody has held or bought. Ask Tirvona for other changes.</p>}
+        <SeatRates layout={layout} blocked={f.blockedSeats.split(",").map((s: string) => s.trim().toUpperCase()).filter(Boolean)} defaultFare={defaultFare} rates={rates} setRates={setRates} seatMode={f.seatMode} />
+        <PointEditor title="Boarding points" noun="boarding point" example="Kashmere Gate ISBT" points={points} setPoints={setPoints} />
+        <PointEditor title="Dropping points" noun="dropping point" example="Vrindavan Bus Stand" points={drops} setPoints={setDrops} optional />
         <div className="space-y-2">
-          <div className="flex items-center justify-between"><p className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300">Boarding points</p><EnterpriseButton type="button" size="sm" variant="ghost" icon={<Plus size={12} />} onClick={() => setPoints([...points, { name: "", address: "", landmark: "", time: "" }])}>Add</EnterpriseButton></div>
-          {points.map((p, i) => (
-            <div key={i} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_170px_auto] gap-2">
-              <input aria-label="Boarding point name" placeholder="Name, e.g. Kashmere Gate ISBT" className={inputClass} value={p.name} onChange={(e) => setPoints(points.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} />
-              <input aria-label="Address or landmark" placeholder="Address or landmark" className={inputClass} value={p.address} onChange={(e) => setPoints(points.map((x, j) => (j === i ? { ...x, address: e.target.value } : x)))} />
-              <input aria-label="Boarding time" type="datetime-local" className={inputClass} value={p.time} onChange={(e) => setPoints(points.map((x, j) => (j === i ? { ...x, time: e.target.value } : x)))} />
-              <button type="button" aria-label="Remove boarding point" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800" onClick={() => setPoints(points.filter((_, j) => j !== i))}><Trash2 size={14} /></button>
+          <div className="flex items-center justify-between"><p className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300">Rest stops <span className="font-medium text-gray-400">(optional)</span></p><EnterpriseButton type="button" size="sm" variant="ghost" icon={<Plus size={12} />} onClick={() => setRests([...rests, { name: "", time: "", durationMinutes: "" }])}>Add</EnterpriseButton></div>
+          {rests.length === 0 && <p className="text-[11px] text-gray-400">No rest stop. Travellers will see "This bus has no rest stop".</p>}
+          {rests.map((r, i) => (
+            <div key={i} className="grid grid-cols-1 sm:grid-cols-[1fr_170px_110px_auto] gap-2">
+              <input aria-label="Rest stop name" placeholder="Name, e.g. Haveli Dhaba, NH-19" className={inputClass} value={r.name} onChange={(e) => setRests(rests.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} />
+              <input aria-label="Rest stop time" type="datetime-local" className={inputClass} value={r.time} onChange={(e) => setRests(rests.map((x, j) => (j === i ? { ...x, time: e.target.value } : x)))} />
+              <input aria-label="Stop length in minutes" type="number" min={0} max={240} placeholder="Minutes" className={inputClass} value={r.durationMinutes} onChange={(e) => setRests(rests.map((x, j) => (j === i ? { ...x, durationMinutes: e.target.value } : x)))} />
+              <button type="button" aria-label="Remove rest stop" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800" onClick={() => setRests(rests.filter((_, j) => j !== i))}><Trash2 size={14} /></button>
             </div>
           ))}
         </div>
+        <label className="flex items-start gap-2 text-xs font-bold"><input type="checkbox" className="mt-0.5" checked={charter} onChange={(e) => setCharter(e.target.checked)} /> <span>Accept requests to book the whole bus<span className="block font-medium text-gray-500">Pilgrims can ask for every seat. You accept or decline; the seats are held for them to pay Tirvona.</span></span></label>
         <Field label="Notes for your team"><textarea rows={2} className={inputClass} value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} maxLength={1000} /></Field>
         {error && <p role="alert" className="text-xs font-semibold text-rose-600">{error}</p>}
         <div className="flex justify-end gap-2">
@@ -182,6 +205,114 @@ const DepartureForm: React.FC<{ onClose: () => void; onSaved: (id: string) => vo
         </div>
       </form>
     </EnterpriseModal>
+  );
+};
+
+/** A list of named places with times: boarding points, or dropping points. */
+const PointEditor: React.FC<{ title: string; noun: string; example: string; points: Point[]; setPoints: (p: Point[]) => void; optional?: boolean }> = ({ title, noun, example, points, setPoints, optional }) => (
+  <div className="space-y-2">
+    <div className="flex items-center justify-between">
+      <p className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300">{title}{optional && <span className="font-medium text-gray-400"> (optional)</span>}</p>
+      <EnterpriseButton type="button" size="sm" variant="ghost" icon={<Plus size={12} />} onClick={() => setPoints([...points, { name: "", address: "", landmark: "", time: "" }])}>Add</EnterpriseButton>
+    </div>
+    {points.map((p, i) => (
+      <div key={i} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_170px_auto] gap-2">
+        <input aria-label={`${noun} name`} placeholder={`Name, e.g. ${example}`} className={inputClass} value={p.name} onChange={(e) => setPoints(points.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} />
+        <input aria-label="Address or landmark" placeholder="Address or landmark" className={inputClass} value={p.address} onChange={(e) => setPoints(points.map((x, j) => (j === i ? { ...x, address: e.target.value } : x)))} />
+        <input aria-label={`${noun} time`} type="datetime-local" className={inputClass} value={p.time} onChange={(e) => setPoints(points.map((x, j) => (j === i ? { ...x, time: e.target.value } : x)))} />
+        <button type="button" aria-label={`Remove ${noun}`} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800" onClick={() => setPoints(points.filter((_, j) => j !== i))}><Trash2 size={14} /></button>
+      </div>
+    ))}
+  </div>
+);
+
+/**
+ * The rate of every seat. One default fare covers all seats; click seats to give them a different rate
+ * (window seats, upper deck, front row...). Seats without their own rate cost the default fare.
+ */
+const SeatRates: React.FC<{ layout: any; blocked: string[]; defaultFare: number; rates: Record<string, string>; setRates: (r: Record<string, string>) => void; seatMode: string }> = ({ layout, blocked, defaultFare, rates, setRates, seatMode }) => {
+  const [picked, setPicked] = useState<string[]>([]);
+  const [value, setValue] = useState("");
+  if (seatMode !== "choose") return <p className="text-[11px] text-gray-500">Every seat costs the default fare. Different seat rates apply only when travellers choose their own seats.</p>;
+  if (!layout?.seats?.length) return <p className="text-[11px] text-gray-500">Choose a vehicle to set the rate of individual seats.</p>;
+  const seats: any[] = layout.seats;
+  const decks = (["lower", "upper"] as const).map((id) => ({ id, seats: seats.filter((s) => (s.deck === "upper" ? "upper" : "lower") === id) })).filter((d) => d.seats.length);
+  const rateOf = (seatNo: string) => (Number(rates[seatNo]) > 0 ? Number(rates[seatNo]) : defaultFare);
+  const custom = Object.entries(rates).filter(([seat, v]) => Number(v) > 0 && Number(v) !== defaultFare && seats.some((s) => String(s.seatNo).toUpperCase() === seat));
+  const toggle = (seatNo: string) => setPicked((p) => (p.includes(seatNo) ? p.filter((x) => x !== seatNo) : [...p, seatNo]));
+  const apply = () => {
+    const n = Number(value);
+    if (!(n >= 1)) return;
+    const next = { ...rates };
+    for (const seat of picked) next[seat] = String(n);
+    setRates(next);
+    setPicked([]);
+    setValue("");
+  };
+  const reset = (list: string[]) => {
+    const next = { ...rates };
+    for (const seat of list) delete next[seat];
+    setRates(next);
+    setPicked([]);
+  };
+  const edit = (seat: string) => {
+    setPicked([seat]);
+    setValue(String(rateOf(seat)));
+  };
+  return (
+    <div className="rounded-2xl border border-gray-100 dark:border-slate-800 p-3 space-y-3">
+      <div>
+        <p className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300">Seat rates</p>
+        <p className="text-[11px] text-gray-500">Every seat costs the default fare ({rupees(defaultFare)}). Tap one or more seats to give them a different rate.</p>
+      </div>
+      <div className={`grid gap-3 ${decks.length > 1 ? "sm:grid-cols-2" : ""}`}>
+        {decks.map((deck) => (
+          <div key={deck.id} className="rounded-xl bg-gray-50/70 dark:bg-slate-900/40 p-2.5 min-w-0">
+            {decks.length > 1 && <p className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-2">{deck.id === "upper" ? "Upper deck" : "Lower deck"}</p>}
+            <div className="grid gap-1.5 mx-auto" style={{ gridTemplateColumns: `repeat(${Math.max(1, layout.columns ?? 5)}, minmax(0, 2.9rem))`, justifyContent: "center" }}>
+              {deck.seats.map((seat) => {
+                const no = String(seat.seatNo).toUpperCase();
+                const off = blocked.includes(no);
+                const own = Number(rates[no]) > 0 && Number(rates[no]) !== defaultFare;
+                const on = picked.includes(no);
+                return (
+                  <button key={no} type="button" disabled={off} aria-pressed={on} aria-label={`Seat ${no}, rate ${rupees(rateOf(no))}${own ? " (custom)" : ""}`} onClick={() => toggle(no)} style={{ gridRow: seat.row + 1, gridColumn: seat.col + 1 }} className={`flex flex-col items-center justify-center rounded-lg border text-[10px] font-black ${seat.kind === "sleeper" ? "h-14" : "h-11"} disabled:opacity-40 disabled:cursor-not-allowed ${on ? "bg-[#F28C28] border-[#F28C28] text-white" : own ? "bg-amber-50 border-amber-400 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300" : "bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700"}`}>
+                    {no}
+                    <span className="text-[8px] font-bold leading-none mt-0.5 opacity-80">{off ? "off" : rupees(rateOf(no))}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+      {picked.length > 0 && (
+        <div className="flex flex-wrap items-end gap-2 rounded-xl bg-orange-50/70 dark:bg-slate-900 p-3">
+          <p className="text-[11px] font-bold w-full">{picked.length === 1 ? `Seat ${picked[0]}` : `${picked.length} seats: ${picked.join(", ")}`}</p>
+          <label className="text-[11px] font-bold text-gray-600">New rate (₹)<input type="number" min={1} step="0.01" className={`${inputClass} w-32 mt-1`} value={value} onChange={(e) => setValue(e.target.value)} /></label>
+          <EnterpriseButton type="button" size="sm" onClick={apply} disabled={!(Number(value) >= 1)}>Set rate</EnterpriseButton>
+          <EnterpriseButton type="button" size="sm" variant="ghost" onClick={() => reset(picked)}>Back to default</EnterpriseButton>
+          <EnterpriseButton type="button" size="sm" variant="ghost" onClick={() => setPicked([])}>Clear selection</EnterpriseButton>
+        </div>
+      )}
+      {custom.length > 0 && (
+        <div>
+          <p className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300 mb-1">Seats with their own rate ({custom.length})</p>
+          <ul className="divide-y divide-gray-50 dark:divide-slate-800">
+            {custom.map(([seat, v]) => (
+              <li key={seat} className="flex items-center gap-3 py-1.5 text-xs">
+                <span className="font-black w-12">Seat {seat}</span>
+                <span className="tabular-nums">{rupees(Number(v))}</span>
+                <span className="ml-auto flex gap-1">
+                  <EnterpriseButton type="button" size="sm" variant="ghost" onClick={() => edit(seat)}>Edit rate</EnterpriseButton>
+                  <EnterpriseButton type="button" size="sm" variant="ghost" onClick={() => reset([seat])}>Reset</EnterpriseButton>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
   );
 };
 

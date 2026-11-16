@@ -25,6 +25,12 @@ export interface RazorpayProof {
 
 /** The signed-in pilgrim. */
 export const yatraCustomer = {
+  rating: (bookingId: string) => api.get(`/v1/yatra/bookings/${bookingId}/rating`, quiet),
+  requestCharter: (body: Record<string, unknown>) => api.post("/v1/yatra/charter-requests", body),
+  charterRequests: () => api.get("/v1/yatra/charter-requests"),
+  cancelCharter: (id: string) => api.post(`/v1/yatra/charter-requests/${id}/cancel`),
+  tracking: (bookingId: string) => api.get(`/v1/yatra/bookings/${bookingId}/tracking`, quiet),
+  rate: (bookingId: string, body: { stars: number; comment?: string; tags?: string[] }) => api.post(`/v1/yatra/bookings/${bookingId}/rating`, body),
   createBooking: (body: Record<string, unknown>) => api.post("/v1/yatra/bookings", body),
   bookings: (params: Record<string, unknown> = {}) => api.get("/v1/yatra/bookings", { params: clean(params) }),
   booking: (id: string) => api.get(`/v1/yatra/bookings/${id}`),
@@ -58,7 +64,7 @@ export const yatraSupplier = {
 
 const op = (path: string) => `/v1/yatra/operator${path}`;
 
-/** The organiser console. Every call is scoped to the caller's own organiser by the API. */
+/** The partner console. Every call is scoped to the caller's own partner by the API. */
 export const yatraOperator = {
   me: () => api.get(op("/me")),
   register: (body: Record<string, unknown>) => api.post(op("/register"), body),
@@ -117,6 +123,7 @@ export const yatraAdmin = {
   overview: () => api.get(ad("/overview")),
   operators: (params: Record<string, unknown> = {}) => api.get(ad("/operators"), { params: clean(params) }),
   operator: (id: string) => api.get(ad(`/operators/${id}`)),
+  createOrganiser: (body: Record<string, unknown>) => api.post(ad("/operators"), body),
   reviewOperator: (id: string, action: string, note?: string) => api.post(ad(`/operators/${id}/review`), { action, note }),
   documents: (params: Record<string, unknown> = {}) => api.get(ad("/documents"), { params: clean(params) }),
   documentLink: (id: string) => api.get(ad(`/documents/${id}/link`)),
@@ -188,7 +195,7 @@ export const yatraRidePartner = {
   payoutProof: (id: string) => api.get(rp(`/payouts/${id}/proof`)),
 };
 
-/** Organiser payout requests. */
+/** Partner payout requests. */
 export const yatraOperatorPayouts = {
   request: (amount: number, note?: string) => api.post("/v1/yatra/operator/payouts", { amount, note }),
   cancel: (id: string) => api.post(`/v1/yatra/operator/payouts/${id}/cancel`),

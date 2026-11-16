@@ -27,7 +27,7 @@ import { EnterpriseButton } from "../../../admin/shared/components/EnterpriseBut
 import { EnterprisePageHeader } from "../../../admin/shared/components/EnterprisePageHeader";
 import { askReason, Chips, Empty, Field, inputClass, Panel, PanelState, useAction, useRemote } from "../../marketplace/ui";
 import { yatraCustomer, yatraRides, yatraSupplier } from "../services/yatra.service";
-import { dateLong, dateTimeIst, InfoRow, paymentError, rupees, runPayment, StatusPill, timeOnly, YatraGate } from "../yatraUi";
+import { ItineraryList, dateLong, dateTimeIst, InfoRow, paymentError, rupees, runPayment, StatusPill, timeOnly, YatraGate } from "../yatraUi";
 
 // ================================================================ my journeys
 export const MyJourneysPage: React.FC = () => (
@@ -139,7 +139,7 @@ const JourneyHub: React.FC = () => {
             <InfoRow label="Departure">{dateTimeIst(departure?.departAt)}</InfoRow>
             <InfoRow label="Return">{dateTimeIst(departure?.returnAt)}</InfoRow>
             <InfoRow label="Seats">{booking.seats.join(", ")}</InfoRow>
-            <InfoRow label="Amount paid">{rupees(booking.pricing.amountPaid)}</InfoRow>
+            <InfoRow label="Amount paid">{rupees(booking.pricing.amountPaid)}{booking.pricing.protectionFee > 0 ? ` (includes ${rupees(booking.pricing.protectionFee)} cancellation protection)` : ""}</InfoRow>
             {booking.pricing.refundAmount > 0 && <InfoRow label="Refunded to wallet">{rupees(booking.pricing.refundAmount)}</InfoRow>}
           </Panel>
 
@@ -156,22 +156,13 @@ const JourneyHub: React.FC = () => {
 
           {tour && (
             <Panel title="Itinerary">
-              <ol className="space-y-3">
-                {tour.itinerary.map((day: any) => (
-                  <li key={day.dayNumber} className="flex gap-3">
-                    <span className="w-7 h-7 rounded-full bg-orange-50 dark:bg-slate-800 text-[#F28C28] text-[11px] font-black flex items-center justify-center shrink-0">{day.dayNumber}</span>
-                    <div>
-                      <p className="text-xs font-black">{day.title}</p>
-                      {day.description && <p className="text-xs text-gray-500 whitespace-pre-line">{day.description}</p>}
-                    </div>
-                  </li>
-                ))}
-              </ol>
+              <ItineraryList days={tour.itinerary} />
             </Panel>
           )}
 
           <AddOns journey={journey} booking={booking} requests={data.serviceRequests} reload={remote.reload} />
           <RidesPanel journey={journey} booking={booking} />
+          <RateTripPanel booking={booking} />
           <LinkedBookings journeyId={journey.id} links={data.links} destination={journey.destinationCity} startDate={journey.startDate} reload={remote.reload} />
 
           <Panel title="Journey history">
@@ -195,7 +186,7 @@ const JourneyHub: React.FC = () => {
             ) : <p className="text-xs text-gray-500">{booking.boardingPointName}</p>}
           </Panel>
           {operator && (
-            <Panel title="Organiser">
+            <Panel title="Partner">
               <p className="text-xs font-black">{operator.name}</p>
               {operator.contactPhone && <a href={`tel:${operator.contactPhone}`} className="text-xs font-bold text-[#F28C28] inline-flex items-center gap-1 mt-1"><Phone size={12} /> {operator.contactPhone}</a>}
             </Panel>
@@ -499,6 +490,48 @@ const SupplierInbox: React.FC = () => {
         </div>
       </Panel>
     </div>
+  );
+};
+
+// --------------------------------------------------------------- rate this trip
+/** After the trip has finished, the pilgrim rates it once (1–5 stars and an optional comment). */
+const RateTripPanel: React.FC<{ booking: any }> = ({ booking }) => {
+  const state = useRemote<any>(() => yatraCustomer.rating(booking.id), [booking.id]);
+  const [stars, setStars] = useState(0);
+  const [comment, setComment] = useState("");
+  const [hover, setHover] = useState(0);
+  const { busy, run } = useAction();
+  if (state.state !== "ready" || !state.data) return null;
+  const { rating, canRate, reason } = state.data;
+  if (!rating && !canRate) return null; // not finished yet (or not a paid booking): nothing to show
+  return (
+    <Panel title="Rate your trip">
+      {rating ? (
+        <div className="space-y-1">
+          <p className="text-sm font-black text-amber-600" aria-label={`You rated ${rating.stars} out of 5`}>{"★".repeat(rating.stars)}<span className="text-gray-300">{"★".repeat(5 - rating.stars)}</span></p>
+          {rating.comment && <p className="text-xs text-gray-600 dark:text-gray-300">{rating.comment}</p>}
+          <p className="text-[11px] text-gray-400">Thank you. Your first name and rating are shown on the partner's page.</p>
+        </div>
+      ) : (
+        <form
+          className="space-y-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!stars) return;
+            run("rate", () => yatraCustomer.rate(booking.id, { stars, comment: comment.trim() || undefined }), state.reload, "Thank you for rating your trip.");
+          }}
+        >
+          <p className="text-[11px] text-gray-500">{reason || "How was your trip with this partner?"}</p>
+          <div className="flex gap-1" role="radiogroup" aria-label="Your rating">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button key={n} type="button" role="radio" aria-checked={stars === n} aria-label={`${n} star${n === 1 ? "" : "s"}`} onMouseEnter={() => setHover(n)} onMouseLeave={() => setHover(0)} onClick={() => setStars(n)} className={`text-3xl leading-none px-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]/60 rounded ${n <= (hover || stars) ? "text-amber-500" : "text-gray-300"}`}>★</button>
+            ))}
+          </div>
+          <Field label="Comment (optional)"><textarea rows={3} maxLength={500} className={inputClass} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Bus, driver, timing, organiser" /></Field>
+          <div className="flex justify-end"><EnterpriseButton type="submit" disabled={busy === "rate" || !stars}>Submit rating</EnterpriseButton></div>
+        </form>
+      )}
+    </Panel>
   );
 };
 

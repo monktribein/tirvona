@@ -297,7 +297,7 @@ const AcceptModal: React.FC<{ ride: any; vehicles: any[]; onClose: () => void; o
 // ============================================================ earnings/payouts
 export const RidePartnerEarningsPage: React.FC = () => <RidePartnerShell>{() => <PayeeMoney kind="partner" />}</RidePartnerShell>;
 
-/** Payable balance, statement and payout requests — shared by ride partners and organisers. */
+/** Payable balance, statement and payout requests — shared by ride partners and partners. */
 export const PayeeMoney: React.FC<{ kind: "partner" | "operator"; fetchEarnings?: (p: Record<string, unknown>) => Promise<any>; fetchPayouts?: () => Promise<any>; requestPayout?: (amount: number, note?: string) => Promise<any>; cancelPayout?: (id: string) => Promise<any>; proof?: (id: string) => Promise<any>; canRequest?: boolean }> = (props) => {
   const isPartner = props.kind === "partner";
   const fetchEarnings = props.fetchEarnings ?? ((p) => yatraRidePartner.earnings(p));

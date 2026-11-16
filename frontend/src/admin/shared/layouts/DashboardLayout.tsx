@@ -294,7 +294,7 @@ const RESTAURANT_GROUPS: NavGroup[] = [
   },
 ];
 
-/** Tirvona Yatra organiser console; shown on every /operator page (the organiser belongs to the user, not to a role). */
+/** Tirvona Yatra partner console; shown on every /operator page (the partner belongs to the user, not to a role). */
 const OPERATOR_GROUPS: NavGroup[] = [
   {
     groupName: "Organisation",
@@ -340,7 +340,7 @@ const YATRA_ADMIN_GROUP: NavGroup = {
   icon: <Car size={15} />,
   links: [
     { label: "Yatra Overview", path: "/admin/yatra" },
-    { label: "Organisers", path: "/admin/yatra/operators" },
+    { label: "Partners", path: "/admin/yatra/operators" },
     { label: "KYC Documents", path: "/admin/yatra/documents" },
     { label: "Vehicle Verification", path: "/admin/yatra/vehicles" },
     { label: "Tour Review & Publishing", path: "/admin/yatra/tours" },
@@ -493,7 +493,7 @@ export const DashboardLayout: React.FC = () => {
       : location.pathname.startsWith("/restaurant") && ["customer", "pilgrim"].includes(String(user?.role))
         ? "Restaurant Owner"
         : location.pathname.startsWith("/operator") && ["customer", "pilgrim"].includes(String(user?.role))
-          ? "Yatra Organiser"
+          ? "Yatra Partner"
           : location.pathname.startsWith("/ride-partner") && ["customer", "pilgrim"].includes(String(user?.role))
             ? "Ride Partner"
             : getFormattedRole(user?.role);
@@ -1221,7 +1221,7 @@ export const DashboardLayout: React.FC = () => {
     if (location.pathname.startsWith("/operator")) {
       return {
         topLink: {
-          label: "Organiser Dashboard",
+          label: "Partner Dashboard",
           path: "/operator/dashboard",
           icon: <LayoutDashboard size={16} className="text-[#F28C28]" />,
         },

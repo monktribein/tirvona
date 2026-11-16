@@ -120,7 +120,7 @@ const DepartureTable: React.FC<{ rows: any[]; onPassengers: (row: any) => void }
       { header: "Departure", cell: (r: any) => <div><p className="font-black">{r.tourTitle}</p><p className="text-[10px] text-gray-500">{r.departureCode} · {r.originCity} → {r.destinationCity}</p></div> },
       { header: "Leaves / returns", cell: (r: any) => <span className="text-[11px]">{dateTimeIst(r.departAt)}<br />{dateTimeIst(r.returnAt)}</span> },
       { header: "Pilgrims", cell: (r: any) => `${r.passengers} / ${r.capacity}` },
-      { header: "Organiser", cell: (r: any) => <span className="text-[11px]">{r.organiser}{r.organiserPhone ? ` · ${r.organiserPhone}` : ""}</span>, hideOnMobile: true },
+      { header: "Partner", cell: (r: any) => <span className="text-[11px]">{r.organiser}{r.organiserPhone ? ` · ${r.organiserPhone}` : ""}</span>, hideOnMobile: true },
       { header: "Status", cell: (r: any) => <StatusPill status={r.status} /> },
       { header: "", cell: (r: any) => <EnterpriseButton size="sm" variant="ghost" icon={<Users size={12} />} onClick={() => onPassengers(r)}>Passengers</EnterpriseButton> },
     ]}

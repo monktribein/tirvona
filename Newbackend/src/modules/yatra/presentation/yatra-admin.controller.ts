@@ -4,6 +4,7 @@ import { type AuthenticatedUser, CurrentUser } from "../../../common/decorators/
 import { Roles } from "../../../common/decorators/roles.decorator";
 import { YATRA_ADMIN_ROLES } from "../domain/yatra.constants";
 import { YatraBookingService } from "../application/yatra-booking.service";
+import { YatraTripService } from "../application/yatra-trip.service";
 import { YatraCatalogService } from "../application/yatra-catalog.service";
 import { YatraInsightsService } from "../application/yatra-insights.service";
 import { YatraInventoryService } from "../application/yatra-inventory.service";
@@ -25,6 +26,7 @@ import {
   OperatorStatusQueryDto,
   ReasonDto,
   ServiceRequestQueryDto,
+  CreateOrganiserAccountDto,
   SettingsDto,
   SimpleReviewDto,
   SupplierResponseDto,
@@ -33,9 +35,9 @@ import {
   VehicleReviewDto,
   VehicleStatusQueryDto,
 } from "./yatra.dto";
-import { EntityIdPipe, ok, paged, YatraEnabledGuard } from "./yatra-http";
+import { EntityIdPipe, ok, paged, YatraEnabledGuard, YatraWriteThrottle } from "./yatra-http";
 
-/** Super Admin console. Only Super Admin approves organisers, verifies documents and publishes tours. */
+/** Super Admin console. Only Super Admin approves partners, verifies documents and publishes tours. */
 @ApiTags("Yatra · Super Admin")
 @ApiBearerAuth()
 @Roles(...YATRA_ADMIN_ROLES)
@@ -51,7 +53,13 @@ export class YatraAdminController {
     private readonly insights: YatraInsightsService,
     private readonly settings: YatraSettingsService,
     private readonly audit: YatraAuditService,
+    private readonly trips: YatraTripService,
   ) {}
+
+  @Get("departures/:id/location")
+  async location(@Param("id", EntityIdPipe) id: string) {
+    return ok(await this.trips.forDeparture(id));
+  }
 
   @Get("overview")
   async overview() {
@@ -62,6 +70,13 @@ export class YatraAdminController {
   @Get("operators")
   async operatorsList(@Query() query: OperatorStatusQueryDto) {
     return paged(await this.operators.adminList(query), query.page, query.limit);
+  }
+
+  /** Creates the partner's login (one-time password, changed at first sign-in) and its draft organisation. */
+  @Post("operators")
+  @YatraWriteThrottle(30, 3_600_000)
+  async createOrganiser(@CurrentUser() admin: AuthenticatedUser, @Body() dto: CreateOrganiserAccountDto) {
+    return ok(await this.operators.adminCreateOrganiser(admin, dto), "Partner account created. Give the partner the email and the password shown once.");
   }
 
   @Get("operators/:id")

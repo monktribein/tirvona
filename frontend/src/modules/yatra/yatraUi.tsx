@@ -96,9 +96,28 @@ const LABELS: Record<string, string> = {
   sales_closed: "Sales closed",
   scheduled: "Open for booking",
   MARKETPLACE: "Tirvona website",
-  OPERATOR_LINK: "Organiser link",
-  ORGANIZER: "Organiser-assisted",
+  OPERATOR_LINK: "Partner link",
+  ORGANIZER: "Partner-assisted",
 };
+/** Average rating as "★ 4.5 (12)", or "New" when nobody has rated yet. */
+export const RatingStars: React.FC<{ rating?: { average: number; count: number }; className?: string }> = ({ rating, className = "" }) =>
+  !rating || !rating.count ? (
+    <span className={`text-[11px] font-bold text-gray-400 ${className}`}>New · no ratings yet</span>
+  ) : (
+    <span className={`inline-flex items-center gap-1 text-[11px] font-black text-amber-600 ${className}`} aria-label={`Rated ${rating.average} out of 5 by ${rating.count} traveller${rating.count === 1 ? "" : "s"}`}>
+      <span aria-hidden="true">★</span> {rating.average.toFixed(1)} <span className="font-bold text-gray-400">({rating.count})</span>
+    </span>
+  );
+
+/** Rating box for a page header: "★ 4.7" over the number of ratings. Nothing until someone has rated. */
+export const RatingBadge: React.FC<{ rating?: { average: number; count: number } }> = ({ rating }) =>
+  rating && rating.count > 0 ? (
+    <span className="inline-flex flex-col items-stretch overflow-hidden rounded-lg text-center shrink-0" aria-label={`Rated ${rating.average} out of 5 by ${rating.count} traveller${rating.count === 1 ? "" : "s"}`}>
+      <span className="bg-emerald-600 px-2.5 py-1 text-xs font-black text-white"><span aria-hidden="true">★</span> {rating.average.toFixed(1)}</span>
+      <span className="bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">{rating.count}</span>
+    </span>
+  ) : null;
+
 export const statusLabel = (status?: string | null) => (status ? LABELS[status] ?? humanizeLabel(status) : "—");
 export const StatusPill: React.FC<{ status?: string | null }> = ({ status }) => (
   <Pill status={status ?? ""} label={statusLabel(status)} tone={TONES[status ?? ""] ?? "gray"} />
@@ -153,6 +172,8 @@ export interface SeatCell {
   kind?: string;
   status: string;
   bookingReference?: string;
+  /** This seat's own rate. */
+  price?: number;
 }
 
 const SEAT_STYLE: Record<string, string> = {
@@ -177,51 +198,76 @@ export const SeatMap: React.FC<{
   onToggle?: (seatNo: string) => void;
   max?: number;
   mode?: "select" | "view";
-}> = ({ seats, columns, selected = [], onToggle, max, mode = "select" }) => {
+  /** Fare per seat, shown under every seat that can still be chosen. */
+  price?: number;
+}> = ({ seats, columns, selected = [], onToggle, max, mode = "select", price }) => {
   const picked = new Set(selected);
   const legend = mode === "select" ? ["available", "selected", "unavailable", "blocked"] : ["available", "held", "booked", "blocked"];
+  // Lower and upper deck are drawn side by side; a single-deck bus is one plan.
+  const decks = (["lower", "upper"] as const)
+    .map((id) => ({ id, seats: seats.filter((s) => (s.deck === "upper" ? "upper" : "lower") === id) }))
+    .filter((d) => d.seats.length);
+  const hasSleeper = seats.some((s) => s.kind === "sleeper");
+  const hasSeater = seats.some((s) => s.kind !== "sleeper");
+  const labelled = decks.length > 1 || hasSleeper;
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-3 text-[10px] font-bold text-gray-500" aria-hidden="true">
+      <div className="flex flex-wrap gap-x-4 gap-y-2 text-[10px] font-bold text-gray-500" aria-hidden="true">
         {legend.map((key) => (
           <span key={key} className="inline-flex items-center gap-1.5">
             <span className={`w-3.5 h-3.5 rounded border ${SEAT_STYLE[key]}`} />
             {humanizeLabel(key)}
           </span>
         ))}
+        {hasSleeper && hasSeater && (
+          <>
+            <span className="inline-flex items-center gap-1.5"><span className="w-3.5 h-3.5 rounded border border-gray-300 bg-white" /> Seater</span>
+            <span className="inline-flex items-center gap-1.5"><span className="w-3 h-5 rounded border border-gray-300 bg-white" /> Sleeper</span>
+          </>
+        )}
       </div>
-      <div className="rounded-2xl border border-gray-100 dark:border-slate-800 p-3 sm:p-4 bg-gray-50/60 dark:bg-slate-900/40 overflow-x-auto">
-        <div className="flex justify-end mb-2 pr-1 text-[10px] font-black uppercase tracking-wider text-gray-400">Driver ▸</div>
-        <div
-          className="grid gap-1.5 sm:gap-2 mx-auto"
-          style={{ gridTemplateColumns: `repeat(${Math.max(1, columns)}, minmax(2.25rem, 2.75rem))`, width: "max-content" }}
-          role="group"
-          aria-label="Seat plan"
-        >
-          {seats.map((seat) => {
-            const isPicked = picked.has(seat.seatNo);
-            const state = isPicked ? "selected" : seat.status;
-            const selectable = mode === "select" && (seat.status === "available" || isPicked);
-            const full = mode === "select" && !isPicked && max !== undefined && picked.size >= max;
-            return (
-              <button
-                key={seat.seatNo}
-                type="button"
-                disabled={!selectable || full || !onToggle}
-                onClick={() => onToggle?.(seat.seatNo)}
-                aria-pressed={mode === "select" ? isPicked : undefined}
-                aria-label={`Seat ${seat.seatNo}, ${statusLabel(state)}${seat.bookingReference ? `, ${seat.bookingReference}` : ""}`}
-                title={seat.bookingReference ? `${seat.seatNo} · ${seat.bookingReference}` : `Seat ${seat.seatNo}`}
-                style={{ gridRow: seat.row + 1, gridColumn: seat.col + 1 }}
-                className={`h-10 sm:h-11 rounded-lg border text-[11px] font-black transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]/60 disabled:cursor-not-allowed ${
-                  seat.kind === "sleeper" ? "h-14 sm:h-16" : ""
-                } ${SEAT_STYLE[state] ?? SEAT_STYLE.unavailable} ${full && seat.status === "available" ? "opacity-50" : ""}`}
-              >
-                {seat.seatNo}
-              </button>
-            );
-          })}
-        </div>
+      <div className={`grid gap-3 ${decks.length > 1 ? "sm:grid-cols-2" : ""}`}>
+        {decks.map((deck) => (
+          <div key={deck.id} className="rounded-2xl border border-gray-100 dark:border-slate-800 p-2.5 sm:p-3 bg-gray-50/60 dark:bg-slate-900/40 min-w-0">
+            <div className="flex items-center justify-between mb-2 px-1 text-[10px] font-black uppercase tracking-wider text-gray-400">
+              <span>{labelled ? (deck.id === "upper" ? "Upper deck" : "Lower deck") : ""}</span>
+              {deck.id === "lower" && <span>Driver ▸</span>}
+            </div>
+            <div
+              className="grid gap-1.5 sm:gap-2 mx-auto"
+              style={{ gridTemplateColumns: `repeat(${Math.max(1, columns)}, minmax(0, 2.6rem))`, justifyContent: "center" }}
+              role="group"
+              aria-label={`Seat plan, ${deck.id} deck`}
+            >
+              {deck.seats.map((seat) => {
+                const isPicked = picked.has(seat.seatNo);
+                const state = isPicked ? "selected" : seat.status;
+                const selectable = mode === "select" && (seat.status === "available" || isPicked);
+                const full = mode === "select" && !isPicked && max !== undefined && picked.size >= max;
+                const sleeper = seat.kind === "sleeper";
+                const shownPrice = seat.price ?? price;
+                return (
+                  <button
+                    key={seat.seatNo}
+                    type="button"
+                    disabled={!selectable || full || !onToggle}
+                    onClick={() => onToggle?.(seat.seatNo)}
+                    aria-pressed={mode === "select" ? isPicked : undefined}
+                    aria-label={`${sleeper ? "Sleeper" : "Seat"} ${seat.seatNo}, ${deck.id} deck, ${statusLabel(state)}${seat.bookingReference ? `, ${seat.bookingReference}` : ""}`}
+                    title={seat.bookingReference ? `${seat.seatNo} · ${seat.bookingReference}` : `${sleeper ? "Sleeper" : "Seat"} ${seat.seatNo}`}
+                    style={{ gridRow: seat.row + 1, gridColumn: seat.col + 1 }}
+                    className={`flex flex-col items-center justify-center rounded-lg border text-[11px] font-black transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]/60 disabled:cursor-not-allowed ${sleeper ? (shownPrice !== undefined ? "h-[4.25rem] sm:h-[4.75rem]" : "h-14 sm:h-16") : shownPrice !== undefined ? "h-12 sm:h-[3.1rem]" : "h-10 sm:h-11"} ${SEAT_STYLE[state] ?? SEAT_STYLE.unavailable} ${full && seat.status === "available" ? "opacity-50" : ""}`}
+                  >
+                    {seat.seatNo}
+                    {shownPrice !== undefined && (state === "available" || state === "selected") && <span className="text-[8px] font-bold leading-none mt-0.5 opacity-70">{rupees(shownPrice)}</span>}
+                    {shownPrice !== undefined && state === "unavailable" && <span className="text-[8px] font-bold leading-none mt-0.5 opacity-70">Sold</span>}
+                    {sleeper && <span aria-hidden="true" className="mt-1 h-1 w-5 rounded-full bg-current opacity-30" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -248,3 +294,36 @@ export function useCountdown(until?: string | null): number {
   return Math.max(0, left);
 }
 export const mmss = (ms: number) => `${Math.floor(ms / 60_000)}:${String(Math.floor((ms % 60_000) / 1000)).padStart(2, "0")}`;
+
+const dayDate = (date?: string): string => {
+  if (!date) return "";
+  const parsed = new Date(`${date}T00:00:00+05:30`);
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", weekday: "short", day: "numeric", month: "short" });
+};
+
+/** The day-by-day plan: each day's date and start time, then its halts (tea, meals, darshan) with times. */
+export const ItineraryList: React.FC<{ days: any[] }> = ({ days }) => (
+  <ol className="space-y-4">
+    {days.map((day) => (
+      <li key={day.dayNumber} className="flex gap-3">
+        <span className="w-7 h-7 rounded-full bg-orange-50 dark:bg-slate-800 text-[#F28C28] text-xs font-black flex items-center justify-center shrink-0">{day.dayNumber}</span>
+        <div className="min-w-0">
+          <p className="text-xs font-black text-[#0B192C] dark:text-white">{day.title}</p>
+          {(day.date || day.time) && (
+            <p className="text-[11px] font-bold text-[#F28C28] mt-0.5">{[dayDate(day.date), day.time && `starts ${day.time}`].filter(Boolean).join(" · ")}</p>
+          )}
+          {day.description && <p className="text-xs text-gray-500 leading-relaxed mt-0.5 whitespace-pre-line">{day.description}</p>}
+          {(day.breaks ?? []).length > 0 && (
+            <ul className="mt-1.5 space-y-1">
+              {day.breaks.map((b: any, i: number) => (
+                <li key={i} className="text-[11px] text-gray-600 dark:text-gray-300">
+                  <span className="font-black">{b.time || "—"}</span> · Break at {b.place}{b.minutes ? ` (${b.minutes} min)` : ""}{b.note ? ` — ${b.note}` : ""}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </li>
+    ))}
+  </ol>
+);

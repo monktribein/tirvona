@@ -45,7 +45,7 @@ const historyEntry = {
   at: { type: Date, default: () => new Date() },
 };
 
-/** One organiser (tour operator). Owned by the Tirvona account that registered it. */
+/** One partner (tour operator). Owned by the Tirvona account that registered it. */
 export const YatraOperatorSchema = new Schema(
   {
     ownerUserId: id("User", true),
@@ -94,7 +94,7 @@ YatraOperatorSchema.index({ ownerUserId: 1 }, { unique: true });
 YatraOperatorSchema.index({ slug: 1 }, { unique: true });
 YatraOperatorSchema.index({ status: 1, createdAt: -1 });
 
-/** A Tirvona account working for an organiser: its owner, managers and staff. */
+/** A Tirvona account working for a partner: its owner, managers and staff. */
 export const YatraOperatorMemberSchema = new Schema(
   {
     operatorId: id(YATRA_MODEL.Operator, true),
@@ -111,7 +111,7 @@ export const YatraOperatorMemberSchema = new Schema(
   opts("yatra_operator_members"),
 );
 YatraOperatorMemberSchema.index({ operatorId: 1, userId: 1 }, { unique: true });
-// An account works for at most one organiser at a time.
+// An account works for at most one partner at a time.
 YatraOperatorMemberSchema.index(
   { userId: 1 },
   { unique: true, partialFilterExpression: { status: "active" } },
@@ -203,6 +203,10 @@ export const YatraTourSchema = new Schema(
     coverImage: { type: String, default: "" },
     baseFare: { type: Number, required: true, min: 1 },
     cancellationPolicy: { type: SchemaTypes.Mixed, default: null },
+    // The partner's own wording for the other policies; empty keys use Tirvona's standard wording.
+    otherPolicies: { type: SchemaTypes.Mixed, default: null },
+    // Optional services sold with the tour at the partner's price: [{ key: stay|food|taxi, price per traveller, note }].
+    serviceAddOns: { type: SchemaTypes.Mixed, default: [] },
     circuitTemplateId: id(YATRA_MODEL.CircuitRef),
     circuitTemplateName: { type: String, default: "" },
     status: { type: String, enum: TOUR_STATUSES, default: "draft" },
@@ -230,6 +234,13 @@ export const YatraDepartureSchema = new Schema(
     returnAt: { type: Date, default: null },
     timezone: { type: String, default: "Asia/Kolkata" },
     boardingPoints: { type: SchemaTypes.Mixed, default: [] },
+    // Where the bus lets people off, and where it stops to rest, with times (provided by the partner).
+    droppingPoints: { type: SchemaTypes.Mixed, default: [] },
+    restStops: { type: SchemaTypes.Mixed, default: [] },
+    // The partner accepts requests to book the whole bus for this departure.
+    charterEnabled: { type: Boolean, default: false },
+    // Own rate of individual seats ({ "12": 1500 }); every other seat costs `fare`.
+    seatFares: { type: SchemaTypes.Mixed, default: {} },
     fare: { type: Number, required: true, min: 1 },
     seatMode: { type: String, enum: SEAT_MODES, default: "choose" },
     seatLayout: { type: SchemaTypes.Mixed, default: null },
@@ -283,7 +294,7 @@ export const YatraBookingSchema = new Schema(
     tourId: id(YATRA_MODEL.Tour, true),
     operatorId: id(YATRA_MODEL.Operator, true),
     // The Tirvona account that owns (and paid for) the booking. Empty only
-    // while an organiser-assisted booking waits for its customer to pay.
+    // while a partner-assisted booking waits for its customer to pay.
     customerId: id("User"),
     source: { type: String, enum: BOOKING_SOURCES, required: true },
     bookedByUserId: id("User", true),
@@ -304,12 +315,21 @@ export const YatraBookingSchema = new Schema(
     },
     boardingPointId: { type: String, default: "" },
     boardingPointName: { type: String, default: "" },
+    droppingPointId: { type: String, default: "" },
+    droppingPointName: { type: String, default: "" },
     departAt: { type: Date, required: true },
     tourTitle: { type: String, default: "" },
     pricing: {
       farePerSeat: { type: Number, default: 0 },
       seatCount: { type: Number, default: 0 },
       subtotal: { type: Number, default: 0 },
+      // The optional cancellation-protection add-on: part of what is paid, but never refunded or commissioned.
+      protected: { type: Boolean, default: false },
+      protectionFee: { type: Number, default: 0 },
+      // Services the pilgrim picked at booking (stay, food, taxi): lines and their total, both part of totalAmount.
+      addOns: { type: SchemaTypes.Mixed, default: [] },
+      addOnsTotal: { type: Number, default: 0 },
+      seatFares: { type: SchemaTypes.Mixed, default: null },
       totalAmount: { type: Number, default: 0 },
       amountPaid: { type: Number, default: 0 },
       refundAmount: { type: Number, default: 0 },
@@ -417,7 +437,7 @@ YatraLedgerEntrySchema.index({ operatorId: 1, createdAt: -1 });
 YatraLedgerEntrySchema.index({ type: 1, createdAt: -1 });
 YatraLedgerEntrySchema.index({ bookingId: 1 });
 
-/** A shareable booking link / QR an organiser gives to its own customers. */
+/** A shareable booking link / QR a partner gives to its own customers. */
 export const YatraBookingLinkSchema = new Schema(
   {
     operatorId: id(YATRA_MODEL.Operator, true),

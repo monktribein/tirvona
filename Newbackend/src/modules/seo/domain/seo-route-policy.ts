@@ -292,7 +292,7 @@ export const PRIVATE_PREFIXES: string[] = [
   "/pandit/profile",
   "/pandit/verification",
   "/provider",
-  // Tirvona Yatra: the organiser console, and the public Yatra pages while the feature is
+  // Tirvona Yatra: the partner console, and the public Yatra pages while the feature is
   // switched off (YATRA_ENABLED). Move /yatra and /yatra-partner to STATIC_PAGES at launch.
   "/operator",
   "/yatra",

@@ -2,7 +2,9 @@ import { Type } from "class-transformer";
 import {
   ArrayMaxSize,
   ArrayMinSize,
+  ArrayUnique,
   IsArray,
+  IsObject,
   IsBoolean,
   IsDateString,
   IsEmail,
@@ -24,19 +26,21 @@ import { IsEntityId } from "../../../common/decorators/is-entity-id.decorator";
 import {
   BOOKING_SOURCES,
   BOOKING_STATUSES,
+  RATING_TAGS,
   DEPARTURE_STATUSES,
   DIETARY_PREFERENCES,
   DOCUMENT_STATUSES,
   DOCUMENT_TYPES,
   JOURNEY_LINK_MODULES,
   MEAL_TYPES,
+  SERVICE_ADD_ON_KEYS,
   OPERATOR_STATUSES,
   ORGANISATION_TYPES,
   PASSENGER_GENDERS,
   PERMIT_TYPES,
   PRODUCT_TYPES,
   SEAT_KINDS,
-  SEAT_LAYOUT_TEMPLATES,
+  SEAT_LAYOUT_PATTERN,
   SEAT_MODES,
   SERVICE_REQUEST_STATUSES,
   SERVICE_TYPES,
@@ -71,6 +75,25 @@ export class RegisterOperatorDto {
   @IsOptional() @IsEmail() contactEmail?: string;
   @IsOptional() @IsString() @MaxLength(80) city?: string;
   @IsOptional() @IsString() @MaxLength(80) state?: string;
+}
+
+/** Super Admin creates the partner's Tirvona login and its organisation together. */
+export class CreateOrganiserAccountDto {
+  @IsString() @Length(2, 80) name!: string;
+  @IsEmail() email!: string;
+  @Matches(PHONE, { message: "phone must be a phone number" }) phone!: string;
+  @IsString() @Length(3, 120) organisationName!: string;
+  @IsOptional() @IsIn(ORGANISATION_TYPES) organisationType?: string;
+  @IsOptional() @IsString() @MaxLength(80) city?: string;
+  @IsOptional() @IsString() @MaxLength(80) state?: string;
+  /** Leave empty to generate a strong one-time password. */
+  @IsOptional() @IsString() @Length(8, 72) password?: string;
+}
+
+export class RatingDto {
+  @Type(() => Number) @IsInt() @Min(1) @Max(5) stars!: number;
+  @IsOptional() @IsString() @MaxLength(500) comment?: string;
+  @IsOptional() @IsArray() @ArrayMaxSize(6) @ArrayUnique() @IsIn(RATING_TAGS as unknown as string[], { each: true }) tags?: string[];
 }
 
 export class UpdateOperatorDto {
@@ -139,7 +162,7 @@ export class VehicleDto {
   @IsOptional() @IsBoolean() isAc?: boolean;
   @IsOptional() @IsArray() @ArrayMaxSize(20) @IsString({ each: true }) @MaxLength(40, { each: true }) amenities?: string[];
   @IsOptional() @IsIn(PERMIT_TYPES) permitType?: string;
-  @IsOptional() @IsIn(SEAT_LAYOUT_TEMPLATES) layoutTemplate?: string;
+  @IsOptional() @Matches(SEAT_LAYOUT_PATTERN, { message: "layoutTemplate must be like 2x2, 2x3, 1x2 or sleeper_2x1" }) layoutTemplate?: string;
   @IsOptional() @IsArray() @ArrayMaxSize(120) @ValidateNested({ each: true }) @Type(() => SeatSpecDto) customSeats?: SeatSpecDto[];
   @IsOptional() @IsArray() @ArrayMaxSize(10) @IsUrl(IMAGE_URL, { each: true }) images?: string[];
 }
@@ -153,7 +176,7 @@ export class UpdateVehicleDto {
   @IsOptional() @IsBoolean() isAc?: boolean;
   @IsOptional() @IsArray() @ArrayMaxSize(20) @IsString({ each: true }) @MaxLength(40, { each: true }) amenities?: string[];
   @IsOptional() @IsIn(PERMIT_TYPES) permitType?: string;
-  @IsOptional() @IsIn(SEAT_LAYOUT_TEMPLATES) layoutTemplate?: string;
+  @IsOptional() @Matches(SEAT_LAYOUT_PATTERN, { message: "layoutTemplate must be like 2x2, 2x3, 1x2 or sleeper_2x1" }) layoutTemplate?: string;
   @IsOptional() @IsArray() @ArrayMaxSize(120) @ValidateNested({ each: true }) @Type(() => SeatSpecDto) customSeats?: SeatSpecDto[];
   @IsOptional() @IsArray() @ArrayMaxSize(10) @IsUrl(IMAGE_URL, { each: true }) images?: string[];
 }
@@ -169,12 +192,30 @@ export class TourStopDto {
   @IsOptional() @IsString() @MaxLength(500) notes?: string;
 }
 
+/** A halt during a day: where the bus stops, when, and what for (tea, meal, darshan...). */
+export class DayBreakDto {
+  @IsString() @Length(2, 120) place!: string;
+  @IsOptional() @Matches(/^([01]\d|2[0-3]):[0-5]\d$/, { message: "time must be HH:mm" }) time?: string;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(5) @Max(600) minutes?: number;
+  @IsOptional() @IsString() @MaxLength(200) note?: string;
+}
+
+export class ServiceAddOnDto {
+  @IsIn(SERVICE_ADD_ON_KEYS) key!: string;
+  @Type(() => Number) @IsNumber() @Min(1) @Max(100000) price!: number;
+  @IsOptional() @IsString() @MaxLength(200) note?: string;
+}
+
 export class ItineraryDayDto {
   @Type(() => Number) @IsInt() @Min(1) @Max(30) dayNumber!: number;
   @IsString() @Length(1, 120) title!: string;
   @IsOptional() @IsString() @MaxLength(2000) description?: string;
   @IsOptional() @IsArray() @ArrayMaxSize(4) @IsIn(MEAL_TYPES, { each: true }) meals?: string[];
   @IsOptional() @IsString() @MaxLength(120) overnightAt?: string;
+  /** The calendar day (YYYY-MM-DD) and the time the day starts (HH:mm), 24-hour. */
+  @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "date must be YYYY-MM-DD" }) date?: string;
+  @IsOptional() @Matches(/^([01]\d|2[0-3]):[0-5]\d$/, { message: "time must be HH:mm" }) time?: string;
+  @IsOptional() @IsArray() @ArrayMaxSize(8) @ValidateNested({ each: true }) @Type(() => DayBreakDto) breaks?: DayBreakDto[];
 }
 
 export class PolicyWindowDto {
@@ -187,6 +228,14 @@ export class CancellationPolicyDto {
   @IsArray() @ArrayMaxSize(6) @ValidateNested({ each: true }) @Type(() => PolicyWindowDto) windows!: PolicyWindowDto[];
   @Type(() => Number) @IsInt() @Min(0) @Max(100) defaultRefundPercent!: number;
   @IsOptional() @IsString() @MaxLength(500) notes?: string;
+}
+
+export class OtherPoliciesDto {
+  @IsOptional() @IsString() @MaxLength(500) childPolicy?: string;
+  @IsOptional() @IsString() @MaxLength(500) luggagePolicy?: string;
+  @IsOptional() @IsString() @MaxLength(500) petsPolicy?: string;
+  @IsOptional() @IsString() @MaxLength(500) alcoholPolicy?: string;
+  @IsOptional() @IsString() @MaxLength(500) pickupPolicy?: string;
 }
 
 class TourFields {
@@ -205,6 +254,8 @@ class TourFields {
   @IsOptional() @IsUrl(IMAGE_URL) coverImage?: string;
   @IsOptional() @ValidateNested() @Type(() => CancellationPolicyDto) cancellationPolicy?: CancellationPolicyDto;
   @IsOptional() @IsEntityId() circuitTemplateId?: string;
+  @IsOptional() @ValidateNested() @Type(() => OtherPoliciesDto) otherPolicies?: OtherPoliciesDto;
+  @IsOptional() @IsArray() @ArrayMaxSize(3) @ValidateNested({ each: true }) @Type(() => ServiceAddOnDto) serviceAddOns?: ServiceAddOnDto[];
 }
 
 export class CreateTourDto extends TourFields {
@@ -233,6 +284,14 @@ export class BoardingPointDto {
   @IsOptional() @IsUrl({ protocols: ["https"], require_protocol: true }) mapUrl?: string;
 }
 
+export class RestStopDto {
+  @IsOptional() @IsString() @MaxLength(40) id?: string;
+  @IsString() @Length(2, 120) name!: string;
+  @IsOptional() @IsString() @MaxLength(300) address?: string;
+  @IsOptional() @IsDateString() time?: string;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(240) durationMinutes?: number;
+}
+
 export class CreateDepartureDto {
   @IsEntityId() tourId!: string;
   @IsEntityId() vehicleId!: string;
@@ -242,6 +301,10 @@ export class CreateDepartureDto {
   @IsOptional() @IsIn(SEAT_MODES) seatMode?: string;
   @IsOptional() @IsArray() @ArrayMaxSize(120) @IsString({ each: true }) blockedSeats?: string[];
   @IsArray() @ArrayMinSize(1) @ArrayMaxSize(20) @ValidateNested({ each: true }) @Type(() => BoardingPointDto) boardingPoints!: BoardingPointDto[];
+  @IsOptional() @IsArray() @ArrayMaxSize(20) @ValidateNested({ each: true }) @Type(() => BoardingPointDto) droppingPoints?: BoardingPointDto[];
+  @IsOptional() @IsArray() @ArrayMaxSize(12) @ValidateNested({ each: true }) @Type(() => RestStopDto) restStops?: RestStopDto[];
+  @IsOptional() @IsBoolean() charterEnabled?: boolean;
+  @IsOptional() @IsObject() seatFares?: Record<string, number>;
   @IsOptional() @IsString() @MaxLength(1000) notes?: string;
 }
 
@@ -252,6 +315,10 @@ export class UpdateDepartureDto {
   @IsOptional() @IsIn(SEAT_MODES) seatMode?: string;
   @IsOptional() @IsArray() @ArrayMaxSize(120) @IsString({ each: true }) blockedSeats?: string[];
   @IsOptional() @IsArray() @ArrayMinSize(1) @ArrayMaxSize(20) @ValidateNested({ each: true }) @Type(() => BoardingPointDto) boardingPoints?: BoardingPointDto[];
+  @IsOptional() @IsArray() @ArrayMaxSize(20) @ValidateNested({ each: true }) @Type(() => BoardingPointDto) droppingPoints?: BoardingPointDto[];
+  @IsOptional() @IsArray() @ArrayMaxSize(12) @ValidateNested({ each: true }) @Type(() => RestStopDto) restStops?: RestStopDto[];
+  @IsOptional() @IsBoolean() charterEnabled?: boolean;
+  @IsOptional() @IsObject() seatFares?: Record<string, number>;
   @IsOptional() @IsString() @MaxLength(1000) notes?: string;
 }
 
@@ -282,7 +349,33 @@ export class CreateBookingDto {
   @IsArray() @ArrayMinSize(1) @ArrayMaxSize(40) @ValidateNested({ each: true }) @Type(() => PassengerDto) passengers!: PassengerDto[];
   @ValidateNested() @Type(() => ContactDto) contact!: ContactDto;
   @IsOptional() @IsString() @MaxLength(40) boardingPointId?: string;
+  @IsOptional() @IsString() @MaxLength(40) droppingPointId?: string;
+  /** Adds the cancellation-protection fee for a full-fare refund on an early cancellation. */
+  @IsOptional() @IsBoolean() cancellationProtection?: boolean;
+  /** Optional services of the tour (stay, food, taxi) the pilgrim wants, by key. */
+  @IsOptional() @IsArray() @ArrayMaxSize(3) @IsIn(SERVICE_ADD_ON_KEYS, { each: true }) addOns?: string[];
   @IsOptional() @IsString() @Matches(/^[0-9a-z]{6,12}$/i) linkCode?: string;
+}
+
+// ------------------------------------------------- live location and full-bus requests
+export class ShareLocationDto {
+  @Type(() => Number) @IsNumber() @Min(-90) @Max(90) latitude!: number;
+  @Type(() => Number) @IsNumber() @Min(-180) @Max(180) longitude!: number;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100000) accuracyM?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(400) speedKmph?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(360) heading?: number;
+}
+
+export class CreateCharterRequestDto {
+  @IsString() @Matches(/^YD[0-9A-Z]{7}$/i) departureCode!: string;
+  @Type(() => Number) @IsInt() @Min(1) @Max(120) groupSize!: number;
+  @ValidateNested() @Type(() => ContactDto) contact!: ContactDto;
+  @IsOptional() @IsString() @MaxLength(1000) message?: string;
+}
+
+export class RespondCharterDto {
+  @IsIn(["accept", "decline"]) action!: string;
+  @IsOptional() @IsString() @MaxLength(500) note?: string;
 }
 
 export class ConfirmPaymentDto {

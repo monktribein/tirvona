@@ -122,6 +122,10 @@ export class YatraJourneyService {
         returnAt: departure.returnAt,
         status: departure.status,
         boardingPoint: boarding,
+        droppingPoint: (departure.droppingPoints ?? []).find((p: any) => p.id === booking?.droppingPointId) ?? null,
+        boardingPoints: departure.boardingPoints ?? [],
+        droppingPoints: departure.droppingPoints ?? [],
+        restStops: departure.restStops ?? [],
         cancellationReason: departure.cancellationReason ?? "",
       },
       tour: tour && {
@@ -260,7 +264,7 @@ export class YatraJourneyService {
     if (dto.serviceType === "food" && (!dto.mealType || !dto.quantity)) throw new YatraException("Choose the meal and how many people.", 400);
     if (dto.serviceType === "puja" && !dto.ritualName) throw new YatraException("Tell us which puja you would like.", 400);
     const supplier = await this.supplierFor(dto.serviceType, dto);
-    // The organiser's referral rule (if any) that applies now stays with the request.
+    // The partner's referral rule (if any) that applies now stays with the request.
     const commissionSnapshot = await this.finance.snapshotFor("addon_referral", { operatorId: journey.operatorId });
     const request = await this.requests.create({
       commissionSnapshot,

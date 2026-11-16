@@ -466,3 +466,100 @@ export const buildEventMessage = (
 Show this code at the venue.`,
   );
 };
+
+/** What a Yatra ticket message needs; every field is optional so a thin booking still reads well. */
+export interface WhatsAppYatraContext {
+  guestName?: string;
+  reference?: string;
+  ticketCode?: string;
+  tourTitle?: string;
+  route?: string;
+  departureCode?: string;
+  departAt?: Date | string;
+  returnAt?: Date | string;
+  seats?: string[];
+  passengers?: Array<{ name: string; seat?: string }>;
+  boardingName?: string;
+  boardingAddress?: string;
+  boardingTime?: Date | string;
+  droppingName?: string;
+  droppingTime?: Date | string;
+  vehicle?: string;
+  operatorName?: string;
+  amountPaid?: number;
+  protectionFee?: number;
+  /** Services the traveller added (stay, food, taxi), e.g. "Local taxi – ₹600". */
+  addOnLines?: string[];
+  currency?: string;
+  /** Plain-language refund lines, already worded for a traveller. */
+  refundLines?: string[];
+  /** Short rule lines (luggage, alcohol, pick-up time ...). */
+  ruleLines?: string[];
+  ticketUrl?: string;
+  appUrl?: string;
+}
+
+export const buildYatraMessage = (
+  context: WhatsAppYatraContext,
+  fallback: { title?: string; message?: string } = {},
+): string => {
+  const paid = formatMoney(context.amountPaid, context.currency);
+  const protection = formatMoney(context.protectionFee, context.currency);
+  const seatList = context.seats?.length ? context.seats.join(", ") : "";
+  const passengerRows = (context.passengers ?? [])
+    .filter((p) => p?.name)
+    .map((p) => `• ${p.name}${p.seat ? ` – Seat ${p.seat}` : ""}`);
+  const boardTime = formatDateTime(context.boardingTime ?? context.departAt);
+  return lines(
+    "*Yatra Ticket Confirmed* 🚌",
+    "",
+    greeting(context.guestName),
+    context.tourTitle
+      ? `Your seat on *${context.tourTitle}* is confirmed.`
+      : fallback.message || "Your Tirvona Yatra ticket is confirmed.",
+    "",
+    context.reference && `*Booking ID:* ${context.reference}`,
+    context.ticketCode && `*Ticket code:* ${context.ticketCode}`,
+    context.route && `*Route:* ${context.route}`,
+    formatDateTime(context.departAt) &&
+      `*Departure:* ${formatDateTime(context.departAt)}`,
+    formatDateTime(context.returnAt) &&
+      `*Return:* ${formatDateTime(context.returnAt)}`,
+    seatList && `*Seat no.:* ${seatList}`,
+    context.vehicle && `*Bus:* ${context.vehicle}`,
+    context.operatorName && `*Organiser:* ${context.operatorName}`,
+    passengerRows.length > 0 && "",
+    passengerRows.length > 0 && "*Passengers*",
+    ...passengerRows,
+    "",
+    context.boardingName &&
+      `*Boarding point:* ${context.boardingName}${
+        context.boardingAddress ? `, ${context.boardingAddress}` : ""
+      }${boardTime ? `\n*Report by:* ${boardTime}` : ""}`,
+    context.droppingName &&
+      `*Dropping point:* ${context.droppingName}${
+        formatDateTime(context.droppingTime)
+          ? ` (${formatDateTime(context.droppingTime)})`
+          : ""
+      }`,
+    "",
+    (context.addOnLines?.length ?? 0) > 0 && "*Services added*",
+    ...(context.addOnLines ?? []).map((row) => `• ${row}`),
+    paid &&
+      `*Amount paid:* ${paid}${
+        protection ? ` (includes ${protection} cancellation protection)` : ""
+      }`,
+    "",
+    (context.ruleLines?.length ?? 0) > 0 && "*Bus rules & policies*",
+    ...(context.ruleLines ?? []).map((row) => `• ${row}`),
+    "",
+    (context.refundLines?.length ?? 0) > 0 && "*Cancellation & refund policy*",
+    ...(context.refundLines ?? []).map((row) => `• ${row}`),
+    "",
+    context.ticketUrl && `*Your ticket & QR:* ${context.ticketUrl}`,
+    "Show the ticket QR or ticket code when boarding.",
+    "",
+    "For more details, download the Tirvona app:",
+    context.appUrl,
+  );
+};

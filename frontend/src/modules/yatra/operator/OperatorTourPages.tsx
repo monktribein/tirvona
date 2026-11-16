@@ -61,7 +61,11 @@ const Tours: React.FC<{ me: any }> = ({ me }) => {
 
 // =================================================================== editor
 type Stop = { name: string; dayNumber: number; city: string };
-type Day = { dayNumber: number; title: string; description: string };
+type Break = { place: string; time: string; minutes: string; note: string };
+type Day = { dayNumber: number; title: string; description: string; date: string; time: string; breaks: Break[] };
+type AddOn = { key: string; on: boolean; price: string; note: string };
+const ADD_ON_ROWS = [{ key: "stay", title: "Short stay (rooms)" }, { key: "food", title: "Food and meals" }, { key: "taxi", title: "Local taxi" }];
+const blankDay = (dayNumber: number): Day => ({ dayNumber, title: "", description: "", date: "", time: "", breaks: [] });
 type Window = { hoursBefore: number; refundPercent: number };
 
 const lines = (value: string) => value.split("\n").map((s) => s.trim()).filter(Boolean);
@@ -76,7 +80,8 @@ const TourEditor: React.FC<{ me: any }> = ({ me }) => {
   const templates = useRemote<any[]>(() => yatraOperator.circuitTemplates(), []);
   const [f, setF] = useState<Record<string, any>>({ title: "", summary: "", description: "", productType: "group_tour", originCity: "", originState: "", destinationCity: "", destinationState: "", durationDays: 1, durationNights: 0, baseFare: "", coverImage: "", circuitTemplateId: "" });
   const [stops, setStops] = useState<Stop[]>([]);
-  const [days, setDays] = useState<Day[]>([{ dayNumber: 1, title: "", description: "" }]);
+  const [days, setDays] = useState<Day[]>([blankDay(1)]);
+  const [addOns, setAddOns] = useState<AddOn[]>(ADD_ON_ROWS.map((r) => ({ key: r.key, on: false, price: "", note: "" })));
   const [text, setText] = useState({ highlights: "", inclusions: "", exclusions: "" });
   const [images, setImages] = useState<string[]>([]);
   const [policy, setPolicy] = useState<{ windows: Window[]; defaultRefundPercent: number }>({ windows: [{ hoursBefore: 72, refundPercent: 90 }, { hoursBefore: 24, refundPercent: 50 }], defaultRefundPercent: 0 });
@@ -87,7 +92,8 @@ const TourEditor: React.FC<{ me: any }> = ({ me }) => {
   const load = (t: any) => {
     setF({ title: t.title ?? "", summary: t.summary ?? "", description: t.description ?? "", productType: t.productType ?? "group_tour", originCity: t.originCity ?? "", originState: t.originState ?? "", destinationCity: t.destinationCity ?? "", destinationState: t.destinationState ?? "", durationDays: t.durationDays ?? 1, durationNights: t.durationNights ?? 0, baseFare: t.baseFare ?? "", coverImage: t.coverImage ?? "", circuitTemplateId: t.circuitTemplateId ?? "" });
     setStops((t.stops ?? []).map((s: any) => ({ name: s.name, dayNumber: s.dayNumber, city: s.city ?? "" })));
-    setDays(t.itinerary?.length ? t.itinerary.map((d: any) => ({ dayNumber: d.dayNumber, title: d.title ?? "", description: d.description ?? "" })) : [{ dayNumber: 1, title: "", description: "" }]);
+    setDays(t.itinerary?.length ? t.itinerary.map((d: any) => ({ dayNumber: d.dayNumber, title: d.title ?? "", description: d.description ?? "", date: d.date ?? "", time: d.time ?? "", breaks: (d.breaks ?? []).map((b: any) => ({ place: b.place ?? "", time: b.time ?? "", minutes: b.minutes ? String(b.minutes) : "", note: b.note ?? "" })) })) : [blankDay(1)]);
+    setAddOns(ADD_ON_ROWS.map((r) => { const own = (t.serviceAddOns ?? []).find((a: any) => a.key === r.key); return { key: r.key, on: Boolean(own), price: own ? String(own.price) : "", note: own?.note ?? "" }; }));
     setText({ highlights: (t.highlights ?? []).join("\n"), inclusions: (t.inclusions ?? []).join("\n"), exclusions: (t.exclusions ?? []).join("\n") });
     setImages(t.images ?? []);
     if (t.cancellationPolicy?.windows) setPolicy({ windows: t.cancellationPolicy.windows, defaultRefundPercent: t.cancellationPolicy.defaultRefundPercent ?? 0 });
@@ -134,7 +140,8 @@ const TourEditor: React.FC<{ me: any }> = ({ me }) => {
       circuitTemplateId: f.circuitTemplateId || undefined,
       coverImage: f.coverImage || undefined,
       stops: stops.filter((s) => s.name.trim()).map((s) => ({ name: s.name.trim(), dayNumber: Number(s.dayNumber) || 1, city: s.city.trim() || undefined })),
-      itinerary: days.filter((d) => d.title.trim()).map((d) => ({ dayNumber: Number(d.dayNumber), title: d.title.trim(), description: d.description.trim() || undefined })),
+      itinerary: days.filter((d) => d.title.trim()).map((d) => ({ dayNumber: Number(d.dayNumber), title: d.title.trim(), description: d.description.trim() || undefined, date: d.date || undefined, time: d.time || undefined, breaks: d.breaks.filter((b) => b.place.trim()).map((b) => ({ place: b.place.trim(), time: b.time || undefined, minutes: b.minutes ? Number(b.minutes) : undefined, note: b.note.trim() || undefined })) })),
+      serviceAddOns: addOns.filter((a) => a.on && Number(a.price) > 0).map((a) => ({ key: a.key, price: Number(a.price), note: a.note.trim() || undefined })),
       highlights: lines(text.highlights),
       inclusions: lines(text.inclusions),
       exclusions: lines(text.exclusions),
@@ -194,7 +201,7 @@ const TourEditor: React.FC<{ me: any }> = ({ me }) => {
           </div>
         </Panel>
 
-        <Panel title="Day-by-day itinerary" actions={editable && <EnterpriseButton type="button" size="sm" variant="outline" icon={<Plus size={12} />} onClick={() => setDays([...days, { dayNumber: days.length + 1, title: "", description: "" }])}>Add day</EnterpriseButton>}>
+        <Panel title="Day-by-day itinerary" actions={editable && <EnterpriseButton type="button" size="sm" variant="outline" icon={<Plus size={12} />} onClick={() => setDays([...days, blankDay(days.length + 1)])}>Add day</EnterpriseButton>}>
           <div className="space-y-3">
             {days.map((d, i) => (
               <div key={i} className="grid grid-cols-[70px_1fr_auto] gap-2 items-start">
@@ -202,10 +209,40 @@ const TourEditor: React.FC<{ me: any }> = ({ me }) => {
                 <div className="space-y-2">
                   <input aria-label={`Day ${d.dayNumber} title`} placeholder="Title, e.g. Mathura darshan" className={inputClass} value={d.title} onChange={(e) => setDays(days.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))} />
                   <textarea aria-label={`Day ${d.dayNumber} plan`} rows={2} placeholder="What happens this day" className={inputClass} value={d.description} onChange={(e) => setDays(days.map((x, j) => (j === i ? { ...x, description: e.target.value } : x)))} />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input aria-label={`Day ${d.dayNumber} date`} type="date" className={inputClass} value={d.date} onChange={(e) => setDays(days.map((x, j) => (j === i ? { ...x, date: e.target.value } : x)))} />
+                    <input aria-label={`Day ${d.dayNumber} start time`} type="time" className={inputClass} value={d.time} onChange={(e) => setDays(days.map((x, j) => (j === i ? { ...x, time: e.target.value } : x)))} />
+                  </div>
+                  {d.breaks.map((b, k) => (
+                    <div key={k} className="grid grid-cols-[1fr_96px_70px_auto] gap-2">
+                      <input aria-label="Break place" placeholder="Break at (dhaba, temple...)" className={inputClass} value={b.place} onChange={(e) => setDays(days.map((x, j) => (j === i ? { ...x, breaks: x.breaks.map((y, m) => (m === k ? { ...y, place: e.target.value } : y)) } : x)))} />
+                      <input aria-label="Break time" type="time" className={inputClass} value={b.time} onChange={(e) => setDays(days.map((x, j) => (j === i ? { ...x, breaks: x.breaks.map((y, m) => (m === k ? { ...y, time: e.target.value } : y)) } : x)))} />
+                      <input aria-label="Break minutes" type="number" min={5} max={600} placeholder="min" className={inputClass} value={b.minutes} onChange={(e) => setDays(days.map((x, j) => (j === i ? { ...x, breaks: x.breaks.map((y, m) => (m === k ? { ...y, minutes: e.target.value } : y)) } : x)))} />
+                      <button type="button" aria-label="Remove break" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800" onClick={() => setDays(days.map((x, j) => (j === i ? { ...x, breaks: x.breaks.filter((_, m) => m !== k) } : x)))}><Trash2 size={14} /></button>
+                    </div>
+                  ))}
+                  {editable && <button type="button" className="text-[11px] font-black text-[#F28C28]" onClick={() => setDays(days.map((x, j) => (j === i ? { ...x, breaks: [...x.breaks, { place: "", time: "", minutes: "", note: "" }] } : x)))}>+ Add break</button>}
                 </div>
                 <button type="button" aria-label="Remove day" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800" onClick={() => setDays(days.filter((_, j) => j !== i))}><Trash2 size={14} /></button>
               </div>
             ))}
+          </div>
+        </Panel>
+
+        <Panel title="Stay, food and local taxi (optional)">
+          <p className="text-xs text-gray-500 mb-3">Offer these with the trip at your own price. Pilgrims can add them while booking; the price is per traveller.</p>
+          <div className="space-y-2">
+            {ADD_ON_ROWS.map((row) => {
+              const a = addOns.find((x) => x.key === row.key)!;
+              const patch = (p: Partial<AddOn>) => setAddOns(addOns.map((x) => (x.key === row.key ? { ...x, ...p } : x)));
+              return (
+                <div key={row.key} className="grid grid-cols-[150px_110px_1fr] gap-2 items-center">
+                  <label className="flex items-center gap-2 text-xs font-bold"><input type="checkbox" className="accent-[#F28C28]" checked={a.on} disabled={!editable} onChange={(e) => patch({ on: e.target.checked })} />{row.title}</label>
+                  <input aria-label={`${row.title} price per traveller`} type="number" min={1} placeholder="₹ per person" className={inputClass} disabled={!a.on || !editable} value={a.price} onChange={(e) => patch({ price: e.target.value })} />
+                  <input aria-label={`${row.title} details`} placeholder="What is included" maxLength={200} className={inputClass} disabled={!a.on || !editable} value={a.note} onChange={(e) => patch({ note: e.target.value })} />
+                </div>
+              );
+            })}
           </div>
         </Panel>
 

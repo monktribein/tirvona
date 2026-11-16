@@ -2,9 +2,10 @@ import { Injectable } from "@nestjs/common";
 import { InjectModel } from "../../../database/orm-nest";
 import type { ClientSession, Model } from "../../../database/orm";
 import { TransactionService } from "../../../common/database/transaction.service";
-import { YATRA_MODEL } from "../domain/yatra.constants";
+import { CANCELLATION_PROTECTION, YATRA_MODEL } from "../domain/yatra.constants";
 import { YatraException } from "../domain/yatra.errors";
-import { cityKey, departureCode, generateSeatLayout, unsellableReason } from "../domain/yatra.utils";
+import { YatraRatingService } from "./yatra-rating.service";
+import { cityKey, cleanSeatFares, departureCode, generateSeatLayout, lowestSeatFare, seatFareOf, unsellableReason } from "../domain/yatra.utils";
 import { operatorPublicView } from "./yatra-operator.service";
 import { tourPublicView } from "./yatra-catalog.service";
 import { YatraAccessService, type YatraActor, YatraAuditService, YatraSettingsService } from "./yatra-support.service";
@@ -20,6 +21,10 @@ export const departureView = (d: any) =>
     returnAt: d.returnAt ?? null,
     timezone: d.timezone ?? "Asia/Kolkata",
     boardingPoints: Array.isArray(d.boardingPoints) ? d.boardingPoints : [],
+    droppingPoints: Array.isArray(d.droppingPoints) ? d.droppingPoints : [],
+    restStops: Array.isArray(d.restStops) ? d.restStops : [],
+    charterEnabled: Boolean(d.charterEnabled),
+    seatFares: d.seatFares && typeof d.seatFares === "object" ? d.seatFares : {},
     fare: d.fare,
     seatMode: d.seatMode,
     seatLayout: d.seatLayout ?? null,
@@ -63,6 +68,8 @@ export class YatraInventoryService {
     @InjectModel(YATRA_MODEL.Departure) private readonly departures: Model<any>,
     @InjectModel(YATRA_MODEL.Seat) private readonly seats: Model<any>,
     @InjectModel(YATRA_MODEL.Booking) private readonly bookings: Model<any>,
+    @InjectModel(YATRA_MODEL.Document) private readonly documents: Model<any>,
+    private readonly ratings: YatraRatingService,
   ) {}
 
   // ------------------------------------------------------------- sellability
@@ -79,17 +86,44 @@ export class YatraInventoryService {
   }
 
   // ---------------------------------------------------- organiser departures
-  private boardingPoints(input: any[] | undefined, previous: any[] = []): any[] {
+  /** Boarding and dropping points: the partner's names and times. `prefix` keeps their ids apart. */
+  private boardingPoints(input: any[] | undefined, previous: any[] = [], prefix = "bp", label = "boarding"): any[] {
     const points = (input ?? []).map((p: any, index: number) => ({
-      id: p.id && previous.some((x) => x.id === p.id) ? p.id : `bp${Date.now().toString(36)}${index}`,
+      id: p.id && previous.some((x) => x.id === p.id) ? p.id : `${prefix}${Date.now().toString(36)}${index}`,
       name: String(p.name ?? "").trim(),
       address: String(p.address ?? "").trim(),
       landmark: String(p.landmark ?? "").trim(),
       time: p.time ? new Date(p.time) : null,
       mapUrl: String(p.mapUrl ?? "").trim(),
     }));
-    if (points.some((p) => !p.name)) throw new YatraException("Every boarding point needs a name.", 400);
+    if (points.some((p) => !p.name)) throw new YatraException(`Every ${label} point needs a name.`, 400);
     return points;
+  }
+
+  private restStops(input: any[] | undefined, previous: any[] = []): any[] {
+    const stops = (input ?? []).map((p: any, index: number) => ({
+      id: p.id && previous.some((x) => x.id === p.id) ? p.id : `rs${Date.now().toString(36)}${index}`,
+      name: String(p.name ?? "").trim(),
+      address: String(p.address ?? "").trim(),
+      time: p.time ? new Date(p.time) : null,
+      durationMinutes: Math.max(0, Math.min(240, Number(p.durationMinutes ?? 0) || 0)),
+    }));
+    if (stops.some((p) => !p.name)) throw new YatraException("Every rest stop needs a name.", 400);
+    return stops;
+  }
+
+  /** Drops and rest stops must fall between the departure and return times. */
+  private checkTimeline(departAt: Date, returnAt: Date | null | undefined, lists: Array<{ label: string; items: any[] }>): void {
+    const end = returnAt ? new Date(returnAt).getTime() : null;
+    for (const { label, items } of lists)
+      for (const item of items) {
+        if (!item.time) continue;
+        const at = new Date(item.time).getTime();
+        if (Number.isNaN(at)) throw new YatraException(`The time of ${label} "${item.name}" is not valid.`, 400);
+        if (end !== null && label !== "boarding point" && at > end + 6 * 3_600_000)
+          throw new YatraException(`The time of ${label} "${item.name}" is after the trip has ended.`, 400);
+      }
+    void departAt;
   }
 
   async listDepartures(user: YatraActor, query: { tourId?: string; status?: string; upcoming?: boolean }): Promise<any[]> {
@@ -138,6 +172,11 @@ export class YatraInventoryService {
     if (blocked.length >= seatNos.size) throw new YatraException("At least one seat must be sellable.", 400);
     const boardingPoints = this.boardingPoints(dto.boardingPoints);
     if (!boardingPoints.length) throw new YatraException("Add at least one boarding point.", 400);
+    const rates = cleanSeatFares(dto.seatFares, new Set<string>([...seatNos].map((n) => String(n).toUpperCase())), dto.fare ?? tour.baseFare);
+    if (rates.error) throw new YatraException(rates.error, 400, "INVALID_SEAT_FARES");
+    const droppingPoints = this.boardingPoints(dto.droppingPoints, [], "dp", "dropping");
+    const restStops = this.restStops(dto.restStops);
+    this.checkTimeline(departAt, returnAt, [{ label: "boarding point", items: boardingPoints }, { label: "dropping point", items: droppingPoints }, { label: "rest stop", items: restStops }]);
 
     let created: any = null;
     for (let attempt = 0; attempt < 5 && !created; attempt += 1) {
@@ -150,6 +189,10 @@ export class YatraInventoryService {
           departAt,
           returnAt,
           boardingPoints,
+          droppingPoints,
+          restStops,
+          charterEnabled: Boolean(dto.charterEnabled),
+          seatFares: rates.fares,
           fare: dto.fare ?? tour.baseFare,
           seatMode: dto.seatMode ?? "choose",
           seatLayout: layout,
@@ -211,6 +254,43 @@ export class YatraInventoryService {
       departure.boardingPoints = points;
       departure.markModified?.("boardingPoints");
     }
+    if (dto.droppingPoints !== undefined) {
+      const previous = Array.isArray(departure.droppingPoints) ? departure.droppingPoints : [];
+      const points = this.boardingPoints(dto.droppingPoints, previous, "dp", "dropping");
+      if (departure.status !== "draft") {
+        const used = await this.bookings.distinct("droppingPointId", { departureId: departure._id, status: { $in: ["held", "payment_pending", "confirmed", "cancellation_requested"] } });
+        const kept = new Set(points.map((p) => p.id));
+        if (used.some((id: unknown) => id && !kept.has(String(id))))
+          throw new YatraException("A dropping point that travellers already chose cannot be removed.", 409);
+      }
+      departure.droppingPoints = points;
+      departure.markModified?.("droppingPoints");
+    }
+    if (dto.restStops !== undefined) {
+      departure.restStops = this.restStops(dto.restStops, Array.isArray(departure.restStops) ? departure.restStops : []);
+      departure.markModified?.("restStops");
+    }
+    if (dto.charterEnabled !== undefined) departure.charterEnabled = Boolean(dto.charterEnabled);
+    if (dto.seatFares !== undefined) {
+      const layoutSeats = new Set<string>((departure.seatLayout?.seats ?? []).map((s: any) => String(s.seatNo).toUpperCase()));
+      const rates = cleanSeatFares(dto.seatFares, layoutSeats, departure.fare);
+      if (rates.error) throw new YatraException(rates.error, 400, "INVALID_SEAT_FARES");
+      if (departure.status !== "draft") {
+        const before = (departure.seatFares && typeof departure.seatFares === "object" ? departure.seatFares : {}) as Record<string, number>;
+        const changed = [...new Set([...Object.keys(before), ...Object.keys(rates.fares)])].filter((seat) => seatFareOf({ fare: departure.fare, seatFares: before }, seat) !== seatFareOf({ fare: departure.fare, seatFares: rates.fares }, seat));
+        if (changed.length) {
+          const taken = await this.seats.find({ departureId: departure._id, seatNo: { $in: changed }, status: { $in: ["held", "booked"] } }).select("seatNo").lean();
+          if (taken.length) throw new YatraException(`The rate of seat ${taken.map((t: any) => t.seatNo).join(", ")} cannot change while it is held or booked.`, 409, "SEAT_FARE_LOCKED");
+        }
+      }
+      departure.seatFares = rates.fares;
+      departure.markModified?.("seatFares");
+    }
+    this.checkTimeline(departure.departAt, departure.returnAt, [
+      { label: "boarding point", items: departure.boardingPoints ?? [] },
+      { label: "dropping point", items: departure.droppingPoints ?? [] },
+      { label: "rest stop", items: departure.restStops ?? [] },
+    ]);
     if (dto.notes !== undefined) departure.notes = dto.notes;
     await departure.save();
     await this.audit.record(user, "departure.updated", { operatorId: String(operator._id), departureId }, { before, after: departureView(departure.toObject()) });
@@ -427,6 +507,12 @@ export class YatraInventoryService {
   }
 
   // ---------------------------------------------------------------- seat maps
+  /** True when no seat of the departure is sold or held right now, so the whole bus can still be given to one group. */
+  async wholeBusFree(departure: any): Promise<boolean> {
+    const map = await this.seatMap(String(departure._id), "public");
+    return map.available >= Number(departure.capacity ?? 0) && Number(departure.capacity ?? 0) > 0;
+  }
+
   async seatMap(departureId: string, view: "public" | "operator" | "admin"): Promise<any> {
     const departure = await this.departures.findById(departureId).lean();
     if (!departure) throw new YatraException("Departure not found.", 404);
@@ -449,7 +535,7 @@ export class YatraInventoryService {
             : heldLive
               ? "held"
               : "available";
-      const base = { seatNo: String(s.seatNo), row: s.row, col: s.col, deck: s.deck ?? "lower", kind: s.kind ?? "seater" };
+      const base = { seatNo: String(s.seatNo), row: s.row, col: s.col, deck: s.deck ?? "lower", kind: s.kind ?? "seater", price: seatFareOf(departure, String(s.seatNo)) };
       if (view === "public") return { ...base, status: state === "booked" || state === "held" ? "unavailable" : state };
       return { ...base, status: state, bookingReference: s.bookingId ? refs.get(String(s.bookingId)) ?? "" : "" };
     });
@@ -543,6 +629,7 @@ export class YatraInventoryService {
     const deps = await this.departures.find(depFilter).sort({ departAt: 1 }).limit(300).lean();
     const vehicles = await this.vehicles.find({ _id: { $in: [...new Set(deps.map((d: any) => String(d.vehicleId)))] }, status: "approved" }).lean();
     const vehicleById = new Map(vehicles.map((v: any) => [String(v._id), v]));
+    const ratingByOperator = await this.ratings.summaries(deps.map((d: any) => d.operatorId));
     const wantSeats = Math.max(1, Number(query.seats ?? 1));
     const results = deps
       .filter((d: any) => vehicleById.has(String(d.vehicleId)))
@@ -556,10 +643,14 @@ export class YatraInventoryService {
           departAt: d.departAt,
           returnAt: d.returnAt,
           fare: d.fare,
+          fromFare: lowestSeatFare(d),
           seatsLeft: left,
           capacity: d.capacity,
           seatMode: d.seatMode,
           boardingPoints: (d.boardingPoints ?? []).map((p: any) => ({ name: p.name, time: p.time })),
+          droppingPoints: (d.droppingPoints ?? []).map((p: any) => ({ name: p.name, time: p.time })),
+          restStopCount: (d.restStops ?? []).length,
+          charterEnabled: Boolean(d.charterEnabled),
           tour: {
             title: tour.title,
             slug: tour.slug,
@@ -572,8 +663,18 @@ export class YatraInventoryService {
             coverImage: tour.coverImage || tour.images?.[0] || "",
             highlights: (tour.highlights ?? []).slice(0, 3),
           },
-          operator: operatorPublicView(opById.get(String(d.operatorId))),
-          vehicle: { vehicleType: vehicle.vehicleType, isAc: Boolean(vehicle.isAc) },
+          operator: { ...operatorPublicView(opById.get(String(d.operatorId))), rating: ratingByOperator.get(String(d.operatorId)) ?? { average: 0, count: 0 } },
+          vehicle: {
+            vehicleType: vehicle.vehicleType,
+            isAc: Boolean(vehicle.isAc),
+            image: vehicle.images?.[0] ?? "",
+            make: vehicle.make ?? "",
+            model: vehicle.model ?? "",
+            amenities: (vehicle.amenities ?? []).slice(0, 12),
+            // What a pilgrim filters by: seater or sleeper berths, one deck or two.
+            seatKinds: [...new Set((d.seatLayout?.seats ?? []).map((x: any) => x.kind ?? "seater"))],
+            decks: new Set((d.seatLayout?.seats ?? []).map((x: any) => x.deck ?? "lower")).size > 1 ? 2 : 1,
+          },
         };
       });
     const start = (query.page - 1) * query.limit;
@@ -596,7 +697,7 @@ export class YatraInventoryService {
     return departure;
   }
 
-  /** The public departure page. Hidden entirely unless the tour is published by an approved organiser. */
+  /** The public departure page. Hidden entirely unless the tour is published by an approved partner. */
   async publicDeparture(code: string): Promise<any> {
     const departure = await this.findByCode(code);
     const { tour, operator, vehicle, reason } = await this.context(departure);
@@ -612,6 +713,9 @@ export class YatraInventoryService {
       returnAt: view.returnAt,
       timezone: view.timezone,
       boardingPoints: view.boardingPoints,
+      droppingPoints: view.droppingPoints,
+      restStops: view.restStops,
+      charterEnabled: view.charterEnabled,
       fare: view.fare,
       seatMode: view.seatMode,
       seatLayout: view.seatLayout,
@@ -619,11 +723,20 @@ export class YatraInventoryService {
       status: view.status,
       cancellationReason: view.cancellationReason,
     };
+    // What a pilgrim can trust about the bus. The documents themselves stay private; only whether Tirvona
+    // verified them (and the pollution certificate's validity) is shown.
+    const docs = vehicle ? await this.documents.find({ vehicleId: vehicle._id, status: "approved" }).select("documentType expiresAt").lean() : [];
+    const now = Date.now();
+    const rc = docs.some((x: any) => x.documentType === "registration_certificate");
+    const pollution = docs
+      .filter((x: any) => x.documentType === "pollution_certificate" && x.expiresAt && new Date(x.expiresAt).getTime() > now)
+      .sort((a: any, b: any) => new Date(b.expiresAt).getTime() - new Date(a.expiresAt).getTime())[0];
     return {
       departure: { ...pub, seatsLeft: map.available },
       tour: tourPublicView(tour),
-      operator: operatorPublicView(operator),
-      vehicle: vehiclePublicView(vehicle),
+      operator: { ...operatorPublicView(operator), rating: await this.ratings.summary(operator._id), reviews: await this.ratings.recent(operator._id, 5) },
+      vehicle: { ...vehiclePublicView(vehicle), rcVerified: rc, pollutionValidTill: pollution?.expiresAt ?? null },
+      protection: { ...CANCELLATION_PROTECTION },
       bookable: !reason && map.available > 0,
       unavailableReason: reason ?? (map.available > 0 ? null : "This departure is fully booked."),
       maxSeatsPerBooking: (await this.settings.get()).maxSeatsPerBooking,
