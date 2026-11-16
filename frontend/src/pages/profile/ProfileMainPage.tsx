@@ -37,6 +37,7 @@ import {
   Info,
 } from "lucide-react";
 import { VisitorArticlesTab } from "./VisitorArticlesTab";
+import { useYatraEnabled } from "../../modules/yatra/yatraUi";
 import { VolunteerApplicationsTab } from "./VolunteerApplicationsTab";
 import ProfileOrdersPage from "./ProfileOrdersPage";
 import ProfileSupportTab from "./ProfileSupportTab";
@@ -92,6 +93,7 @@ const formatDateTime = (value?: string) =>
 
 export const ProfileMainPage: React.FC = () => {
   const { user, logout, refreshUser } = useAuth();
+  const yatraEnabled = useYatraEnabled() === true;
   const { balance: walletBalance } = useWallet();
   const {
     addNotification,
@@ -549,6 +551,18 @@ export const ProfileMainPage: React.FC = () => {
       iconBg: "bg-[#FFF4E5]/40 text-[#F28C28]",
       badge: counts.total > 0 ? String(counts.total) : undefined,
     },
+    ...(yatraEnabled
+      ? [
+          {
+            key: "journeys",
+            path: "/profile/journeys",
+            label: "My Journeys (Yatra)",
+            desc: "Bus tickets, boarding & add-ons",
+            icon: <MapPin size={18} />,
+            iconBg: "bg-[#FFF4E5]/40 text-[#F28C28]",
+          },
+        ]
+      : []),
     {
       key: "articles",
       path: "/profile/articles",

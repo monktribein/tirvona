@@ -43,6 +43,13 @@ const escapeRegex = (value: string): string =>
 
 const round2 = (value: number): number => Math.round(value * 100) / 100;
 
+/**
+ * Verification documents (trust deed, ownership, fire safety) are uploaded into their own folders. A
+ * link there must never be shown as a stay photo, so it is refused on save and dropped from public output.
+ */
+export const isPrivateDocumentUrl = (value: unknown): boolean =>
+  typeof value === "string" && /\/(?:ashram-)?documents\//i.test(value);
+
 const assertNoInlineMedia = (dto: {
   images?: string[];
   documents?: Record<string, any>;
@@ -56,6 +63,13 @@ const assertNoInlineMedia = (dto: {
   if (Object.values(dto.documents ?? {}).some(isInline))
     throw new BadRequestException(
       "Documents must be uploaded first and referenced by URL, not embedded in the request",
+    );
+  const documentUrls = new Set(
+    Object.values(dto.documents ?? {}).filter((v) => typeof v === "string" && v.trim()),
+  );
+  if ((dto.images ?? []).some((url) => isPrivateDocumentUrl(url) || documentUrls.has(url)))
+    throw new BadRequestException(
+      "A verification document cannot be used as a stay photo. Upload a photo of the stay instead.",
     );
 };
 
@@ -177,6 +191,11 @@ export const withoutPrivateAshramFields = <T extends Record<string, any>>(
 ): T => {
   if (!row || typeof row !== "object") return row;
   const out: Record<string, any> = { ...row };
+  // Whatever was saved earlier, a verification document is never shown in the public photo gallery.
+  if (Array.isArray(out.images)) {
+    const own = new Set(Object.values(out.documents ?? {}).filter((v) => typeof v === "string"));
+    out.images = out.images.filter((url: unknown) => !isPrivateDocumentUrl(url) && !own.has(url as string));
+  }
   for (const key of [
     "ownerId",
     "documents",

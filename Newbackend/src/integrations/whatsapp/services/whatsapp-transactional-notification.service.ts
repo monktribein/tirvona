@@ -37,6 +37,8 @@ import {
   buildEventMessage,
   buildParkingMessage,
   buildStayMessage,
+  buildYatraMessage,
+  type WhatsAppYatraContext,
   formatDate,
   formatDateTime,
   formatMoney,
@@ -52,6 +54,15 @@ const numberOr = (...values: unknown[]): number | undefined => {
     if (Number.isFinite(parsed)) return parsed;
   }
   return undefined;
+};
+
+/** Rows joined into one line for a template value: no line breaks, at most `max` characters. */
+const oneLine = (rows: readonly string[] | undefined, max: number): string => {
+  const text = (rows ?? [])
+    .map((row) => String(row).replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .join(" • ");
+  return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
 };
 
 interface TransactionalInput {
@@ -130,6 +141,51 @@ export class WhatsAppTransactionalNotificationService implements OnModuleInit {
   }
   sendCheckoutCompleted(input: TransactionalInput) {
     return this.send(WHATSAPP_TEMPLATE.CHECKOUT_COMPLETED, input);
+  }
+
+  /**
+   * The ticket a pilgrim gets once a Yatra booking is paid and confirmed. Yatra has no notification
+   * outbox, so the caller sends this directly (and must never let a failure here undo the booking).
+   */
+  sendYatraTicket(input: {
+    phone: string;
+    bookingId: string;
+    context: WhatsAppYatraContext;
+  }): Promise<WhatsAppProviderResult> {
+    const blocked = this.testModeBlock(input.phone);
+    if (blocked) return Promise.resolve(blocked);
+    const { context } = input;
+    const currency = context.currency;
+    const variables: Record<string, WhatsAppTemplateValue> = {
+      title: "Yatra ticket confirmed",
+      message: buildYatraMessage(context),
+    };
+    const set = (key: string, value: WhatsAppTemplateValue | undefined) => {
+      if (value !== undefined && value !== null && String(value).trim())
+        variables[key] = value;
+    };
+    set("customer_name", context.guestName);
+    set("guest_name", context.guestName);
+    set("reference", context.reference);
+    set("booking_type", WHATSAPP_BOOKING_TYPE_LABEL.yatra);
+    set("service_name", context.tourTitle);
+    set("scheduled_at", formatDateTime(context.departAt));
+    set("seats", context.seats?.join(", "));
+    set("boarding_point", context.boardingName);
+    set("amount_paid", formatMoney(context.amountPaid, currency));
+    set("entry_code", context.ticketCode);
+    // An approved template cannot hold line breaks inside a value, so the rules and the refund policy
+    // travel as one short line each (the text providers send the full message above instead).
+    set("rules_summary", oneLine(context.ruleLines, 500));
+    set("refund_summary", oneLine(context.refundLines, 600));
+    return this.templates.send({
+      to: input.phone,
+      templateKey: WHATSAPP_TEMPLATE.BOOKING_CONFIRMATION,
+      variables,
+      idempotencyKey: `yatra:${input.bookingId}:confirmed:whatsapp`,
+      correlationId: `yatra:${input.bookingId}:confirmed`,
+      metaEvent: META_TRANSACTIONAL_EVENT.YATRA_CONFIRMED,
+    });
   }
 
   /** Maps an outbox event onto the shape of message it should read as. */

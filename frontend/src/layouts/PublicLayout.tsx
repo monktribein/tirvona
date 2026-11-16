@@ -16,8 +16,10 @@ import { providerSelfService } from "../modules/pandit";
 import { useCurrency } from "../contexts/CurrencyContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import { getFormattingLocale } from "../utils/format";
+import { useYatraEnabled } from "../modules/yatra/yatraUi";
+import { yatraOperator, yatraRidePartner } from "../modules/yatra/services/yatra.service";
 import { realEmail } from "../utils/email";
-import { TIRVONA_SERVICES, isServiceActive } from "../design-system/premium";
+import { visibleServices, isServiceActive } from "../design-system/premium";
 import {
   LogOut,
   Menu,
@@ -85,6 +87,7 @@ const FooterAccordion: React.FC<{
 
 export const PublicLayout: React.FC = () => {
   const { user, logout } = useAuth();
+  const yatraEnabled = useYatraEnabled() === true;
   const { unreadCount: _unreadCount, notifications: _notifications, markAllAsRead: _markAllAsRead, removeNotification: _removeNotification } =
     useNotifications();
   const navigate = useNavigate();
@@ -314,6 +317,22 @@ export const PublicLayout: React.FC = () => {
     };
   }, [user?.id]);
 
+  // Yatra partners and ride partners are normal accounts with a workspace; same way back to it.
+  const signedInId = user?.id;
+  const [hasOrganiser, setHasOrganiser] = useState(false);
+  const [hasRidePartner, setHasRidePartner] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    setHasOrganiser(false);
+    setHasRidePartner(false);
+    if (!signedInId || !yatraEnabled) return;
+    yatraOperator.me().then((res) => { if (!cancelled && res.data?.data?.registered) setHasOrganiser(true); }).catch(() => undefined);
+    yatraRidePartner.me().then((res) => { if (!cancelled && res.data?.data?.registered) setHasRidePartner(true); }).catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [signedInId, yatraEnabled]);
+
   // A pandit account always has a provider console, and a remembered profile is shown straight away,
   // so the dashboard button does not wait for the profile request like it never waits for other roles.
   const providerCacheKey = user?.id ? `tirvona:provider-profile:${user.id}` : "";
@@ -394,12 +413,14 @@ export const PublicLayout: React.FC = () => {
 
   // The seven core services lead the navigation; every other public section stays one click away under "More".
   const navLinks: { label: string; to: string; isActive: boolean; isHighlighted?: boolean }[] =
-    TIRVONA_SERVICES.map((service) => ({
+    visibleServices(yatraEnabled).map((service) => ({
       label: service.navLabel,
       to: service.to,
       isActive: isServiceActive(service, location.pathname),
     }));
   const moreLinks: { label: string; to: string }[] = [
+    // Yatra takes Volunteer & Seva's place in the main navigation while Yatra is on; otherwise Seva stays up there.
+    ...(yatraEnabled ? [{ label: "Volunteer & Seva", to: "/volunteer" }] : []),
     { label: "Aarti Booking", to: "/aarti" },
     { label: "Live Pooja", to: "/live-pooja" },
     { label: "Events & Festivals", to: "/events" },
@@ -642,6 +663,30 @@ export const PublicLayout: React.FC = () => {
                     </Link>
                   )}
 
+                  {!hasOperationalDashboard() && hasOrganiser && (
+                    <Link
+                      to="/operator/dashboard"
+                      aria-label="Partner Dashboard"
+                      title="Partner Dashboard"
+                      className={HEADER_DASHBOARD_LINK}
+                    >
+                      <LayoutDashboard size={13} />
+                      <span className={HEADER_DASHBOARD_LABEL}>Partner Dashboard</span>
+                    </Link>
+                  )}
+
+                  {!hasOperationalDashboard() && hasRidePartner && (
+                    <Link
+                      to="/ride-partner/dashboard"
+                      aria-label="Ride Partner Dashboard"
+                      title="Ride Partner Dashboard"
+                      className={HEADER_DASHBOARD_LINK}
+                    >
+                      <LayoutDashboard size={13} />
+                      <span className={HEADER_DASHBOARD_LABEL}>Ride Partner Dashboard</span>
+                    </Link>
+                  )}
+
                   {!hasOperationalDashboard() && hasStore && (
                     <Link
                       to="/vendor/dashboard"
@@ -791,6 +836,36 @@ export const PublicLayout: React.FC = () => {
                                   Help &amp; Support
                                 </span>
                               </Link>
+
+                              {hasOrganiser && (
+                                <Link
+                                  to="/operator/dashboard"
+                                  onClick={() => setProfileDropdownOpen(false)}
+                                  className="px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                                >
+                                  <div className="w-6 h-6 rounded-md bg-orange-100/60 dark:bg-orange-950/60 text-[#F28C28] flex items-center justify-center shrink-0">
+                                    <LayoutDashboard size={13} />
+                                  </div>
+                                  <span className="text-xs font-bold">
+                                    Partner Dashboard
+                                  </span>
+                                </Link>
+                              )}
+
+                              {hasRidePartner && (
+                                <Link
+                                  to="/ride-partner/dashboard"
+                                  onClick={() => setProfileDropdownOpen(false)}
+                                  className="px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                                >
+                                  <div className="w-6 h-6 rounded-md bg-orange-100/60 dark:bg-orange-950/60 text-[#F28C28] flex items-center justify-center shrink-0">
+                                    <LayoutDashboard size={13} />
+                                  </div>
+                                  <span className="text-xs font-bold">
+                                    Ride Partner Dashboard
+                                  </span>
+                                </Link>
+                              )}
 
                               <Link
                                 to="/vendor/dashboard"
@@ -982,6 +1057,30 @@ export const PublicLayout: React.FC = () => {
               );
             })}
 
+            {user && hasOrganiser && !hasOperationalDashboard() && (
+              <Link
+                to="/operator/dashboard"
+                onClick={() => setDrawerOpen(false)}
+                className="flex items-center justify-between py-3.5 px-3 rounded-xl text-sm font-bold text-primary hover:bg-primary/5 transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  <LayoutDashboard size={15} /> Partner Dashboard
+                </span>
+                <ChevronRight size={14} className="text-primary/50" />
+              </Link>
+            )}
+            {user && hasRidePartner && !hasOperationalDashboard() && (
+              <Link
+                to="/ride-partner/dashboard"
+                onClick={() => setDrawerOpen(false)}
+                className="flex items-center justify-between py-3.5 px-3 rounded-xl text-sm font-bold text-primary hover:bg-primary/5 transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  <LayoutDashboard size={15} /> Ride Partner Dashboard
+                </span>
+                <ChevronRight size={14} className="text-primary/50" />
+              </Link>
+            )}
             {user && hasStore && !hasOperationalDashboard() && (
               <Link
                 to="/vendor/dashboard"
@@ -1307,6 +1406,20 @@ export const PublicLayout: React.FC = () => {
                       Yatra Circuits
                     </Link>
                   </li>
+                  {yatraEnabled && (
+                    <li>
+                      <Link
+                        to="/yatra"
+                        className="hover:text-amber-400 transition-colors flex items-center gap-1"
+                      >
+                        <ArrowRight
+                          size={10}
+                          className="text-slate-500 shrink-0"
+                        />{" "}
+                        Tirvona Yatra: Bus &amp; Group Tours
+                      </Link>
+                    </li>
+                  )}
                   <li>
                     <Link
                       to="/blog"
@@ -1340,7 +1453,7 @@ export const PublicLayout: React.FC = () => {
                   Our Services
                 </h2>
                 <ul className="text-xs space-y-2.5 text-slate-300 font-medium pt-1">
-                  {TIRVONA_SERVICES.map((service) => (
+                  {visibleServices(yatraEnabled).map((service) => (
                     <li key={service.id}>
                       <Link
                         to={service.to}

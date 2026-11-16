@@ -153,6 +153,7 @@ export const FoodOrderTrackingPage: React.FC = () => {
     "REFUND_PROCESSING",
     "REFUND_FAILED",
     "PAYMENT_FAILED",
+    "PAYMENT_EXPIRED",
   ].includes(order.orderStatus);
 
   const canCancel =
@@ -269,7 +270,11 @@ export const FoodOrderTrackingPage: React.FC = () => {
             <div className="p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-800 text-red-900 dark:text-red-200 text-xs flex items-center gap-2.5">
               <XCircle size={16} className="text-red-500 shrink-0" />
               <div>
-                <p className="font-bold">Order was {order.orderStatus.replace(/_/g, " ")}</p>
+                <p className="font-bold">
+                  {order.orderStatus === "PAYMENT_EXPIRED"
+                    ? "Order closed: the payment was never completed"
+                    : `Order was ${order.orderStatus.replace(/_/g, " ")}`}
+                </p>
                 {order.rejectionReason && (
                   <p className="mt-0.5 text-slate-600 dark:text-slate-300">
                     Reason: {order.rejectionReason}

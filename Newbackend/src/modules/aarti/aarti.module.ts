@@ -7,6 +7,7 @@ import { AartiAccessService } from "./application/aarti-access.service";
 import { AartiBookingService } from "./application/aarti-booking.service";
 import { AartiDiscoveryService } from "./application/aarti-discovery.service";
 import { AartiManagementService } from "./application/aarti-management.service";
+import { AartiMaintenanceService } from "./application/aarti-maintenance.service";
 import { AartiPricingService } from "./application/aarti-pricing.service";
 import { AartiReportService } from "./application/aarti-report.service";
 import { AartiScanService } from "./application/aarti-scan.service";
@@ -81,6 +82,7 @@ const schemas = [
     AartiStreamService,
     AartiReportService,
     AartiManagementService,
+    AartiMaintenanceService,
     { provide: AARTI_REPOSITORY, useClass: PgAartiRepository },
   ],
   exports: [

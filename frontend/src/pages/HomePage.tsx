@@ -8,6 +8,7 @@ import { ashramService, reviewService } from "../services";
 import { storeApi, toStoreProduct, type StoreProduct } from "../services/marketplace.service";
 import { visitorArticleService } from "../services/visitorArticleService";
 import { volunteerService } from "../services/volunteer.service";
+import { useYatraEnabled } from "../modules/yatra/yatraUi";
 import { formatCurrency } from "../utils/format";
 import {
   APPROVED_SACRED_DESTINATIONS,
@@ -30,7 +31,7 @@ import {
   SectionHeader,
   ServiceCard,
   ServiceChip,
-  TIRVONA_SERVICES,
+  visibleServices,
   type TirvonaService,
 } from "../design-system/premium";
 import {
@@ -56,6 +57,8 @@ import {
 } from "lucide-react";
 
 export const HomePage: React.FC = () => {
+  const yatraEnabled = useYatraEnabled() === true;
+  const services = visibleServices(yatraEnabled);
   const { language: _language, t } = useLanguage();
   const navigate = useNavigate();
   const { searchState, updateBookingSearch, totalGuests } = useBookingSearch();
@@ -644,7 +647,7 @@ export const HomePage: React.FC = () => {
             transition={{ delay: 0.4, duration: 0.5 }}
             className="no-mobile-stack mt-8 sm:mt-12 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 sm:gap-3"
           >
-            {TIRVONA_SERVICES.map((service) => (
+            {services.map((service) => (
               <ServiceChip key={service.id} service={service} />
             ))}
           </motion.nav>
@@ -819,7 +822,7 @@ export const HomePage: React.FC = () => {
         />
 
         <div className="no-mobile-stack grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-6">
-          {TIRVONA_SERVICES.map((service) => {
+          {services.map((service) => {
             const cms = serviceCms[service.id];
             return (
               <ServiceCard

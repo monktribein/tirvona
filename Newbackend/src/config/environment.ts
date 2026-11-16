@@ -72,6 +72,14 @@ export interface Environment {
   firebaseProjectId: string;
   firebaseClientEmail: string;
   firebasePrivateKey: string;
+  /** Tirvona Yatra (bus & tour bookings). Off unless YATRA_ENABLED=true. */
+  yatraEnabled: boolean;
+  /** Yatra housekeeping sweep (expires lapsed holds). Off unless YATRA_MAINTENANCE_ENABLED=true. */
+  yatraMaintenanceEnabled: boolean;
+  /** Yatra transactional emails through Resend. Off unless YATRA_EMAIL_ENABLED=true. */
+  yatraEmailEnabled: boolean;
+  /** Daily Razorpay settlement reconciliation for Yatra. Off unless YATRA_RECONCILIATION_ENABLED=true. */
+  yatraReconciliationEnabled: boolean;
 }
 
 export const applyDnsServersFromEnvironment = (): string[] => {
@@ -192,6 +200,10 @@ export const environment = (): Environment => ({
   firebaseProjectId: process.env.FIREBASE_PROJECT_ID ?? "",
   firebaseClientEmail: process.env.FIREBASE_CLIENT_EMAIL ?? "",
   firebasePrivateKey: process.env.FIREBASE_PRIVATE_KEY ?? "",
+  yatraEnabled: boolean(process.env.YATRA_ENABLED, false),
+  yatraMaintenanceEnabled: boolean(process.env.YATRA_MAINTENANCE_ENABLED, false),
+  yatraEmailEnabled: boolean(process.env.YATRA_EMAIL_ENABLED, false),
+  yatraReconciliationEnabled: boolean(process.env.YATRA_RECONCILIATION_ENABLED, false),
 });
 
 const requireTogether = (

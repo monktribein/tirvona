@@ -304,6 +304,15 @@ export const reviewService = {
   remove: (id: string) => api.delete(`/reviews/${id}`),
 };
 
+/** Money that came in but did not become a booking (admin / finance). */
+export const paymentIssuesService = {
+  list: () => api.get("/payments/issues"),
+  markParkingRefunded: (paymentId: string, gatewayRefundId?: string) =>
+    api.post(`/payments/issues/parking/${paymentId}/mark-refunded`, {
+      ...(gatewayRefundId ? { gatewayRefundId } : {}),
+    }),
+};
+
 export const refundService = {
   list: (params: Record<string, unknown> = {}) =>
     api.get("/refunds", { params }),

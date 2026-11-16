@@ -4,6 +4,10 @@ import {
 } from "@nestjs/common";
 import { createHmac } from "node:crypto";
 import { BookingsService } from "./bookings.service";
+import {
+  PaymentRefundedException,
+  UNAPPLIED_PAYMENT_PREFIX,
+} from "../../../common/payments/unapplied-payment";
 import type { BookingActor } from "../domain/booking-customer";
 
 const KEY_SECRET = "test-key-secret";
@@ -16,6 +20,7 @@ const query = <T>(value: T) => {
   const q: any = {
     session: () => q,
     sort: () => q,
+    select: () => q,
     lean: async () => value,
     then: (resolve: (v: T) => unknown, reject?: (e: unknown) => unknown) =>
       Promise.resolve(value).then(resolve, reject),
@@ -92,7 +97,9 @@ const createService = (
     bookings: { findOne: jest.fn(() => query(bookingRow)) },
     payments: {
       findOne: paymentFindOne,
+      updateOne: jest.fn(),
     },
+    refunds: { create: jest.fn().mockResolvedValue([{}]) },
     paymentEvents: { updateOne: jest.fn().mockResolvedValue({}) },
     notifications: { create: jest.fn().mockResolvedValue({}) },
     inventoryHolds: { updateMany: jest.fn() },
@@ -209,26 +216,51 @@ describe("BookingsService.confirmPayment order ↔ booking binding", () => {
     expect(service.repository.confirmInventory).not.toHaveBeenCalled();
   });
 
-  it("refuses an already-paid booking", async () => {
+  it("refunds a second payment for a booking that is already paid, instead of keeping it", async () => {
     const { service } = createService({
       booking: booking({ paymentStatus: "fully_paid" }),
     });
     await expect(
       service.confirmPayment("booking-1", owner, dtoFor("order_A")),
     ).rejects.toThrow("already paid");
+    expect(service.repository.confirmInventory).not.toHaveBeenCalled();
+    expect(service.wallet.credit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "user-1",
+        amount: 2000,
+        category: "refund",
+        idempotencyKey: "refund:unapplied:pay_X",
+      }),
+      expect.anything(),
+    );
   });
 
-  it("does not confirm a cancelled booking even with a valid order and signature", async () => {
+  it("does not confirm a cancelled booking, and refunds the payment to the wallet", async () => {
     const { service } = createService({
       booking: booking({
         status: "cancelled",
         reservationExpiresAt: new Date(Date.now() - 60_000),
       }),
     });
-    await expect(
-      service.confirmPayment("booking-1", owner, dtoFor("order_A")),
-    ).rejects.toThrow("was cancelled");
+    const attempt = service.confirmPayment("booking-1", owner, dtoFor("order_A"));
+    await expect(attempt).rejects.toThrow(PaymentRefundedException);
+    await expect(attempt).rejects.toThrow("was cancelled");
     expect(service.repository.confirmInventory).not.toHaveBeenCalled();
+    expect(service.payments.updateOne).toHaveBeenCalledWith(
+      { _id: "pay-1" },
+      {
+        $set: expect.objectContaining({
+          status: "refunded",
+          failureReason: expect.stringMatching(/^UNAPPLIED_PAYMENT: /),
+          "gateway.paymentId": "pay_X",
+        }),
+      },
+      expect.anything(),
+    );
+    expect(service.refunds.create).toHaveBeenCalledWith(
+      [expect.objectContaining({ method: "wallet", status: "success", amount: 2000 })],
+      expect.anything(),
+    );
   });
 
   it("rejects a bad signature before touching the payment or booking", async () => {
@@ -321,14 +353,44 @@ describe("BookingsService.confirmPaymentFromWebhook", () => {
     );
   });
 
-  it("treats a duplicate webhook for an already-paid booking as a safe no-op", async () => {
+  it("treats a duplicate webhook for a booking this payment already confirmed as a safe no-op", async () => {
     const service = withWebhook(pendingPayment());
+    // The order lookup finds the row; the re-read after the conflict shows
+    // that this very payment confirmed the booking.
+    (service as any).payments.findOne = jest
+      .fn()
+      .mockReturnValueOnce(query(pendingPayment()))
+      .mockReturnValue(query({ status: "success" }));
     jest
       .spyOn(service, "confirmPayment")
       .mockRejectedValue(new ConflictException("Booking is already paid"));
     await expect(
       service.confirmPaymentFromWebhook("order_A", "pay_1"),
     ).resolves.toBe(true);
+  });
+
+  it("treats a payment that was refunded instead of applied as handled", async () => {
+    const service = withWebhook(pendingPayment());
+    jest
+      .spyOn(service, "confirmPayment")
+      .mockRejectedValue(new PaymentRefundedException("refunded"));
+    await expect(
+      service.confirmPaymentFromWebhook("order_A", "pay_1"),
+    ).resolves.toBe(true);
+  });
+
+  it("surfaces a conflict that has not used the money, so Razorpay retries the event", async () => {
+    // e.g. the room hold changed underneath the confirmation. Swallowing it
+    // used to leave the money captured with nothing confirmed.
+    const service = withWebhook(pendingPayment());
+    jest
+      .spyOn(service, "confirmPayment")
+      .mockRejectedValue(
+        new ConflictException("The reservation inventory hold is no longer available."),
+      );
+    await expect(
+      service.confirmPaymentFromWebhook("order_A", "pay_1"),
+    ).rejects.toThrow(ConflictException);
   });
 
   it("surfaces an amount mismatch instead of silently confirming", async () => {
@@ -339,6 +401,103 @@ describe("BookingsService.confirmPaymentFromWebhook", () => {
     await expect(
       service.confirmPaymentFromWebhook("order_A", "pay_1", { amountPaise: 1 }),
     ).rejects.toThrow(BadRequestException);
+  });
+});
+
+describe("BookingsService.confirmPayment after the hold ran out", () => {
+  const lapsed = new Date(Date.now() - 60_000);
+
+  it("does not hold the rooms a second time when the sweep has not expired the booking yet", async () => {
+    const { service, sentinel } = createService({
+      booking: booking({ reservationExpiresAt: lapsed }),
+    });
+    await expect(
+      service.confirmPayment("booking-1", owner, dtoFor("order_A")),
+    ).rejects.toBe(sentinel);
+    expect(service.repository.holdInventory).not.toHaveBeenCalled();
+    expect(service.repository.confirmInventory).toHaveBeenCalled();
+  });
+
+  it("takes the rooms again for an expired booking when they are still free", async () => {
+    const { service, sentinel } = createService({
+      booking: booking({ status: "expired", reservationExpiresAt: null }),
+    });
+    await expect(
+      service.confirmPayment("booking-1", owner, dtoFor("order_A")),
+    ).rejects.toBe(sentinel);
+    expect(service.repository.holdInventory).toHaveBeenCalledTimes(1);
+    expect(service.wallet.credit).not.toHaveBeenCalled();
+  });
+
+  it("refunds to the wallet when an expired booking's room went to someone else", async () => {
+    const { service } = createService({
+      booking: booking({ status: "expired", reservationExpiresAt: null }),
+    });
+    service.repository.holdInventory.mockRejectedValue(
+      new ConflictException("Rooms are no longer available on 2030-10-01."),
+    );
+    await expect(
+      service.confirmPayment("booking-1", owner, dtoFor("order_A")),
+    ).rejects.toThrow("booked by someone else");
+    expect(service.repository.confirmInventory).not.toHaveBeenCalled();
+    expect(service.wallet.credit).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 2000, idempotencyKey: "refund:unapplied:pay_X" }),
+      expect.anything(),
+    );
+    // The booking is no longer open, so wallet money parked for it goes back.
+    expect(service.wallet.releaseHold).toHaveBeenCalled();
+  });
+
+  it("queues a gateway refund for a WhatsApp guest, who has no wallet", async () => {
+    const { service } = createService({
+      booking: booking({
+        customerId: undefined,
+        whatsappCustomerId: "wa-1",
+        status: "cancelled",
+        reservationExpiresAt: lapsed,
+      }),
+    });
+    await expect(
+      service.confirmPayment("booking-1", guest, dtoFor("order_A")),
+    ).rejects.toThrow("refunded to your original payment method");
+    expect(service.wallet.credit).not.toHaveBeenCalled();
+    expect(service.payments.updateOne).toHaveBeenCalledWith(
+      { _id: "pay-1" },
+      { $set: expect.objectContaining({ status: "failed" }) },
+      expect.anything(),
+    );
+    expect(service.refunds.create).toHaveBeenCalledWith(
+      [expect.objectContaining({ method: "gateway", status: "pending" })],
+      expect.anything(),
+    );
+  });
+
+  it("refunds a payment made on an order a newer checkout replaced", async () => {
+    const { service } = createService({
+      payment: pendingPayment({ status: "failed" }),
+    });
+    await expect(
+      service.confirmPayment("booking-1", owner, dtoFor("order_A")),
+    ).rejects.toThrow("older checkout");
+    expect(service.repository.confirmInventory).not.toHaveBeenCalled();
+    expect(service.wallet.credit).toHaveBeenCalled();
+    // The booking is still open for the newer checkout: leave its wallet hold.
+    expect(service.wallet.releaseHold).not.toHaveBeenCalled();
+  });
+
+  it("never refunds the same payment twice", async () => {
+    const { service } = createService({
+      booking: booking({ status: "cancelled" }),
+      payment: pendingPayment({
+        status: "refunded",
+        failureReason: `${UNAPPLIED_PAYMENT_PREFIX}already handled`,
+      }),
+    });
+    await expect(
+      service.confirmPayment("booking-1", owner, dtoFor("order_A")),
+    ).rejects.toThrow("already been refunded");
+    expect(service.wallet.credit).not.toHaveBeenCalled();
+    expect(service.refunds.create).not.toHaveBeenCalled();
   });
 });
 

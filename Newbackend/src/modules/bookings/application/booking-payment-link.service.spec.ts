@@ -17,6 +17,7 @@ import {
 } from "../domain/payment-link-token";
 import { BookingPaymentLinkService } from "./booking-payment-link.service";
 import { BookingsService } from "./bookings.service";
+import { PaymentRefundedException } from "../../../common/payments/unapplied-payment";
 
 const JWT = "j".repeat(48);
 const KEY_SECRET = "rzp-test-secret";
@@ -519,7 +520,8 @@ describe("a WhatsApp guest paying through the link, with no login", () => {
           }),
         },
       },
-      payments: { findOne: paymentFindOne, create: jest.fn() },
+      payments: { findOne: paymentFindOne, create: jest.fn(), updateOne: jest.fn() },
+      refunds: { create: jest.fn().mockResolvedValue([{}]) },
       paymentEvents: { updateOne: jest.fn().mockResolvedValue({}) },
       notifications: { create: jest.fn().mockResolvedValue({}) },
       repository: {
@@ -598,14 +600,20 @@ describe("a WhatsApp guest paying through the link, with no login", () => {
     expect(w.bookingsService.repository.confirmInventory).not.toHaveBeenCalled();
   });
 
-  it("a duplicate confirmation of an already-paid booking is a safe no-op", async () => {
+  it("a second payment for a booking already paid another way is queued for refund, never reported as paid", async () => {
     const w = world();
     const { url } = await w.links.issue(guestActor, BOOKING_ID);
     w.row.paymentStatus = "fully_paid";
-    await expect(w.links.confirm(tokenOf(url), proofFor("order_A"))).resolves.toEqual({
-      status: "paid",
-    });
+    await expect(w.links.confirm(tokenOf(url), proofFor("order_A"))).rejects.toThrow(
+      PaymentRefundedException,
+    );
     expect(w.bookingsService.repository.confirmInventory).not.toHaveBeenCalled();
+    // A WhatsApp guest has no wallet: the refund goes to the finance queue.
+    expect(w.bookingsService.refunds.create).toHaveBeenCalledWith(
+      [expect.objectContaining({ method: "gateway", status: "pending", amount: 8818 })],
+      expect.anything(),
+    );
+    expect(w.bookingsService.wallet.credit).not.toHaveBeenCalled();
   });
 
   it("a payment row already marked successful cannot confirm the booking twice", async () => {
@@ -637,6 +645,18 @@ describe("a WhatsApp guest paying through the link, with no login", () => {
       "was cancelled",
     );
     expect(w.bookingsService.repository.confirmInventory).not.toHaveBeenCalled();
+    // The captured money is not kept: the payment is marked for refund.
+    expect(w.bookingsService.payments.updateOne).toHaveBeenCalledWith(
+      { _id: "pay-1" },
+      {
+        $set: expect.objectContaining({
+          status: "failed",
+          failureReason: expect.stringMatching(/^UNAPPLIED_PAYMENT: /),
+        }),
+      },
+      expect.anything(),
+    );
+    expect(w.bookingsService.refunds.create).toHaveBeenCalled();
   });
 
   it("refuses an order for an expired hold", async () => {

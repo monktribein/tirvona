@@ -21,6 +21,7 @@ import {
   verifyPaymentLink,
 } from "../domain/payment-link-token";
 import { BookingsService } from "./bookings.service";
+import { PaymentRefundedException } from "../../../common/payments/unapplied-payment";
 
 export type PaymentPageStatus = "payable" | "paid" | "expired" | "cancelled";
 
@@ -333,6 +334,8 @@ export class BookingPaymentLinkService {
         method: "razorpay",
       });
     } catch (error) {
+      // Refunded instead of applied: say so, never report it as paid.
+      if (error instanceof PaymentRefundedException) throw error;
       // Already paid — the webhook (or an earlier tap) got there first.
       if (!(error instanceof ConflictException)) throw error;
     }

@@ -1,13 +1,14 @@
 import type React from "react";
-import { BedDouble, CircleParking, Flame, HandHeart, Landmark, ShoppingBag, Utensils } from "lucide-react";
+import { BedDouble, Bus, CircleParking, Flame, HandHeart, Landmark, ShoppingBag, Utensils } from "lucide-react";
 
 /**
- * The seven core Tirvona services, in one place, so the homepage, the header and any future page
- * describe and link them the same way. Every `to` is an existing, working route; every highlight
- * describes something the service already does.
+ * The Tirvona services, in one place, so the homepage, the header and any future page describe and link
+ * them the same way. Every `to` is an existing, working route; every highlight describes something the
+ * service already does. Only seven show at once: use `visibleServices` (Yatra takes the Volunteer slot
+ * while Yatra is switched on, and the site is exactly as it was while it is off).
  */
 export interface TirvonaService {
-  id: "temples" | "stays" | "food" | "parking" | "pandit" | "marketplace" | "volunteer";
+  id: "temples" | "stays" | "food" | "parking" | "pandit" | "marketplace" | "volunteer" | "yatra";
   /** Full name used on cards. */
   name: string;
   /** Short name for the header and chips. */
@@ -132,7 +133,29 @@ export const TIRVONA_SERVICES: TirvonaService[] = [
     icon: HandHeart,
     tint: "#3F7D58",
   },
+  {
+    id: "yatra",
+    name: "Tirvona Yatra",
+    navLabel: "Yatra",
+    tagline: "Bus and group pilgrimages",
+    description: "Book a seat on a pilgrimage bus run by a verified partner, then keep your ticket, stay, food and puja in one journey.",
+    highlights: ["Choose your seat", "Verified partners", "Ticket, add-ons and refunds in one place"],
+    cta: "Find a Yatra",
+    to: "/yatra",
+    matches: ["/yatra", "/profile/journeys"],
+    image: "/images/home/hero-vrindavan-ghats.jpg",
+    imageAlt: "The Vrindavan ghats at sunrise",
+    icon: Bus,
+    tint: "#C2571A",
+  },
 ];
+
+/**
+ * The seven services to show. While Yatra is off nothing changes (Volunteer & Seva keeps its place);
+ * while it is on, Yatra takes that place and Volunteer & Seva moves under "More" in the header.
+ */
+export const visibleServices = (yatraEnabled: boolean): TirvonaService[] =>
+  TIRVONA_SERVICES.filter((service) => service.id !== (yatraEnabled ? "volunteer" : "yatra"));
 
 /** True when `pathname` belongs to the service. */
 export const isServiceActive = (service: TirvonaService, pathname: string) =>

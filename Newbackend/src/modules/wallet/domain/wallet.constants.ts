@@ -6,6 +6,7 @@ export const WALLET_MODULES = [
   "aarti",
   "marketplace",
   "provider_booking",
+  "yatra",
   "withdrawal",
   "admin",
 ] as const;

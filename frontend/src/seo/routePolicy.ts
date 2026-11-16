@@ -292,6 +292,14 @@ export const PRIVATE_PREFIXES: string[] = [
   "/pandit/profile",
   "/pandit/verification",
   "/provider",
+  // Tirvona Yatra: the partner console, and the public Yatra pages while the feature is
+  // switched off (YATRA_ENABLED). Move /yatra and /yatra-partner to STATIC_PAGES at launch.
+  "/operator",
+  "/yatra",
+  "/yatra-partner",
+  // Tirvona Yatra ride partner console and Destination Ops (signed-in consoles).
+  "/ride-partner",
+  "/ops",
 ];
 
 /** Public utility pages: reachable without signing in, but not search landing pages. */

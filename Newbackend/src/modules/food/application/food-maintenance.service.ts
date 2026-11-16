@@ -13,6 +13,7 @@ export class FoodMaintenanceService {
   private readonly logger = new Logger(FoodMaintenanceService.name);
   private running = false;
   private refunding = false;
+  private expiring = false;
 
   constructor(private readonly orders: FoodOrderService) {}
 
@@ -30,6 +31,23 @@ export class FoodMaintenanceService {
       return 0;
     } finally {
       this.refunding = false;
+    }
+  }
+
+  /** Orders that were placed but never paid stop showing as "Payment pending" after a day. */
+  @Interval(600_000)
+  async sweepUnpaidOrders(): Promise<number> {
+    if (process.env.FOOD_MAINTENANCE_ENABLED === "false" || this.expiring) return 0;
+    this.expiring = true;
+    try {
+      const count = await this.orders.expireUnpaidOrders();
+      if (count) this.logger.log(`Closed ${count} food order(s) that were never paid`);
+      return count;
+    } catch (error) {
+      this.logger.error(`Unpaid order sweep failed: ${(error as Error).message}`);
+      return 0;
+    } finally {
+      this.expiring = false;
     }
   }
 

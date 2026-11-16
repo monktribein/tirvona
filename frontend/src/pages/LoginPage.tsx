@@ -27,6 +27,8 @@ import { getPostLoginRedirect } from "../utils/roleRedirect";
 import { vendorApi } from "../services/marketplace.service";
 import { foodPartnerService } from "../services/foodPartner.service";
 import { providerSelfService } from "../modules/pandit/services/provider.service";
+import { fetchYatraEnabled } from "../modules/yatra/yatraUi";
+import { yatraOperator, yatraRidePartner } from "../modules/yatra/services/yatra.service";
 
 const GoogleIcon: React.FC = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
@@ -107,6 +109,21 @@ export const LoginPage: React.FC = () => {
       if (panditProfile?.data?.data) {
         navigate("/provider/dashboard", { replace: true });
         return;
+      }
+      // Yatra partners and ride partners land on their own dashboard (only while Yatra is on).
+      if (await fetchYatraEnabled().catch(() => false)) {
+        const [organiser, partner] = await Promise.all([
+          yatraOperator.me().catch(() => null),
+          yatraRidePartner.me().catch(() => null),
+        ]);
+        if (organiser?.data?.data?.registered) {
+          navigate("/operator/dashboard", { replace: true });
+          return;
+        }
+        if (partner?.data?.data?.registered) {
+          navigate("/ride-partner/dashboard", { replace: true });
+          return;
+        }
       }
     }
     navigate(target.url, { replace: true });

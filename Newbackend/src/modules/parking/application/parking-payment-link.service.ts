@@ -26,6 +26,7 @@ import {
 } from "../../bookings/domain/payment-link-token";
 import { PARKING_MODEL } from "../domain/parking.constants";
 import { ParkingBookingService } from "./parking-booking.service";
+import { PaymentRefundedException } from "../../../common/payments/unapplied-payment";
 
 export type ParkingPayStatus = "payable" | "paid" | "expired" | "cancelled";
 
@@ -297,6 +298,8 @@ export class ParkingPaymentLinkService {
         { ...proof, method: "razorpay" },
       );
     } catch (error) {
+      // Refunded instead of applied: say so, never report it as paid.
+      if (error instanceof PaymentRefundedException) throw error;
       if (!(error instanceof ConflictException)) throw error;
     }
     return { status: "paid" };
