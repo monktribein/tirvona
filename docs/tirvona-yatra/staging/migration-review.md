@@ -48,4 +48,4 @@ The steps were: apply 0012 → 0016 → `db:verify` OK (247 tables, 4,223 column
 
 ## Conclusion
 
-Both migrations add only Yatra objects. They cannot modify or break an existing production module's schema. What remains is the run on a real **staging** Supabase project (see `staging-report.md`), then owner approval for production.
+Both migrations add only Yatra objects. They cannot modify or break an existing production module's schema. What remains is applying them to the existing Tirvona database through the normal deploy after the owner's explicit approval (see `staging-report.md`). No other database is involved.

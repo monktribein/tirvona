@@ -46,7 +46,7 @@ All scenarios A–D passed, with database rows inspected after each. See `seat-i
 
 ## P3: payments and refunds
 
-17 of 18 checks passed; 1 is blocked (a real Razorpay test-mode run needs test keys). See `payment-refund-audit.md`.
+17 of 18 checks passed; 1 is blocked (a real Razorpay checkout needs the owner's authorisation, because the existing keys are live). See `payment-refund-audit.md`.
 
 ## P4: Journey Hub
 

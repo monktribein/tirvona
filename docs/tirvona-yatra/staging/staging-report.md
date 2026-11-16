@@ -1,93 +1,59 @@
-# Tirvona Yatra: staging verification report
+# Tirvona Yatra: verification status (existing Tirvona configuration)
 
-Date: 2026-11-15.
+Updated 2026-11-16. Replaces the earlier version, which wrongly assumed a separate Supabase project, Razorpay test account, Cloudinary account and Resend key.
 
-Branch `fix/booking-payment-gaps`: 6 code commits plus 1 documentation commit, all local, **not pushed**.
+Branch `fix/booking-payment-gaps`: local commits only, **not pushed**.
 
-Production safety rules held throughout:
-- no production migration;
-- no deployment;
-- no live payment;
-- no production environment change;
-- no production flag change;
-- live credentials not used, copied or printed.
+Production safety held throughout: no production migration, deployment, push, live payment, secret change or production flag change. The existing `.env` files were read only in memory to report which variables are set (yes/no); no value was printed or copied.
 
 ## Verdict
 
-**NOT READY.** The staging checks are **blocked, not failed**.
+**NOT READY.** No real-service verification has been performed, so none is claimed.
 
-This machine has no staging Supabase database and no Razorpay test, Cloudinary test or Resend staging credentials. The only credentials present (`Newbackend/.env`, `leadTirvona/.env`) are **live** (`rzp_live_…` and the shared database), and the rules forbid using them. Everything that does not need those credentials is done, and the staging kit is ready to run the blocked checks as soon as `Newbackend/.env.staging` exists.
+The implementation needs nothing new: it uses the existing database, Razorpay, Cloudinary, Resend and configuration (`../integration/infrastructure-audit.md`). What is missing is evidence from running it against those existing services, and that needs decisions that are yours.
 
-## Status by instruction
+## What is verified (evidence exists)
 
-| # | Instruction | Status | Evidence |
+| Area | Result |
+|---|---|
+| Yatra unit tests | 24/24 |
+| Yatra database tests (PostgreSQL 17, throwaway instance) | 64/64 |
+| All-modules database tests | 364/364 (earlier run) |
+| All-modules unit tests | 2,517 pass; 2 pre-existing failures in the Smart Contact QR tests (`separate-issue-smart-contact-qr-timeouts.md`) |
+| Yatra pages, desktop, tablet and mobile | 98/98 |
+| Existing modules with the Yatra flags off | passes, apart from the known Pandit page warning (`separate-issue-pandit-withdrawals.md`) |
+| Migrations 0015 and 0016: apply, verify, idempotent re-run, rollback of each, re-apply | pass on a throwaway PostgreSQL 17, by hand and again through the kit's `db` phase (10/10) |
+| Seat concurrency, expiry, duplicate confirmations, refund and wallet maths, payout rules, permissions | pass (final-QA reports) |
+| Razorpay checkout and webhook signature code | pass with test-secret unit tests |
+| Kit safety guards | verified: against the live configuration the read-only phase reports and every writing phase refuses |
+
+## What is NOT verified
+
+| # | Item | Why | What it needs |
 |---|---|---|---|
-| 1 | Separate staging Supabase; review SQL and rollbacks; apply 0015/0016 to staging; verify and roll back / re-apply | **Review done. Staging run BLOCKED** (no staging project; one must be created in your Supabase account). | `migration-review.md`: both files add only `yatra_*` objects (0 DROP/UPDATE/DELETE, 0 non-Yatra targets); both rollbacks reviewed. Full replay on PostgreSQL 17 passed (`../final-qa-report/database-integrity-report.md`). `tools/yatra-staging-check.mjs db` runs the same sequence on staging. |
-| 2 | Razorpay TEST, Cloudinary test, Resend staging; complete the 5 blocked checks | **BLOCKED** (no test credentials). Kit ready; safety guard verified. | `tools/yatra-staging-check.mjs services` and `e2e`. Guard test: the kit refused a staging file reusing the production database (same host, or another host of the same Supabase project), live keys, the production Cloudinary cloud or key, and the production Resend key. It passed only fully separate values (fake values used; no live secret touched). |
-| 3 | Separate, traceable commits; review status and diff before each; no push | **DONE** | 6 commits, below. Each was staged explicitly after reviewing `git status` and the diff. The three files shared between workstreams were split hunk by hunk. Commits 2 and 4 were typechecked in isolation in a temporary worktree (backend and frontend: 0 errors). |
-| 4 | Compare worktrees; do not delete | **DONE, nothing deleted** | `worktree-comparison.md`: the old worktree has no unique work, and its branch adds no code. Waiting for your approval. |
-| 5 | Leave the Pandit issue; report it separately | **DONE** (untouched) | `separate-issue-pandit-withdrawals.md` |
-| 6 | WhatsApp and SMS documented as pending | **DONE** | `docs/yatra/notifications.md` now says "pending, not operational" and explains that the organiser "Share on WhatsApp" buttons are only `wa.me` share links. Every other mention already said "not implemented". |
-| 7 | Complete staging verification | **Local re-verification DONE. Staging-specific checks BLOCKED.** | below |
+| A5 | Migrations 0015/0016 on the existing Tirvona database | Not applied; your approval required | Your explicit approval. They are additive and `yatra_*` only (`migration-review.md`). Apply them through the normal deploy, or with the kit's `db` phase, which on the live database applies only if exactly 0015 and 0016 are pending and never rolls back. |
+| A1 | A real Razorpay checkout with Yatra | The existing Razorpay keys are live; none of the Yatra code has taken a real payment | Your explicit authorisation, one of: (a) a single minimum-value live booking and its refund to the wallet, done through the app after A5, with the Yatra flag on only briefly; or (b) Razorpay test keys supplied by you through the same variable names in an isolated environment, using `--env-file`. |
+| A2 | Razorpay settlement reconciliation against the real API | Needs real captured payments | After A1, Finance Center → Razorpay reconciliation |
+| A3 | Cloudinary private upload and signed link in the real account | Not exercised | After A5, upload one organiser document, one ride partner document and one payout proof through the app and check the plain URL is not public |
+| A4 | Resend email in the real account | Not exercised; `YATRA_EMAIL_ENABLED` is off | After A5, send one of each Yatra email through the app, then switch the email flag on |
+| — | WhatsApp and SMS | Not implemented | Documented as pending in `docs/yatra/notifications.md` |
 
-## Commits (local only)
+## The verification kit (`tools/yatra-staging-check.mjs`)
 
-| # | Commit | Scope |
+It reads the application's own variable names from an env file (default `Newbackend/.env`). There are no extra variables and no second file.
+
+| Phase | What it does | Against the live configuration |
 |---|---|---|
-| 1 | `23d6352` chore(deps): bump mongoose 9.9.1 → 9.11.4 | `package.json`, lockfile (mongoose subtree only) |
-| 2 | `b84847b` fix(payments): refund payments that cannot become a booking; Payment Issues page | The earlier booking-payment fixes (stays, aarti, parking, food, Payment Issues page). Only the payment hunks of `payments.module.ts`, `App.tsx` and `DashboardLayout.tsx`. |
-| 3 | `d70d80c` fix(auth): stop the 401 polling loop in a tab whose login ended elsewhere | `api.ts`, `AuthContext.tsx` |
-| 4 | `2a7fd3c` feat(yatra): Tirvona Yatra P0–P6 (all flags off) | The whole Yatra module in its pre-QA-fix state: migrations, rollbacks, docs, shared-file hunks |
-| 5 | `7650192` fix(yatra): final-QA fixes, regression tests and QA reports | The 8 fixes in `bugs-fixed.md`, the QA test suites, `docs/tirvona-yatra/final-qa-report/` |
-| 6 | `347f685` fix(yatra): treat a Resend rejection as a failed customer email | New finding while preparing the email check (below) |
+| `readiness` | Reports yes/no for each variable, the Razorpay key mode, the flags | Allowed (read-only, no connection) |
+| `db-plan` | `migrate --plan`: lists pending migrations | Allowed (read-only) |
+| `db` | Applies and verifies 0015/0016; with another database it also rolls back and re-applies | Refused unless `--allow-live`; on the live database it never rolls back and applies only if exactly 0015 and 0016 are pending |
+| `services` | Razorpay order and signature, Cloudinary upload, Resend email | Refused: it needs a `rzp_test_` key and `--allow-live` |
+| `e2e` | Whole stack with a real checkout and webhooks | Refused: it needs a `rzp_test_` key and `--allow-live` |
 
-| 7 | (this documentation commit) docs(yatra): staging verification kit, reports and pending-notification note | `docs/tirvona-yatra/staging/` and the clarification in `docs/yatra/notifications.md`. Documentation and kit only; no application code. |
+Current readiness report: all required variables are set (the sender address is derived by the app from its defaults), the Razorpay key is a **live** key, and all four Yatra flags are off. A live key is never used for a payment by the kit.
 
-Deliberately **not** committed and left untouched: `docs/seo/publishing/`. It holds two superseded drafts of the 2026-11-03 SEO migration, never committed and each marked "SUPERSEDED … never run this copy". It is not part of this work.
+## Decisions for you
 
-## New finding, fixed (commit 6)
-
-| Defect | Root cause | Fix | Test |
-|---|---|---|---|
-| A Yatra customer email that Resend **rejected** (for example an unverified sender) was reported as sent, with nothing logged | Resend SDK 6.x returns `{ data, error }` instead of throwing; `emailCustomer` ignored `error` | Read `error`; log a warning without the recipient address; return false | `yatra-notifier.spec.ts`: accepted, rejected, thrown, disabled (4/4) |
-
-## Checks
-
-| Area | Check | Status | Evidence |
-|---|---|---|---|
-| Yatra tests | Unit (4 suites) | PASS 24/24 | after commit 6 |
-| Yatra tests | Postgres (3 suites) | PASS 64/64 | on committed code (HEAD) |
-| All modules | Unit suite (202 suites) | 2,517 PASS, **2 FAIL: pre-existing, not Yatra** | After commit 6. The 2 failures are 30-second timeouts in `smart-contact/application/qr.service.spec.ts` (see below). Earlier full runs today: 2,515/2,515. |
-| All modules | Postgres suite | PASS 364/364 | identical code before the commits; Yatra suites re-run after |
-| Flags OFF | Existing-module page regression (homepage at 3 widths, stays, ashrams, pandits, food, restaurants, parking, marketplace, aarti, events, temples, circuits, destinations, login, profile, wallet, admin, finance, HR, restaurant and vendor consoles); Yatra APIs 404 | PASS 35, FAIL 1 (pre-existing Pandit warning, reported separately) | dark-deploy smoke |
-| Flags ON | All Yatra pages at desktop, tablet and mobile | PASS 98/98 | Yatra UI smoke |
-| Permissions | Customer, organiser (owner and staff), Super Admin, Finance Manager, HR and Executive (city scope), ride partner ("driver/partner" in your list) | PASS (48 role checks + IDOR suite) | `yatra-qa.http.pg-spec.ts` |
-| Seat concurrency, expiry, confirmation | 100 vs 40 seats; customer vs organiser race; hold expiry; duplicate confirms | PASS | `seat-inventory-concurrency-report.md` |
-| Payments (logic) | Signatures, duplicate and late webhooks, refunds, wallet credits, ledger, payout reconciliation | PASS (demo payments + test-secret HMAC) | `payment-refund-audit.md`, `finance-payout-audit.md` |
-| Staging | 0015/0016 on a real staging Supabase; verify; rollback and re-apply | **BLOCKED** | needs `STAGING_SUPABASE_DB_URL` |
-| Staging | Razorpay TEST: real order, real hosted checkout, duplicate and late webhooks for a real payment, refund to wallet, ledger, Razorpay reconciliation | **BLOCKED** | needs Razorpay test keys |
-| Staging | Cloudinary test: authenticated upload, signed link opens, unsigned URL refused, KYC upload through the app | **BLOCKED** | needs a Cloudinary test account |
-| Staging | Resend staging: test email and the Yatra booking email | **BLOCKED** | needs a staging Resend key and a mailbox |
-| Notifications | WhatsApp, SMS | NOT IMPLEMENTED (documented as pending) | `docs/yatra/notifications.md` |
-
-## Pre-existing issues observed (not Yatra, documented separately, not changed)
-
-- `separate-issue-smart-contact-qr-timeouts.md`: two load-sensitive 30-second timeouts in the Smart Contact QR unit tests.
-- `separate-issue-pandit-withdrawals.md`: invalid HTML nesting on the Pandit Withdrawals admin page.
-
-## What I need from you (nothing goes in chat)
-
-1. Create a **new Supabase project** for staging (free tier is enough).
-2. In Razorpay, switch to **Test Mode** and create API keys (`rzp_test_…`).
-3. Create a **separate Cloudinary** account or product environment.
-4. Create a **Resend staging API key** with a verified sender, and choose a mailbox you can read.
-5. Copy `docs/tirvona-yatra/staging/env.staging.example` to `Newbackend/.env.staging` (already ignored by git) and fill it in on this machine.
-6. Tell me "staging file ready". I will run `preflight` → `db` → `services` → `e2e`. In `e2e` you make **one** Razorpay TEST checkout in your browser (test card; no real money). I will then report every result with evidence and give the final verdict.
-
-## Deployment prerequisites (after staging passes)
-
-1. All staging checks PASS (or are explicitly accepted by you).
-2. Your explicit approval to apply 0015/0016 to production. They are applied by the deploy pipeline when the code reaches `main`, so the code and the migrations ship together.
-3. Your approval to push the branch and open a PR. CI must pass: lint, typecheck, unit, Postgres, audit, build, route check.
-4. Deploy with **all Yatra flags off**, confirm existing modules, then follow `docs/yatra/launch-and-rollback.md`.
-5. WhatsApp and SMS remain pending; launch with in-app notifications and, after staging email passes, email.
+1. **A5:** approve applying 0015/0016 to the existing database (or say when).
+2. **A1:** choose (a) one small authorised live payment and refund, (b) test keys through the same variable names in an isolated environment, or (c) go to production approval with A1 explicitly accepted as unverified. I recommend (a) after A5, with a minimum-value booking you make yourself.
+3. Worktree deletion, the commit plan and the push remain as before (nothing done without your word).

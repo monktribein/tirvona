@@ -49,7 +49,7 @@ No critical blocker is marked passed without a test that ran. Items 9 and 11 are
 ## What must happen before production approval
 
 1. Owner approves migrations 0015 and 0016 (additive, `yatra_*` only, rollback tested).
-2. On staging, with **test** credentials:
+2. With the existing Tirvona configuration, after the migrations are approved and with the owner's authorisation for anything that moves money (see `../staging/staging-report.md`):
    - A1: one Razorpay test-mode booking, webhook and wallet refund;
    - A3: one Cloudinary authenticated upload and signed view each for organiser KYC, ride partner KYC and payout proof;
    - A4: one Resend email;
@@ -63,7 +63,7 @@ No critical blocker is marked passed without a test that ran. Items 9 and 11 are
 **READY FOR STAGING.**
 
 The code passes every executed functional, concurrency, financial, security and regression check, and the defects found were fixed with regression tests. It is **not yet ready for production approval** because:
-- the real Razorpay, Cloudinary, Resend and Supabase-migration steps (A1–A5) could not be executed here without test credentials or approval;
+- the real Razorpay, Cloudinary, Resend and Supabase-migration steps (A1–A5) could not be executed here: they need the migrations approved and, for a real payment, the owner's explicit authorisation;
 - WhatsApp and SMS are not implemented;
 - the branch mixes Yatra with other uncommitted work.
 

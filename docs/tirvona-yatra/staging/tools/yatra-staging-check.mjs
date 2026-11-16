@@ -1,21 +1,36 @@
 #!/usr/bin/env node
 /**
- * Tirvona Yatra — staging verification kit.
+ * Tirvona Yatra: verification kit for the EXISTING Tirvona configuration.
  *
- *   node docs/tirvona-yatra/staging/tools/yatra-staging-check.mjs <phase>
+ *   node docs/tirvona-yatra/staging/tools/yatra-staging-check.mjs <phase> [options]
  *
- * Phases (run in this order):
- *   preflight  safety checks only (no network, no database writes)
- *   db         migrations on the STAGING database: plan, apply, verify, rollback/re-apply (0016, then 0016+0015)
- *   services   Razorpay TEST order + checkout signature, Cloudinary authenticated upload + signed link, Resend email
- *   e2e        full stack against staging: real Razorpay test checkout (one manual step), webhooks, refund, wallet,
- *              ledger, reconciliation, KYC upload through the app, booking email
+ * It uses the application's own variable names (SUPABASE_DB_URL, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET,
+ * RAZORPAY_WEBHOOK_SECRET, CLOUDINARY_*, RESEND_*), read from an env file. There is no second
+ * variable set. The default file is Newbackend/.env, the live one.
  *
- * SAFETY
- *  - Staging values are read ONLY from Newbackend/.env.staging, using STAGING_* names the app itself never reads.
- *  - Newbackend/.env (live) is read ONLY to refuse anything that matches production; it is never used or printed.
- *  - Razorpay keys must be test keys (rzp_test_). Same DB host/project, same Cloudinary cloud or key, or the same
- *    Resend key as production => refuse.
+ * Phases
+ *   readiness  Read-only, no network and no database access. Reports, as yes/no only, which of the
+ *              variables above are set, whether the Razorpay key is a test or live key, and which
+ *              database project is configured (masked).
+ *   db-plan    Read-only: `migrate --plan` (lists pending migrations; changes nothing).
+ *   db         APPLIES 0015/0016 and verifies.   [writes to the database]
+ *              On a database other than the live one it also rolls back and re-applies; on the live
+ *              database it applies only if exactly 0015 and 0016 are pending and never rolls back.
+ *   services   Razorpay order + signature, Cloudinary upload, Resend email. [external writes]
+ *   e2e        Full stack with real Razorpay checkout and webhooks.        [writes data and moves money]
+ *
+ * Options
+ *   --env-file <path>   Use another env file with the SAME variable names (default Newbackend/.env).
+ *                       Use this only if an isolated environment is supplied later.
+ *   --email-to <addr>   Mailbox for the Resend checks (services, e2e).
+ *   --allow-live        Unlocks writing phases against the database configured in Newbackend/.env.
+ *                       Needs the owner's explicit approval; never implied.
+ *
+ * Safety
+ *  - Only readiness and db-plan run against the live env file without an extra flag, and both are read-only.
+ *  - db, services and e2e refuse to touch the database configured in Newbackend/.env unless --allow-live is given.
+ *  - services and e2e create Razorpay orders and payments, so they refuse unless RAZORPAY_KEY_ID is a test
+ *    key (rzp_test_). A live key is never used for a payment, even with --allow-live.
  *  - Secrets are never printed. Results (no secrets) are written to docs/tirvona-yatra/staging/results/.
  */
 import { createRequire } from "node:module";
@@ -54,6 +69,8 @@ function parseEnv(file) {
   }
   return out;
 }
+/** The sender address, derived exactly as Newbackend/src/config/environment.ts derives it. */
+const resendFrom = (e) => e.RESEND_FROM_EMAIL ?? `${e.EMAIL_FROM_NAME ?? "Tirvona"} <${e.EMAIL_FROM_EMAIL ?? "notifications@tirvona.com"}>`;
 const dbIdentity = (url) => {
   try {
     const u = new URL(url);
@@ -64,44 +81,56 @@ const dbIdentity = (url) => {
   }
 };
 
-/** Validates .env.staging against production. Returns the staging config or exits. */
-function preflight({ needDb = false, needServices = false } = {}) {
-  const stagingFile = path.join(BACKEND, ".env.staging");
-  const s = parseEnv(stagingFile);
-  const prod = parseEnv(path.join(BACKEND, ".env"));
+const args = process.argv.slice(3);
+const opt = (name) => { const i = args.indexOf(`--${name}`); return i >= 0 ? args[i + 1] : undefined; };
+const flag = (name) => args.includes(`--${name}`);
+const LIVE_ENV_FILE = path.join(BACKEND, ".env");
+const envFile = path.resolve(opt("env-file") ?? LIVE_ENV_FILE);
+const usingLiveFile = envFile === path.resolve(LIVE_ENV_FILE);
+
+/**
+ * Loads the env file and applies the guards for the phase. `writes` = changes the database or an
+ * external service; `money` = creates Razorpay orders or payments.
+ */
+function preflight({ writes = false, money = false, services = false } = {}) {
+  const s = parseEnv(envFile);
+  const live = parseEnv(LIVE_ENV_FILE);
   const problems = [];
   const ok = (cond, msg) => { if (!cond) problems.push(msg); return cond; };
-  ok(fs.existsSync(stagingFile), "Newbackend/.env.staging does not exist (copy docs/tirvona-yatra/staging/env.staging.example)");
-  const tracked = (() => { try { execFileSync("git", ["-C", ROOT, "ls-files", "--error-unmatch", "Newbackend/.env.staging"], { stdio: "ignore" }); return true; } catch { return false; } })();
-  ok(!tracked, "Newbackend/.env.staging is tracked by git — remove it from git");
-
-  if (needDb) {
-    const st = dbIdentity(s.STAGING_SUPABASE_DB_URL ?? "");
-    const pr = dbIdentity(prod.SUPABASE_DB_URL ?? "");
-    if (ok(st, "STAGING_SUPABASE_DB_URL is missing or not a URL") && pr) {
-      ok(!(st.host === pr.host && st.user === pr.user), "STAGING_SUPABASE_DB_URL points at the PRODUCTION database");
-      ok(!pr.ref || (st.ref !== pr.ref && !String(s.STAGING_SUPABASE_DB_URL).includes(pr.ref)), "STAGING_SUPABASE_DB_URL belongs to the PRODUCTION Supabase project");
-    }
+  ok(fs.existsSync(envFile), `env file not found: ${path.relative(ROOT, envFile)}`);
+  const tracked = (() => { try { execFileSync("git", ["-C", ROOT, "ls-files", "--error-unmatch", path.relative(ROOT, envFile)], { stdio: "ignore" }); return true; } catch { return false; } })();
+  ok(!tracked, "the env file is tracked by git");
+  ok(Boolean(s.SUPABASE_DB_URL), "SUPABASE_DB_URL is not set in the env file");
+  const mine = dbIdentity(s.SUPABASE_DB_URL ?? "");
+  const theirs = dbIdentity(live.SUPABASE_DB_URL ?? "");
+  const sameAsLive = Boolean(mine && theirs && (mine.ref && theirs.ref ? mine.ref === theirs.ref : mine.host === theirs.host && mine.user === theirs.user));
+  if (writes) ok(!sameAsLive || flag("allow-live"), "this phase writes to the database configured in Newbackend/.env; it needs --allow-live, which needs the owner's explicit approval");
+  if (money) ok((s.RAZORPAY_KEY_ID ?? "").startsWith("rzp_test_"), "this phase creates Razorpay orders and payments and needs a Razorpay TEST key (rzp_test_); a live key is never used");
+  if (services) {
+    ok(Boolean(s.RAZORPAY_KEY_SECRET && s.CLOUDINARY_CLOUD_NAME && s.CLOUDINARY_API_KEY && s.CLOUDINARY_API_SECRET && s.RESEND_API_KEY), "RAZORPAY_KEY_SECRET, CLOUDINARY_* or RESEND_API_KEY are not set");
+    ok(/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(opt("email-to") ?? ""), "pass --email-to <a mailbox you can read>");
   }
-  if (needServices) {
-    const key = s.STAGING_RAZORPAY_KEY_ID ?? "";
-    ok(key.startsWith("rzp_test_"), "STAGING_RAZORPAY_KEY_ID must be a Razorpay TEST key (rzp_test_…)");
-    ok(key !== prod.RAZORPAY_KEY_ID, "STAGING_RAZORPAY_KEY_ID equals the production key");
-    ok(Boolean(s.STAGING_RAZORPAY_KEY_SECRET) && s.STAGING_RAZORPAY_KEY_SECRET !== prod.RAZORPAY_KEY_SECRET, "STAGING_RAZORPAY_KEY_SECRET missing or equal to production");
-    ok(Boolean(s.STAGING_RAZORPAY_WEBHOOK_SECRET) && s.STAGING_RAZORPAY_WEBHOOK_SECRET !== prod.RAZORPAY_WEBHOOK_SECRET, "STAGING_RAZORPAY_WEBHOOK_SECRET missing or equal to production");
-    ok(Boolean(s.STAGING_CLOUDINARY_CLOUD_NAME) && s.STAGING_CLOUDINARY_CLOUD_NAME !== prod.CLOUDINARY_CLOUD_NAME, "STAGING_CLOUDINARY_CLOUD_NAME missing or equal to production");
-    ok(Boolean(s.STAGING_CLOUDINARY_API_KEY) && s.STAGING_CLOUDINARY_API_KEY !== prod.CLOUDINARY_API_KEY, "STAGING_CLOUDINARY_API_KEY missing or equal to production");
-    ok(Boolean(s.STAGING_CLOUDINARY_API_SECRET), "STAGING_CLOUDINARY_API_SECRET missing");
-    ok(Boolean(s.STAGING_RESEND_API_KEY) && s.STAGING_RESEND_API_KEY !== prod.RESEND_API_KEY, "STAGING_RESEND_API_KEY missing or equal to production");
-    ok(/@/.test(s.STAGING_RESEND_FROM_EMAIL ?? ""), "STAGING_RESEND_FROM_EMAIL missing");
-    ok(/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s.STAGING_TEST_EMAIL_TO ?? ""), "STAGING_TEST_EMAIL_TO missing (a mailbox you can read)");
-  }
+  if (money) ok(Boolean(s.RAZORPAY_WEBHOOK_SECRET), "RAZORPAY_WEBHOOK_SECRET is not set");
   if (problems.length) {
     for (const p of problems) record(`preflight: ${p}`, "REFUSED");
     finish(2);
   }
-  record("preflight: staging configuration is separate from production", "PASS", `${needDb ? "database" : ""}${needDb && needServices ? " + " : ""}${needServices ? "Razorpay test / Cloudinary / Resend" : ""}`.trim());
-  return s;
+  record("preflight: guards satisfied", "PASS", `env file ${usingLiveFile ? "Newbackend/.env (live)" : path.relative(ROOT, envFile)}; database ${sameAsLive ? "same as the live one" : "different from the live one"}`);
+  return { ...s, CHECK_EMAIL_TO: opt("email-to") ?? "", ON_LIVE_DB: sameAsLive };
+}
+
+/** Read-only report: yes/no per variable, key mode, masked database project. Never prints a value. */
+function phaseReadiness() {
+  const s = parseEnv(envFile);
+  const names = ["SUPABASE_DB_URL", "JWT_SECRET", "RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET", "RAZORPAY_WEBHOOK_SECRET", "CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET", "RESEND_API_KEY", "PAYOUT_ENCRYPTION_KEY", "FRONTEND_URL"];
+  for (const n of names) record(`config: ${n}`, s[n] ? "SET" : "MISSING");
+  const mode = (s.RAZORPAY_KEY_ID ?? "").startsWith("rzp_live_") ? "LIVE key" : (s.RAZORPAY_KEY_ID ?? "").startsWith("rzp_test_") ? "TEST key" : "no key";
+  record("config: Razorpay key mode", "INFO", `${mode} (money-moving phases need a TEST key)`);
+  record("config: Resend sender", "INFO", s.RESEND_FROM_EMAIL ? "RESEND_FROM_EMAIL is set" : "derived by the app from EMAIL_FROM_NAME / EMAIL_FROM_EMAIL (default notifications@tirvona.com)");
+  const id = dbIdentity(s.SUPABASE_DB_URL ?? "");
+  record("config: database project", "INFO", id ? `${id.ref ? "project " + id.ref.slice(0, 3) + "…" + id.ref.slice(-2) : "host " + id.host}` : "none");
+  for (const n of ["YATRA_ENABLED", "YATRA_MAINTENANCE_ENABLED", "YATRA_EMAIL_ENABLED", "YATRA_RECONCILIATION_ENABLED"]) record(`flag: ${n}`, "INFO", s[n] === "true" ? "true" : "false/unset");
+  finish(0);
 }
 
 function finish(code) {
@@ -139,8 +168,8 @@ const loadTs = (rel) => {
 
 // ========================================================================== db
 async function phaseDb() {
-  const s = preflight({ needDb: true });
-  const url = s.STAGING_SUPABASE_DB_URL;
+  const s = preflight({ writes: true });
+  const url = s.SUPABASE_DB_URL;
   const state = async () => {
     const c = await stagingDb(url);
     try {
@@ -159,8 +188,16 @@ async function phaseDb() {
   };
   try {
     const before = await state();
-    record("db: connected to the staging database", "PASS", `${before.all} public tables before; 0015 applied=${before.m15}, 0016 applied=${before.m16}`);
-    record("db: migrate --plan", "INFO", dbTool("migrate.js", url, ["--plan"]).split("\n").slice(-6).join(" | "));
+    record("db: connected to the configured database", "PASS", `${before.all} public tables before; 0015 applied=${before.m15}, 0016 applied=${before.m16}`);
+    const plan = dbTool("migrate.js", url, ["--plan"]);
+    record("db: migrate --plan", "INFO", plan.split("\n").slice(-6).join(" | "));
+    if (s.ON_LIVE_DB) {
+      const pending = plan.split("\n").map((l) => l.match(/^pending\s+(\S+)/)?.[1]).filter(Boolean);
+      const expected = ["0015_yatra_module.sql", "0016_yatra_rides_finance_ops.sql"];
+      const exact = pending.length === 2 && expected.every((m) => pending.includes(m));
+      record("db: live database has exactly 0015 and 0016 pending", exact ? "PASS" : "REFUSED", exact ? "" : `pending: ${pending.join(", ") || "none"}; nothing applied`);
+      if (!exact) throw new Error("live database: refusing to apply anything other than exactly 0015 and 0016");
+    }
     dbTool("migrate.js", url);
     record("db: migrate", "PASS");
     const v1 = dbTool("verify.js", url);
@@ -168,21 +205,25 @@ async function phaseDb() {
     record("db: migrate again is a no-op", /up to date/i.test(dbTool("migrate.js", url)) ? "PASS" : "FAIL");
     let st = await state();
     record("db: 22 Yatra tables, both migrations recorded", st.yatra === 22 && st.m15 && st.m16 ? "PASS" : "FAIL", JSON.stringify(st));
-    await rollback("0016_yatra_rides_finance_ops.down.sql");
-    st = await state();
-    record("db: rollback 0016 leaves the 15 P0–P4 tables", st.yatra === 15 && st.m15 && !st.m16 ? "PASS" : "FAIL", JSON.stringify(st));
-    dbTool("migrate.js", url);
-    const v2 = dbTool("verify.js", url);
-    record("db: re-apply 0016 and verify", /schema OK/.test(v2) ? "PASS" : "FAIL");
-    const total = (await state()).all;
-    await rollback("0016_yatra_rides_finance_ops.down.sql");
-    await rollback("0015_yatra_module.down.sql");
-    st = await state();
-    record("db: full rollback removes every Yatra table and leaves the rest", st.yatra === 0 && !st.m15 && !st.m16 && st.all === total - 22 ? "PASS" : "FAIL", JSON.stringify(st));
-    dbTool("migrate.js", url);
-    const v3 = dbTool("verify.js", url);
-    st = await state();
-    record("db: re-apply 0015 + 0016 and verify", /schema OK/.test(v3) && st.yatra === 22 ? "PASS" : "FAIL", v3.split("\n").slice(-2).join(" | "));
+    if (s.ON_LIVE_DB) {
+      record("db: rollback / re-apply", "SKIPPED", "never run on the live database (a rollback drops tables); rehearsed on a throwaway PostgreSQL 17 instead");
+    } else {
+      await rollback("0016_yatra_rides_finance_ops.down.sql");
+      st = await state();
+      record("db: rollback 0016 leaves the 15 P0–P4 tables", st.yatra === 15 && st.m15 && !st.m16 ? "PASS" : "FAIL", JSON.stringify(st));
+      dbTool("migrate.js", url);
+      const v2 = dbTool("verify.js", url);
+      record("db: re-apply 0016 and verify", /schema OK/.test(v2) ? "PASS" : "FAIL");
+      const total = (await state()).all;
+      await rollback("0016_yatra_rides_finance_ops.down.sql");
+      await rollback("0015_yatra_module.down.sql");
+      st = await state();
+      record("db: full rollback removes every Yatra table and leaves the rest", st.yatra === 0 && !st.m15 && !st.m16 && st.all === total - 22 ? "PASS" : "FAIL", JSON.stringify(st));
+      dbTool("migrate.js", url);
+      const v3 = dbTool("verify.js", url);
+      st = await state();
+      record("db: re-apply 0015 + 0016 and verify", /schema OK/.test(v3) && st.yatra === 22 ? "PASS" : "FAIL", v3.split("\n").slice(-2).join(" | "));
+    }
   } catch (e) {
     record("db: unexpected error", "FAIL", String(e.stderr || e.message).slice(0, 400));
   }
@@ -191,17 +232,17 @@ async function phaseDb() {
 
 // =================================================================== services
 async function phaseServices() {
-  const s = preflight({ needServices: true });
+  const s = preflight({ writes: true, money: true, services: true });
   // --- Razorpay (TEST mode) through Tirvona's own gateway class.
   try {
     const { YatraGatewayService } = loadTs("src/modules/yatra/application/yatra-support.service.ts");
-    const gw = new YatraGatewayService(configOf({ razorpayKeyId: s.STAGING_RAZORPAY_KEY_ID, razorpayKeySecret: s.STAGING_RAZORPAY_KEY_SECRET, nodeEnv: "production" }));
+    const gw = new YatraGatewayService(configOf({ razorpayKeyId: s.RAZORPAY_KEY_ID, razorpayKeySecret: s.RAZORPAY_KEY_SECRET, nodeEnv: "production" }));
     const order = await gw.createOrder(1, `yatra-staging-${Date.now()}`, { purpose: "staging_check" });
     record("razorpay: test order created by YatraGatewayService", order.demo === false && /^order_/.test(order.orderId) && order.amount === 100 ? "PASS" : "FAIL", `order ${order.orderId}, ${order.amount} paise`);
     const Razorpay = requireB("razorpay");
-    const fetched = await new Razorpay({ key_id: s.STAGING_RAZORPAY_KEY_ID, key_secret: s.STAGING_RAZORPAY_KEY_SECRET }).orders.fetch(order.orderId);
+    const fetched = await new Razorpay({ key_id: s.RAZORPAY_KEY_ID, key_secret: s.RAZORPAY_KEY_SECRET }).orders.fetch(order.orderId);
     record("razorpay: order visible in the Razorpay TEST account", fetched.status === "created" && Number(fetched.amount) === 100 ? "PASS" : "FAIL", `status ${fetched.status}`);
-    const sig = createHmac("sha256", s.STAGING_RAZORPAY_KEY_SECRET).update(`${order.orderId}|pay_stagingcheck01`).digest("hex");
+    const sig = createHmac("sha256", s.RAZORPAY_KEY_SECRET).update(`${order.orderId}|pay_stagingcheck01`).digest("hex");
     record("razorpay: checkout signature verified with the test secret; tampered rejected", gw.verifySignature(order.orderId, "pay_stagingcheck01", sig) && !gw.verifySignature(order.orderId, "pay_other", sig) ? "PASS" : "FAIL");
     record("razorpay: demo payments refused (production mode, keys configured)", !gw.verifySignature("demo_order_x", "demo_pay_x", "") ? "PASS" : "FAIL");
   } catch (e) {
@@ -210,14 +251,14 @@ async function phaseServices() {
   // --- Cloudinary (separate test account) through Tirvona's private storage class.
   try {
     const { YatraDocumentStorage } = loadTs("src/modules/yatra/application/yatra-support.service.ts");
-    const storage = new YatraDocumentStorage(configOf({ cloudinaryCloudName: s.STAGING_CLOUDINARY_CLOUD_NAME, cloudinaryApiKey: s.STAGING_CLOUDINARY_API_KEY, cloudinaryApiSecret: s.STAGING_CLOUDINARY_API_SECRET, cloudinaryFolder: "tirvona-staging" }));
+    const storage = new YatraDocumentStorage(configOf({ cloudinaryCloudName: s.CLOUDINARY_CLOUD_NAME, cloudinaryApiKey: s.CLOUDINARY_API_KEY, cloudinaryApiSecret: s.CLOUDINARY_API_SECRET, cloudinaryFolder: "tirvona-staging" }));
     const stored = await storage.put(PNG, "yatra-staging-check", "image");
     record("cloudinary: authenticated upload", Boolean(stored.publicId) ? "PASS" : "FAIL", stored.publicId);
     const link = storage.signedUrl({ ...stored, format: stored.format || "png" });
     const signed = await fetch(link.url);
     record("cloudinary: signed 5-minute link opens the file", signed.status === 200 ? "PASS" : "FAIL", `HTTP ${signed.status}, expires ${new Date(link.expiresAt).toISOString()}`);
-    const plain = await fetch(`https://res.cloudinary.com/${s.STAGING_CLOUDINARY_CLOUD_NAME}/image/authenticated/${stored.publicId}.png`);
-    const publicUrl = await fetch(`https://res.cloudinary.com/${s.STAGING_CLOUDINARY_CLOUD_NAME}/image/upload/${stored.publicId}.png`);
+    const plain = await fetch(`https://res.cloudinary.com/${s.CLOUDINARY_CLOUD_NAME}/image/authenticated/${stored.publicId}.png`);
+    const publicUrl = await fetch(`https://res.cloudinary.com/${s.CLOUDINARY_CLOUD_NAME}/image/upload/${stored.publicId}.png`);
     record("cloudinary: file is NOT reachable without a signature", plain.status >= 400 && publicUrl.status >= 400 ? "PASS" : "FAIL", `unsigned authenticated URL HTTP ${plain.status}; public URL HTTP ${publicUrl.status}`);
     await storage.remove(stored);
     record("cloudinary: test file removed", "PASS");
@@ -227,12 +268,12 @@ async function phaseServices() {
   // --- Resend (staging key) through Tirvona's notifier, plus a direct SDK check.
   try {
     const { Resend } = requireB("resend");
-    const direct = await new Resend(s.STAGING_RESEND_API_KEY).emails.send({ from: s.STAGING_RESEND_FROM_EMAIL, to: s.STAGING_TEST_EMAIL_TO, subject: "[STAGING] Tirvona Yatra email check", text: "Staging email check from the Tirvona Yatra verification kit. No action needed." });
+    const direct = await new Resend(s.RESEND_API_KEY).emails.send({ from: resendFrom(s), to: s.CHECK_EMAIL_TO, subject: "[STAGING] Tirvona Yatra email check", text: "Staging email check from the Tirvona Yatra verification kit. No action needed." });
     record("resend: staging key accepted a test email", direct?.data?.id && !direct.error ? "PASS" : "FAIL", direct?.error ? `${direct.error.name}: ${direct.error.message}` : `id ${direct?.data?.id}`);
     const { YatraNotifier } = loadTs("src/modules/yatra/application/yatra-support.service.ts");
-    const notifier = new YatraNotifier({}, {}, { findById: () => ({ select: () => ({ lean: async () => null }) }) }, configOf({ yatraEmailEnabled: true, resendApiKey: s.STAGING_RESEND_API_KEY, resendFromEmail: s.STAGING_RESEND_FROM_EMAIL, frontendUrl: "https://staging.tirvona.invalid" }));
-    const sent = await notifier.emailCustomer({ contact: { email: s.STAGING_TEST_EMAIL_TO, name: "Staging check" } }, { title: "[STAGING] Your Yatra booking is confirmed", message: "This is the Yatra booking email template sent from staging.", reference: "TVN-YTR-STAGING", highlight: { label: "Ticket code", code: "STG-001" }, ctaPath: "/profile/journeys" });
-    record("resend: Yatra booking email sent through YatraNotifier", sent ? "PASS" : "FAIL", `check ${s.STAGING_TEST_EMAIL_TO.replace(/^(.).*(@.*)$/, "$1***$2")} for 2 "[STAGING]" emails`);
+    const notifier = new YatraNotifier({}, {}, { findById: () => ({ select: () => ({ lean: async () => null }) }) }, configOf({ yatraEmailEnabled: true, resendApiKey: s.RESEND_API_KEY, resendFromEmail: resendFrom(s), frontendUrl: "https://staging.tirvona.invalid" }));
+    const sent = await notifier.emailCustomer({ contact: { email: s.CHECK_EMAIL_TO, name: "Staging check" } }, { title: "[STAGING] Your Yatra booking is confirmed", message: "This is the Yatra booking email template sent from staging.", reference: "TVN-YTR-STAGING", highlight: { label: "Ticket code", code: "STG-001" }, ctaPath: "/profile/journeys" });
+    record("resend: Yatra booking email sent through YatraNotifier", sent ? "PASS" : "FAIL", `check ${s.CHECK_EMAIL_TO.replace(/^(.).*(@.*)$/, "$1***$2")} for 2 "[STAGING]" emails`);
   } catch (e) {
     record("resend: error", "FAIL", String(e.message).slice(0, 300));
   }
@@ -241,8 +282,8 @@ async function phaseServices() {
 
 // ========================================================================= e2e
 async function phaseE2e() {
-  const s = preflight({ needDb: true, needServices: true });
-  const pg = await stagingDb(s.STAGING_SUPABASE_DB_URL);
+  const s = preflight({ writes: true, money: true, services: true });
+  const pg = await stagingDb(s.SUPABASE_DB_URL);
   const q = async (sql, params = []) => (await pg.query(sql, params)).rows;
   const { ObjectId } = requireB("bson");
   const jwt = requireB("jsonwebtoken");
@@ -270,11 +311,11 @@ async function phaseE2e() {
       cwd: work,
       env: {
         ...baseEnv(), NODE_ENV: "development", HOST: "127.0.0.1", PORT: String(API_PORT), LOG_LEVEL: "warn",
-        SUPABASE_DB_URL: s.STAGING_SUPABASE_DB_URL, SUPABASE_MIGRATION_URL: s.STAGING_SUPABASE_DB_URL, REDIS_URL: "redis://127.0.0.1:1",
+        SUPABASE_DB_URL: s.SUPABASE_DB_URL, SUPABASE_MIGRATION_URL: s.SUPABASE_DB_URL, REDIS_URL: "redis://127.0.0.1:1",
         JWT_SECRET, FRONTEND_URL: WEB, CORS_ORIGINS: `${WEB},http://127.0.0.1:${WEB_PORT}`, PAYOUT_ENCRYPTION_KEY: randomBytes(32).toString("base64"),
-        RAZORPAY_KEY_ID: s.STAGING_RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET: s.STAGING_RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET: s.STAGING_RAZORPAY_WEBHOOK_SECRET,
-        CLOUDINARY_CLOUD_NAME: s.STAGING_CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY: s.STAGING_CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET: s.STAGING_CLOUDINARY_API_SECRET, CLOUDINARY_FOLDER: "tirvona-staging",
-        RESEND_API_KEY: s.STAGING_RESEND_API_KEY, RESEND_FROM_EMAIL: s.STAGING_RESEND_FROM_EMAIL,
+        RAZORPAY_KEY_ID: s.RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET: s.RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET: s.RAZORPAY_WEBHOOK_SECRET,
+        CLOUDINARY_CLOUD_NAME: s.CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY: s.CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET: s.CLOUDINARY_API_SECRET, CLOUDINARY_FOLDER: "tirvona-staging",
+        RESEND_API_KEY: s.RESEND_API_KEY, RESEND_FROM_EMAIL: resendFrom(s),
         YATRA_ENABLED: "true", YATRA_EMAIL_ENABLED: "true", YATRA_MAINTENANCE_ENABLED: "false", YATRA_RECONCILIATION_ENABLED: "false",
         WHATSAPP_ENABLED: "false", MSG91_AUTH_KEY: "", PROVIDERS_MAINTENANCE_ENABLED: "false", FOOD_MAINTENANCE_ENABLED: "false", HR_REMINDERS_ENABLED: "false", AARTI_MAINTENANCE_ENABLED: "false",
       },
@@ -286,7 +327,7 @@ async function phaseE2e() {
     let up = false;
     for (let i = 0; i < 120 && !up; i++) { await sleep(1000); try { up = (await fetch(`${API}/v1/yatra/config`)).ok; } catch {} }
     if (!up) throw new Error(`staging API did not start: ${apiErr.slice(-400)}`);
-    record("e2e: API started on the staging database with test credentials (local process only)", "PASS");
+    record("e2e: API started on the configured database with test credentials (local process only)", "PASS");
 
     // 2) Users (staging only). The pilgrim uses your test mailbox so the booking email reaches you.
     const password = `Stg-${randomBytes(6).toString("hex")}`;
@@ -303,7 +344,7 @@ async function phaseE2e() {
       admin: await mkUser("admin", "super_admin", "Staging Admin", `staging.admin.${tag}@tirvona.invalid`),
       finance: await mkUser("finance", "finance_manager", "Staging Finance", `staging.finance.${tag}@tirvona.invalid`),
       owner: await mkUser("owner", "customer", "Staging Organiser", `staging.owner.${tag}@tirvona.invalid`),
-      pilgrim: await mkUser("pilgrim", "customer", "Staging Pilgrim", s.STAGING_TEST_EMAIL_TO.toLowerCase()),
+      pilgrim: await mkUser("pilgrim", "customer", "Staging Pilgrim", s.CHECK_EMAIL_TO.toLowerCase()),
       other: await mkUser("other", "customer", "Staging Other Pilgrim", `staging.other.${tag}@tirvona.invalid`),
     };
     const call = async (method, p, user, body, raw = false) => {
@@ -340,10 +381,10 @@ async function phaseE2e() {
     const bp = dep.boardingPoints[0].id;
     record("e2e: organiser, vehicle, tour and departure created and published through the app", "PASS", dep.departureCode);
     const hold = (user, seat) => call("POST", "/v1/yatra/bookings", user, { departureCode: dep.departureCode, seats: [seat], boardingPointId: bp, passengers: [{ name: user.name }], contact: { name: user.name, phone: "9876543210", email: user.email } });
-    const sign = (orderId, paymentId) => createHmac("sha256", s.STAGING_RAZORPAY_KEY_SECRET).update(`${orderId}|${paymentId}`).digest("hex");
+    const sign = (orderId, paymentId) => createHmac("sha256", s.RAZORPAY_KEY_SECRET).update(`${orderId}|${paymentId}`).digest("hex");
     const webhook = async (payment, eventId) => {
       const body = JSON.stringify({ event: "payment.captured", payload: { payment: { entity: payment } } });
-      const r = await fetch(`${API}/payments/razorpay/webhook`, { method: "POST", headers: { "content-type": "application/json", "x-razorpay-signature": createHmac("sha256", s.STAGING_RAZORPAY_WEBHOOK_SECRET).update(body).digest("hex"), "x-razorpay-event-id": eventId }, body });
+      const r = await fetch(`${API}/payments/razorpay/webhook`, { method: "POST", headers: { "content-type": "application/json", "x-razorpay-signature": createHmac("sha256", s.RAZORPAY_WEBHOOK_SECRET).update(body).digest("hex"), "x-razorpay-event-id": eventId }, body });
       return r.status;
     };
     const counts = async (bookingId) => (await q("SELECT (SELECT count(*)::int FROM public.yatra_ledger_entries WHERE booking_id = $1 AND type = 'booking_payment') AS payments, (SELECT count(*)::int FROM public.yatra_journeys WHERE booking_id = $1) AS journeys, (SELECT status FROM public.yatra_bookings WHERE id = $1) AS status", [bookingId]))[0];
@@ -381,7 +422,7 @@ async function phaseE2e() {
       const row = (await q("SELECT gateway, amount, method FROM public.yatra_payments WHERE booking_id = $1 AND status = 'paid' ORDER BY paid_at DESC LIMIT 1", [b.id]))[0];
       const paymentId = row?.gateway?.paymentId;
       const Razorpay = requireB("razorpay");
-      const real = await new Razorpay({ key_id: s.STAGING_RAZORPAY_KEY_ID, key_secret: s.STAGING_RAZORPAY_KEY_SECRET }).payments.fetch(paymentId);
+      const real = await new Razorpay({ key_id: s.RAZORPAY_KEY_ID, key_secret: s.RAZORPAY_KEY_SECRET }).payments.fetch(paymentId);
       record("e2e: real Razorpay TEST payment confirmed the booking", ["captured", "authorized"].includes(real.status) && Number(real.amount) === Math.round(Number(row.amount) * 100) ? "PASS" : "FAIL", `${paymentId} ${real.status} ${real.amount} paise via ${real.method}`);
       const d1 = await webhook({ id: real.id, order_id: real.order_id, amount: real.amount, currency: real.currency, status: "captured" }, `evt_staging_b_${tag}`);
       const d2 = await webhook({ id: real.id, order_id: real.order_id, amount: real.amount, currency: real.currency, status: "captured" }, `evt_staging_b2_${tag}`);
@@ -408,7 +449,7 @@ async function phaseE2e() {
     const deny = await Promise.all([call("GET", "/v1/yatra/admin/overview", U.pilgrim, null, true), call("GET", "/v1/yatra/finance/dashboard", U.owner, null, true), call("GET", "/v1/yatra/ops/dashboard", U.finance, null, true)]);
     const allow = await Promise.all([call("GET", "/v1/yatra/finance/dashboard", U.finance, null, true), call("GET", "/v1/yatra/admin/overview", U.admin, null, true)]);
     record("e2e: role checks on staging (pilgrim/organiser/finance denied; finance/admin allowed)", deny.every((r) => r.status === 403) && allow.every((r) => r.status === 200) ? "PASS" : "FAIL", `denied ${deny.map((r) => r.status).join("/")}; allowed ${allow.map((r) => r.status).join("/")}`);
-    if (paidB) record("e2e: booking email", "MANUAL", `confirm the "Your Yatra booking is confirmed" email arrived at ${s.STAGING_TEST_EMAIL_TO.replace(/^(.).*(@.*)$/, "$1***$2")}`);
+    if (paidB) record("e2e: booking email", "MANUAL", `confirm the "Your Yatra booking is confirmed" email arrived at ${s.CHECK_EMAIL_TO.replace(/^(.).*(@.*)$/, "$1***$2")}`);
   } catch (e) {
     record("e2e: unexpected error", "FAIL", String(e.message).slice(0, 400));
   } finally {
@@ -418,8 +459,13 @@ async function phaseE2e() {
 }
 
 // ========================================================================= main
-if (phase === "preflight") { preflight({ needDb: true, needServices: true }); finish(0); }
+if (phase === "readiness" || phase === "preflight") phaseReadiness();
+else if (phase === "db-plan") {
+  const e = preflight({});
+  try { record("db: migrate --plan (read-only)", "INFO", dbTool("migrate.js", e.SUPABASE_DB_URL, ["--plan"]).split("\n").slice(-8).join(" | ")); } catch (x) { record("db: migrate --plan", "FAIL", String(x.stderr || x.message).slice(0, 300)); }
+  finish(results.some((r) => r.status === "FAIL") ? 1 : 0);
+}
 else if (phase === "db") await phaseDb();
 else if (phase === "services") await phaseServices();
 else if (phase === "e2e") await phaseE2e();
-else { console.error("Usage: yatra-staging-check.mjs preflight|db|services|e2e"); process.exit(64); }
+else { console.error("Usage: yatra-staging-check.mjs readiness|db-plan|db|services|e2e [--env-file <path>] [--email-to <addr>] [--allow-live]"); process.exit(64); }

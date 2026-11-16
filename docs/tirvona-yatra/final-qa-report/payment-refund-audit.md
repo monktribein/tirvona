@@ -37,7 +37,7 @@ No real customer payment or refund was made. The Razorpay keys in `Newbackend/.e
 | 15 | Ledger entries | One `booking_payment` per booking, one `booking_refund` per refund | As expected | DB queries | PASS |
 | 16 | Departure cancelled by Tirvona | 100% refund to every paid traveller, unpaid holds freed | As expected | `yatra.http` › "Super Admin cancels a departure" | PASS |
 | 17 | Ride payment and refund | Paid ride refunded 100% when cancelled early, by the partner, or by Tirvona | As expected | `yatra-p5.http` ride tests | PASS |
-| 18 | Real Razorpay test-mode payment end to end | Order → checkout → webhook | **Not executed.** No Razorpay test keys are available in this environment, and the live keys must not be used. | — | BLOCKED |
+| 18 | Real Razorpay test-mode payment end to end | Order → checkout → webhook | **Not executed.** The only Razorpay keys in Tirvona's existing configuration are live, and no real payment was authorised, so no real checkout was run. | — | BLOCKED |
 
 ## Counts
 
@@ -47,7 +47,7 @@ No real customer payment or refund was made. The Razorpay keys in `Newbackend/.e
 
 ## Remaining risk
 
-- Item 18 must run on staging with Razorpay **test** keys and the webhook secret before production approval:
+- Item 18 needs one real checkout through Tirvona's existing Razorpay configuration before production approval. Because the configured keys are live, this needs the owner's explicit authorisation of one minimum-value payment and its refund to the wallet (options in `../staging/staging-report.md`):
   - order creation;
   - hosted checkout;
   - signature verification;
