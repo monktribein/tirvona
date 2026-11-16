@@ -33,4 +33,17 @@ describe("public ashram view", () => {
     expect(out.dayStayConfig.enabled).toBe(true);
     expect(row.trust.panNo).toBe("ABCDE1234F");
   });
+
+  it("never shows a verification document in the photo gallery", () => {
+    const deed = "https://res.cloudinary.com/x/image/upload/v1/tirvona/ashram-documents/deed.jpg";
+    const other = "https://res.cloudinary.com/x/image/upload/v1/tirvona/ashrams/lobby.jpg";
+    const copied = "https://res.cloudinary.com/x/image/upload/v1/tirvona/ashrams/receipt.jpg";
+    const out: any = withoutPrivateAshramFields({
+      ...row,
+      images: [other, deed, copied],
+      documents: { trustDeedUrl: deed, landOwnershipUrl: copied },
+    });
+    expect(out.images).toEqual([other]);
+    expect(out.documents).toBeUndefined();
+  });
 });
