@@ -19,7 +19,7 @@ import { getFormattingLocale } from "../utils/format";
 import { useYatraEnabled } from "../modules/yatra/yatraUi";
 import { yatraOperator, yatraRidePartner } from "../modules/yatra/services/yatra.service";
 import { realEmail } from "../utils/email";
-import { visibleServices, isServiceActive } from "../design-system/premium";
+import { TIRVONA_SERVICES, isServiceActive } from "../design-system/premium";
 import {
   LogOut,
   Menu,
@@ -413,14 +413,14 @@ export const PublicLayout: React.FC = () => {
 
   // The seven core services lead the navigation; every other public section stays one click away under "More".
   const navLinks: { label: string; to: string; isActive: boolean; isHighlighted?: boolean }[] =
-    visibleServices(yatraEnabled).map((service) => ({
+    TIRVONA_SERVICES.map((service) => ({
       label: service.navLabel,
       to: service.to,
       isActive: isServiceActive(service, location.pathname),
     }));
   const moreLinks: { label: string; to: string }[] = [
-    // Yatra takes Volunteer & Seva's place in the main navigation while Yatra is on; otherwise Seva stays up there.
-    ...(yatraEnabled ? [{ label: "Volunteer & Seva", to: "/volunteer" }] : []),
+    // Yatra holds the seventh place in the main navigation, so Volunteer & Seva sits here.
+    { label: "Volunteer & Seva", to: "/volunteer" },
     { label: "Aarti Booking", to: "/aarti" },
     { label: "Live Pooja", to: "/live-pooja" },
     { label: "Events & Festivals", to: "/events" },
@@ -1453,7 +1453,7 @@ export const PublicLayout: React.FC = () => {
                   Our Services
                 </h2>
                 <ul className="text-xs space-y-2.5 text-slate-300 font-medium pt-1">
-                  {visibleServices(yatraEnabled).map((service) => (
+                  {TIRVONA_SERVICES.map((service) => (
                     <li key={service.id}>
                       <Link
                         to={service.to}
