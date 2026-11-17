@@ -3,11 +3,16 @@
 For the owner and whoever deploys. Each step needs the owner's explicit approval. Nothing here
 runs automatically.
 
-## Switches (all default `false`)
+> **Update 2026-11-17:** the owner chose to launch Yatra with the next deploy, so `YATRA_ENABLED` now defaults to
+> `true`. To switch it off, set `YATRA_ENABLED=false` on the server and restart the API (see the rollback table).
+> The staged plan below (dark deploy first) describes the cautious route and is kept for reference. The other
+> three switches still default to `false`.
+
+## Switches (`YATRA_ENABLED` defaults to `true`, the others to `false`)
 
 | Variable | What it does when `true` |
 |---|---|
-| `YATRA_ENABLED` | Opens the Yatra API, pages and links. While false, every `/api/v1/yatra/*` endpoint except `/config` answers 404, and the site hides Yatra. |
+| `YATRA_ENABLED` | Opens the Yatra API, pages and links (on unless set to `false`). While false, every `/api/v1/yatra/*` endpoint except `/config` answers 404, and the site hides Yatra. |
 | `YATRA_MAINTENANCE_ENABLED` | Runs the once-a-minute sweep: it expires lapsed holds, completes finished departures, returns unanswered ride requests to Tirvona, and sends journey reminders. |
 | `YATRA_EMAIL_ENABLED` | Sends Yatra customer emails (booking confirmed, cancellation decided, reminder) through the existing Resend setup. In-app notifications are always on. |
 | `YATRA_RECONCILIATION_ENABLED` | The sweep also runs the daily Razorpay settlement check (needs `YATRA_MAINTENANCE_ENABLED`). |

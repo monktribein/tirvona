@@ -116,7 +116,8 @@ const Checks: React.FC<{ rows: Array<[string, number]>; set: Set<string>; toggle
 
 const clock24 = (value: string) => new Date(value).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" });
 
-const BusRow: React.FC<{ d: any }> = ({ d }) => {
+/** `sample` rows are page-only placeholders: labelled, with no link into a departure and no way to book. */
+const BusRow: React.FC<{ d: any; sample?: boolean }> = ({ d, sample = false }) => {
   const vehicle = d.vehicle ?? {};
   const kind = (vehicle.seatKinds ?? []).includes("sleeper") ? ((vehicle.seatKinds ?? []).includes("seater") ? "Seater /Sleeper" : "Sleeper") : "Seater";
   const bus = [vehicle.make, vehicle.model].filter(Boolean).join(" ") || String(vehicle.vehicleType ?? "bus").replace(/_/g, " ");
@@ -127,6 +128,7 @@ const BusRow: React.FC<{ d: any }> = ({ d }) => {
   return (
     <li className="bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-lg shadow-sm px-4 pt-3 pb-2.5 hover:shadow-md transition-shadow">
       <span className="inline-block text-[10px] text-gray-500 bg-gray-100 dark:bg-slate-800 rounded px-1.5 py-0.5 mb-1.5">{d.tour.originCity} → {d.tour.destinationCity}{d.operator?.yearsInBusiness > 0 ? ` · ${d.operator.yearsInBusiness} yrs in business` : ""}</span>
+      {sample && <span className="inline-block ml-1.5 text-[10px] font-bold text-amber-800 bg-amber-100 dark:bg-amber-950/40 dark:text-amber-300 rounded px-1.5 py-0.5 mb-1.5">Sample</span>}
       <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1.5fr)_auto_auto] gap-x-6 gap-y-2 items-start">
         <div className="min-w-0">
           <h3 className="text-[13px] font-bold text-[#0B192C] dark:text-white truncate">{d.operator?.name}</h3>
@@ -136,23 +138,29 @@ const BusRow: React.FC<{ d: any }> = ({ d }) => {
           <RatingBadge rating={d.operator?.rating} />
           <div className="text-[#0B192C] dark:text-white">
             <p className="text-[15px] font-semibold leading-tight tabular-nums">{clock24(d.departAt)} <span className="text-gray-400 font-normal">—</span> <span className="text-gray-500">{d.returnAt ? clock24(d.returnAt) : "—"}</span></p>
-            <p className="text-[10px] text-gray-500 mt-0.5">{duration(d.departAt, d.returnAt) || `${d.tour.durationDays}d`} · {d.seatsLeft} Seat{d.seatsLeft === 1 ? "" : "s"}</p>
+            <p className="text-[10px] text-gray-500 mt-0.5">{duration(d.departAt, d.returnAt) || `${d.tour.durationDays}d`}{sample ? "" : ` · ${d.seatsLeft} Seat${d.seatsLeft === 1 ? "" : "s"}`}</p>
           </div>
         </div>
         <div className="sm:text-right flex sm:block items-center justify-between gap-3">
           <p className="leading-none"><span className="text-base font-bold text-[#0B192C] dark:text-white">{rupees(d.fromFare ?? d.fare)}</span><span className="block text-[9px] text-gray-400 mt-0.5">Onwards</span></p>
-          <Link to={`/yatra/departures/${d.departureCode}`} className="sm:mt-2 inline-flex items-center justify-center rounded-md bg-[#F28C28] hover:bg-[#E57C18] text-white text-xs font-bold px-5 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]/60">View seats</Link>
+          {sample ? (
+            <button type="button" disabled className="sm:mt-2 inline-flex items-center justify-center rounded-md bg-gray-200 dark:bg-slate-800 text-gray-500 dark:text-gray-400 text-xs font-bold px-5 py-2 cursor-not-allowed">Not available</button>
+          ) : (
+            <Link to={`/yatra/departures/${d.departureCode}`} className="sm:mt-2 inline-flex items-center justify-center rounded-md bg-[#F28C28] hover:bg-[#E57C18] text-white text-xs font-bold px-5 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]/60">View seats</Link>
+          )}
         </div>
       </div>
       {chips.length > 0 && <div className="mt-2 flex flex-wrap gap-1.5">{chips.map((c: string) => <span key={c} className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300">{c}</span>)}</div>}
-      <nav className="mt-2.5 pt-2 border-t border-gray-100 dark:border-slate-800 flex flex-wrap gap-x-4 gap-y-1" aria-label="Bus details">
-        {links.map(([label, tab]) => <Link key={tab} to={to(tab)} className="text-[10px] font-medium text-blue-600 dark:text-blue-400 hover:underline">{label}</Link>)}
-      </nav>
+      {!sample && (
+        <nav className="mt-2.5 pt-2 border-t border-gray-100 dark:border-slate-800 flex flex-wrap gap-x-4 gap-y-1" aria-label="Bus details">
+          {links.map(([label, tab]) => <Link key={tab} to={to(tab)} className="text-[10px] font-medium text-blue-600 dark:text-blue-400 hover:underline">{label}</Link>)}
+        </nav>
+      )}
     </li>
   );
 };
 
-export const BusResults: React.FC<{ items: any[] }> = ({ items }) => {
+export const BusResults: React.FC<{ items: any[]; sample?: boolean }> = ({ items, sample = false }) => {
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [sort, setSort] = useState<Sort>("departure");
   const [drawer, setDrawer] = useState(false);
@@ -228,12 +236,17 @@ export const BusResults: React.FC<{ items: any[] }> = ({ items }) => {
       )}
 
       <div className="min-w-0 space-y-3">
+        {sample && (
+          <div role="note" className="rounded-2xl border border-amber-200 bg-amber-50 dark:bg-slate-900 dark:border-slate-700 px-4 py-3 text-xs text-amber-900 dark:text-amber-200">
+            <b>Sample listings.</b> These buses only show how Yatra will look, and they cannot be booked yet. Real departures from verified partners appear here as soon as partners join.
+          </div>
+        )}
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl px-4 py-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-          <p className="text-xs font-black text-[#0B192C] dark:text-white mr-auto">{shown.length} bus{shown.length === 1 ? "" : "es"} found</p>
+          <p className="text-xs font-black text-[#0B192C] dark:text-white mr-auto">{shown.length} {sample ? "sample " : ""}bus{shown.length === 1 ? "" : "es"} {sample ? "listed" : "found"}</p>
           <button type="button" onClick={() => setDrawer(true)} className="lg:hidden inline-flex items-center gap-1.5 text-xs font-extrabold text-[#F28C28]"><Filter size={14} /> Filters{active ? ` (${active})` : ""}</button>
           <div className="flex items-center gap-1 text-xs" role="group" aria-label="Sort buses">
             <span className="text-gray-400 font-bold mr-1">Sort by:</span>
-            {([["rating", "Ratings"], ["departure", "Departure time"], ["price", "Price"]] as Array<[Sort, string]>).map(([id, label]) => (
+            {([["rating", "Ratings"], ["departure", "Departure time"], ["price", "Price"]] as Array<[Sort, string]>).filter(([id]) => !(sample && id === "rating")).map(([id, label]) => (
               <button key={id} type="button" aria-pressed={sort === id} onClick={() => setSort(id)} className={`px-2.5 py-1 rounded-md font-extrabold ${sort === id ? "bg-orange-50 text-[#F28C28] dark:bg-slate-800" : "text-gray-500 hover:text-[#0B192C] dark:hover:text-white"}`}>{label}</button>
             ))}
           </div>
@@ -241,7 +254,7 @@ export const BusResults: React.FC<{ items: any[] }> = ({ items }) => {
         {shown.length === 0 ? (
           <Empty icon={<Bus size={28} className="text-gray-300" />} title="No buses match these filters" text="Remove a filter or two to see more buses." />
         ) : (
-          <ul className="space-y-2.5">{shown.map((d) => <BusRow key={d.departureCode} d={d} />)}</ul>
+          <ul className="space-y-2.5">{shown.map((d) => <BusRow key={d.departureCode} d={d} sample={sample} />)}</ul>
         )}
       </div>
     </div>

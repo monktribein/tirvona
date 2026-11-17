@@ -18,8 +18,8 @@ const ALWAYS_AVAILABLE = "yatraAlwaysAvailable";
 export const YatraAlwaysAvailable = () => SetMetadata(ALWAYS_AVAILABLE, true);
 
 /**
- * Tirvona Yatra stays switched off until YATRA_ENABLED=true. While off,
- * every Yatra endpoint answers 404, so nothing can be created or sold.
+ * Tirvona Yatra is on unless YATRA_ENABLED=false. While off, every Yatra
+ * endpoint answers 404, so nothing can be created or sold.
  */
 @Injectable()
 export class YatraEnabledGuard implements CanActivate {
