@@ -72,7 +72,7 @@ export interface Environment {
   firebaseProjectId: string;
   firebaseClientEmail: string;
   firebasePrivateKey: string;
-  /** Tirvona Yatra (bus & tour bookings). Off unless YATRA_ENABLED=true. */
+  /** Tirvona Yatra (bus & tour bookings). On unless YATRA_ENABLED=false. */
   yatraEnabled: boolean;
   /** Yatra housekeeping sweep (expires lapsed holds). Off unless YATRA_MAINTENANCE_ENABLED=true. */
   yatraMaintenanceEnabled: boolean;
@@ -200,7 +200,9 @@ export const environment = (): Environment => ({
   firebaseProjectId: process.env.FIREBASE_PROJECT_ID ?? "",
   firebaseClientEmail: process.env.FIREBASE_CLIENT_EMAIL ?? "",
   firebasePrivateKey: process.env.FIREBASE_PRIVATE_KEY ?? "",
-  yatraEnabled: boolean(process.env.YATRA_ENABLED, false),
+  // On unless YATRA_ENABLED=false (the owner chose to launch Yatra with the next deploy). The sweep,
+  // the emails and the reconciliation below stay off until they are switched on.
+  yatraEnabled: boolean(process.env.YATRA_ENABLED, true),
   yatraMaintenanceEnabled: boolean(process.env.YATRA_MAINTENANCE_ENABLED, false),
   yatraEmailEnabled: boolean(process.env.YATRA_EMAIL_ENABLED, false),
   yatraReconciliationEnabled: boolean(process.env.YATRA_RECONCILIATION_ENABLED, false),

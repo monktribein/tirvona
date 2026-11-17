@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import {
   applyDnsServersFromEnvironment,
+  environment,
   validateEnvironment,
 } from "./environment";
 
@@ -118,6 +119,37 @@ describe("production environment validation", () => {
         WHATSAPP_PHONE_NUMBER_ID: "not-an-id",
       }),
     ).toThrow("WHATSAPP_PHONE_NUMBER_ID");
+  });
+});
+
+describe("Yatra switches", () => {
+  const names = ["YATRA_ENABLED", "YATRA_MAINTENANCE_ENABLED", "YATRA_EMAIL_ENABLED", "YATRA_RECONCILIATION_ENABLED"];
+  const original = Object.fromEntries(names.map((name) => [name, process.env[name]]));
+  afterEach(() => {
+    for (const name of names) {
+      if (original[name] === undefined) delete process.env[name];
+      else process.env[name] = original[name];
+    }
+  });
+
+  it("is on when YATRA_ENABLED is not set, so a deploy launches Yatra", () => {
+    delete process.env.YATRA_ENABLED;
+    expect(environment().yatraEnabled).toBe(true);
+  });
+
+  it("is off only when YATRA_ENABLED is set to false", () => {
+    process.env.YATRA_ENABLED = "false";
+    expect(environment().yatraEnabled).toBe(false);
+    process.env.YATRA_ENABLED = "true";
+    expect(environment().yatraEnabled).toBe(true);
+  });
+
+  it("keeps the sweep, the emails and the reconciliation off until they are switched on", () => {
+    for (const name of names.slice(1)) delete process.env[name];
+    const config = environment();
+    expect(config.yatraMaintenanceEnabled).toBe(false);
+    expect(config.yatraEmailEnabled).toBe(false);
+    expect(config.yatraReconciliationEnabled).toBe(false);
   });
 });
 

@@ -47,8 +47,8 @@ import { UserSchema } from "../users/infrastructure/persistence/user.schema";
 
 /**
  * Tirvona Yatra: organisers, tours, departures, the central seat inventory,
- * bookings, journeys and add-on requests. Switched off unless
- * YATRA_ENABLED=true. Money moves only through Tirvona's existing Razorpay
+ * bookings, journeys and add-on requests. On unless YATRA_ENABLED=false.
+ * Money moves only through Tirvona's existing Razorpay
  * account (via the shared webhook) and the existing pilgrim wallet.
  */
 @Module({

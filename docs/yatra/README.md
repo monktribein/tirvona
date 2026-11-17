@@ -21,7 +21,7 @@ More documents:
 
 | Variable | Default | Effect |
 |---|---|---|
-| `YATRA_ENABLED` | `false` | While false, every `/api/v1/yatra/*` endpoint answers 404 except `GET /api/v1/yatra/config`, and the website shows "not available yet" and hides every Yatra link. |
+| `YATRA_ENABLED` | `true` (since 2026-11-17) | Set to `false` to switch Yatra off. While false, every `/api/v1/yatra/*` endpoint answers 404 except `GET /api/v1/yatra/config`, and the website shows "not available yet" and hides every Yatra link. |
 | `YATRA_MAINTENANCE_ENABLED` | `false` | A once-a-minute sweep that marks lapsed holds `expired` and finished departures `completed`, returns unanswered ride requests to Tirvona, and sends journey reminders. Bookings are correct without it, because an expired hold is reclaimed in place by the next checkout. |
 | `YATRA_EMAIL_ENABLED` | `false` | Customer emails (booking confirmed, cancellation, reminder) through the existing Resend setup. |
 | `YATRA_RECONCILIATION_ENABLED` | `false` | The sweep also runs the daily Razorpay settlement check for the day before yesterday. |
