@@ -27,6 +27,7 @@ import { toast } from "../../../lib/toast";
 import { EnterpriseButton } from "../../../admin/shared/components/EnterpriseButton";
 import { Empty, Field, inputClass, Panel, PanelState, useRemote } from "../../marketplace/ui";
 import { BusResults } from "./YatraSearchResults";
+import { SAMPLE_DESTINATIONS, SAMPLE_ORIGINS, sampleBuses } from "./yatraSampleBuses";
 import { yatraCustomer, yatraOperator, yatraPublic, yatraRidePartner } from "../services/yatra.service";
 import {
   dateLong,
@@ -131,6 +132,15 @@ const YatraSearch: React.FC = () => {
   const filters = useRemote<{ origins: string[]; destinations: string[] }>(() => yatraPublic.filters(), []);
   const query = useMemo(() => Object.fromEntries(params.entries()), [params]);
   const results = useRemote<any[]>(() => yatraPublic.search({ ...query, limit: 100 }), [JSON.stringify(query)]);
+  // Until the first real departure exists, show labelled sample buses (page-only, not bookable) so the page is not bare.
+  const platformEmpty = filters.state === "ready" && !(filters.data?.origins?.length ?? 0) && !(filters.data?.destinations?.length ?? 0);
+  const samples = useMemo(() => sampleBuses(), []);
+  const wantedFrom = (params.get("origin") ?? "").toLowerCase();
+  const wantedTo = (params.get("destination") ?? "").toLowerCase();
+  const sampleItems = samples.filter((d) => (!wantedFrom || d.tour.originCity.toLowerCase() === wantedFrom) && (!wantedTo || d.tour.destinationCity.toLowerCase() === wantedTo));
+  const sampleMode = platformEmpty && results.state === "ready" && !results.data?.length && sampleItems.length > 0;
+  const originOptions = platformEmpty ? SAMPLE_ORIGINS : filters.data?.origins ?? [];
+  const destinationOptions = platformEmpty ? SAMPLE_DESTINATIONS : filters.data?.destinations ?? [];
   const today = new Date(Date.now() + 330 * 60_000).toISOString().slice(0, 10);
 
   const submit = (e: React.FormEvent) => {
@@ -144,7 +154,7 @@ const YatraSearch: React.FC = () => {
         {params.get("origin") || params.get("destination") ? (
           <div>
             <h1 className="font-black text-base sm:text-lg text-[#0B192C] dark:text-white">{params.get("origin") || "Any city"} <span aria-hidden="true">→</span> {params.get("destination") || "Any destination"}</h1>
-            <p className="text-xs text-gray-500 mt-0.5">{results.state === "ready" ? `${results.meta.total} bus${results.meta.total === 1 ? "" : "es"}` : "Finding buses…"}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{results.state !== "ready" ? "Finding buses…" : sampleMode ? `${sampleItems.length} sample bus${sampleItems.length === 1 ? "" : "es"}, not available yet` : `${results.meta.total} bus${results.meta.total === 1 ? "" : "es"}`}</p>
           </div>
         ) : (
           <PageTitle title="Tirvona Yatra" subtitle="Bus and group pilgrimages run by verified partners. Choose your seat, pay Tirvona securely and keep the whole journey in one place." />
@@ -160,7 +170,7 @@ const YatraSearch: React.FC = () => {
             <span className="min-w-0 flex-1"><span className="block text-[10px] text-gray-400">From</span>
               <select aria-label="From" className="w-full bg-transparent text-sm font-bold text-[#0B192C] dark:text-white outline-none" value={form.origin} onChange={(e) => setForm({ ...form, origin: e.target.value })}>
                 <option value="">Any city</option>
-                {(filters.data?.origins ?? []).map((c) => <option key={c}>{c}</option>)}
+                {originOptions.map((c) => <option key={c}>{c}</option>)}
               </select></span>
           </label>
           <label className="flex items-center gap-2.5 px-4 py-2.5 border-b sm:border-b-0 lg:border-r border-gray-200 dark:border-slate-700 min-w-0">
@@ -168,7 +178,7 @@ const YatraSearch: React.FC = () => {
             <span className="min-w-0 flex-1"><span className="block text-[10px] text-gray-400">To</span>
               <select aria-label="To" className="w-full bg-transparent text-sm font-bold text-[#0B192C] dark:text-white outline-none" value={form.destination} onChange={(e) => setForm({ ...form, destination: e.target.value })}>
                 <option value="">Any destination</option>
-                {(filters.data?.destinations ?? []).map((c) => <option key={c}>{c}</option>)}
+                {destinationOptions.map((c) => <option key={c}>{c}</option>)}
               </select></span>
           </label>
           <label className="flex items-center gap-2.5 px-4 py-2.5 border-t lg:border-t-0 sm:border-r border-gray-200 dark:border-slate-700 min-w-0">
@@ -188,6 +198,8 @@ const YatraSearch: React.FC = () => {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-4" aria-live="polite">
         {results.state !== "ready" ? (
           <PanelState state={results.state} error={results.error} onRetry={results.reload} />
+        ) : sampleMode ? (
+          <BusResults items={sampleItems} sample />
         ) : !results.data?.length ? (
           <Empty icon={<Bus size={28} className="text-gray-300" />} title="No departures match" text="Try another date or destination. New departures are added as partners are verified." />
         ) : (
