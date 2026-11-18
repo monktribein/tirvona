@@ -495,8 +495,8 @@ export class UsersService {
     const generated = chosen || generateTemporaryPassword();
     row.passwordHash = await bcrypt.hash(generated, 12);
     row.tokenVersion = Number(row.tokenVersion ?? 0) + 1;
-    // The admin knows this password, so the owner sets their own at the next sign-in.
-    row.mustChangePassword = true;
+    // The admin agreed the password with the person, so they go straight in; no forced change screen.
+    row.mustChangePassword = undefined;
     await row.save();
     await this.audit(actor, "USER_PASSWORD_RESET", { targetUserId: id });
     return generated;

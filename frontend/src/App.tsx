@@ -586,11 +586,6 @@ const ProtectedRoute: React.FC<{
     );
   }
 
-  // A temporary password an admin gave out is replaced before anything else.
-  if (user.mustChangePassword && location.pathname !== SET_PASSWORD_PATH) {
-    return <Navigate to={SET_PASSWORD_PATH} replace />;
-  }
-
   if (allowedRoles && !hasRoleAccess(user.role, allowedRoles)) {
     return (
       <Navigate
