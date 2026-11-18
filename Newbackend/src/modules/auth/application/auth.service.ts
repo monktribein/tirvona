@@ -27,6 +27,7 @@ import {
   renderEmailText,
   type EmailTemplateInput,
 } from "../../notifications/email-template";
+import { sendTeamAlert } from "../../notifications/team-alert";
 import { OAuth2Client } from "google-auth-library";
 import {
   USER_REPOSITORY,
@@ -436,6 +437,18 @@ export class AuthService {
         status: row.payload.status ?? "active",
         isVerified: row.payload.isVerified ?? true,
       });
+      if (user.role === ASHRAM_OWNER_ROLE)
+        sendTeamAlert(this.config, {
+          subject: "New stay owner account created",
+          title: "New stay owner account",
+          message: "Someone just created a stay owner account on Tirvona. Their account is waiting for approval.",
+          details: [
+            { label: "Name", value: String(user.name ?? "") },
+            { label: "Email", value: String(user.email ?? "") },
+            { label: "Phone", value: String(user.phone ?? "") },
+            { label: "Status", value: String(user.status ?? "").replace(/_/g, " ") },
+          ],
+        });
     } else {
       user = await this.users.findById(row.payload.userId);
       if (!user) throw new NotFoundException("User not found");

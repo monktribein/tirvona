@@ -55,6 +55,7 @@ export interface Environment {
   cloudinaryFolder: string;
   resendApiKey: string;
   resendFromEmail: string;
+  teamAlertEmail: string;
   resendReplyTo: string;
   msg91AuthKey: string;
   msg91OtpTemplateId: string;
@@ -181,6 +182,8 @@ export const environment = (): Environment => ({
     process.env.RESEND_FROM_EMAIL ??
     `${process.env.EMAIL_FROM_NAME ?? "Tirvona"} <${process.env.EMAIL_FROM_EMAIL ?? "notifications@tirvona.com"}>`,
   resendReplyTo: process.env.EMAIL_REPLY_TO ?? "support@tirvona.com",
+  /** Where the team is told about new stay owner accounts and new stays. Set it empty to turn those emails off. */
+  teamAlertEmail: process.env.TEAM_ALERT_EMAIL ?? "tirvonaofficial@gmail.com",
   msg91AuthKey: process.env.MSG91_AUTH_KEY ?? "",
   msg91OtpTemplateId: process.env.MSG91_OTP_TEMPLATE_ID ?? "",
   msg91TemplateId: process.env.MSG91_TEMPLATE_ID ?? "",
