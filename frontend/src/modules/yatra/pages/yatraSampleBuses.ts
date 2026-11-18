@@ -69,3 +69,56 @@ export const sampleBuses = (now = Date.now()): any[] => {
   });
   return rows;
 };
+
+export const isSampleCode = (code: string) => code.startsWith("SAMPLE-");
+
+/**
+ * The same sample bus shaped like the departure page's data and seat map, so a visitor can walk through seats,
+ * boarding points and passenger details. It is built in the page; the booking is never sent to the server.
+ */
+export const sampleDeparture = (code: string): { detail: any; seats: any } | null => {
+  const row = sampleBuses().find((r) => r.departureCode === code);
+  if (!row) return null;
+  const seats = Array.from({ length: 40 }, (_, i) => ({
+    seatNo: `${Math.floor(i / 4) + 1}${"ABCD"[i % 4]}`,
+    row: Math.floor(i / 4),
+    col: i % 4,
+    deck: "lower",
+    kind: row.vehicle.seatKinds.includes("sleeper") ? "sleeper" : "seater",
+    status: i % 7 === 3 ? "booked" : "available",
+  }));
+  const at = (offsetMin: number, i: number, name: string) => ({ id: `${code}-${name}`, name, time: new Date(new Date(row.departAt).getTime() + (i * 20 + offsetMin) * 60_000).toISOString() });
+  const departure = {
+    fare: row.fare,
+    seatMode: "choose",
+    seatsLeft: seats.filter((s) => s.status === "available").length,
+    capacity: seats.length,
+    departAt: row.departAt,
+    returnAt: row.returnAt,
+    charterEnabled: false,
+    boardingPoints: row.boardingPoints.map((p: any, i: number) => at(-60, i, p.name)),
+    droppingPoints: row.droppingPoints.map((p: any, i: number) => at(60 * 12, i, p.name)),
+    restStops: [],
+    seatLayout: { seats },
+  };
+  const detail = {
+    bookable: true,
+    maxSeatsPerBooking: 6,
+    departure,
+    tour: {
+      title: `${row.tour.originCity} to ${row.tour.destinationCity}`,
+      originCity: row.tour.originCity,
+      destinationCity: row.tour.destinationCity,
+      itinerary: [],
+      inclusions: [],
+      exclusions: [],
+      policies: [],
+      stops: [],
+      serviceAddOns: [],
+      cancellationPolicy: { windows: [], defaultRefundPercent: 0 },
+    },
+    vehicle: { ...row.vehicle, seatCapacity: seats.length },
+    operator: row.operator,
+  };
+  return { detail, seats: { seats, columns: 4 } };
+};

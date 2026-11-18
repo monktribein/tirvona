@@ -144,7 +144,7 @@ const BusRow: React.FC<{ d: any; sample?: boolean }> = ({ d, sample = false }) =
         <div className="sm:text-right flex sm:block items-center justify-between gap-3">
           <p className="leading-none"><span className="text-base font-bold text-[#0B192C] dark:text-white">{rupees(d.fromFare ?? d.fare)}</span><span className="block text-[9px] text-gray-400 mt-0.5">Onwards</span></p>
           {sample ? (
-            <button type="button" disabled className="sm:mt-2 inline-flex items-center justify-center rounded-md bg-gray-200 dark:bg-slate-800 text-gray-500 dark:text-gray-400 text-xs font-bold px-5 py-2 cursor-not-allowed">Not available</button>
+            <Link to={`/yatra/departures/${d.departureCode}`} className="sm:mt-2 inline-flex items-center justify-center rounded-md bg-[#F28C28] hover:bg-[#E57C18] text-white text-xs font-bold px-5 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]/60">Book now</Link>
           ) : (
             <Link to={`/yatra/departures/${d.departureCode}`} className="sm:mt-2 inline-flex items-center justify-center rounded-md bg-[#F28C28] hover:bg-[#E57C18] text-white text-xs font-bold px-5 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]/60">View seats</Link>
           )}
@@ -236,11 +236,6 @@ export const BusResults: React.FC<{ items: any[]; sample?: boolean }> = ({ items
       )}
 
       <div className="min-w-0 space-y-3">
-        {sample && (
-          <div role="note" className="rounded-2xl border border-amber-200 bg-amber-50 dark:bg-slate-900 dark:border-slate-700 px-4 py-3 text-xs text-amber-900 dark:text-amber-200">
-            <b>Sample listings.</b> These buses only show how Yatra will look, and they cannot be booked yet. Real departures from verified partners appear here as soon as partners join.
-          </div>
-        )}
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl px-4 py-3 flex flex-wrap items-center gap-x-4 gap-y-2">
           <p className="text-xs font-black text-[#0B192C] dark:text-white mr-auto">{shown.length} {sample ? "sample " : ""}bus{shown.length === 1 ? "" : "es"} {sample ? "listed" : "found"}</p>
           <button type="button" onClick={() => setDrawer(true)} className="lg:hidden inline-flex items-center gap-1.5 text-xs font-extrabold text-[#F28C28]"><Filter size={14} /> Filters{active ? ` (${active})` : ""}</button>

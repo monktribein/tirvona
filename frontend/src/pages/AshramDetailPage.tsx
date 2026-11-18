@@ -40,7 +40,6 @@ import {
 import { GuestRoomSelector } from "../components/shared/GuestRoomSelector";
 import { GuestReviewsCarousel } from "../components/shared/GuestReviewsCarousel";
 import WriteReviewCard from "../components/shared/WriteReviewCard";
-import { VerifiedBadge } from "../components/shared/VerifiedBadge";
 import {
   useBookingSearch,
   getTodayYMD,
@@ -1381,19 +1380,9 @@ export const AshramDetailPage: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-2 pb-24 lg:pb-16 space-y-6 sm:space-y-10">
       <div className="border-b border-gray-100 dark:border-slate-800 pb-5">
-        <div className="max-w-3xl md:max-w-4xl mx-auto flex flex-col items-center text-center space-y-3 px-2">
-          <div className="flex items-center justify-center gap-2 flex-wrap">
-            <VerifiedBadge
-              isVerified={ashram.isVerified ?? ashram.status === "approved"}
-              text="Tirvona Verified"
-              size="md"
-            />
-            <span className="text-xs text-gray-400 font-extrabold tracking-wider">
-              {[ashram.address?.city, ashram.address?.state]
-                .filter(Boolean)
-                .join(", ")}
-            </span>
-            {!checkAshramBookingAvailable(ashram) && (
+        <div className="max-w-3xl md:max-w-6xl mx-auto flex flex-col items-center text-center space-y-3 px-2">
+          {!checkAshramBookingAvailable(ashram) && (
+            <div className="flex items-center justify-center gap-2 flex-wrap">
               <span
                 className={`px-2.5 py-0.5 rounded-full text-white text-[10px] font-black uppercase tracking-wider shadow-sm ${
                   isAshramEnquiryOnly(ashram) ? "bg-amber-600" : "bg-rose-600"
@@ -1401,11 +1390,25 @@ export const AshramDetailPage: React.FC = () => {
               >
                 {isAshramEnquiryOnly(ashram) ? "ENQUIRY ONLY" : "Not Available"}
               </span>
-            )}
-          </div>
+            </div>
+          )}
 
-          <h1 className="tvp-display text-2xl sm:text-3xl md:text-5xl font-bold text-[#0B192C] dark:text-white leading-tight">
+          <h1 className="tvp-display text-2xl sm:text-3xl md:text-5xl font-bold text-[#0B192C] dark:text-white leading-tight inline-flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
             {ashram.name}
+            {(ashram.isVerified ?? ashram.status === "approved") && (
+              <svg
+                viewBox="0 0 24 24"
+                role="img"
+                aria-label="Verified by Tirvona"
+                className="h-6 w-6 sm:h-7 sm:w-7 md:h-9 md:w-9 shrink-0 translate-y-[2px]"
+              >
+                <path
+                  d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82L8.6 22.5l3.4-1.47 3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12z"
+                  fill="#1D9BF0"
+                />
+                <path d="M7.8 12.4l3 3 5.6-5.8" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
           </h1>
 
           {!checkAshramBookingAvailable(ashram) && (
@@ -1427,7 +1430,7 @@ export const AshramDetailPage: React.FC = () => {
             </div>
           )}
           <div className="text-xs font-bold text-gray-600 dark:text-gray-300 flex flex-col sm:flex-row sm:flex-wrap items-center justify-center gap-y-2 sm:gap-x-2.5 leading-relaxed">
-            <span className="flex items-start gap-1.5">
+            <span className="flex items-start gap-1.5 sm:basis-full sm:justify-center">
               <MapPin size={14} className="text-[#F28C28] shrink-0 mt-[3px]" />
               <span>
                 {[
@@ -1441,10 +1444,6 @@ export const AshramDetailPage: React.FC = () => {
                   .filter(Boolean)
                   .join(", ")}
               </span>
-            </span>
-
-            <span className="hidden sm:inline text-gray-300 dark:text-slate-700 font-black">
-              •
             </span>
 
             {(() => {
@@ -1498,26 +1497,25 @@ export const AshramDetailPage: React.FC = () => {
                       </a>
                     </>
                   )}
+
+                  <span className="hidden sm:inline text-gray-300 dark:text-slate-700 font-black">
+                    •
+                  </span>
+                  <a
+                    href={`mailto:${ashram.contact?.email || ashram.email || ashram.ownerId?.email || "stay@trust.in"}`}
+                    className="flex items-center gap-1.5 hover:text-[#F28C28] transition-colors shrink-0"
+                  >
+                    <Mail size={13} className="text-[#F28C28] shrink-0" />
+                    <span>
+                      {ashram.contact?.email ||
+                        ashram.email ||
+                        ashram.ownerId?.email ||
+                        "stay@trust.in"}
+                    </span>
+                  </a>
                 </>
               );
             })()}
-
-            <span className="hidden sm:inline text-gray-300 dark:text-slate-700 font-black">
-              •
-            </span>
-
-            <a
-              href={`mailto:${ashram.contact?.email || ashram.email || ashram.ownerId?.email || "stay@trust.in"}`}
-              className="flex items-center gap-1.5 hover:text-[#F28C28] transition-colors shrink-0"
-            >
-              <Mail size={13} className="text-[#F28C28] shrink-0" />
-              <span>
-                {ashram.contact?.email ||
-                  ashram.email ||
-                  ashram.ownerId?.email ||
-                  "stay@trust.in"}
-              </span>
-            </a>
 
             {ashram.website && (
               <>
@@ -1755,7 +1753,7 @@ export const AshramDetailPage: React.FC = () => {
       </nav>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 lg:col-start-1 lg:row-start-1 space-y-6">
           <SectionCard
             id="about"
             title="About the Retreat"
@@ -2262,24 +2260,9 @@ export const AshramDetailPage: React.FC = () => {
             </div>
           )}
 
-          <div id="guest-reviews" className="scroll-mt-24 space-y-5">
-            <GuestReviewsCarousel
-              compact
-              reviews={reviews}
-              ashramName={ashram?.name}
-              onReviewDeleted={() => id && fetchReviews(id)}
-            />
-            {id && (
-              <WriteReviewCard
-                ashramId={id}
-                ashramName={ashram?.name}
-                onSubmitted={() => fetchReviews(id)}
-              />
-            )}
-          </div>
         </div>
 
-        <div className="space-y-6">
+        <div className="lg:col-start-3 lg:row-start-1 space-y-6">
           {/* Short Stay card — only when user explicitly chose short-stay mode */}
           {shortStayOpen && showOvernightBooking === false && (
             <DayStayBookingCard
@@ -2334,7 +2317,6 @@ export const AshramDetailPage: React.FC = () => {
           {/* Overnight booking panel — visible when no dayStay or user chose overnight */}
           {(!shortStayOpen || showOvernightBooking === true) && (
           <div id="booking-engine" className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-4 sm:p-6 shadow-sm space-y-6 relative overflow-visible z-40">
-            <div className="absolute top-0 inset-x-0 h-1 bg-[#F28C28]" />
             <div className="flex items-start justify-between gap-3">
               <div className="space-y-0.5">
                 <h2 className="tvp-display font-semibold text-xl text-[#0B192C] dark:text-white">
@@ -3148,6 +3130,22 @@ export const AshramDetailPage: React.FC = () => {
               </p>
             )}
             <NearbyPlaces value={ashram.nearbyAttractions} />
+          </div>
+
+          <div id="guest-reviews" className="scroll-mt-24 space-y-5 flex flex-col [&>:first-child]:flex-1">
+            <GuestReviewsCarousel
+              compact
+              reviews={reviews}
+              ashramName={ashram?.name}
+              onReviewDeleted={() => id && fetchReviews(id)}
+            />
+            {id && (
+              <WriteReviewCard
+                ashramId={id}
+                ashramName={ashram?.name}
+                onSubmitted={() => fetchReviews(id)}
+              />
+            )}
           </div>
         </div>
       </div>

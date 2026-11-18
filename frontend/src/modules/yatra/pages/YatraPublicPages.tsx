@@ -27,7 +27,7 @@ import { toast } from "../../../lib/toast";
 import { EnterpriseButton } from "../../../admin/shared/components/EnterpriseButton";
 import { Empty, Field, inputClass, Panel, PanelState, useRemote } from "../../marketplace/ui";
 import { BusResults } from "./YatraSearchResults";
-import { SAMPLE_DESTINATIONS, SAMPLE_ORIGINS, sampleBuses } from "./yatraSampleBuses";
+import { SAMPLE_DESTINATIONS, SAMPLE_ORIGINS, isSampleCode, sampleBuses, sampleDeparture } from "./yatraSampleBuses";
 import { yatraCustomer, yatraOperator, yatraPublic, yatraRidePartner } from "../services/yatra.service";
 import {
   dateLong,
@@ -566,8 +566,9 @@ const DepartureDetail: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const detail = useRemote<any>(() => yatraPublic.departure(code), [code]);
-  const seatMap = useRemote<any>(() => yatraPublic.seats(code), [code]);
+  const sampleTrip = isSampleCode(code) ? sampleDeparture(code) : null;
+  const detail = useRemote<any>(() => (sampleTrip ? Promise.resolve({ data: { data: sampleTrip.detail } }) : yatraPublic.departure(code)), [code]);
+  const seatMap = useRemote<any>(() => (sampleTrip ? Promise.resolve({ data: { data: sampleTrip.seats } }) : yatraPublic.seats(code)), [code]);
   const [step, setStep] = useState<Step>("seats");
   const [selected, setSelected] = useState<string[]>([]);
   const [count, setCount] = useState(1);
@@ -613,13 +614,15 @@ const DepartureDetail: React.FC = () => {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!user) {
+    if (!user && !sampleTrip) {
       navigate(`/login?redirect=${encodeURIComponent(location.pathname)}`);
       return;
     }
     if (seatsWanted < 1) return setError("Choose at least one seat.");
     if (travellers.some((t) => t.name.trim().length < 2)) return setError("Enter every traveller's name.");
     if (!/^\+?[0-9][0-9 -]{7,15}$/.test(contact.phone)) return setError("Enter a valid contact phone number.");
+    // Sample buses are page-only: everything above is filled in, then payment is where it stops.
+    if (sampleTrip) return setError("Payment is not available for this bus yet.");
     setBusy(true);
     try {
       const res = await yatraCustomer.createBooking({
@@ -824,7 +827,7 @@ const DepartureDetail: React.FC = () => {
                       {step === "points" && <EnterpriseButton type="button" onClick={goPassengers} className="flex-1 justify-center">Continue</EnterpriseButton>}
                       {step === "passengers" && (
                         <EnterpriseButton type="submit" disabled={busy || seatsWanted < 1} icon={<ShieldCheck size={14} />} className="flex-1 justify-center">
-                          {busy ? "Holding seats…" : user ? "Hold seats and pay" : "Sign in to book"}
+                          {busy ? "Holding seats…" : user || sampleTrip ? "Hold seats and pay" : "Sign in to book"}
                         </EnterpriseButton>
                       )}
                     </div>

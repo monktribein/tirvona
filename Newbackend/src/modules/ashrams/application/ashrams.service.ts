@@ -6,8 +6,10 @@ import {
   NotFoundException,
   Optional,
 } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { randomUUID } from "node:crypto";
 import bcrypt from "bcryptjs";
+import { sendTeamAlert } from "../../notifications/team-alert";
 import { InjectModel } from "../../../database/orm-nest";
 import type { Model } from "../../../database/orm";
 import { assertWritableInLocation, isLocationScopedUser } from "../../../common/auth/location-scope";
@@ -229,6 +231,7 @@ export class AshramsService {
     @Optional() @InjectModel("RoomRate") readonly roomRates?: Model<any>,
     @Optional() @InjectModel("User") readonly userModel?: Model<any>,
     @Optional() private readonly hrLocation?: HrLocationService,
+    @Optional() private readonly config?: ConfigService,
   ) { }
 
   /**
@@ -1117,6 +1120,17 @@ export class AshramsService {
           isVerified: true,
         });
         targetOwnerId = createdUser._id.toString();
+        sendTeamAlert(this.config, {
+          subject: "New stay owner account created",
+          title: "New stay owner account",
+          message: "A stay owner account was created while a stay was being added on Tirvona.",
+          details: [
+            { label: "Name", value: name },
+            { label: "Email", value: email },
+            { label: "Phone", value: String(phone) },
+            { label: "Created by", value: String((user as any).email ?? (user as any).name ?? user.id) },
+          ],
+        });
       }
     }
 
@@ -1167,6 +1181,25 @@ export class AshramsService {
         status: "active",
       }));
     if (roomDocs.length) await this.rooms.insertMany(roomDocs);
+    const ownerAccount =
+      this.userModel && targetOwnerId
+        ? await this.userModel.findById(targetOwnerId).select("name email phone").lean().catch(() => null)
+        : null;
+    sendTeamAlert(this.config, {
+      subject: `New stay onboarding: ${ashram.name}`,
+      title: "New stay onboarding",
+      message: "A new stay was added to Tirvona. It is waiting for documents and approval.",
+      details: [
+        { label: "Stay", value: String(ashram.name ?? "") },
+        { label: "Stay code", value: String(ashram.ashramCode ?? "") },
+        { label: "City", value: [payload.address?.city, payload.address?.state].filter(Boolean).join(", ") },
+        { label: "Rooms added", value: String(roomDocs.length) },
+        { label: "Owner", value: String((ownerAccount as any)?.name ?? "") },
+        { label: "Owner email", value: String((ownerAccount as any)?.email ?? "") },
+        { label: "Owner phone", value: String((ownerAccount as any)?.phone ?? "") },
+        { label: "Added by", value: String((user as any).email ?? (user as any).name ?? user.id) },
+      ],
+    });
     return { ashram, roomsCreated: roomDocs.length };
   }
 
