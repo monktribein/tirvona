@@ -11,7 +11,11 @@ import {
   AttendanceQueryDto,
 } from "../presentation/dtos/lead-attendance.dto";
 
-const buildGoogleMapsUrl = (lat?: number | null, lng?: number | null) => {
+/** A shift still open this long after check-in is closed automatically. */
+export const LEAD_AUTO_CHECKOUT_HOURS = 9;
+export const LEAD_AUTO_CHECKOUT_NOTE = `Checked out automatically ${LEAD_AUTO_CHECKOUT_HOURS} hours after check-in (no check-out was recorded).`;
+
+const buildGoogleMapsUrl =(lat?: number | null, lng?: number | null) => {
   if (lat === null || lat === undefined || lng === null || lng === undefined) return "";
   return `https://www.google.com/maps?q=${lat},${lng}`;
 };
@@ -58,8 +62,13 @@ export class LeadAttendanceService {
 
   async markCheckIn(agent: AuthenticatedLeadUser, dto: any) {
     // Only a real device fix is stored. An invented point would show up on the
-    // route map and add a phantom leg to the day's distance.
+    // route map and add a phantom leg to the day's distance. Without one the
+    // agent is not checked in: the shift's whole route starts from this point.
     const { lat, lng, accuracy } = readCoords(dto);
+    if (lat === null || lng === null)
+      throw new BadRequestException(
+        "Location is required to check in. Allow location access on your phone and try again.",
+      );
 
     const today = getTodayDateString();
     const now = new Date();
@@ -73,9 +82,30 @@ export class LeadAttendanceService {
     });
 
     if (existing && existing.checkedIn && !existing.checkedOut) {
+      const hasPoint =
+        Number.isFinite(existing.checkInCoords?.lat) && Number.isFinite(existing.checkInCoords?.lng);
+      if (hasPoint) {
+        return {
+          message: "Already checked in today",
+          record: existing,
+        };
+      }
+      // A shift opened without a location (sign-in used to do that): the
+      // phone's fix completes it instead of leaving the route without a start.
+      const completed = await this.attendanceModel.findOneAndUpdate(
+        { $or: [{ agentId: agent.id }, { agentId: agentIdObj }], date: today },
+        {
+          $set: {
+            checkInCoords: { lat, lng, accuracy },
+            checkInMapsUrl: mapsUrl,
+            checkInAddress: dto.address || existing.checkInAddress,
+          },
+        },
+        { new: true },
+      );
       return {
-        message: "Already checked in today",
-        record: existing,
+        message: "Check-in location recorded",
+        record: completed ?? existing,
       };
     }
 
@@ -186,6 +216,47 @@ export class LeadAttendanceService {
       message: "Check-out recorded successfully",
       record: updated,
     };
+  }
+
+  /**
+   * Closes every shift that has been open for 9 hours or more: the agent
+   * checked in and never checked out. The check-out is stamped exactly 9 hours
+   * after the check-in (not at the moment the sweep ran) so a late sweep never
+   * inflates the hours, and it carries no location because none was sent.
+   * Each row is claimed with its own conditional update, so an agent checking
+   * out at the same moment, or two instances sweeping at once, can never be
+   * overwritten. Returns the shifts it closed.
+   */
+  async autoCheckOutStale(now = new Date()): Promise<Array<{ agentId: string; attendanceId: string }>> {
+    const limitMs = LEAD_AUTO_CHECKOUT_HOURS * 3_600_000;
+    const open = (await this.attendanceModel
+      .find({ checkedIn: true, checkedOut: false, checkInTime: { $lte: new Date(now.getTime() - limitMs) } })
+      .select("_id agentId checkInTime notes")
+      .lean()) as any[];
+
+    const closed: Array<{ agentId: string; attendanceId: string }> = [];
+    for (const row of open) {
+      if (!row.checkInTime) continue;
+      const checkOutTime = new Date(new Date(row.checkInTime).getTime() + limitMs);
+      const totalMinutes = LEAD_AUTO_CHECKOUT_HOURS * 60;
+      const claimed = await this.attendanceModel.findOneAndUpdate(
+        { _id: row._id, checkedOut: false },
+        {
+          $set: {
+            checkedOut: true,
+            checkOutTime,
+            checkOutFormattedTime: formatTimeInIST(checkOutTime),
+            totalWorkingMinutes: totalMinutes,
+            formattedWorkingHours: `${LEAD_AUTO_CHECKOUT_HOURS} hr 0 min`,
+            status: "present",
+            notes: row.notes ? `${row.notes} | ${LEAD_AUTO_CHECKOUT_NOTE}` : LEAD_AUTO_CHECKOUT_NOTE,
+          },
+        },
+        { new: true },
+      );
+      if (claimed) closed.push({ agentId: String(row.agentId), attendanceId: String(row._id) });
+    }
+    return closed;
   }
 
   async getTodayStatus(agentId: string) {

@@ -208,6 +208,35 @@ describe("summariseDay", () => {
     expect(summary.idleMinutes).toBeGreaterThanOrEqual(20);
   });
 
+  it("reports each stop's average accuracy and keeps accuracy on the route", () => {
+    const withAccuracy = (lat: number, lng: number, minutes: number, metres: number, accuracy: number | null) => ({
+      ...stored(lat, lng, minutes, metres),
+      accuracy,
+    });
+    const summary = summariseDay("2026-09-09", [
+      withAccuracy(27.49, 77.67, 0, 0, 10),
+      withAccuracy(27.4901, 77.6701, 10, 14, 20),
+      withAccuracy(27.4902, 77.6702, 20, 14, null),
+      withAccuracy(27.5, 77.68, 40, 1400, 8),
+    ]);
+
+    expect(summary.visited).toHaveLength(1);
+    // The fix with no accuracy is left out of the average rather than counted as zero.
+    expect(summary.visited[0].accuracy).toBe(15);
+    expect(summary.route.map((p) => p.accuracy)).toEqual([10, 20, null, 8]);
+    expect(summary.latest?.accuracy).toBe(8);
+  });
+
+  it("leaves a stop's accuracy empty when no fix reported one", () => {
+    const summary = summariseDay("2026-09-09", [
+      stored(27.49, 77.67, 0),
+      stored(27.4901, 77.6701, 10, 14),
+      stored(27.4902, 77.6702, 20, 14),
+      stored(27.5, 77.68, 40, 1400),
+    ]);
+    expect(summary.visited[0].accuracy).toBeNull();
+  });
+
   it("builds a timeline of moves and stops in order", () => {
     const summary = summariseDay("2026-09-09", [
       stored(27.49, 77.67, 0),

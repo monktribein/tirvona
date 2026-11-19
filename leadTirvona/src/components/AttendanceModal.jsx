@@ -8,9 +8,9 @@ import { leadApi } from '../services/leadApi';
 
 export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpdated }) {
   const { t } = useLanguage();
-  const { isCapturing, gpsError, captureCurrentLocation } = useGeolocation();
+  const { isCapturing, gpsError, captureCurrentLocation, prefetchLocation } = useGeolocation();
   // Tied to the signed-in agent: tracking stops on sign-out and resumes on sign-in.
-  const { startShift, endShift, screenKeptOn, tracking, error: trackingError } = useMovementTracker(user?.id || user?._id || null);
+  const { ensureConsent, startShift, endShift, screenKeptOn, tracking, error: trackingError } = useMovementTracker(user?.id || user?._id || null);
   const [attendance, setAttendance] = useState({
     checkedIn: false,
     checkInTime: null,
@@ -34,15 +34,23 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
         .then((data) => {
           if (!isMounted || !data) return;
           if (data.checkedIn) {
+            // Today's record keeps its fixes in checkInCoords/checkOutCoords
+            // (older rows: checkInLocation). A shift opened without a fix has none.
+            const point = (coords, legacy) =>
+              coords && Number.isFinite(coords.lat) && Number.isFinite(coords.lng)
+                ? { lat: coords.lat, lng: coords.lng, accuracy: coords.accuracy ?? null }
+                : legacy && Number.isFinite(legacy.latitude) && Number.isFinite(legacy.longitude)
+                ? { lat: legacy.latitude, lng: legacy.longitude, accuracy: legacy.accuracy ?? null }
+                : null;
             const record = {
               checkedIn: !data.checkedOut,
               checkInTime: data.checkInTime ? new Date(data.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : null,
-              checkInCoords: data.checkInLocation ? { lat: data.checkInLocation.latitude, lng: data.checkInLocation.longitude } : null,
-              checkInAddress: data.checkInLocation?.address || '',
+              checkInCoords: point(data.checkInCoords, data.checkInLocation),
+              checkInAddress: data.checkInAddress || data.checkInLocation?.address || '',
               checkedOut: data.checkedOut,
               checkOutTime: data.checkOutTime ? new Date(data.checkOutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : null,
-              checkOutCoords: data.checkOutLocation ? { lat: data.checkOutLocation.latitude, lng: data.checkOutLocation.longitude } : null,
-              checkOutAddress: data.checkOutLocation?.address || '',
+              checkOutCoords: data.checkedOut ? point(data.checkOutCoords, data.checkOutLocation) : null,
+              checkOutAddress: data.checkOutAddress || data.checkOutLocation?.address || '',
             };
             setAttendance(record);
             if (onAttendanceUpdated) onAttendanceUpdated(record);
@@ -60,6 +68,12 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
       };
     }
   }, [isOpen]);
+
+  // With location already allowed, find a fix while the popup is open so
+  // Check In / Check Out answer at once.
+  useEffect(() => {
+    if (isOpen) prefetchLocation();
+  }, [isOpen, prefetchLocation]);
 
   // Lock background body scroll and pause Lenis smooth scroll while modal is open
   React.useEffect(() => {
@@ -122,17 +136,32 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
     : isLeadExecutive
     ? t('Lead Executive')
     : t('Active Shift');
+  // Checked in with a real location. A shift opened without one (signing in
+  // used to do that) can still take its location from the Check In button.
+  const checkInDone = attendance.checkedIn && Boolean(attendance.checkInCoords);
 
   const handleCheckIn = () => {
     setStatusMsg('Capturing Geotag location...');
+    // Tracking consent is saved while the location is being found, so it adds
+    // no wait, and it is in place before the check-in is sent: an agent is never
+    // checked in with location tracking off.
+    const consentSaved = ensureConsent();
+    consentSaved.catch(() => { /* reported below once the location is in */ });
     captureCurrentLocation(async (coords) => {
       setSubmitting(true);
       try {
+        try {
+          await consentSaved;
+        } catch (err) {
+          setStatusMsg(`❌ ${err?.message || 'Could not turn on location tracking. Please try again.'}`);
+          return;
+        }
         const res = await leadApi.checkIn({
           coords: {
             lat: coords.lat,
             lng: coords.lng,
-            accuracy: coords.accuracy || 10,
+            // The phone's own accuracy, in metres; never a made-up value.
+            ...(coords.accuracy != null ? { accuracy: coords.accuracy } : {}),
           },
           address: coords.address || `${user?.district || 'Field'}, Uttar Pradesh`
         });
@@ -158,7 +187,7 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
         }
       } catch (err) {
         console.error('[AttendanceModal] check-in failed:', err);
-        setStatusMsg('❌ Check-in failed. Please try again.');
+        setStatusMsg(`❌ ${err?.message || 'Check-in failed. Please try again.'}`);
       } finally {
         setSubmitting(false);
       }
@@ -189,7 +218,7 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
           coords: {
             lat: coords.lat,
             lng: coords.lng,
-            accuracy: coords.accuracy || 10,
+            ...(coords.accuracy != null ? { accuracy: coords.accuracy } : {}),
           },
           address: coords.address || `${user?.district || 'Field'}, Uttar Pradesh`
         });
@@ -229,36 +258,36 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172A]/50 backdrop-blur-xs animate-fadeIn overscroll-contain"
     >
       
-      <div className="bg-white border border-[#E2E8F0] rounded-3xl p-6 sm:p-8 w-full max-w-lg shadow-xl relative animate-scaleUp text-left space-y-5">
-        
+      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 sm:p-5 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-xl relative animate-scaleUp text-left space-y-3">
+
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-[#64748B] hover:text-[#0F172A] rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+          className="absolute top-3 right-3 p-1.5 text-[#64748B] hover:text-[#0F172A] rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
           aria-label="Close Modal"
         >
-          <X size={18} />
+          <X size={16} />
         </button>
 
-        <div className="text-center space-y-1.5">
-          <div className="flex items-center justify-center mb-2">
-            <img src="/logo.png" alt="Tirvona Logo" className="h-10 w-auto object-contain" />
+        <div className="text-center space-y-0.5">
+          <div className="flex items-center justify-center mb-1">
+            <img src="/logo.png" alt="Tirvona Logo" className="h-7 w-auto object-contain" />
           </div>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-[#0F172A] tracking-tight">
+          <h2 className="text-lg font-extrabold text-[#0F172A] tracking-tight">
             {roleTitle}
           </h2>
-          <p className="text-xs text-[#64748B] font-medium">
+          <p className="text-[11px] text-[#64748B] font-medium">
             {roleSubtitle}
           </p>
         </div>
 
-        <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl p-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] font-extrabold flex items-center justify-center text-sm">
+        <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-2.5 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] font-extrabold flex items-center justify-center text-xs">
               {userInitials}
             </div>
             <div>
               <h3 className="text-sm font-extrabold text-[#0F172A]">{user?.name || (isSupervisor ? 'Field Supervisor' : 'Field Lead Agent')}</h3>
-              <p className="text-xs font-medium text-[#64748B]">Phone: {user?.phone || '+91 9876543210'}</p>
+              <p className="text-[11px] font-medium text-[#64748B]">Phone: {user?.phone || '+91 9876543210'}</p>
             </div>
           </div>
           <span className={`text-[10px] font-extrabold uppercase px-3 py-1 rounded-full border ${
@@ -271,22 +300,22 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
         </div>
 
         {gpsError && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-600 flex items-center gap-2">
+          <div className="p-2.5 bg-red-50 border border-red-200 rounded-xl text-[11px] font-semibold text-red-600 flex items-center gap-2">
             <AlertCircle size={14} className="shrink-0" />
             <span>{gpsError}</span>
           </div>
         )}
 
         {statusMsg && !gpsError && (
-          <div className="p-3 bg-[#0A4DA6]/5 border border-[#0A4DA6]/20 rounded-xl text-xs font-bold text-[#0A4DA6] flex items-center gap-2">
+          <div className="p-2.5 bg-[#0A4DA6]/5 border border-[#0A4DA6]/20 rounded-xl text-[11px] font-bold text-[#0A4DA6] flex items-center gap-2">
             <CheckCircle2 size={14} className="shrink-0 text-[#0A4DA6]" />
             <span>{statusMsg}</span>
           </div>
         )}
 
         {/* While on duty: the route is only recorded while this app is open. */}
-        {attendance.checkedIn && !attendance.checkedOut && (
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] font-semibold text-amber-800 flex items-start gap-2">
+        {attendance.checkedIn && !attendance.checkedOut && tracking && (
+          <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] font-semibold text-amber-800 flex items-start gap-2">
             <Navigation size={14} className="shrink-0 mt-0.5" />
             <span>
               {t('Location is on for your shift. Keep this app open on screen until you check out — if you switch apps or lock the phone, your route pauses until you come back.')}
@@ -295,11 +324,11 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
           </div>
         )}
 
-        {attendance.checkedIn && !attendance.checkedOut && !tracking && (
+        {checkInDone && !attendance.checkedOut && !tracking && (
           <button
             type="button"
             onClick={handleStartTracking}
-            className="w-full min-h-[48px] rounded-2xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white transition-all cursor-pointer shadow-xs"
+            className="w-full min-h-[40px] rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white transition-all cursor-pointer shadow-xs"
           >
             <Navigation size={16} />
             <span>{t('Start location tracking')}</span>
@@ -307,28 +336,28 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
         )}
 
         {trackingError && attendance.checkedIn && !attendance.checkedOut && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-600 flex items-center gap-2">
+          <div className="p-2.5 bg-red-50 border border-red-200 rounded-xl text-[11px] font-semibold text-red-600 flex items-center gap-2">
             <AlertCircle size={14} className="shrink-0" />
             <span>{trackingError}</span>
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-3.5 pt-1">
+        <div className="grid grid-cols-2 gap-2.5">
           <button
             type="button"
             onClick={handleCheckIn}
-            disabled={isCapturing || attendance.checkedIn}
-            className={`min-h-[52px] rounded-2xl font-extrabold text-xs sm:text-sm flex flex-col items-center justify-center gap-1 transition-all cursor-pointer shadow-xs ${
-              attendance.checkedIn
+            disabled={isCapturing || checkInDone}
+            className={`min-h-[44px] rounded-xl font-extrabold text-xs sm:text-sm flex flex-col items-center justify-center gap-1 transition-all cursor-pointer shadow-xs ${
+              checkInDone
                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default'
                 : 'bg-[#0A4DA6] hover:bg-[#083D85] text-white'
             }`}
           >
             <div className="flex items-center gap-1.5">
               <MapPin size={16} />
-              <span>{attendance.checkedIn ? t('Checked In') : t('Check In')}</span>
+              <span>{checkInDone ? t('Checked In') : t('Check In')}</span>
             </div>
-            {isCapturing && !attendance.checkedIn && (
+            {isCapturing && !checkInDone && (
               <span className="text-[10px] opacity-80 font-normal">Capturing Geotag...</span>
             )}
           </button>
@@ -337,7 +366,7 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
             type="button"
             onClick={handleCheckOut}
             disabled={isCapturing || !attendance.checkedIn || attendance.checkedOut}
-            className={`min-h-[52px] rounded-2xl font-extrabold text-xs sm:text-sm flex flex-col items-center justify-center gap-1 transition-all cursor-pointer shadow-xs ${
+            className={`min-h-[44px] rounded-xl font-extrabold text-xs sm:text-sm flex flex-col items-center justify-center gap-1 transition-all cursor-pointer shadow-xs ${
               attendance.checkedOut
                 ? 'bg-slate-100 text-slate-600 border border-slate-200 cursor-default'
                 : !attendance.checkedIn
@@ -355,12 +384,12 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
           </button>
         </div>
 
-        <div className="space-y-2.5 pt-2 border-t border-[#E2E8F0]">
-          <h4 className="text-xs font-bold text-[#64748B] tracking-wider uppercase">
+        <div className="space-y-2 pt-2 border-t border-[#E2E8F0]">
+          <h4 className="text-[11px] font-bold text-[#64748B] tracking-wider uppercase">
             {t('Attendance Log Record')}
           </h4>
 
-          <div className="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl space-y-1 text-xs">
+          <div className="p-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg space-y-1 text-xs">
             <div className="flex items-center justify-between font-extrabold text-[#0F172A]">
               <span className="flex items-center gap-1 text-[#0A4DA6]">
                 <Clock size={13} /> {t('Check-In Status')}
@@ -371,6 +400,9 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
               <div className="text-[11px] text-[#64748B] space-y-0.5 pt-1 border-t border-[#E2E8F0]">
                 <p><strong className="text-[#0F172A]">Time:</strong> {attendance.checkInTime}</p>
                 <p><strong className="text-[#0F172A]">Geotag GPS:</strong> Lat {attendance.checkInCoords?.lat}, Lng {attendance.checkInCoords?.lng}</p>
+                {attendance.checkInCoords?.accuracy != null && (
+                  <p><strong className="text-[#0F172A]">Accuracy:</strong> ±{attendance.checkInCoords.accuracy} m{attendance.checkInCoords.accuracy > 100 ? ' — low; your route may not be recorded. Move outdoors.' : ''}</p>
+                )}
                 {checkInMapsUrl && (
                   <a href={checkInMapsUrl} target="_blank" rel="noopener noreferrer" className="text-[#0A4DA6] font-bold hover:underline inline-block mt-0.5">
                     📍 Open Location in Google Maps &rarr;
@@ -382,7 +414,7 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
             )}
           </div>
 
-          <div className="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl space-y-1 text-xs">
+          <div className="p-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg space-y-1 text-xs">
             <div className="flex items-center justify-between font-extrabold text-[#0F172A]">
               <span className="flex items-center gap-1 text-[#0B192C]">
                 <Clock size={13} /> {t('Check-Out Status')}
@@ -393,6 +425,9 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
               <div className="text-[11px] text-[#64748B] space-y-0.5 pt-1 border-t border-[#E2E8F0]">
                 <p><strong className="text-[#0F172A]">Time:</strong> {attendance.checkOutTime}</p>
                 <p><strong className="text-[#0F172A]">Geotag GPS:</strong> Lat {attendance.checkOutCoords?.lat}, Lng {attendance.checkOutCoords?.lng}</p>
+                {attendance.checkOutCoords?.accuracy != null && (
+                  <p><strong className="text-[#0F172A]">Accuracy:</strong> ±{attendance.checkOutCoords.accuracy} m</p>
+                )}
                 {checkOutMapsUrl && (
                   <a href={checkOutMapsUrl} target="_blank" rel="noopener noreferrer" className="text-[#0A4DA6] font-bold hover:underline inline-block mt-0.5">
                     📍 Open Location in Google Maps &rarr;
@@ -405,10 +440,10 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
           </div>
         </div>
 
-        <div className="pt-2">
+        <div>
           <button
             onClick={onClose}
-            className="w-full py-2.5 bg-[#F8FAFC] hover:bg-slate-100 border border-[#E2E8F0] text-[#0F172A] font-extrabold rounded-xl text-xs transition-colors cursor-pointer"
+            className="w-full py-2 bg-[#F8FAFC] hover:bg-slate-100 border border-[#E2E8F0] text-[#0F172A] font-extrabold rounded-xl text-xs transition-colors cursor-pointer"
           >
             {isSupervisor ? t('Continue to Dashboard') : t('Continue to Field Dashboard')}
           </button>
