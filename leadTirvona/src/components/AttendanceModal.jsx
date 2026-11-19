@@ -10,7 +10,7 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
   const { t } = useLanguage();
   const { isCapturing, gpsError, captureCurrentLocation } = useGeolocation();
   // Tied to the signed-in agent: tracking stops on sign-out and resumes on sign-in.
-  const { startShift, endShift, screenKeptOn } = useMovementTracker(user?.id || user?._id || null);
+  const { startShift, endShift, screenKeptOn, tracking, error: trackingError } = useMovementTracker(user?.id || user?._id || null);
   const [attendance, setAttendance] = useState({
     checkedIn: false,
     checkInTime: null,
@@ -151,7 +151,11 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
         setStatusMsg('✅ Check-In Attendance Saved to Server with GPS Location!');
         if (onAttendanceUpdated) onAttendanceUpdated(record);
         // Check-in turns location tracking on for the shift.
-        try { await startShift(); } catch { /* non-blocking */ }
+        try {
+          await startShift();
+        } catch {
+          setStatusMsg('⚠️ Checked in, but location tracking could not start. Tap "Start location tracking".');
+        }
       } catch (err) {
         console.error('[AttendanceModal] check-in failed:', err);
         setStatusMsg('❌ Check-in failed. Please try again.');
@@ -159,6 +163,18 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
         setSubmitting(false);
       }
     });
+  };
+
+  // Signing in opens the shift without a location, so an agent can be checked
+  // in with tracking never started. This turns it on for the open shift.
+  const handleStartTracking = async () => {
+    setStatusMsg('Starting location tracking...');
+    try {
+      await startShift();
+      setStatusMsg('✅ Location tracking is on for your shift.');
+    } catch {
+      setStatusMsg('❌ Could not start location tracking. Please try again.');
+    }
   };
 
   const handleCheckOut = () => {
@@ -276,6 +292,24 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
               {t('Location is on for your shift. Keep this app open on screen until you check out — if you switch apps or lock the phone, your route pauses until you come back.')}
               {screenKeptOn ? ` ${t('Screen will stay on while the app is open.')}` : ''}
             </span>
+          </div>
+        )}
+
+        {attendance.checkedIn && !attendance.checkedOut && !tracking && (
+          <button
+            type="button"
+            onClick={handleStartTracking}
+            className="w-full min-h-[48px] rounded-2xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white transition-all cursor-pointer shadow-xs"
+          >
+            <Navigation size={16} />
+            <span>{t('Start location tracking')}</span>
+          </button>
+        )}
+
+        {trackingError && attendance.checkedIn && !attendance.checkedOut && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-600 flex items-center gap-2">
+            <AlertCircle size={14} className="shrink-0" />
+            <span>{trackingError}</span>
           </div>
         )}
 

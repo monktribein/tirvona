@@ -6,6 +6,7 @@ import {
 import { Roles } from "../../../common/decorators/roles.decorator";
 import { AnalyticsService } from "../application/analytics.service";
 import { SectionSummaryService } from "../application/section-summary.service";
+import { LocationOverviewService } from "../application/location-overview.service";
 import {
   AnalyticsOverviewQueryDto,
   RecentBookingsQueryDto,
@@ -26,6 +27,7 @@ export class AnalyticsController {
   constructor(
     private readonly service: AnalyticsService,
     private readonly sections: SectionSummaryService,
+    private readonly locations_: LocationOverviewService,
   ) {}
 
   /**
@@ -62,6 +64,12 @@ export class AnalyticsController {
   @Roles(...OVERSIGHT_ROLES)
   async system(@CurrentUser() user: AuthenticatedUser) {
     return { success: true, data: await this.service.system(user) };
+  }
+  /** Per-city counts. Platform-wide, so Super Admin only. */
+  @Get("locations")
+  @Roles("super_admin")
+  async locations() {
+    return { success: true, data: await this.locations_.overview() };
   }
   @Get("overview")
   @Roles(...OVERSIGHT_ROLES)

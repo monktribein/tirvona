@@ -351,6 +351,7 @@ export const analyticsService = {
   dashboard: (params: Record<string, string> = {}) =>
     api.get("/analytics/dashboard", { params }),
   system: () => api.get("/analytics/system"),
+  locations: () => api.get("/analytics/locations", { skipToast: true }),
   // The section strips are decoration around each page and already fall back
   // to rendering nothing, so a failure here must not raise an error toast.
   sections: () => api.get("/analytics/sections", { skipToast: true }),

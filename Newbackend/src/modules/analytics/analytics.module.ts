@@ -9,6 +9,8 @@ import { EventsModule } from "../events/events.module";
 import { MarketplaceModule } from "../marketplace/marketplace.module";
 import { AnalyticsService } from "./application/analytics.service";
 import { SectionSummaryService } from "./application/section-summary.service";
+import { LocationOverviewService } from "./application/location-overview.service";
+import { LeadDatabaseModule } from "../lead-collection/infrastructure/lead-database.module";
 import { AnalyticsController } from "./presentation/analytics.controller";
 @Module({
   imports: [
@@ -20,8 +22,9 @@ import { AnalyticsController } from "./presentation/analytics.controller";
     AartiModule,
     EventsModule,
     MarketplaceModule,
+    LeadDatabaseModule,
   ],
   controllers: [AnalyticsController],
-  providers: [AnalyticsService, SectionSummaryService],
+  providers: [AnalyticsService, SectionSummaryService, LocationOverviewService],
 })
 export class AnalyticsModule {}
