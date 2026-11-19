@@ -15,6 +15,7 @@ import {
   Eye,
   Inbox,
   Lock,
+  MapPin,
   Plus,
   RefreshCw,
   Search,
@@ -137,6 +138,30 @@ interface Overview {
     comparable: boolean;
   };
 }
+
+interface LocationRow {
+  key: string;
+  label: string;
+  stays: number;
+  temples: number;
+  pandits: number;
+  restaurants: number;
+  leads: number;
+  total: number;
+}
+
+interface LocationOverview {
+  locations: LocationRow[];
+  unplaced: Record<"stays" | "temples" | "pandits" | "restaurants" | "leads", number>;
+}
+
+const LOCATION_COUNTS: { key: "stays" | "temples" | "pandits" | "restaurants" | "leads"; label: string }[] = [
+  { key: "stays", label: "Stays" },
+  { key: "temples", label: "Temples" },
+  { key: "pandits", label: "Pandits" },
+  { key: "restaurants", label: "Restaurants" },
+  { key: "leads", label: "Leads" },
+];
 
 const RANGE_LABEL: Record<Range, string> = {
   daily: "last 14 days",
@@ -636,6 +661,9 @@ export const AdminDashboard: React.FC = () => {
 
   const [overview, setOverview] = useState<Overview | null>(null);
   const [system, setSystem] = useState<any>(null);
+  const [locationOverview, setLocationOverview] = useState<LocationOverview | null>(null);
+  const [district, setDistrict] = useState("all");
+  const isSuperAdmin = user?.role === "super_admin";
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
@@ -645,11 +673,16 @@ export const AdminDashboard: React.FC = () => {
       if (isInitial) setLoading(true);
       else setRefreshing(true);
 
-      const [overviewRes, systemRes] =
+      const [overviewRes, systemRes, locationsRes] =
         await Promise.allSettled([
           analyticsService.overview(nextRange),
           analyticsService.system(),
+          isSuperAdmin ? analyticsService.locations() : Promise.reject(new Error("not super admin")),
         ]);
+
+      // Best effort: the district panel simply stays hidden if it cannot load.
+      if (locationsRes.status === "fulfilled")
+        setLocationOverview(locationsRes.value.data?.data ?? null);
 
       const failed: string[] = [];
       if (overviewRes.status === "fulfilled")
@@ -664,7 +697,7 @@ export const AdminDashboard: React.FC = () => {
       setLoading(false);
       setRefreshing(false);
     },
-    [],
+    [isSuperAdmin],
   );
 
   useEffect(() => {
@@ -719,6 +752,21 @@ export const AdminDashboard: React.FC = () => {
 
   const series = overview?.series ?? [];
   const hasWindowData = (overview?.totals.windowBookings ?? 0) > 0;
+
+  // Range tabs and refresh: they sit beside the district picker when that is shown.
+  const showDistrictBar = isSuperAdmin && Boolean(locationOverview?.locations.length);
+  const rangeControls = (
+    <>
+        <div className="flex items-center gap-1 overflow-x-auto max-w-full rounded-2xl border border-gray-200 bg-white p-1 text-xs dark:border-slate-800 dark:bg-slate-900">
+          {(["daily", "weekly", "monthly", "yearly"] as const).map((tab) => (
+            <button key={tab} type="button" onClick={() => setRange(tab)} className={`rounded-xl px-2.5 sm:px-3 py-1.5 capitalize text-[11px] sm:text-xs font-bold ${range === tab ? "bg-[#F28C28] text-white" : "text-gray-500 hover:text-[#F28C28]"}`}>{tab}</button>
+          ))}
+        </div>
+        <button type="button" onClick={() => load(range, false)} className="rounded-2xl border border-gray-200 bg-white p-2.5 text-gray-500 dark:border-slate-800 dark:bg-slate-900 cursor-pointer" title="Refresh analytics">
+          <RefreshCw size={16} className={refreshing ? "animate-spin text-[#F28C28]" : ""} />
+        </button>
+    </>
+  );
 
   return (
     <div className="tv-viz space-y-6 text-left w-full font-sans">
@@ -780,16 +828,62 @@ export const AdminDashboard: React.FC = () => {
       <div
         className={`flex flex-col gap-6 transition-opacity ${refreshing ? "opacity-60" : "opacity-100"}`}
       >
-        <div className="order-1 flex flex-wrap items-center justify-between sm:justify-end gap-2 sm:gap-3">
-          <div className="flex items-center gap-1 overflow-x-auto max-w-full rounded-2xl border border-gray-200 bg-white p-1 text-xs dark:border-slate-800 dark:bg-slate-900">
-            {(["daily", "weekly", "monthly", "yearly"] as const).map((tab) => (
-              <button key={tab} type="button" onClick={() => setRange(tab)} className={`rounded-xl px-2.5 sm:px-3 py-1.5 capitalize text-[11px] sm:text-xs font-bold ${range === tab ? "bg-[#F28C28] text-white" : "text-gray-500 hover:text-[#F28C28]"}`}>{tab}</button>
-            ))}
+        {isSuperAdmin && locationOverview && locationOverview.locations.length > 0 && (() => {
+          const picked = locationOverview.locations.find((d) => d.key === district);
+          const counts = LOCATION_COUNTS.map((item) => ({
+            ...item,
+            value: picked
+              ? picked[item.key]
+              : locationOverview.locations.reduce((sum, d) => sum + d[item.key], 0),
+          }));
+          return (
+            <section className="order-first" aria-label="District">
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-[#0B192C]">
+                <label className="flex items-center gap-2 text-xs font-bold text-gray-500">
+                  <MapPin size={16} className="text-[#F28C28] shrink-0" />
+                  District
+                  <select
+                    value={district}
+                    onChange={(e) => setDistrict(e.target.value)}
+                    className="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-black text-[#0B192C] focus:border-[#F28C28] focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                  >
+                    <option value="all">All districts</option>
+                    {locationOverview.locations.map((d) => (
+                      <option key={d.key} value={d.key}>
+                        {d.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+                  {counts.map((item) => (
+                    <span key={item.key} className="text-xs font-semibold text-gray-500">
+                      <span className="mr-1 text-sm font-black tabular-nums text-[#0B192C] dark:text-white">
+                        {formatIndianNumber(item.value)}
+                      </span>
+                      {item.label}
+                    </span>
+                  ))}
+                </div>
+                <div className="ml-auto flex items-center gap-2 sm:gap-3">{rangeControls}</div>
+              </div>
+              {LOCATION_COUNTS.some((item) => (locationOverview.unplaced[item.key] ?? 0) > 0) && (
+                <p className="mt-2 text-[11px] text-gray-400">
+                  Not in any district:{" "}
+                  {LOCATION_COUNTS.filter((item) => (locationOverview.unplaced[item.key] ?? 0) > 0)
+                    .map((item) => `${formatIndianNumber(locationOverview.unplaced[item.key])} ${item.label.toLowerCase()}`)
+                    .join(", ")}
+                </p>
+              )}
+            </section>
+          );
+        })()}
+
+        {!showDistrictBar && (
+          <div className="order-1 flex flex-wrap items-center justify-between sm:justify-end gap-2 sm:gap-3">
+            {rangeControls}
           </div>
-          <button type="button" onClick={() => load(range, false)} className="rounded-2xl border border-gray-200 bg-white p-2.5 text-gray-500 dark:border-slate-800 dark:bg-slate-900 cursor-pointer" title="Refresh analytics">
-            <RefreshCw size={16} className={refreshing ? "animate-spin text-[#F28C28]" : ""} />
-          </button>
-        </div>
+        )}
 
         <div className="order-3 grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-8 bg-white dark:bg-[#0B192C] rounded-2xl border border-gray-200 dark:border-slate-800 p-6 shadow-sm space-y-5">

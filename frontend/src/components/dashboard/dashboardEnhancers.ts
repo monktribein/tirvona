@@ -92,6 +92,9 @@ function annotateActionCell(cell: HTMLTableCellElement, header: string, isLast: 
   ).filter(
     (control) =>
       !(control instanceof HTMLInputElement) &&
+      // The dropdown wrapper from an earlier pass is role="button" too; counting
+      // it as an action made the next pass see one control and drop the menu.
+      !control.classList.contains("tv-menu") &&
       !control.closest('[role="menu"], [role="listbox"]'),
   );
   if (!controls.length) return;

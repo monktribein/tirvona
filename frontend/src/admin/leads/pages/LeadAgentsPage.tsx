@@ -482,6 +482,7 @@ export const LeadAgentsPage: React.FC = () => {
                   <th className="px-5 py-3">ROLE</th>
                   <th className="px-5 py-3">REGION</th>
                   <th className="px-5 py-3">LEADS</th>
+                  <th className="px-5 py-3">LAST LOGIN</th>
                   <th className="px-5 py-3">ATTENDANCE</th>
                   <th className="px-5 py-3">STATUS</th>
                   <th className="px-5 py-3 text-right">ACTIONS</th>
