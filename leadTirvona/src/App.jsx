@@ -36,7 +36,11 @@ export default function App() {
     if (agent?.role === 'field_agent' || agent?.role === 'field_executive') {
       leadApi.getTodayAttendance()
         .then((data) => {
-          if (!data) return;
+          if (!data) {
+            // No attendance yet today: the agent has not checked in.
+            setAttendanceState({ checkedIn: false, checkInTime: null, checkedOut: false, checkOutTime: null });
+            return;
+          }
           setAttendanceState({
             checkedIn: !!data.checkedIn && !data.checkedOut,
             checkInTime: data.checkInTime || null,

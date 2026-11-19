@@ -53,6 +53,8 @@ export interface VisitedPlace {
   leftAt: Date;
   minutes: number;
   fixes: number;
+  /** Average accuracy, in metres, of the fixes taken during the stay (null when none reported one). */
+  accuracy: number | null;
 }
 
 const EARTH_RADIUS_M = 6_371_000;
@@ -83,6 +85,17 @@ const isPlottable = (fix: RawFix): boolean =>
   Number.isFinite(fix.lng) &&
   Math.abs(fix.lat) <= 90 &&
   Math.abs(fix.lng) <= 180;
+
+const finiteAccuracy = (value: number | null | undefined): number | null =>
+  typeof value === "number" && Number.isFinite(value) ? Math.round(value) : null;
+
+/** Mean accuracy in metres of the fixes that reported one. */
+const averageAccuracy = (fixes: { accuracy?: number | null }[]): number | null => {
+  const known = fixes
+    .map((fix) => fix.accuracy)
+    .filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+  return known.length ? Math.round(known.reduce((sum, v) => sum + v, 0) / known.length) : null;
+};
 
 const minutesBetween = (from: Date, to: Date): number =>
   (to.getTime() - from.getTime()) / 60_000;
@@ -188,8 +201,8 @@ export interface DaySummary {
   endedAt: Date | null;
   startLocation: { lat: number; lng: number } | null;
   endLocation: { lat: number; lng: number } | null;
-  latest: { lat: number; lng: number; recordedAt: Date } | null;
-  route: { lat: number; lng: number; recordedAt: Date }[];
+  latest: { lat: number; lng: number; recordedAt: Date; accuracy: number | null } | null;
+  route: { lat: number; lng: number; recordedAt: Date; accuracy: number | null }[];
   timeline: TimelineLeg[];
   visited: VisitedPlace[];
 }
@@ -292,6 +305,7 @@ export const summariseDay = (
         leftAt,
         minutes: round(dwell, 1),
         fixes: end - index + 1,
+        accuracy: averageAccuracy(ordered.slice(index, end + 1)),
       });
       // The next leg starts where this stay ended.
       index = stayedUntilAfter ? end + 1 : end;
@@ -334,7 +348,12 @@ export const summariseDay = (
     endedAt: last.recordedAt,
     startLocation: { lat: first.lat, lng: first.lng },
     endLocation: { lat: last.lat, lng: last.lng },
-    latest: { lat: last.lat, lng: last.lng, recordedAt: last.recordedAt },
+    latest: {
+      lat: last.lat,
+      lng: last.lng,
+      recordedAt: last.recordedAt,
+      accuracy: finiteAccuracy(last.accuracy),
+    },
     // Still fixes add nothing to the line, and road routing takes few points.
     route: ordered
       .filter((fix, i) => i === 0 || Number(fix.metresFromPrevious ?? 0) > 0)
@@ -342,6 +361,7 @@ export const summariseDay = (
         lat: fix.lat,
         lng: fix.lng,
         recordedAt: fix.recordedAt,
+        accuracy: finiteAccuracy(fix.accuracy),
       })),
     timeline,
     visited,

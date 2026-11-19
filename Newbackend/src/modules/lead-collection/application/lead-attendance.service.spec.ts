@@ -111,6 +111,51 @@ describe("LeadAttendanceService", () => {
     expect(attendanceModel.findOneAndUpdate).toHaveBeenCalledTimes(1);
   });
 
+  it("does not check an agent in without a real location", async () => {
+    const attendanceModel = createAttendanceModelMock();
+    const service = new LeadAttendanceService(attendanceModel as any, {} as any);
+
+    await expect(service.markCheckIn(agent, { address: "Mathura" })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.markCheckIn(agent, { coords: { lat: 0, lng: 0 } })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.markCheckIn(agent, { coords: { lat: "x", lng: 77.7 } })).rejects.toBeInstanceOf(BadRequestException);
+    expect(attendanceModel.__getStore()).toBeNull();
+  });
+
+  it("stores the accuracy the phone reported at check-in", async () => {
+    const attendanceModel = createAttendanceModelMock();
+    const service = new LeadAttendanceService(attendanceModel as any, {} as any);
+
+    await service.markCheckIn(agent, { coords: { lat: 27.58, lng: 77.7, accuracy: 23 } });
+
+    expect(attendanceModel.__getStore()?.checkInCoords).toEqual({ lat: 27.58, lng: 77.7, accuracy: 23 });
+  });
+
+  it("gives a shift that was opened without a location its starting point", async () => {
+    const attendanceModel = createAttendanceModelMock();
+    const service = new LeadAttendanceService(attendanceModel as any, {} as any);
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+    await attendanceModel.findOneAndUpdate(
+      { date: today },
+      {
+        $set: {
+          agentId: agent.id,
+          date: today,
+          checkedIn: true,
+          checkedOut: false,
+          checkInTime: new Date(),
+          checkInCoords: { lat: null, lng: null, accuracy: null },
+        },
+      },
+      { upsert: true },
+    );
+
+    const result = await service.markCheckIn(agent, { coords: { lat: 27.58, lng: 77.7, accuracy: 12 } });
+
+    expect(result.message).toBe("Check-in location recorded");
+    expect(attendanceModel.__getStore()?.checkInCoords).toEqual({ lat: 27.58, lng: 77.7, accuracy: 12 });
+    expect(attendanceModel.__getStore()?.checkedIn).toBe(true);
+  });
+
   it("rejects check-out before check-in", async () => {
     const attendanceModel = createAttendanceModelMock();
     const service = new LeadAttendanceService(attendanceModel as any, {} as any);

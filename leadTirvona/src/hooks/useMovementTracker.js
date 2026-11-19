@@ -256,6 +256,17 @@ export function useMovementTracker(agentId) {
     [persist, start, stop]
   );
 
+  /**
+   * Records the agent's consent without starting the watch. Check-in calls this
+   * before it saves attendance, so nobody is checked in with tracking off.
+   */
+  const ensureConsent = useCallback(async () => {
+    if (consent?.granted) return;
+    const label = typeof navigator !== 'undefined' ? navigator.platform || '' : '';
+    const next = await leadApi.setTrackingConsent(true, label);
+    setConsent(next);
+  }, [consent?.granted]);
+
   /** Check-in: location on. Consent is recorded the first time. */
   const startShift = useCallback(async () => {
     if (!consent?.granted) await updateConsent(true);
@@ -312,6 +323,7 @@ export function useMovementTracker(agentId) {
     lastFixAt,
     screenKeptOn,
     updateConsent,
+    ensureConsent,
     startShift,
     endShift,
     flush,

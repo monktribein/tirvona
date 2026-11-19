@@ -7,7 +7,6 @@ import { leadCollectionConfig } from "../config/lead-collection.config";
 import {
   LEAD_CONNECTION,
   LEAD_USER_MODEL,
-  LOGIN_CHECK_IN_NOTES,
 } from "../domain/lead-collection.constants";
 import type {
   AuthenticatedLeadUser,
@@ -17,7 +16,6 @@ import type {
 } from "../domain/lead-collection.types";
 import type { LeadLoginDto } from "../presentation/dtos/lead-auth.dto";
 import { LeadUsersService } from "./lead-users.service";
-import { LeadAttendanceService } from "./lead-attendance.service";
 
 export interface LeadLoginResult {
   token: string;
@@ -33,7 +31,6 @@ export class LeadAuthService {
     @InjectModel(LEAD_USER_MODEL, LEAD_CONNECTION)
     private readonly leadUsers: Model<LeadUserDocument>,
     private readonly jwt: JwtService,
-    private readonly attendanceService?: LeadAttendanceService,
   ) {}
 
   private toAuthenticated(user: LeadUserRecord): AuthenticatedLeadUser {
@@ -87,19 +84,6 @@ export class LeadAuthService {
     );
 
     const authUser = this.toAuthenticated(user);
-
-    if (user.role === "field_agent" && this.attendanceService) {
-      try {
-        // No coordinates: the server does not know where the phone is. The
-        // shift's route starts at the first fix the phone sends.
-        await this.attendanceService.markCheckIn(authUser, {
-          address: `${user.district || 'Mathura'}, ${user.state || 'Uttar Pradesh'}`,
-          notes: LOGIN_CHECK_IN_NOTES[0],
-        });
-      } catch {
-        // Non-blocking
-      }
-    }
 
     const payload: LeadTokenPayload = {
       sub: user._id.toString(),

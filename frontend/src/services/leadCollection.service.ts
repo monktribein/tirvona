@@ -86,6 +86,8 @@ export interface TrackingPoint {
   lat: number;
   lng: number;
   recordedAt: string;
+  /** Accuracy of the phone's fix, in metres. */
+  accuracy?: number | null;
 }
 
 /** Stops are lettered in the order they were made: A, B, … Z, AA, AB, … */
@@ -117,6 +119,8 @@ export interface TrackingVisit {
   leftAt: string;
   minutes: number;
   fixes: number;
+  /** Average accuracy of the fixes taken during the stay, in metres. */
+  accuracy?: number | null;
 }
 
 export interface TrackingDay {
@@ -155,6 +159,8 @@ export interface ShiftPoint {
   at: string;
   lat: number | null;
   lng: number | null;
+  /** Accuracy of the phone's fix at that moment, in metres. */
+  accuracy?: number | null;
   address: string;
 }
 

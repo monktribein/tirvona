@@ -44,6 +44,9 @@ const duration = (minutes: number): string => {
 
 const km = (value: number) => `${value.toFixed(value < 10 ? 2 : 1)} km`;
 
+/** "± 12 m": how far off the phone says its own position may be. */
+const accuracyLabel = (metres?: number | null) => (metres == null ? "" : `±${metres} m`);
+
 const mapsLink = (lat: number, lng: number) =>
   `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 
@@ -120,7 +123,7 @@ export const LeadShiftRoutePage: React.FC = () => {
         latitude: visit.lat,
         longitude: visit.lng,
         title: `Stop ${stopLetter(index)}`,
-        subtitle: `${clock(visit.arrivedAt)} – ${clock(visit.leftAt)} · ${duration(visit.minutes)}`,
+        subtitle: `${clock(visit.arrivedAt)} – ${clock(visit.leftAt)} · ${duration(visit.minutes)}${visit.accuracy != null ? ` · ${accuracyLabel(visit.accuracy)}` : ""}`,
         badge: `Stop ${stopLetter(index)}`,
       }),
     );
@@ -147,6 +150,18 @@ export const LeadShiftRoutePage: React.FC = () => {
     return pins;
   }, [shift, summary]);
 
+  /** A stop's own accuracy, found by the time it began. */
+  const stopAccuracy = (startedAt: string): number | null | undefined =>
+    summary?.visited.find((visit) => visit.arrivedAt === startedAt)?.accuracy;
+
+  /** Mean accuracy over every fix that reported one. */
+  const averageAccuracy = useMemo(() => {
+    const known = (summary?.route ?? [])
+      .map((point) => point.accuracy)
+      .filter((value): value is number => typeof value === "number");
+    return known.length ? Math.round(known.reduce((sum, value) => sum + value, 0) / known.length) : null;
+  }, [summary]);
+
   const pointCell = (
     label: string,
     icon: React.ReactNode,
@@ -155,6 +170,7 @@ export const LeadShiftRoutePage: React.FC = () => {
     lng: number | null | undefined,
     address: string | undefined,
     fallback: string,
+    accuracy?: number | null,
   ) => (
     <div className={`${card} p-4 flex gap-3 min-w-0`}>
       <span className="w-9 h-9 rounded-xl bg-[#F28C28]/10 text-[#F28C28] flex items-center justify-center shrink-0">
@@ -177,6 +193,9 @@ export const LeadShiftRoutePage: React.FC = () => {
               </a>
             ) : (
               <p className="text-[11px] text-gray-400">No GPS fix sent</p>
+            )}
+            {lat != null && lng != null && accuracy != null && (
+              <p className="text-[10px] font-semibold text-gray-400">GPS accuracy {accuracyLabel(accuracy)}</p>
             )}
           </>
         ) : (
@@ -276,7 +295,8 @@ export const LeadShiftRoutePage: React.FC = () => {
                               rel="noreferrer"
                               className="text-xs font-bold text-[#F28C28] hover:underline"
                             >
-                              {latest.lat.toFixed(5)}, {latest.lng.toFixed(5)} · Open in Google Maps ↗
+                              {latest.lat.toFixed(5)}, {latest.lng.toFixed(5)}
+                              {latest.accuracy != null && ` · ${accuracyLabel(latest.accuracy)}`} · Open in Google Maps ↗
                             </a>
                           </>
                         ) : (
@@ -331,6 +351,7 @@ export const LeadShiftRoutePage: React.FC = () => {
               shift.checkIn.lng ?? summary.startLocation?.lng,
               shift.checkIn.address,
               "—",
+              shift.checkIn.accuracy,
             )}
             {pointCell(
               shift.checkOut ? "Ended · check-out" : "Ends at check-out",
@@ -340,6 +361,7 @@ export const LeadShiftRoutePage: React.FC = () => {
               shift.checkOut?.lng ?? summary.endLocation?.lng,
               shift.checkOut?.address,
               "Still on duty",
+              shift.checkOut?.accuracy,
             )}
           </div>
 
@@ -351,6 +373,7 @@ export const LeadShiftRoutePage: React.FC = () => {
                   {summary.fixes} GPS points · {km(summary.totalKm)} from check-in to{" "}
                   {shift.checkOut ? "check-out" : "now"}
                   {roadKm != null && ` · ≈ ${km(roadKm)} by road`}
+                  {averageAccuracy != null && ` · average GPS accuracy ${accuracyLabel(averageAccuracy)}`}
                 </p>
               </div>
             </div>
@@ -422,6 +445,7 @@ export const LeadShiftRoutePage: React.FC = () => {
                           >
                             {leg.from.lat.toFixed(5)}, {leg.from.lng.toFixed(5)} ↗
                           </a>
+                          {stopAccuracy(leg.startedAt) != null && ` · ${accuracyLabel(stopAccuracy(leg.startedAt))}`}
                         </p>
                       </div>
                     </li>

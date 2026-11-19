@@ -41,6 +41,9 @@ const placedAtLogin = (record: any): boolean =>
   (LOGIN_CHECK_IN_NOTES as readonly string[]).includes(String(record?.notes ?? "")) &&
   hasFix(record?.checkInCoords);
 
+const finiteOrNull = (value: unknown): number | null =>
+  typeof value === "number" && Number.isFinite(value) ? Math.round(value) : null;
+
 /** Where the phone was at check-in, when it sent a real fix. */
 const checkInFix = (record: any) =>
   hasFix(record?.checkInCoords) && !placedAtLogin(record) ? record.checkInCoords : null;
@@ -64,6 +67,8 @@ export interface ShiftPoint {
   at: Date;
   lat: number | null;
   lng: number | null;
+  /** Accuracy of the phone's fix at that moment, in metres. */
+  accuracy: number | null;
   address: string;
 }
 
@@ -360,6 +365,7 @@ export class LeadTrackingService {
         at: checkInAt,
         lat: checkInFix(record)?.lat ?? null,
         lng: checkInFix(record)?.lng ?? null,
+        accuracy: finiteOrNull(checkInFix(record)?.accuracy),
         address: String(record.checkInAddress ?? ""),
       },
       checkOut: checkOutAt
@@ -367,6 +373,7 @@ export class LeadTrackingService {
             at: checkOutAt,
             lat: hasFix(record.checkOutCoords) ? record.checkOutCoords.lat : null,
             lng: hasFix(record.checkOutCoords) ? record.checkOutCoords.lng : null,
+            accuracy: hasFix(record.checkOutCoords) ? finiteOrNull(record.checkOutCoords.accuracy) : null,
             address: String(record.checkOutAddress ?? ""),
           }
         : null,

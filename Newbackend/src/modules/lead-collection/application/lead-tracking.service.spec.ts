@@ -334,6 +334,10 @@ describe("LeadTrackingService shifts", () => {
     expect(shift.onDuty).toBe(false);
     expect(shift.checkIn.lat).toBe(27.49);
     expect(shift.checkOut?.lat).toBe(27.52);
+    // Every point of the path says how accurate the phone's fix was.
+    expect(shift.checkIn.accuracy).toBe(10);
+    expect(shift.checkOut?.accuracy).toBe(10);
+    expect(shift.summary.route.every((point) => point.accuracy === 10)).toBe(true);
   });
 
   it("ignores a check-in that carried no device fix", async () => {

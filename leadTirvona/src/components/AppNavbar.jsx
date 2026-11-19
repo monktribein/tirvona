@@ -26,6 +26,21 @@ export default function AppNavbar({
   const userMenuRef = useRef(null);
   const user = agent;
 
+  // Signing in no longer marks attendance. A field agent who is not checked in
+  // is taken straight to the check-in screen, once per sign-in.
+  const promptedCheckIn = useRef(false);
+  useEffect(() => {
+    if (!agent) {
+      promptedCheckIn.current = false;
+      return;
+    }
+    if (promptedCheckIn.current) return;
+    if (agent.role !== 'field_agent' || !attendanceState) return;
+    if (attendanceState.checkedIn || attendanceState.checkedOut) return;
+    promptedCheckIn.current = true;
+    setIsAttendanceModalOpen(true);
+  }, [agent, attendanceState]);
+
   useEffect(() => {
     if (!userMenuOpen) return;
     const onClickOutside = (e) => {
