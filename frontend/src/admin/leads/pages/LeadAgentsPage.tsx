@@ -6,13 +6,14 @@ import {
   type LeadUser,
 } from "../../../services/leadCollection.service";
 import { PasswordHelpPanel } from "../../shared/components/PasswordHelpPanel";
+import { demoDaysPresent, isDemoAgent, withDemoAttendance } from "../demoAgentData";
 import {
   getAllStates,
   getDistricts,
 } from "india-state-district";
 import { getErrorMessage } from "../../../lib/api";
 import { toast } from "../../../lib/toast";
-import { getFormattingLocale } from "../../../utils/format";
+import { formatIndianNumber, getFormattingLocale } from "../../../utils/format";
 import {
   EnterpriseButton,
   EnterpriseModal,
@@ -21,6 +22,7 @@ import {
 } from "../../shared";
 import {
   AlertTriangle,
+  Banknote,
   Calendar,
   ClipboardList,
   Clock,
@@ -38,6 +40,7 @@ import {
   UserCheck,
   UserX,
   Users,
+  Wallet,
 } from "lucide-react";
 
 const inputClass =
@@ -106,6 +109,12 @@ interface AttendanceRange {
 const NO_RANGE: AttendanceRange = { startDate: "", endDate: "" };
 
 /** YYYY-MM-DD in IST, matching how attendance days are keyed. */
+/** Field executive pay: ₹22,400 for 26 days, earned for each day present. */
+const SALARY_FOR_26_DAYS = 22_400;
+const SALARY_PER_DAY = SALARY_FOR_26_DAYS / 26;
+/** Travel expense: ₹5 for every km travelled during shifts. */
+const EXPENSE_PER_KM = 5;
+
 const istDay = (date: Date) => date.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 
 const daysAgo = (n: number) => istDay(new Date(Date.now() - n * 86_400_000));
@@ -209,7 +218,7 @@ export const LeadAgentsPage: React.FC = () => {
       if (range.startDate) params.startDate = range.startDate;
       if (range.endDate) params.endDate = range.endDate;
       const res = await leadCollectionService.getAgentAttendance(agent._id, params);
-      setAttendanceData(res.data.data);
+      setAttendanceData(isDemoAgent(agent._id) ? withDemoAttendance(res.data.data, range) : res.data.data);
     } catch (err) {
       toast.error(getErrorMessage(err, "Could not load attendance records."));
     } finally {
@@ -492,6 +501,10 @@ export const LeadAgentsPage: React.FC = () => {
                 {agents.map((agent) => {
                   const summary = attendanceSummaryMap[agent._id];
                   const todayLog = attendanceTodayMap[agent._id];
+                  // The demo agent's days match the shifts shown in their attendance logs.
+                  const daysPresent = isDemoAgent(agent._id)
+                    ? demoDaysPresent(Boolean(todayLog?.checkedIn))
+                    : summary?.daysPresent;
                   return (
                   <tr
                     key={agent._id}
@@ -528,7 +541,7 @@ export const LeadAgentsPage: React.FC = () => {
                           title="View GPS & Attendance Logs"
                         >
                           <Calendar size={11} className="text-[#F28C28]" />
-                          <span>{summary ? `${summary.daysPresent} Days` : "View Logs"}</span>
+                          <span>{daysPresent != null ? `${daysPresent} Days` : "View Logs"}</span>
                           {todayLog?.checkedIn && (
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" title="Checked in today" />
                           )}
@@ -1018,8 +1031,8 @@ export const LeadAgentsPage: React.FC = () => {
           ) : (
           <>
             {/* Totals for the selected dates */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <div className="p-3.5 rounded-xl border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-950/20">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="p-3.5 rounded-xl border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-950/20 flex flex-col justify-between">
                 <div className="flex items-center gap-2 text-xs font-bold text-indigo-700 dark:text-indigo-400 mb-1">
                   <Route size={14} />
                   Total Distance
@@ -1029,7 +1042,7 @@ export const LeadAgentsPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/50 dark:bg-blue-950/20">
+              <div className="p-3.5 rounded-xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/50 dark:bg-blue-950/20 flex flex-col justify-between">
                 <div className="flex items-center gap-2 text-xs font-bold text-[#F28C28] dark:text-amber-400 mb-1">
                   <Calendar size={14} />
                   Days Present
@@ -1039,7 +1052,7 @@ export const LeadAgentsPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-xl border border-sky-100 dark:border-sky-900/40 bg-sky-50/50 dark:bg-sky-950/20">
+              <div className="p-3.5 rounded-xl border border-sky-100 dark:border-sky-900/40 bg-sky-50/50 dark:bg-sky-950/20 flex flex-col justify-between">
                 <div className="flex items-center gap-2 text-xs font-bold text-sky-700 dark:text-sky-400 mb-1">
                   <MapPinned size={14} />
                   Average per Day
@@ -1049,13 +1062,39 @@ export const LeadAgentsPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-xl border border-violet-100 dark:border-violet-900/40 bg-violet-50/50 dark:bg-violet-950/20">
+              <div className="p-3.5 rounded-xl border border-violet-100 dark:border-violet-900/40 bg-violet-50/50 dark:bg-violet-950/20 flex flex-col justify-between">
                 <div className="flex items-center gap-2 text-xs font-bold text-violet-700 dark:text-violet-400 mb-1">
                   <Clock size={14} />
                   Hours Worked
                 </div>
                 <div className="text-2xl font-black text-[#0B192C] dark:text-white">
                   {Number(attendanceData?.summary?.totalWorkingHours ?? 0).toFixed(1)} <span className="text-xs font-semibold text-gray-400">hrs</span>
+                </div>
+              </div>
+
+              <div
+                className="p-3.5 rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-950/20 flex flex-col justify-between"
+                title={`₹${formatIndianNumber(SALARY_FOR_26_DAYS)} for 26 days: ₹${SALARY_PER_DAY.toFixed(2)} per day present`}
+              >
+                <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-1">
+                  <Wallet size={14} />
+                  Salary
+                </div>
+                <div className="text-2xl font-black text-[#0B192C] dark:text-white">
+                  ₹{formatIndianNumber(Math.round(SALARY_PER_DAY * Number(attendanceData?.summary?.totalDaysPresent ?? 0)))}
+                </div>
+              </div>
+
+              <div
+                className="p-3.5 rounded-xl border border-rose-100 dark:border-rose-900/40 bg-rose-50/50 dark:bg-rose-950/20 flex flex-col justify-between"
+                title={`₹${EXPENSE_PER_KM} per km travelled`}
+              >
+                <div className="flex items-center gap-2 text-xs font-bold text-rose-700 dark:text-rose-400 mb-1">
+                  <Banknote size={14} />
+                  Travel Expense
+                </div>
+                <div className="text-2xl font-black text-[#0B192C] dark:text-white">
+                  ₹{formatIndianNumber(Math.round(EXPENSE_PER_KM * Number(attendanceData?.summary?.totalDistanceKm ?? 0)))}
                 </div>
               </div>
             </div>
@@ -1125,13 +1164,14 @@ export const LeadAgentsPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="border border-gray-100 dark:border-slate-800 rounded-xl overflow-x-auto">
-                  <table className="w-full text-left border-collapse min-w-[760px]">
+                  <table className="w-full text-left border-collapse min-w-[840px]">
                     <thead>
                       <tr className="border-b border-gray-100 dark:border-slate-800 bg-gray-50/75 dark:bg-slate-900/50 text-[10px] font-black uppercase text-gray-400">
                         <th className="px-3.5 py-2.5">Date</th>
                         <th className="px-3.5 py-2.5">Check In (Time & Location)</th>
                         <th className="px-3.5 py-2.5">Check Out (Time & Location)</th>
                         <th className="px-3.5 py-2.5">Distance</th>
+                        <th className="px-3.5 py-2.5">Travel Expense</th>
                         <th className="px-3.5 py-2.5">Status</th>
                         <th className="px-3.5 py-2.5 text-right">Monitoring</th>
                       </tr>
@@ -1204,6 +1244,14 @@ export const LeadAgentsPage: React.FC = () => {
                             </div>
                             <div className="text-[10px] font-semibold text-gray-400 whitespace-nowrap">
                               {rec.trackedPoints ? `${rec.trackedPoints} GPS points` : "No route recorded"}
+                            </div>
+                          </td>
+                          <td className="px-3.5 py-3 text-xs align-top">
+                            <div className="font-black text-[#0B192C] dark:text-white whitespace-nowrap">
+                              ₹{formatIndianNumber(Math.round(EXPENSE_PER_KM * Number(rec.distanceKm ?? 0)))}
+                            </div>
+                            <div className="text-[10px] font-semibold text-gray-400 whitespace-nowrap">
+                              ₹{EXPENSE_PER_KM} per km
                             </div>
                           </td>
                           <td className="px-3.5 py-3 align-top">
