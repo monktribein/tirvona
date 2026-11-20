@@ -20,6 +20,7 @@ import {
   type ShiftRouteAgent,
 } from "../../../services/leadCollection.service";
 import { getErrorMessage } from "../../../lib/api";
+import { demoRouteAgent, demoShiftRoute, isDemoShift } from "../demoAgentData";
 import { EnterprisePageHeader } from "../../shared/components/EnterprisePageHeader";
 import { EnterpriseStatsCard } from "../../shared/components/EnterpriseStatsCard";
 import { TirvonaMapView, type MapMarker } from "../../../components/TirvonaMapView";
@@ -70,6 +71,15 @@ export const LeadShiftRoutePage: React.FC = () => {
     async (quiet = false) => {
       if (!quiet) setLoading(true);
       try {
+        if (isDemoShift(agentId, attendanceId)) {
+          const demo = demoShiftRoute(attendanceId);
+          if (!demo) throw new Error("This shift is no longer in the demo range.");
+          const res = await leadCollectionService.getAgentAttendance(agentId, { limit: 1 });
+          setAgent(demoRouteAgent(agentId, res.data.data.agent));
+          setShift(demo);
+          setError(null);
+          return;
+        }
         const res = await leadCollectionService.getShiftRoute(agentId, attendanceId);
         setAgent(res.data.data.agent);
         setShift(res.data.data.shift);
